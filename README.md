@@ -64,6 +64,11 @@ This repository contains the canonical product specifications, architecture, and
 - **api-spec.md** — REST API specification and endpoints
 - **config-examples.md** — Configuration examples (`.readylayer.yml`)
 - **ci-examples.md** — CI/CD integration examples (copy-paste ready)
+- **frontend-ux-improvements.md** — Comprehensive UX/UI improvement specification
+- **ide-ux-implementation.md** — Detailed IDE extension implementation guide
+- **ux-improvements-summary.md** — Quick reference guide for UX improvements
+- **ux-expansion-strategy.md** — Strategic expansion across platforms and lifecycle stages
+- **ux-reflection-and-expansion.md** — Reflection and strategic expansion framework
 
 ### 🚀 Go-to-Market (`/gtm`)
 - **landing-copy.md** — Landing page copy and messaging

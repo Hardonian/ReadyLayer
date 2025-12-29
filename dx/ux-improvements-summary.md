@@ -326,6 +326,30 @@ This document provides a quick reference guide to all front-end UX/UI improvemen
 
 ---
 
+## Strategic Expansion
+
+### Expansion Strategy
+See `/dx/ux-expansion-strategy.md` for comprehensive expansion strategy across platforms and lifecycle stages.
+
+### Key Principles
+1. **Consistency First:** Same UX patterns across all platforms
+2. **Platform-Native:** Integrate into existing workflows
+3. **Progressive Enhancement:** Core features work everywhere
+4. **Focused Expansion:** Prioritize high-impact, medium-effort expansions
+
+### Expansion Priorities
+- **Tier 1 (Q1):** GitLab MR UX, Slack Rich Messages, CLI Enhancement, GitHub Browser Extension
+- **Tier 2 (Q2):** CI/CD Enhancements, Jira Integration, Bitbucket PR UX, Azure DevOps
+- **Tier 3 (Q3+):** Deployment Platforms, Monitoring Tools (based on demand)
+
+### Avoiding Scope Creep
+- Focus on platforms with high user overlap
+- Natural extensions to existing workflows
+- Clear, measurable value for each expansion
+- User-driven expansion, not speculation
+
+---
+
 ## Conclusion
 
 This summary provides a quick reference to all front-end UX/UI improvements for ReadyLayer. The improvements focus on:
@@ -336,5 +360,7 @@ This summary provides a quick reference to all front-end UX/UI improvements for 
 4. **Error recovery:** Graceful error handling, retry mechanisms, clear messaging
 
 These improvements make ReadyLayer feel more like Vercel deployments and GitHub Actions PR reviews, but with better context, more actionable insights, and a focus on developer productivity.
+
+**Strategic Expansion:** See `/dx/ux-expansion-strategy.md` and `/dx/ux-reflection-and-expansion.md` for expansion strategy and reflection.
 
 For detailed implementation guides, see the individual documentation files referenced above.
