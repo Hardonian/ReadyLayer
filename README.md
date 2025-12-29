@@ -14,20 +14,27 @@ ReadyLayer is a mandatory readiness layer for AI-generated code. It sits after A
 
 ## ⚠️ Current Status
 
-**This repository contains product specifications and architecture documentation. Implementation code will be in separate repositories.**
+**⚠️ IMPORTANT: This repository contains a gamification/social platform implementation, NOT the ReadyLayer product described in the specifications.**
 
 **What exists:**
-- ✅ Product specifications (`/specs`)
+- ✅ Next.js frontend application
+- ✅ Prisma database schema (gamification platform)
+- ✅ 30+ API routes for gamification features
+- ✅ Database migrations (Supabase SQL)
+- ✅ Product specifications (`/specs`) - for ReadyLayer (not implemented)
 - ✅ Architecture documentation (`/architecture`)
 - ✅ Integration specifications (`/integrations`)
-- ✅ Hardened enforcement specifications (`/specs/*-HARDENED.md`)
 
 **What does not exist:**
-- ❌ Implementation code (TypeScript, Python, etc.)
-- ❌ Database schemas or migrations
-- ❌ CI/CD pipelines
-- ❌ Deployed services
-- ❌ Running system
+- ❌ ReadyLayer core features (Review Guard, Test Engine, Doc Sync)
+- ❌ Authentication system (no auth middleware)
+- ❌ Authorization system (no permission checks)
+- ❌ Billing system
+- ❌ Rate limiting
+- ❌ Production-ready error handling
+- ❌ Observability/monitoring
+
+**⚠️ CRITICAL: This system is NOT production-ready. See `/LAUNCH-READINESS-AUDIT.md` for detailed security and readiness issues.**
 
 **Reality Audit:** See `/REALITY-AUDIT.md` for gap analysis between specifications and enforceable reality.
 
@@ -157,4 +164,16 @@ See `/REALITY-AUDIT.md` for:
 
 ---
 
-**Note:** This repository contains product specifications and architecture documentation. Implementation code will be in separate repositories.
+## 🚨 Launch Readiness
+
+**Status:** ❌ **NOT PRODUCTION-READY**
+
+See `/LAUNCH-READINESS-AUDIT.md` for comprehensive audit results.
+
+**Critical Issues:**
+- No authentication/authorization
+- Unprotected API routes
+- Security vulnerabilities
+- Product mismatch (code vs README)
+
+**⚠️ DO NOT DEPLOY** until critical security issues are resolved.

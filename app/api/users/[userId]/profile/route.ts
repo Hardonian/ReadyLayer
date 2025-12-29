@@ -41,6 +41,26 @@ export async function PUT(
   { params }: { params: { userId: string } }
 ) {
   try {
+    // TODO: Implement authentication middleware
+    // const authenticatedUserId = await getAuthenticatedUserId(request)
+    // if (!authenticatedUserId) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
+    // if (authenticatedUserId !== params.userId) {
+    //   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    // }
+
+    // TODO: Remove this hardcoded userId once auth is implemented
+    const authenticatedUserId = 'temp-user-id' // Should come from auth middleware
+    
+    // Authorization check: Users can only update their own profile
+    if (authenticatedUserId !== params.userId) {
+      return NextResponse.json(
+        { error: 'Forbidden: You can only update your own profile' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { username, displayName, bio, avatarUrl, bannerUrl, isPublic } = body
 

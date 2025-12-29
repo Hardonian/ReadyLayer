@@ -52,9 +52,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // TODO: Implement authentication middleware
+    // const userId = await getAuthenticatedUserId(request)
+    // if (!userId) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
+
     const body = await request.json()
     const validated = insightSchema.parse(body)
-    const userId = (body as { userId?: string }).userId || 'user-id' // Should come from auth
+    
+    // TODO: Remove this hardcoded userId once auth is implemented
+    const userId = 'temp-user-id' // Should come from auth middleware
     
     const insight = await prisma.insight.create({
       data: {
