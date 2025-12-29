@@ -69,6 +69,10 @@ This repository contains the canonical product specifications, architecture, and
 - **ux-improvements-summary.md** — Quick reference guide for UX improvements
 - **ux-expansion-strategy.md** — Strategic expansion across platforms and lifecycle stages
 - **ux-reflection-and-expansion.md** — Reflection and strategic expansion framework
+- **ux-expansion-tier1-typesafe.md** — Tier 1 type-safe implementations (GitLab, Slack, CLI, Browser Extension)
+- **ux-expansion-tier2-typesafe.md** — Tier 2 type-safe implementations (CI/CD, Jira, Bitbucket, Azure DevOps)
+- **ux-expansion-tier3-typesafe.md** — Tier 3 type-safe implementations (Deployment Platforms, Monitoring Tools)
+- **ux-expansion-complete-typesafe.md** — Complete overview of all type-safe expansions
 
 ### 🚀 Go-to-Market (`/gtm`)
 - **landing-copy.md** — Landing page copy and messaging
