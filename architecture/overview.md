@@ -4,6 +4,13 @@
 
 ReadyLayer is built as a composable service architecture, not a monolith. Each service has clear ownership and responsibilities, enabling independent scaling, deployment, and maintenance.
 
+**Core Principles:**
+- **Compatibility:** Platform-agnostic core with adapter pattern for platform-specific integrations
+- **Portability:** Stateless services, configuration-driven, Docker/Kubernetes ready
+- **Composability:** Modular services, event-driven, plugin architecture
+
+See `/architecture/compatibility-portability-composability.md` for detailed architecture patterns and adapter implementations.
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Client Layer                             │

@@ -497,3 +497,9 @@ Body: {
 3. **Error handling:** Graceful degradation, don't block PRs on failures
 4. **Monitoring:** Track all API calls, alert on anomalies
 5. **Security:** Validate webhooks, encrypt tokens, audit logs
+6. **Real-time updates:** Use WebSocket for live status updates
+7. **Visual feedback:** Provide progress indicators and status badges
+8. **Actionable insights:** Include fix suggestions and quick actions
+
+**See `/integrations/github-pr-ux.md` for comprehensive PR review UX improvements.**
+**See `/dx/frontend-ux-improvements.md` for overall front-end UX/UI improvements.**
