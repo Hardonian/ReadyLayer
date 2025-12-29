@@ -1,16 +1,17 @@
-# ReadyLayer — AI Code Readiness Platform
+# ReadyLayer — Gamified Code Review Platform
 
-**AI writes the code. ReadyLayer makes it production-ready.**
+**Engineers verify AI code reviews on pull requests. Earn badges, streaks, and recognition for quality code reviews.**
 
-ReadyLayer automatically reviews, tests, and documents AI-generated code before merge. Catch security vulnerabilities, enforce test coverage, and keep API docs in sync—all without slowing down development.
+ReadyLayer is a gamified code review platform that combines AI-powered code analysis with human verification. Engineers review AI-generated code on pull requests, verify findings, and earn rewards through badges, streaks, and leaderboards.
 
 ## Overview
 
-ReadyLayer is a mandatory readiness layer for AI-generated code. It sits after AI code generation and before merge, ensuring production readiness through three core modules:
+ReadyLayer gamifies the code review process for AI-generated code:
 
-1. **Review Guard** — AI-aware code review for security, quality, and style
-2. **Test Engine** — Automatic test generation and coverage enforcement
-3. **Doc Sync** — OpenAPI generation and documentation sync
+1. **AI Code Review** — Automated analysis detects security issues, quality problems, and suggests improvements
+2. **Human Verification** — Engineers review and verify AI findings, ensuring accuracy and building team knowledge
+3. **Gamification** — Earn badges, maintain streaks, and climb leaderboards for exceptional code review work
+4. **Social Features** — Give kudos, follow teammates, and collaborate on code reviews
 
 ## ⚠️ Current Status
 

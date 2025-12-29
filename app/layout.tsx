@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { SessionProvider } from 'next-auth/react'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ReadyLayer — AI Code Readiness Platform',
-  description: 'AI writes the code. ReadyLayer makes it production-ready.',
+  title: 'ReadyLayer — Gamified Code Review Platform',
+  description: 'Engineers verify AI code reviews on pull requests. Earn badges, streaks, and recognition.',
 }
 
 export default function RootLayout({
@@ -16,7 +17,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   )
 }
