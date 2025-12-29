@@ -301,6 +301,9 @@ Extension auto-detects repo from project. If multiple repos, select repo in stat
 - **On save:** Review file on save (configurable)
 - **On change:** Review file on change (debounced, configurable)
 - **Manual:** User triggers review via command/action
+- **WebSocket updates:** Live status updates via WebSocket connection
+- **Progress indicators:** Real-time progress bars and status updates
+- **Toast notifications:** Non-intrusive alerts for status changes
 
 ### Integration with Git
 - **Branch detection:** Auto-detect current branch
@@ -311,11 +314,25 @@ Extension auto-detects repo from project. If multiple repos, select repo in stat
 - **Network errors:** Show error message, retry button
 - **API errors:** Show error message, link to dashboard
 - **Rate limit:** Show warning, queue requests
+- **Auto-retry:** Exponential backoff retry for transient failures
+- **Error recovery:** Graceful degradation with cached results
 
 ### Performance
 - **Caching:** Cache review results (TTL 5 minutes)
 - **Debouncing:** Debounce file change events (500ms)
 - **Batching:** Batch API calls when possible
+- **Lazy loading:** Load content on demand
+- **Virtualization:** Virtualize long lists for performance
+
+### Enhanced UX Features
+- **Rich hover cards:** Detailed issue information with code snippets
+- **Progress indicators:** Visual progress bars for long-running operations
+- **Status badges:** Color-coded status indicators
+- **Interactive panels:** Sidebar panels with live updates
+- **Toast notifications:** Non-intrusive status alerts
+
+**See `/dx/frontend-ux-improvements.md` for comprehensive UX/UI improvements.**
+**See `/dx/ide-ux-implementation.md` for detailed implementation guide.**
 
 ---
 
