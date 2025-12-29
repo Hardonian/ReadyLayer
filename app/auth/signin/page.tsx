@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 export default function SignInPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const [loading, setLoading] = useState(false)
@@ -28,8 +27,8 @@ export default function SignInPage() {
         setError(error.message)
         setLoading(false)
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred')
       setLoading(false)
     }
   }
