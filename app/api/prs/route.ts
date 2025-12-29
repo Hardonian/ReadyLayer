@@ -14,6 +14,7 @@ const createPRSchema = z.object({
   authorUsername: z.string().optional(),
   baseBranch: z.string().optional(),
   headBranch: z.string().optional(),
+  status: z.enum(['open', 'merged', 'closed', 'draft']).optional(),
   isAIGenerated: z.boolean().default(false),
   aiConfidence: z.number().min(0).max(100).optional(),
   diffStats: z
@@ -170,6 +171,7 @@ export async function POST(request: NextRequest) {
         authorUsername: validated.authorUsername,
         baseBranch: validated.baseBranch,
         headBranch: validated.headBranch,
+        status: validated.status,
         isAIGenerated: validated.isAIGenerated,
         aiConfidence: validated.aiConfidence,
         diffStats: validated.diffStats as any,
