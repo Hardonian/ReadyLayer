@@ -1,33 +1,41 @@
-# ReadyLayer — AI Code Readiness Platform
+# ReadyLayer — Gamified Code Review Platform
 
-**AI writes the code. ReadyLayer makes it production-ready.**
+**Engineers verify AI code reviews on pull requests. Earn badges, streaks, and recognition for quality code reviews.**
 
-ReadyLayer automatically reviews, tests, and documents AI-generated code before merge. Catch security vulnerabilities, enforce test coverage, and keep API docs in sync—all without slowing down development.
+ReadyLayer is a gamified code review platform that combines AI-powered code analysis with human verification. Engineers review AI-generated code on pull requests, verify findings, and earn rewards through badges, streaks, and leaderboards.
 
 ## Overview
 
-ReadyLayer is a mandatory readiness layer for AI-generated code. It sits after AI code generation and before merge, ensuring production readiness through three core modules:
+ReadyLayer gamifies the code review process for AI-generated code:
 
-1. **Review Guard** — AI-aware code review for security, quality, and style
-2. **Test Engine** — Automatic test generation and coverage enforcement
-3. **Doc Sync** — OpenAPI generation and documentation sync
+1. **AI Code Review** — Automated analysis detects security issues, quality problems, and suggests improvements
+2. **Human Verification** — Engineers review and verify AI findings, ensuring accuracy and building team knowledge
+3. **Gamification** — Earn badges, maintain streaks, and climb leaderboards for exceptional code review work
+4. **Social Features** — Give kudos, follow teammates, and collaborate on code reviews
 
 ## ⚠️ Current Status
 
-**This repository contains product specifications and architecture documentation. Implementation code will be in separate repositories.**
+**⚠️ IMPORTANT: This repository contains a gamification/social platform implementation, NOT the ReadyLayer product described in the specifications.**
 
 **What exists:**
-- ✅ Product specifications (`/specs`)
+- ✅ Next.js frontend application
+- ✅ Prisma database schema (gamification platform)
+- ✅ 30+ API routes for gamification features
+- ✅ Database migrations (Supabase SQL)
+- ✅ Product specifications (`/specs`) - for ReadyLayer (not implemented)
 - ✅ Architecture documentation (`/architecture`)
 - ✅ Integration specifications (`/integrations`)
-- ✅ Hardened enforcement specifications (`/specs/*-HARDENED.md`)
 
 **What does not exist:**
-- ❌ Implementation code (TypeScript, Python, etc.)
-- ❌ Database schemas or migrations
-- ❌ CI/CD pipelines
-- ❌ Deployed services
-- ❌ Running system
+- ❌ ReadyLayer core features (Review Guard, Test Engine, Doc Sync)
+- ❌ Authentication system (no auth middleware)
+- ❌ Authorization system (no permission checks)
+- ❌ Billing system
+- ❌ Rate limiting
+- ❌ Production-ready error handling
+- ❌ Observability/monitoring
+
+**⚠️ CRITICAL: This system is NOT production-ready. See `/LAUNCH-READINESS-AUDIT.md` for detailed security and readiness issues.**
 
 **Reality Audit:** See `/REALITY-AUDIT.md` for gap analysis between specifications and enforceable reality.
 
@@ -157,4 +165,16 @@ See `/REALITY-AUDIT.md` for:
 
 ---
 
-**Note:** This repository contains product specifications and architecture documentation. Implementation code will be in separate repositories.
+## 🚨 Launch Readiness
+
+**Status:** ❌ **NOT PRODUCTION-READY**
+
+See `/LAUNCH-READINESS-AUDIT.md` for comprehensive audit results.
+
+**Critical Issues:**
+- No authentication/authorization
+- Unprotected API routes
+- Security vulnerabilities
+- Product mismatch (code vs README)
+
+**⚠️ DO NOT DEPLOY** until critical security issues are resolved.

@@ -10,14 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core User Model
+// Core User Model (Supabase Auth compatible)
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id // Uses Supabase auth.users.id (UUID as TEXT)
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
   profile       UserProfile?
@@ -36,9 +37,11 @@ model User {
   pairSessionsInitiated PairSession[] @relation("Initiator")
   pairSessionsJoined PairSession[] @relation("Partner")
   teamReviews   TeamReview[]
+  codeReviews   CodeReview[]
   reviewVotes   ReviewVote[]
   leaderboardRankings LeaderboardRanking[]
   teamMembers   TeamMember[]
+  pullRequests  PullRequest[]
 
   @@index([email])
 }
@@ -238,23 +241,27 @@ model UserFollow {
   @@index([followeeId])
 }
 
-// Kudos (Recognition)
+// Kudos (Recognition for code review work)
 model Kudos {
   id          String   @id @default(cuid())
   fromUserId  String
   toUserId    String
-  type        String   // great_catch, helpful_fix, perfect_pr, team_player, knowledge_share, quality_work
+  type        String   // great_catch, helpful_fix, perfect_pr, team_player, knowledge_share, quality_work, security_expert, test_champion
   message     String?  @db.Text
-  contextType String?  // pr, issue, insight, etc.
-  contextId   String?
+  contextType String?  // pr, review, insight, etc.
+  contextId   String?  // PR ID, Review ID, etc.
+  prId        String?  // Direct link to PR
   createdAt   DateTime @default(now())
 
-  fromUser User @relation("KudosFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
-  toUser   User @relation("KudosTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  fromUser User         @relation("KudosFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User         @relation("KudosTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  pr       PullRequest? @relation(fields: [prId], references: [id], onDelete: SetNull)
 
   @@index([fromUserId])
   @@index([toUserId])
   @@index([type])
+  @@index([prId])
+  @@index([contextType, contextId])
 }
 
 // Knowledge Insights
@@ -385,30 +392,47 @@ model PairSession {
   @@index([status])
 }
 
-// Pull Requests (for team reviews)
+// Pull Requests (GitHub/GitLab PRs)
 model PullRequest {
-  id          String   @id @default(cuid())
-  number      Int
-  title       String
-  repository  String
-  authorId    String
-  status      String   @default("open") // open, merged, closed
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  number          Int
+  title           String
+  repository      String   // format: owner/repo
+  repositoryUrl   String?
+  authorId        String
+  authorUsername  String?
+  baseBranch      String?
+  headBranch      String?
+  status          String   @default("open") // open, merged, closed, draft
+  isAIGenerated   Boolean  @default(false) // Detected AI-generated code
+  aiConfidence    Decimal? @db.Decimal(5, 2) // 0-100 confidence score
+  diffStats       Json?    // { additions, deletions, files }
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  mergedAt        DateTime?
 
-  reviews TeamReview[]
+  author          User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reviews         TeamReview[]
+  codeReviews     CodeReview[]
+  kudos           Kudos[]      // Kudos related to this PR
 
+  @@unique([repository, number], name: "repository_number")
   @@index([repository, number])
   @@index([authorId])
+  @@index([status])
+  @@index([isAIGenerated])
+  @@index([createdAt])
 }
 
-// Team Reviews
+// Human Code Reviews (Engineer reviews)
 model TeamReview {
   id          String   @id @default(cuid())
   prId        String
   reviewerId  String
-  status      String   @default("pending") // pending, approved, rejected, needs_discussion
+  status      String   @default("pending") // pending, approved, rejected, needs_discussion, changes_requested
   comment     String?  @db.Text
+  reviewType  String   @default("human") // human, ai_verified
+  issuesFound Json?    // [{ severity, type, file, line, message }]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -419,6 +443,35 @@ model TeamReview {
   @@index([prId])
   @@index([reviewerId])
   @@index([status])
+  @@index([reviewType])
+}
+
+// AI Code Reviews (AI-generated review analysis)
+model CodeReview {
+  id              String   @id @default(cuid())
+  prId            String
+  reviewerId      String   // User who triggered/verified the AI review
+  aiProvider      String?  // openai, anthropic, etc.
+  status          String   @default("pending") // pending, verified, rejected, needs_review
+  summary         String?  @db.Text
+  issuesFound     Json     // [{ severity, type, file, line, message, confidence }]
+  suggestions     Json?    // [{ type, file, line, suggestion }]
+  securityIssues  Int      @default(0)
+  qualityIssues   Int      @default(0)
+  testIssues      Int      @default(0)
+  docIssues       Int      @default(0)
+  overallScore    Decimal? @db.Decimal(5, 2) // 0-100
+  verifiedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pr       PullRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  reviewer User        @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([prId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // Review Votes

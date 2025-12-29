@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ReadyLayer — AI Code Readiness Platform',
-  description: 'AI writes the code. ReadyLayer makes it production-ready.',
+  title: 'ReadyLayer — Gamified Code Review Platform',
+  description: 'Engineers verify AI code reviews on pull requests. Earn badges, streaks, and recognition.',
 }
 
 export default function RootLayout({

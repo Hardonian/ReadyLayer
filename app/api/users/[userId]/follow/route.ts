@@ -2,16 +2,40 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { userId: string } }
 ) {
   try {
-    const body = await request.json()
-    const { followerId } = body
+    // TODO: Implement authentication middleware
+    // const authenticatedUserId = await getAuthenticatedUserId(request)
+    // if (!authenticatedUserId) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
+
+    // TODO: Remove this hardcoded userId once auth is implemented
+    const authenticatedUserId = 'temp-user-id' // Should come from auth middleware
+    const followerId = authenticatedUserId // Fixed: Use authenticated user, not body
 
     if (followerId === params.userId) {
       return NextResponse.json(
         { error: 'Cannot follow yourself' },
+        { status: 400 }
+      )
+    }
+
+    // Check if already following
+    const existingFollow = await prisma.userFollow.findUnique({
+      where: {
+        followerId_followeeId: {
+          followerId,
+          followeeId: params.userId,
+        },
+      },
+    })
+
+    if (existingFollow) {
+      return NextResponse.json(
+        { error: 'Already following this user' },
         { status: 400 }
       )
     }
@@ -34,19 +58,19 @@ export async function POST(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { userId: string } }
 ) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const followerId = searchParams.get('followerId')
+    // TODO: Implement authentication middleware
+    // const authenticatedUserId = await getAuthenticatedUserId(request)
+    // if (!authenticatedUserId) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // }
 
-    if (!followerId) {
-      return NextResponse.json(
-        { error: 'followerId is required' },
-        { status: 400 }
-      )
-    }
+    // TODO: Remove this hardcoded userId once auth is implemented
+    const authenticatedUserId = 'temp-user-id' // Should come from auth middleware
+    const followerId = authenticatedUserId // Fixed: Use authenticated user, not query param
 
     await prisma.userFollow.delete({
       where: {
