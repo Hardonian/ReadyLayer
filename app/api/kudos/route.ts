@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
         message: validated.message,
         contextType: validated.contextType,
         contextId: validated.contextId,
-        prId: validated.contextType === 'pr' ? validated.contextId : undefined,
+        ...(validated.contextType === 'pr' && validated.contextId
+          ? { prId: validated.contextId }
+          : {}),
       },
       include: {
         fromUser: {
