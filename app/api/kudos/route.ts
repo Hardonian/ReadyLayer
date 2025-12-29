@@ -4,7 +4,7 @@ import { kudosSchema } from '@/lib/validations'
 import { requireAuth } from '@/lib/auth-server'
 import { rateLimit, rateLimiters } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
-import { createErrorResponse, ErrorCodes } from '@/lib/errors'
+import { ErrorCodes } from '@/lib/errors'
 
 export async function POST(request: NextRequest) {
   try {

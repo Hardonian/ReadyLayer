@@ -1,10 +1,34 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useEffect, useState } from 'react'
+import { createSupabaseClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 
 export default function Home() {
-  const { data: session, status } = useSession()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const supabase = createSupabaseClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+
+    getUser()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
@@ -17,11 +41,11 @@ export default function Home() {
           Engineers verify AI code reviews on pull requests. Earn badges, streaks, and recognition for quality code reviews.
         </p>
 
-        {status === 'loading' && (
+        {loading && (
           <div className="text-center">Loading...</div>
         )}
 
-        {status === 'unauthenticated' && (
+        {!loading && !user && (
           <div className="text-center">
             <Link
               href="/auth/signin"
@@ -32,10 +56,10 @@ export default function Home() {
           </div>
         )}
 
-        {status === 'authenticated' && session && (
+        {!loading && user && (
           <div className="space-y-4">
             <div className="text-center mb-8">
-              <p className="text-lg">Welcome, {session.user?.name || session.user?.email}!</p>
+              <p className="text-lg">Welcome, {user.user_metadata?.full_name || user.email}!</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
@@ -52,7 +76,7 @@ export default function Home() {
                 <h2 className="text-lg font-semibold mb-2">Gamification</h2>
                 <p className="mb-4">Earn badges, streaks, and XP for quality reviews</p>
                 <Link
-                  href={`/users/${session.user?.id}/profile`}
+                  href={`/users/${user.id}/profile`}
                   className="text-blue-600 hover:underline"
                 >
                   View Profile →

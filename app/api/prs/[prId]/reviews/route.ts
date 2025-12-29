@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-server'
 import { rateLimit, rateLimiters } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
-import { createErrorResponse, ErrorCodes } from '@/lib/errors'
+import { ErrorCodes } from '@/lib/errors'
 import { z } from 'zod'
 
 const createReviewSchema = z.object({

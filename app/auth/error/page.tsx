@@ -8,9 +8,9 @@ export default function AuthErrorPage() {
   const error = searchParams.get('error')
 
   const errorMessages: Record<string, string> = {
-    Configuration: 'There is a problem with the server configuration.',
+    AuthError: 'An error occurred during authentication. Please try again.',
     AccessDenied: 'You do not have permission to sign in.',
-    Verification: 'The verification token has expired or has already been used.',
+    Configuration: 'There is a problem with the server configuration.',
     Default: 'An error occurred during authentication.',
   }
 

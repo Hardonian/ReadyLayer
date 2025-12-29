@@ -1,13 +1,11 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { getSupabaseUserId, getSupabaseUser } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 
 /**
- * Get the authenticated user ID from the server session
+ * Get the authenticated user ID from Supabase session
  */
-export async function getAuthenticatedUserId(_request?: NextRequest): Promise<string | null> {
-  const session = await getServerSession(authOptions)
-  return session?.user?.id || null
+export async function getAuthenticatedUserId(request?: NextRequest): Promise<string | null> {
+  return await getSupabaseUserId(request)
 }
 
 /**
@@ -20,6 +18,13 @@ export async function requireAuth(request?: NextRequest): Promise<string> {
     throw new Error('Unauthorized')
   }
   return userId
+}
+
+/**
+ * Get the full authenticated user object
+ */
+export async function getAuthenticatedUser(request?: NextRequest) {
+  return await getSupabaseUser(request)
 }
 
 /**
