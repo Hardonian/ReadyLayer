@@ -41,9 +41,6 @@ export async function GET(
     if (rateLimitResponse) return rateLimitResponse
 
     await requireAuth(request)
-    if (rateLimitResponse) return rateLimitResponse
-
-    await requireAuth(request)
 
     const codeReviews = await prisma.codeReview.findMany({
       where: { prId: params.prId },
