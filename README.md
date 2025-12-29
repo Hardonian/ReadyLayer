@@ -12,6 +12,25 @@ ReadyLayer is a mandatory readiness layer for AI-generated code. It sits after A
 2. **Test Engine** — Automatic test generation and coverage enforcement
 3. **Doc Sync** — OpenAPI generation and documentation sync
 
+## ⚠️ Current Status
+
+**This repository contains product specifications and architecture documentation. Implementation code will be in separate repositories.**
+
+**What exists:**
+- ✅ Product specifications (`/specs`)
+- ✅ Architecture documentation (`/architecture`)
+- ✅ Integration specifications (`/integrations`)
+- ✅ Hardened enforcement specifications (`/specs/*-HARDENED.md`)
+
+**What does not exist:**
+- ❌ Implementation code (TypeScript, Python, etc.)
+- ❌ Database schemas or migrations
+- ❌ CI/CD pipelines
+- ❌ Deployed services
+- ❌ Running system
+
+**Reality Audit:** See `/REALITY-AUDIT.md` for gap analysis between specifications and enforceable reality.
+
 ## Project Structure
 
 This repository contains the canonical product specifications, architecture, and delivery plans for ReadyLayer.
@@ -34,9 +53,12 @@ This repository contains the canonical product specifications, architecture, and
 - **ci.md** — CI/CD integrations (GitHub Actions, GitLab CI)
 
 ### 📋 Specs (`/specs`)
-- **review-guard.md** — Review Guard implementation specification
-- **test-engine.md** — Test Engine implementation specification
-- **doc-sync.md** — Doc Sync implementation specification
+- **review-guard.md** — Review Guard implementation specification (original)
+- **review-guard-HARDENED.md** — Review Guard hardened specification (enforcement-first)
+- **test-engine.md** — Test Engine implementation specification (original)
+- **test-engine-HARDENED.md** — Test Engine hardened specification (enforcement-first)
+- **doc-sync.md** — Doc Sync implementation specification (original)
+- **doc-sync-HARDENED.md** — Doc Sync hardened specification (enforcement-first)
 
 ### 👨‍💻 Developer Experience (`/dx`)
 - **api-spec.md** — REST API specification and endpoints
@@ -101,6 +123,26 @@ See `/dx/config-examples.md` for configuration examples and `/dx/ci-examples.md`
 ## License
 
 Proprietary — ReadyLayer Platform Specifications
+
+---
+
+## Enforcement-First Principles
+
+ReadyLayer follows enforcement-first principles:
+
+1. **Rules > AI:** Deterministic rules always override AI judgment
+2. **Enforcement > Insight:** Blocking is default, warnings are exception
+3. **Safety > Convenience:** Fail-secure defaults, explicit overrides required
+4. **Explicit > Silent:** All failures are explicit, no silent degradation
+
+See hardened specifications (`/specs/*-HARDENED.md`) for enforcement-first implementations.
+
+## Reality Audit
+
+See `/REALITY-AUDIT.md` for:
+- Gap identification between specifications and enforceable reality
+- Enforcement gaps, reliability gaps, trust gaps
+- Required changes to achieve enforcement-first behavior
 
 ---
 
