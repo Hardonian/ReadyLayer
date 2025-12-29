@@ -363,4 +363,10 @@ These improvements make ReadyLayer feel more like Vercel deployments and GitHub 
 
 **Strategic Expansion:** See `/dx/ux-expansion-strategy.md` and `/dx/ux-reflection-and-expansion.md` for expansion strategy and reflection.
 
+**Gamification & Social Features:** See `/dx/ux-design-future-social-collaboration.md` for comprehensive gamification, social networking, and collaboration features designed for Gen Z developers and future-forward thinking.
+
+**Visual Design Extensions:** See `/dx/ux-design-visual-system-extension.md` for extended visual design system including badges, achievements, leaderboards, and social components.
+
+**Implementation Guide:** See `/dx/ux-design-implementation-guide.md` for technical implementation details including database schema, API endpoints, and frontend/backend code examples.
+
 For detailed implementation guides, see the individual documentation files referenced above.
