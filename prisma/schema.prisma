@@ -1,0 +1,438 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core User Model
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profile       UserProfile?
+  stats         UserStats?
+  badges        UserBadge[]
+  achievements  UserAchievement[]
+  streaks       UserStreak[]
+  streakHistory StreakHistory[]
+  followers     UserFollow[] @relation("Follower")
+  following     UserFollow[] @relation("Followee")
+  kudosGiven    Kudos[] @relation("KudosFrom")
+  kudosReceived Kudos[] @relation("KudosTo")
+  insights      Insight[]
+  insightInteractions InsightInteraction[]
+  challengeParticipants ChallengeParticipant[]
+  pairSessionsInitiated PairSession[] @relation("Initiator")
+  pairSessionsJoined PairSession[] @relation("Partner")
+  teamReviews   TeamReview[]
+  reviewVotes   ReviewVote[]
+  leaderboardRankings LeaderboardRanking[]
+  teamMembers   TeamMember[]
+
+  @@index([email])
+}
+
+// Extended User Profile
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  username    String   @unique
+  displayName String?
+  bio         String?  @db.Text
+  avatarUrl   String?
+  bannerUrl   String?
+  level       Int      @default(1)
+  experiencePoints Int @default(0)
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([username])
+  @@index([userId])
+}
+
+// User Stats
+model UserStats {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  prsReviewed           Int      @default(0)
+  issuesCaught          Int      @default(0)
+  testsGenerated        Int      @default(0)
+  qualityScore          Decimal  @default(0) @db.Decimal(5, 2)
+  securityIssuesCaught  Int      @default(0)
+  highIssuesCaught      Int      @default(0)
+  mediumIssuesCaught    Int      @default(0)
+  lowIssuesCaught       Int      @default(0)
+  updatedAt             DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Badge Definitions
+model Badge {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  category    String   // security, quality, testing, documentation, collaboration
+  tier        String   // bronze, silver, gold, platinum, diamond
+  icon        String?  // emoji
+  color       String?  // hex color
+  criteria    Json     // achievement criteria
+  createdAt   DateTime @default(now())
+
+  userBadges UserBadge[]
+
+  @@index([category])
+  @@index([tier])
+}
+
+// User Badges (Earned)
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  progress  Int      @default(100) // 0-100
+  earnedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+}
+
+// Achievement Definitions
+model Achievement {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  name         String
+  description  String?  @db.Text
+  category     String
+  icon         String?  // emoji
+  criteria     Json     // achievement criteria
+  rewardPoints Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  userAchievements UserAchievement[]
+
+  @@index([category])
+}
+
+// User Achievements
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  progress      Int      @default(0)
+  earnedAt      DateTime?
+  updatedAt     DateTime @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
+}
+
+// Leaderboards
+model Leaderboard {
+  id          String   @id @default(cuid())
+  type        String   // security, quality, testing, documentation, collaboration
+  scope       String   // global, team, organization
+  scopeId     String?  // team_id or org_id for scoped leaderboards
+  period      String   // daily, weekly, monthly, all-time
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime @default(now())
+
+  rankings LeaderboardRanking[]
+
+  @@index([type, scope, period])
+  @@index([periodStart, periodEnd])
+}
+
+// Leaderboard Rankings
+model LeaderboardRanking {
+  id            String   @id @default(cuid())
+  leaderboardId String
+  userId        String
+  rank          Int
+  score         Decimal  @db.Decimal(10, 2)
+  metadata      Json?    // additional ranking data
+  updatedAt     DateTime @updatedAt
+
+  leaderboard Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([leaderboardId, userId])
+  @@index([leaderboardId])
+  @@index([userId])
+  @@index([rank])
+}
+
+// User Streaks
+model UserStreak {
+  id               String   @id @default(cuid())
+  userId           String
+  type             String   // quality, security, activity, etc.
+  currentStreak    Int      @default(0)
+  longestStreak    Int      @default(0)
+  lastActivityDate DateTime?
+  startedAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@index([type])
+}
+
+// Streak History
+model StreakHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  streakType   String
+  activityDate DateTime @db.Date
+  completed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, streakType, activityDate])
+  @@index([userId, streakType])
+  @@index([activityDate])
+}
+
+// User Follows
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followeeId  String
+  createdAt   DateTime @default(now())
+
+  follower User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("Followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followeeId])
+  @@index([followerId])
+  @@index([followeeId])
+}
+
+// Kudos (Recognition)
+model Kudos {
+  id          String   @id @default(cuid())
+  fromUserId  String
+  toUserId    String
+  type        String   // great_catch, helpful_fix, perfect_pr, team_player, knowledge_share, quality_work
+  message     String?  @db.Text
+  contextType String?  // pr, issue, insight, etc.
+  contextId   String?
+  createdAt   DateTime @default(now())
+
+  fromUser User @relation("KudosFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User @relation("KudosTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([fromUserId])
+  @@index([toUserId])
+  @@index([type])
+}
+
+// Knowledge Insights
+model Insight {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  content       String   @db.Text
+  category      String   // security, quality, testing, documentation
+  tags          String[]
+  likesCount    Int      @default(0)
+  commentsCount Int      @default(0)
+  sharesCount   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interactions      InsightInteraction[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([createdAt])
+}
+
+// Insight Interactions
+model InsightInteraction {
+  id        String   @id @default(cuid())
+  insightId String
+  userId    String
+  type      String   // like, comment, share
+  content   String?  @db.Text // for comments
+  createdAt DateTime @default(now())
+
+  insight Insight @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([insightId, userId, type])
+  @@index([insightId])
+  @@index([userId])
+}
+
+// Teams
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  challenges Challenge[]
+  members    TeamMember[]
+
+  @@index([slug])
+}
+
+// Team Members
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  role      String   @default("member") // member, admin, owner
+  joinedAt  DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+// Team Challenges
+model Challenge {
+  id          String   @id @default(cuid())
+  teamId      String
+  name        String
+  description String?  @db.Text
+  type        String   // zero_issues, coverage, security, documentation
+  goal        Json     // challenge goal criteria
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("upcoming") // upcoming, active, completed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team          Team                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  participants  ChallengeParticipant[]
+
+  @@index([teamId])
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+// Challenge Participants
+model ChallengeParticipant {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  progress    Json?    // progress tracking
+  joinedAt    DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, userId])
+  @@index([challengeId])
+  @@index([userId])
+}
+
+// Pair Programming Sessions
+model PairSession {
+  id          String   @id @default(cuid())
+  initiatorId String
+  partnerId   String
+  prId        String?
+  status      String   @default("pending") // pending, active, completed
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  initiator User @relation("Initiator", fields: [initiatorId], references: [id], onDelete: Cascade)
+  partner   User @relation("Partner", fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([initiatorId])
+  @@index([partnerId])
+  @@index([status])
+}
+
+// Pull Requests (for team reviews)
+model PullRequest {
+  id          String   @id @default(cuid())
+  number      Int
+  title       String
+  repository  String
+  authorId    String
+  status      String   @default("open") // open, merged, closed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reviews TeamReview[]
+
+  @@index([repository, number])
+  @@index([authorId])
+}
+
+// Team Reviews
+model TeamReview {
+  id          String   @id @default(cuid())
+  prId        String
+  reviewerId  String
+  status      String   @default("pending") // pending, approved, rejected, needs_discussion
+  comment     String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pr       PullRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  reviewer User        @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  votes    ReviewVote[]
+
+  @@index([prId])
+  @@index([reviewerId])
+  @@index([status])
+}
+
+// Review Votes
+model ReviewVote {
+  id        String   @id @default(cuid())
+  reviewId  String
+  userId    String
+  vote      String   // approve, reject, needs_discussion
+  createdAt DateTime @default(now())
+
+  review TeamReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([reviewId])
+  @@index([userId])
+}
