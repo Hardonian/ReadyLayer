@@ -44,6 +44,7 @@ This repository contains the canonical product specifications, architecture, and
 - **overview.md** — High-level system architecture and services
 - **services.md** — Service responsibilities and ownership
 - **events-and-security.md** — Event model and security architecture
+- **compatibility-portability-composability.md** — Adapter patterns, normalized APIs, webhooks, WebSockets
 
 ### 🔌 Integrations (`/integrations`)
 - **github.md** — GitHub integration (webhooks, API, installation)
@@ -73,6 +74,7 @@ This repository contains the canonical product specifications, architecture, and
 - **ux-expansion-tier2-typesafe.md** — Tier 2 type-safe implementations (CI/CD, Jira, Bitbucket, Azure DevOps)
 - **ux-expansion-tier3-typesafe.md** — Tier 3 type-safe implementations (Deployment Platforms, Monitoring Tools)
 - **ux-expansion-complete-typesafe.md** — Complete overview of all type-safe expansions
+- **adapter-pattern-guide.md** — Developer guide for adapter pattern usage
 
 ### 🚀 Go-to-Market (`/gtm`)
 - **landing-copy.md** — Landing page copy and messaging
