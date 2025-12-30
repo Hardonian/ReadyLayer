@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
+import { requireAuth } from '../../../../../lib/auth';
+import { createAuthzMiddleware } from '../../../../../lib/authz';
 
 /**
  * GET /api/v1/repos/:repoId
- * Get repository details
+ * Get repository details (tenant-isolated)
  */
 export async function GET(
   request: NextRequest,
@@ -14,10 +16,28 @@ export async function GET(
   const log = logger.child({ requestId, repoId: params.repoId });
 
   try {
+    // Require authentication
+    const user = await requireAuth(request);
+
+    // Check authorization
+    const authzResponse = await createAuthzMiddleware({
+      requiredScopes: ['read'],
+    })(request);
+    if (authzResponse) {
+      return authzResponse;
+    }
+
+    // Get repository with tenant isolation check
     const repo = await prisma.repository.findUnique({
       where: { id: params.repoId },
       include: {
-        organization: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
         configs: true,
       },
     });
@@ -31,6 +51,40 @@ export async function GET(
           },
         },
         { status: 404 }
+      );
+    }
+
+    if (!repo) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'NOT_FOUND',
+            message: `Repository ${params.repoId} not found`,
+          },
+        },
+        { status: 404 }
+      );
+    }
+
+    // Verify user belongs to repository's organization (tenant isolation)
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: repo.organizationId,
+          userId: user.id,
+        },
+      },
+    });
+
+    if (!membership) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Access denied to repository',
+          },
+        },
+        { status: 403 }
       );
     }
 
@@ -61,7 +115,7 @@ export async function GET(
 
 /**
  * PATCH /api/v1/repos/:repoId
- * Update repository config
+ * Update repository config (tenant-isolated)
  */
 export async function PATCH(
   request: NextRequest,
@@ -71,6 +125,17 @@ export async function PATCH(
   const log = logger.child({ requestId, repoId: params.repoId });
 
   try {
+    // Require authentication
+    const user = await requireAuth(request);
+
+    // Check authorization
+    const authzResponse = await createAuthzMiddleware({
+      requiredScopes: ['write'],
+    })(request);
+    if (authzResponse) {
+      return authzResponse;
+    }
+
     const body = await request.json();
     const { config } = body;
 
@@ -87,9 +152,10 @@ export async function PATCH(
       );
     }
 
-    // Update or create config
+    // Get repository and verify tenant isolation
     const repo = await prisma.repository.findUnique({
       where: { id: params.repoId },
+      select: { organizationId: true },
     });
 
     if (!repo) {
@@ -101,6 +167,28 @@ export async function PATCH(
           },
         },
         { status: 404 }
+      );
+    }
+
+    // Verify user belongs to repository's organization and has admin role
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: repo.organizationId,
+          userId: user.id,
+        },
+      },
+    });
+
+    if (!membership || !['owner', 'admin'].includes(membership.role)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Admin role required to update repository',
+          },
+        },
+        { status: 403 }
       );
     }
 

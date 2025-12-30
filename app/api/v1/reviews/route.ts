@@ -2,16 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { reviewGuardService } from '../../../../services/review-guard';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
+import { requireAuth } from '../../../../lib/auth';
+import { createAuthzMiddleware } from '../../../../lib/authz';
+import { prisma } from '../../../../lib/prisma';
+import { checkBillingLimits } from '../../../../lib/billing-middleware';
 
 /**
  * POST /api/v1/reviews
- * Create a new review
+ * Create a new review (tenant-isolated)
  */
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
   const log = logger.child({ requestId });
 
   try {
+    // Require authentication
+    const user = await requireAuth(request);
+
+    // Check authorization
+    const authzResponse = await createAuthzMiddleware({
+      requiredScopes: ['write'],
+    })(request);
+    if (authzResponse) {
+      return authzResponse;
+    }
+
     const body = await request.json();
     const { repositoryId, prNumber, prSha, prTitle, diff, files, config } = body;
 
@@ -26,6 +41,67 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // Verify user belongs to repository's organization (tenant isolation)
+    const repo = await prisma.repository.findUnique({
+      where: { id: repositoryId },
+      select: { organizationId: true },
+    });
+
+    if (!repo) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'NOT_FOUND',
+            message: `Repository ${repositoryId} not found`,
+          },
+        },
+        { status: 404 }
+      );
+    }
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: repo.organizationId,
+          userId: user.id,
+        },
+      },
+    });
+
+    if (!membership) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Access denied to repository',
+          },
+        },
+        { status: 403 }
+      );
+    }
+
+    // Validate input
+    if (!repositoryId || !prNumber || !prSha || !files) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Missing required fields: repositoryId, prNumber, prSha, files',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check billing limits (feature access and LLM budget)
+    const billingCheck = await checkBillingLimits(repo.organizationId, {
+      requireFeature: 'reviewGuard',
+      checkLLMBudget: true,
+    });
+    if (billingCheck) {
+      return billingCheck;
     }
 
     log.info({ repositoryId, prNumber }, 'Starting review');
@@ -78,28 +154,82 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/v1/reviews
- * List reviews
+ * List reviews (tenant-isolated)
  */
 export async function GET(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
   const log = logger.child({ requestId });
 
   try {
+    // Require authentication
+    const user = await requireAuth(request);
+
+    // Check authorization
+    const authzResponse = await createAuthzMiddleware({
+      requiredScopes: ['read'],
+    })(request);
+    if (authzResponse) {
+      return authzResponse;
+    }
+
     const { searchParams } = new URL(request.url);
     const repositoryId = searchParams.get('repositoryId');
     const prNumber = searchParams.get('prNumber');
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    const where: any = {};
+    // Get user's organization memberships for tenant isolation
+    const memberships = await prisma.organizationMember.findMany({
+      where: { userId: user.id },
+      select: { organizationId: true },
+    });
+    const userOrgIds = memberships.map(m => m.organizationId);
+
+    if (userOrgIds.length === 0) {
+      return NextResponse.json({
+        reviews: [],
+        pagination: {
+          total: 0,
+          limit,
+          offset,
+          hasMore: false,
+        },
+      });
+    }
+
+    // Build where clause with tenant isolation
+    const where: any = {
+      repository: {
+        organizationId: { in: userOrgIds }, // Only show reviews from user's organizations
+      },
+    };
+
     if (repositoryId) {
+      // Verify repository belongs to user's organization
+      const repo = await prisma.repository.findUnique({
+        where: { id: repositoryId },
+        select: { organizationId: true },
+      });
+
+      if (!repo || !userOrgIds.includes(repo.organizationId)) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'FORBIDDEN',
+              message: 'Access denied to repository',
+            },
+          },
+          { status: 403 }
+        );
+      }
+
       where.repositoryId = repositoryId;
     }
+
     if (prNumber) {
       where.prNumber = parseInt(prNumber, 10);
     }
 
-    const { prisma } = await import('../../../../lib/prisma');
     const [reviews, total] = await Promise.all([
       prisma.review.findMany({
         where,
@@ -112,6 +242,7 @@ export async function GET(request: NextRequest) {
               id: true,
               name: true,
               fullName: true,
+              organizationId: true,
             },
           },
         },
