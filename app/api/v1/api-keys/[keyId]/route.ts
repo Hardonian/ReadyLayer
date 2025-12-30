@@ -53,11 +53,11 @@ export async function DELETE(
       data: { isActive: false },
     });
 
-    log.info('API key revoked', { keyId: params.keyId });
+    log.info({ keyId: params.keyId }, 'API key revoked');
 
     return NextResponse.json({ revoked: true });
   } catch (error) {
-    log.error('Failed to revoke API key', error);
+    log.error(error, 'Failed to revoke API key');
     return NextResponse.json(
       {
         error: {

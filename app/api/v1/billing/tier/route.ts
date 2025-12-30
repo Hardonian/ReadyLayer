@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Require authentication
-    const user = await requireAuth(request);
+    await requireAuth(request);
 
     // Get organization ID from query or header
     const organizationId =
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    log.error('Failed to get billing tier', error);
+    log.error(error, 'Failed to get billing tier');
     return NextResponse.json(
       {
         error: {

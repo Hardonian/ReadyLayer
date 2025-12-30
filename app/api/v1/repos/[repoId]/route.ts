@@ -46,7 +46,7 @@ export async function GET(
       updatedAt: repo.updatedAt,
     });
   } catch (error) {
-    log.error('Failed to get repository', error);
+    log.error(error, 'Failed to get repository');
     return NextResponse.json(
       {
         error: {
@@ -116,7 +116,7 @@ export async function PATCH(
       },
     });
 
-    log.info('Repository config updated', { repoId: params.repoId });
+    log.info({ repoId: params.repoId }, 'Repository config updated');
 
     return NextResponse.json({
       id: params.repoId,
@@ -124,7 +124,7 @@ export async function PATCH(
       updatedAt: new Date(),
     });
   } catch (error) {
-    log.error('Failed to update repository config', error);
+    log.error(error, 'Failed to update repository config');
     return NextResponse.json(
       {
         error: {

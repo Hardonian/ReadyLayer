@@ -35,10 +35,10 @@ export default function Home() {
       <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
         <h1 className="text-4xl font-bold mb-4 text-center">ReadyLayer</h1>
         <p className="text-xl mb-8 text-center">
-          Gamified Code Review Platform for AI-Generated Code
+          AI Code Readiness Platform
         </p>
         <p className="text-lg mb-8 text-center text-gray-600">
-          Engineers verify AI code reviews on pull requests. Earn badges, streaks, and recognition for quality code reviews.
+          Ensure AI-generated code is production-ready through automated review, testing, and documentation. Enforcement-first principles catch security vulnerabilities, ensure test coverage, and keep docs in sync.
         </p>
 
         {loading && (
@@ -63,33 +63,33 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-                <h2 className="text-lg font-semibold mb-2">Code Reviews</h2>
-                <p className="mb-4">Review AI-generated code on pull requests</p>
+                <h2 className="text-lg font-semibold mb-2">Review Guard</h2>
+                <p className="mb-4">AI-aware code review with enforcement-first principles</p>
                 <Link
-                  href="/prs"
+                  href="/dashboard"
                   className="text-blue-600 hover:underline"
                 >
-                  View PRs →
+                  View Dashboard →
                 </Link>
               </div>
               <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-                <h2 className="text-lg font-semibold mb-2">Gamification</h2>
-                <p className="mb-4">Earn badges, streaks, and XP for quality reviews</p>
+                <h2 className="text-lg font-semibold mb-2">Test Engine</h2>
+                <p className="mb-4">Automatic test generation with coverage enforcement</p>
                 <Link
-                  href={`/users/${user.id}/profile`}
+                  href="/dashboard"
                   className="text-blue-600 hover:underline"
                 >
-                  View Profile →
+                  View Dashboard →
                 </Link>
               </div>
               <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-                <h2 className="text-lg font-semibold mb-2">Leaderboards</h2>
-                <p className="mb-4">Compete with your team on code review quality</p>
+                <h2 className="text-lg font-semibold mb-2">Doc Sync</h2>
+                <p className="mb-4">Keep API documentation in sync with code</p>
                 <Link
-                  href="/leaderboards"
+                  href="/dashboard"
                   className="text-blue-600 hover:underline"
                 >
-                  View Leaderboards →
+                  View Dashboard →
                 </Link>
               </div>
             </div>
@@ -110,9 +110,9 @@ export default function Home() {
             </p>
           </div>
           <div className="p-6 border rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">🏆 Gamification</h3>
+            <h3 className="text-lg font-semibold mb-2">📚 Doc Sync</h3>
             <p className="text-sm text-gray-600">
-              Earn badges, maintain streaks, and climb leaderboards for exceptional code review work.
+              Automatic API documentation generation with drift prevention. Blocks PRs when code and docs are out of sync.
             </p>
           </div>
           <div className="p-6 border rounded-lg">

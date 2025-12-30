@@ -47,7 +47,7 @@ export async function GET(
       completedAt: review.completedAt,
     });
   } catch (error) {
-    log.error('Failed to get review', error);
+    log.error(error, 'Failed to get review');
     return NextResponse.json(
       {
         error: {

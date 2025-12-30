@@ -56,7 +56,7 @@ export class TestEngineService {
    * Detect AI-touched files
    */
   async detectAITouchedFiles(
-    repositoryId: string,
+    _repositoryId: string,
     files: Array<{ path: string; content: string; commitMessage?: string; author?: string }>
   ): Promise<Array<{ path: string; confidence: number; methods: string[] }>> {
     const aiTouched: Array<{ path: string; confidence: number; methods: string[] }> = [];
@@ -67,8 +67,9 @@ export class TestEngineService {
 
       // Method 1: Check commit message
       if (file.commitMessage) {
+        const commitMessage = file.commitMessage;
         const aiKeywords = ['copilot', 'cursor', 'claude', 'gpt', 'ai-generated', 'ai assisted'];
-        if (aiKeywords.some((keyword) => file.commitMessage.toLowerCase().includes(keyword))) {
+        if (aiKeywords.some((keyword) => commitMessage.toLowerCase().includes(keyword))) {
           methods.push('commit_message');
           confidence += 0.4;
         }
@@ -304,7 +305,7 @@ Return only the test code, no explanations.`;
   /**
    * Detect test framework
    */
-  private async detectFramework(repositoryId: string): Promise<string> {
+  private async detectFramework(_repositoryId: string): Promise<string> {
     // Would check repo config or package.json in production
     // Default to Jest for TypeScript/JavaScript
     return 'jest';

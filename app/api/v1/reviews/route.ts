@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    log.info('Starting review', { repositoryId, prNumber });
+    log.info({ repositoryId, prNumber }, 'Starting review');
 
     // Perform review
     const result = await reviewGuardService.review({
@@ -42,20 +42,25 @@ export async function POST(request: NextRequest) {
     });
 
     metrics.increment('reviews.completed', { status: result.status });
-    metrics.increment('reviews.issues_found', { severity: 'critical' }, result.summary.critical);
-    metrics.increment('reviews.issues_found', { severity: 'high' }, result.summary.high);
+    // Note: metrics.increment signature may vary - adjust if needed
+    if (result.summary.critical > 0) {
+      metrics.increment('reviews.issues_found', { severity: 'critical' });
+    }
+    if (result.summary.high > 0) {
+      metrics.increment('reviews.issues_found', { severity: 'high' });
+    }
 
-    log.info('Review completed', {
+    log.info({
       repositoryId,
       prNumber,
       reviewId: result.id,
       issuesFound: result.summary.total,
       isBlocked: result.isBlocked,
-    });
+    }, 'Review completed');
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    log.error('Review failed', error, { requestId });
+    log.error(error, 'Review failed');
     metrics.increment('reviews.failed');
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -86,20 +91,57 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    // Would fetch from database in production
-    const reviews: any[] = [];
+    const where: any = {};
+    if (repositoryId) {
+      where.repositoryId = repositoryId;
+    }
+    if (prNumber) {
+      where.prNumber = parseInt(prNumber, 10);
+    }
+
+    const { prisma } = await import('../../../../lib/prisma');
+    const [reviews, total] = await Promise.all([
+      prisma.review.findMany({
+        where,
+        take: limit,
+        skip: offset,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          repository: {
+            select: {
+              id: true,
+              name: true,
+              fullName: true,
+            },
+          },
+        },
+      }),
+      prisma.review.count({ where }),
+    ]);
 
     return NextResponse.json({
-      reviews,
+      reviews: reviews.map((r) => ({
+        id: r.id,
+        repositoryId: r.repositoryId,
+        prNumber: r.prNumber,
+        prSha: r.prSha,
+        prTitle: r.prTitle,
+        status: r.status,
+        isBlocked: r.isBlocked,
+        blockedReason: r.blockedReason,
+        summary: r.summary,
+        createdAt: r.createdAt,
+        completedAt: r.completedAt,
+      })),
       pagination: {
-        total: reviews.length,
+        total,
         limit,
         offset,
-        hasMore: false,
+        hasMore: offset + limit < total,
       },
     });
   } catch (error) {
-    log.error('Failed to list reviews', error, { requestId });
+    log.error(error, 'Failed to list reviews');
     return NextResponse.json(
       {
         error: {

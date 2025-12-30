@@ -149,7 +149,7 @@ export function createAuthzMiddleware(options: AuthzOptions = {}) {
         );
       }
 
-      logger.error('Authorization error', error);
+      logger.error(error, 'Authorization error');
       return NextResponse.json(
         {
           error: {

@@ -27,7 +27,7 @@ export async function GET(
 
     return NextResponse.json({ config });
   } catch (error) {
-    log.error('Failed to get repository config', error);
+    log.error(error, 'Failed to get repository config');
     return NextResponse.json(
       {
         error: {
@@ -66,7 +66,7 @@ export async function PUT(
     // Validate and update config
     await configService.updateRepositoryConfig(params.repoId, config, rawConfig);
 
-    log.info('Repository config updated', { repoId: params.repoId });
+    log.info({ repoId: params.repoId }, 'Repository config updated');
 
     return NextResponse.json({
       id: params.repoId,
@@ -74,7 +74,7 @@ export async function PUT(
       updatedAt: new Date(),
     });
   } catch (error) {
-    log.error('Failed to update repository config', error);
+    log.error(error, 'Failed to update repository config');
     return NextResponse.json(
       {
         error: {

@@ -38,7 +38,7 @@ async function processJob(payload: any): Promise<any> {
         throw new Error(`Unknown job type: ${type}`);
     }
   } catch (error) {
-    log.error('Job processing failed', error);
+    log.error(error, 'Job processing failed');
     metrics.increment('jobs.failed', { type });
     throw error;
   }

@@ -67,7 +67,7 @@ export class QueueService {
     }
 
     // Create job in database (for durability)
-    const job = await prisma.job.create({
+    await prisma.job.create({
       data: {
         id: jobId,
         type: payload.type,
@@ -113,7 +113,7 @@ export class QueueService {
         const jobData = JSON.parse(result.element);
         await this.processJob(jobData.id, handler);
       } catch (error) {
-        logger.error('Queue processing error', error);
+        logger.error(error, 'Queue processing error');
         await this.sleep(1000); // Wait before retrying
       }
     }
@@ -235,7 +235,7 @@ export class QueueService {
 
         await this.sleep(1000); // Poll every second
       } catch (error) {
-        logger.error('Database queue processing error', error);
+        logger.error(error, 'Database queue processing error');
         await this.sleep(5000);
       }
     }
@@ -244,7 +244,7 @@ export class QueueService {
   /**
    * Get job by idempotency key
    */
-  private async getJobByIdempotencyKey(key: string): Promise<any> {
+  private async getJobByIdempotencyKey(_key: string): Promise<any> {
     // Would check Redis cache first, then database
     return null; // Simplified
   }

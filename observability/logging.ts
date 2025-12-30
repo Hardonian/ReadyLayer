@@ -17,59 +17,87 @@ export interface LogContext {
 class Logger {
   private logger: pino.Logger;
 
-  constructor() {
-    this.logger = pino({
-      level: process.env.LOG_LEVEL || 'info',
-      formatters: {
-        level: (label) => {
-          return { level: label.toUpperCase() };
+  constructor(loggerInstance?: pino.Logger) {
+    if (loggerInstance) {
+      this.logger = loggerInstance;
+    } else {
+      this.logger = pino({
+        level: process.env.LOG_LEVEL || 'info',
+        formatters: {
+          level: (label) => {
+            return { level: label.toUpperCase() };
+          },
         },
-      },
-      timestamp: pino.stdTimeFunctions.isoTime,
-    });
+        timestamp: pino.stdTimeFunctions.isoTime,
+      });
+    }
   }
 
   /**
    * Log info message
    */
-  info(message: string, context?: LogContext): void {
-    this.logger.info(context || {}, message);
+  info(messageOrContext: string | LogContext, contextOrMessage?: LogContext | string): void {
+    if (typeof messageOrContext === 'string') {
+      // Called as info(message, context?)
+      this.logger.info(contextOrMessage as LogContext || {}, messageOrContext);
+    } else {
+      // Called as info(context, message) - pino style
+      this.logger.info(messageOrContext, (contextOrMessage as string) || '');
+    }
   }
 
   /**
    * Log warning message
    */
-  warn(message: string, context?: LogContext): void {
-    this.logger.warn(context || {}, message);
+  warn(messageOrContext: string | LogContext, contextOrMessage?: LogContext | string): void {
+    if (typeof messageOrContext === 'string') {
+      this.logger.warn(contextOrMessage as LogContext || {}, messageOrContext);
+    } else {
+      this.logger.warn(messageOrContext, (contextOrMessage as string) || '');
+    }
   }
 
   /**
    * Log error message
    */
-  error(message: string, error?: Error | unknown, context?: LogContext): void {
-    const errorContext = {
-      ...context,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-      } : error,
-    };
-    this.logger.error(errorContext, message);
+  error(errorOrMessage: Error | unknown | string, messageOrContext?: string | LogContext, context?: LogContext): void {
+    if (typeof errorOrMessage === 'string') {
+      // Called as error(message, context?)
+      const errorContext = {
+        ...(messageOrContext as LogContext || {}),
+        ...(context || {}),
+      };
+      this.logger.error(errorContext, errorOrMessage);
+    } else {
+      // Called as error(error, message) - pino style
+      const errorContext = {
+        ...(messageOrContext as LogContext || {}),
+        error: errorOrMessage instanceof Error ? {
+          message: errorOrMessage.message,
+          stack: errorOrMessage.stack,
+          name: errorOrMessage.name,
+        } : errorOrMessage,
+      };
+      this.logger.error(errorContext, (context as any) || '');
+    }
   }
 
   /**
    * Log debug message
    */
-  debug(message: string, context?: LogContext): void {
-    this.logger.debug(context || {}, message);
+  debug(messageOrContext: string | LogContext, contextOrMessage?: LogContext | string): void {
+    if (typeof messageOrContext === 'string') {
+      this.logger.debug(contextOrMessage as LogContext || {}, messageOrContext);
+    } else {
+      this.logger.debug(messageOrContext, (contextOrMessage as string) || '');
+    }
   }
 
   /**
    * Create child logger with context
    */
-  child(context: LogContext): pino.Logger {
-    return this.logger.child(context);
+  child(context: LogContext): Logger {
+    return new Logger(this.logger.child(context));
   }
 }
 

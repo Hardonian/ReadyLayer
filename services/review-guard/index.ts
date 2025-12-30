@@ -8,7 +8,7 @@
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
-import { codeParserService } from '../code-parser';
+// import { codeParserService } from '../code-parser'; // Reserved for future use
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -124,9 +124,9 @@ export class ReviewGuardService {
             issues: allIssues,
             summary,
             blocking: isBlocked,
-          },
-          issuesFound: allIssues,
-          summary: summary,
+          } as any, // Prisma Json type
+          issuesFound: allIssues as any, // Prisma Json type
+          summary: summary as any, // Prisma Json type
           isBlocked,
           blockedReason,
           startedAt,
@@ -160,6 +160,8 @@ export class ReviewGuardService {
           status: 'failed',
           isBlocked: true,
           blockedReason: errorMessage,
+          issuesFound: [] as any, // Empty array for failed reviews
+          summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0 } as any,
           startedAt,
         },
       });

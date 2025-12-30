@@ -6,7 +6,6 @@
 
 import yaml from 'js-yaml';
 import { prisma } from '../../lib/prisma';
-import { logger } from '../../observability/logging';
 
 export interface ReviewConfig {
   enabled: boolean;
@@ -150,62 +149,78 @@ export class ConfigService {
     });
 
     const orgConfig = repo?.organization?.configs[0]?.config as ReadyLayerConfig | undefined;
+    const repoConfigData = repoConfig?.config as ReadyLayerConfig | undefined;
 
-    // Merge: repo config overrides org config
-    const merged: ReadyLayerConfig = {
-      ...orgConfig,
+    // Merge: repo config overrides org config (as partial, defaults will be applied)
+    const merged: any = {
       review: {
         ...orgConfig?.review,
-        ...repoConfig?.config.review,
+        ...(repoConfigData?.review || {}),
       },
       test: {
         ...orgConfig?.test,
-        ...repoConfig?.config.test,
+        ...(repoConfigData?.test || {}),
       },
       docs: {
         ...orgConfig?.docs,
-        ...repoConfig?.config.docs,
+        ...(repoConfigData?.docs || {}),
       },
     };
 
-    // Apply defaults (enforcement-first)
+    // Apply defaults (enforcement-first) - this ensures all required properties are present
     return this.applyDefaults(merged);
   }
 
   /**
    * Apply enforcement-first defaults
    */
-  private applyDefaults(config: ReadyLayerConfig): ReadyLayerConfig {
+  private applyDefaults(config: Partial<ReadyLayerConfig>): ReadyLayerConfig {
+    const reviewConfig: ReviewConfig = {
+      enabled: config.review?.enabled !== false,
+      failOnCritical: true, // REQUIRED: Cannot disable
+      failOnHigh: config.review?.failOnHigh !== false, // DEFAULT: true
+      failOnMedium: config.review?.failOnMedium || false,
+      failOnLow: config.review?.failOnLow || false,
+      enabledRules: config.review?.enabledRules,
+      disabledRules: config.review?.disabledRules,
+      excludedPaths: config.review?.excludedPaths,
+      includedPaths: config.review?.includedPaths,
+    };
+
+    const testConfig: TestConfig = {
+      enabled: config.test?.enabled !== false,
+      framework: config.test?.framework,
+      placement: config.test?.placement,
+      testDir: config.test?.testDir,
+      aiDetection: config.test?.aiDetection,
+      coverage: {
+        threshold: config.test?.coverage?.threshold || 80,
+        metric: config.test?.coverage?.metric || 'lines',
+        enforceOn: config.test?.coverage?.enforceOn || 'pr',
+        failOnBelow: true, // REQUIRED: Cannot disable
+      },
+      excludedPaths: config.test?.excludedPaths,
+    };
+
+    const docsConfig: DocSyncConfig = {
+      enabled: config.docs?.enabled !== false,
+      framework: config.docs?.framework,
+      openapi: config.docs?.openapi,
+      markdown: config.docs?.markdown,
+      updateStrategy: config.docs?.updateStrategy,
+      branch: config.docs?.branch,
+      driftPrevention: {
+        enabled: true, // REQUIRED: Cannot disable
+        action: config.docs?.driftPrevention?.action || 'block',
+        checkOn: config.docs?.driftPrevention?.checkOn || 'pr',
+      },
+      excludedPaths: config.docs?.excludedPaths,
+    };
+
     return {
-      review: {
-        enabled: config.review?.enabled !== false,
-        failOnCritical: true, // REQUIRED: Cannot disable
-        failOnHigh: config.review?.failOnHigh !== false, // DEFAULT: true
-        failOnMedium: config.review?.failOnMedium || false,
-        failOnLow: config.review?.failOnLow || false,
-        ...config.review,
-      },
-      test: {
-        enabled: config.test?.enabled !== false,
-        coverage: {
-          threshold: config.test?.coverage?.threshold || 80,
-          metric: config.test?.coverage?.metric || 'lines',
-          enforceOn: config.test?.coverage?.enforceOn || 'pr',
-          failOnBelow: true, // REQUIRED: Cannot disable
-          ...config.test?.coverage,
-        },
-        ...config.test,
-      },
-      docs: {
-        enabled: config.docs?.enabled !== false,
-        driftPrevention: {
-          enabled: true, // REQUIRED: Cannot disable
-          action: config.docs?.driftPrevention?.action || 'block',
-          checkOn: config.docs?.driftPrevention?.checkOn || 'pr',
-          ...config.docs?.driftPrevention,
-        },
-        ...config.docs,
-      },
+      review: reviewConfig,
+      test: testConfig,
+      docs: docsConfig,
     };
   }
 
@@ -230,13 +245,13 @@ export class ConfigService {
     await prisma.repositoryConfig.upsert({
       where: { repositoryId },
       update: {
-        config: finalConfig,
+        config: finalConfig as any, // Prisma Json type
         rawConfig,
         version: { increment: 1 },
       },
       create: {
         repositoryId,
-        config: finalConfig,
+        config: finalConfig as any, // Prisma Json type
         rawConfig,
       },
     });

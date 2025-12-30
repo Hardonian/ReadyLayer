@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { createHash } from 'crypto';
+// import { createHash } from 'crypto'; // Reserved for future caching
 
 export interface LLMRequest {
   prompt: string;
@@ -353,37 +353,19 @@ export class LLMService {
 
   /**
    * Get cached response
+   * TODO: Implement Redis caching
    */
-  private async getCachedResponse(request: LLMRequest): Promise<LLMResponse | null> {
-    // Use Redis for caching (simplified here, would use Redis in production)
-    const cacheKey = this.getCacheKey(request);
-    
-    // For now, return null (would check Redis)
-    // In production: const cached = await redis.get(cacheKey);
+  private async getCachedResponse(_request: LLMRequest): Promise<LLMResponse | null> {
+    // Caching not yet implemented
     return null;
   }
 
   /**
    * Cache response
+   * TODO: Implement Redis caching
    */
-  private async cacheResponse(request: LLMRequest, response: LLMResponse): Promise<void> {
-    const cacheKey = this.getCacheKey(request);
-    
-    // In production: await redis.setex(cacheKey, 3600, JSON.stringify(response));
-    // TTL: 1 hour
-  }
-
-  /**
-   * Generate cache key from request
-   */
-  private getCacheKey(request: LLMRequest): string {
-    const hash = createHash('sha256');
-    hash.update(JSON.stringify({
-      prompt: request.prompt,
-      model: request.model,
-      temperature: request.temperature,
-    }));
-    return `llm:cache:${hash.digest('hex')}`;
+  private async cacheResponse(_request: LLMRequest, _response: LLMResponse): Promise<void> {
+    // Caching not yet implemented
   }
 }
 

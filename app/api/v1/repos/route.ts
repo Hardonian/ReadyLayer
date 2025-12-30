@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    log.error('Failed to list repositories', error);
+    log.error(error, 'Failed to list repositories');
     return NextResponse.json(
       {
         error: {

@@ -5,13 +5,13 @@
  */
 
 export default function RepositoryDetailPage({
-  params,
+  params: { repoId },
 }: {
   params: { repoId: string };
 }) {
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Repository Details</h1>
+      <h1 className="text-3xl font-bold mb-8">Repository Details: {repoId}</h1>
       
       <div className="grid gap-6">
         <div className="bg-white rounded-lg shadow p-6">
