@@ -14,7 +14,11 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
     "worker:webhook": "tsx workers/webhook-processor.ts",
-    "worker:job": "tsx workers/job-processor.ts"
+    "worker:job": "tsx workers/job-processor.ts",
+    "migrate:run": "tsx scripts/run-migration-prisma.ts",
+    "migrate:verify": "tsx scripts/verify-migration.ts",
+    "test:tenant-isolation": "tsx scripts/test-tenant-isolation.ts",
+    "test:billing": "tsx scripts/test-billing-enforcement.ts"
   },
   "dependencies": {
     "@babel/parser": "^7.23.7",
