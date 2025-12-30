@@ -1,78 +1,125 @@
-import { RateLimiterMemory } from 'rate-limiter-flexible'
-import { NextRequest, NextResponse } from 'next/server'
-
-// Rate limiters for different endpoints
-const apiLimiter = new RateLimiterMemory({
-  points: 100, // Number of requests
-  duration: 60, // Per 60 seconds
-})
-
-const authLimiter = new RateLimiterMemory({
-  points: 5, // Number of requests
-  duration: 60, // Per 60 seconds
-})
-
-const reviewLimiter = new RateLimiterMemory({
-  points: 20, // Number of requests
-  duration: 60, // Per 60 seconds
-})
-
 /**
- * Get client identifier for rate limiting
+ * Rate Limiting Middleware
+ * 
+ * Per-user, per-IP, per-organization rate limiting
  */
-function getClientId(request: NextRequest): string {
-  // Try to get user ID from session first
-  const authHeader = request.headers.get('authorization')
-  if (authHeader) {
-    // Extract user ID from token if available
-    // For now, use IP as fallback
-  }
 
-  // Fallback to IP address
-  const forwarded = request.headers.get('x-forwarded-for')
-  const ip = forwarded ? forwarded.split(',')[0] : request.headers.get('x-real-ip') || 'unknown'
-  return ip
-}
+import { NextRequest, NextResponse } from 'next/server';
+import { RateLimiterMemory, RateLimiterRedis } from 'rate-limiter-flexible';
+import { createClient } from 'redis';
+import { getAuthenticatedUser } from './auth';
+import { logger } from '../observability/logging';
 
-/**
- * Rate limit middleware for API routes
- */
-export async function rateLimit(
-  request: NextRequest,
-  limiter: RateLimiterMemory = apiLimiter
-): Promise<NextResponse | null> {
-  const clientId = getClientId(request)
+let rateLimiter: RateLimiterMemory | RateLimiterRedis;
 
+// Initialize rate limiter
+(async () => {
   try {
-    await limiter.consume(clientId)
-    return null // No rate limit exceeded
-  } catch (rejRes: any) {
-    const secs = Math.round(rejRes.msBeforeNext / 1000) || 1
-    return NextResponse.json(
-      {
-        error: {
-          code: 'RATE_LIMIT_EXCEEDED',
-          message: 'Too many requests',
-          retryAfter: secs,
-        },
-      },
-      {
-        status: 429,
-        headers: {
-          'Retry-After': String(secs),
-          'X-RateLimit-Limit': String(limiter.points),
-          'X-RateLimit-Remaining': '0',
-        },
-      }
-    )
+    if (process.env.REDIS_URL) {
+      const redis = createClient({ url: process.env.REDIS_URL });
+      await redis.connect();
+      rateLimiter = new RateLimiterRedis({
+        storeClient: redis,
+        keyPrefix: 'rl_rate_limit',
+        points: 100, // Number of requests
+        duration: 60, // Per 60 seconds
+      });
+    } else {
+      rateLimiter = new RateLimiterMemory({
+        points: 100,
+        duration: 60,
+      });
+    }
+  } catch (error) {
+    logger.warn('Failed to initialize Redis rate limiter, using memory', { error });
+    rateLimiter = new RateLimiterMemory({
+      points: 100,
+      duration: 60,
+    });
   }
+})();
+
+export interface RateLimitOptions {
+  points?: number; // Number of requests
+  duration?: number; // Per duration (seconds)
+  keyGenerator?: (request: NextRequest) => Promise<string>;
 }
 
 /**
- * Rate limiters for specific endpoints
+ * Rate limiting middleware factory
  */
-export const rateLimiters = {
-  api: apiLimiter,
-  auth: authLimiter,
-  review: reviewLimiter,
+export function createRateLimitMiddleware(options: RateLimitOptions = {}) {
+  const limiter = options.points
+    ? new RateLimiterMemory({
+        points: options.points,
+        duration: options.duration || 60,
+      })
+    : rateLimiter;
+
+  return async (request: NextRequest): Promise<NextResponse | null> => {
+    try {
+      // Generate rate limit key
+      let key: string;
+
+      if (options.keyGenerator) {
+        key = await options.keyGenerator(request);
+      } else {
+        // Default: use user ID if authenticated, otherwise IP
+        const user = await getAuthenticatedUser(request);
+        if (user) {
+          key = `user:${user.id}`;
+        } else {
+          const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+                    request.headers.get('x-real-ip') ||
+                    'unknown';
+          key = `ip:${ip}`;
+        }
+      }
+
+      // Check rate limit
+      await limiter.consume(key);
+
+      // Rate limit passed
+      return null;
+    } catch (error: any) {
+      if (error.remainingPoints !== undefined) {
+        // Rate limit exceeded
+        const retryAfter = Math.ceil(error.msBeforeNext / 1000);
+        return NextResponse.json(
+          {
+            error: {
+              code: 'RATE_LIMIT_EXCEEDED',
+              message: 'Rate limit exceeded',
+              retryAfter,
+            },
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': retryAfter.toString(),
+              'X-RateLimit-Limit': (options.points || 100).toString(),
+              'X-RateLimit-Remaining': '0',
+            },
+          }
+        );
+      }
+
+      logger.error('Rate limit check failed', error);
+      // Allow request on error (fail open)
+      return null;
+    }
+  };
 }
+
+/**
+ * Default rate limit: 100 requests per minute
+ */
+export const defaultRateLimit = createRateLimitMiddleware();
+
+/**
+ * Strict rate limit: 10 requests per minute
+ */
+export const strictRateLimit = createRateLimitMiddleware({
+  points: 10,
+  duration: 60,
+});
