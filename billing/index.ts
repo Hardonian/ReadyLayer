@@ -5,7 +5,6 @@
  */
 
 import { prisma } from '../lib/prisma';
-import { logger } from '../observability/logging';
 
 export interface BillingTier {
   name: 'starter' | 'growth' | 'scale';

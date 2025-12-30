@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       expiresAt ? new Date(expiresAt) : undefined
     );
 
-    log.info('API key created', { userId: user.id, keyId: id });
+    log.info({ userId: user.id, keyId: id }, 'API key created');
 
     // Return key only once (would store securely in production)
     return NextResponse.json(
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    log.error('Failed to create API key', error);
+    log.error(error, 'Failed to create API key');
     return NextResponse.json(
       {
         error: {
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ apiKeys });
   } catch (error) {
-    log.error('Failed to list API keys', error);
+    log.error(error, 'Failed to list API keys');
     return NextResponse.json(
       {
         error: {

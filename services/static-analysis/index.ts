@@ -40,6 +40,7 @@ export class StaticAnalysisService {
    * Analyze code file
    */
   async analyze(filePath: string, content: string): Promise<Issue[]> {
+    // Parse code for AST analysis
     const parseResult = await this.codeParser.parse(filePath, content);
     const issues: Issue[] = [];
 
@@ -95,7 +96,7 @@ export class StaticAnalysisService {
       category: 'security',
       severity: 'critical',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
         const lines = content.split('\n');
 
@@ -129,7 +130,7 @@ export class StaticAnalysisService {
       category: 'security',
       severity: 'critical',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
         const lines = content.split('\n');
 

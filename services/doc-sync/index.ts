@@ -7,7 +7,6 @@
 
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
-import { codeParserService } from '../code-parser';
 
 export interface DocGenerationRequest {
   repositoryId: string;
@@ -249,9 +248,9 @@ export class DocSyncService {
    * Extract API endpoints from code
    */
   private async extractEndpoints(
-    repositoryId: string,
-    ref: string,
-    framework: string
+    _repositoryId: string,
+    _ref: string,
+    _framework: string
   ): Promise<Array<{ method: string; path: string; file: string; line: number; params: any }>> {
     // Simplified extraction (would fetch actual code from repo in production)
     const endpoints: Array<{ method: string; path: string; file: string; line: number; params: any }> = [];
@@ -357,7 +356,7 @@ Return the enhanced OpenAPI spec as JSON.`;
   /**
    * Generate Markdown documentation
    */
-  private async generateMarkdown(endpoints: any[], organizationId: string): Promise<string> {
+  private async generateMarkdown(endpoints: any[], _organizationId: string): Promise<string> {
     let markdown = '# API Documentation\n\n';
 
     for (const endpoint of endpoints) {
@@ -389,7 +388,7 @@ Return the enhanced OpenAPI spec as JSON.`;
   /**
    * Detect framework
    */
-  private async detectFramework(repositoryId: string): Promise<string> {
+  private async detectFramework(_repositoryId: string): Promise<string> {
     // Would check repo config or package.json in production
     return 'express';
   }

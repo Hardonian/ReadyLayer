@@ -82,7 +82,8 @@ export class CodeParserService {
     beforeContent: string | null,
     afterContent: string
   ): Promise<DiffParseResult> {
-    const language = this.detectLanguage(filePath, afterContent);
+    // Language detection for future use
+    this.detectLanguage(filePath, afterContent);
 
     const after = afterContent ? await this.parse(filePath, afterContent) : null;
     const before = beforeContent ? await this.parse(filePath, beforeContent) : null;
@@ -119,7 +120,7 @@ export class CodeParserService {
       }
     }
 
-    for (const [name, beforeFunc] of beforeFunctions) {
+    for (const [name] of beforeFunctions) {
       if (!afterFunctions.has(name)) {
         removed.push(before);
         break;
@@ -132,7 +133,7 @@ export class CodeParserService {
   /**
    * Detect language from file path and content
    */
-  private detectLanguage(filePath: string, content: string): string {
+  private detectLanguage(filePath: string, _content: string): string {
     const ext = filePath.split('.').pop()?.toLowerCase();
 
     const languageMap: Record<string, string> = {
@@ -321,7 +322,7 @@ export class CodeParserService {
   /**
    * Parse Java (simplified)
    */
-  private parseJava(content: string): ParseResult {
+  private parseJava(_content: string): ParseResult {
     // Simplified Java parsing
     return {
       language: 'java',
@@ -336,7 +337,7 @@ export class CodeParserService {
   /**
    * Parse Go (simplified)
    */
-  private parseGo(content: string): ParseResult {
+  private parseGo(_content: string): ParseResult {
     // Simplified Go parsing
     return {
       language: 'go',

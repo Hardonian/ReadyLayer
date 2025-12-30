@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
+import { requireAuth } from '../../../../../lib/auth';
+import { createAuthzMiddleware } from '../../../../../lib/authz';
 
 /**
  * GET /api/v1/reviews/:reviewId
- * Get review details
+ * Get review details (tenant-isolated)
  */
 export async function GET(
   request: NextRequest,
@@ -14,10 +16,28 @@ export async function GET(
   const log = logger.child({ requestId, reviewId: params.reviewId });
 
   try {
+    // Require authentication
+    const user = await requireAuth(request);
+
+    // Check authorization
+    const authzResponse = await createAuthzMiddleware({
+      requiredScopes: ['read'],
+    })(request);
+    if (authzResponse) {
+      return authzResponse;
+    }
+
     const review = await prisma.review.findUnique({
       where: { id: params.reviewId },
       include: {
-        repository: true,
+        repository: {
+          select: {
+            id: true,
+            name: true,
+            fullName: true,
+            organizationId: true,
+          },
+        },
       },
     });
 
@@ -30,6 +50,28 @@ export async function GET(
           },
         },
         { status: 404 }
+      );
+    }
+
+    // Verify user belongs to repository's organization (tenant isolation)
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: review.repository.organizationId,
+          userId: user.id,
+        },
+      },
+    });
+
+    if (!membership) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Access denied to review',
+          },
+        },
+        { status: 403 }
       );
     }
 
@@ -47,7 +89,7 @@ export async function GET(
       completedAt: review.completedAt,
     });
   } catch (error) {
-    log.error('Failed to get review', error);
+    log.error(error, 'Failed to get review');
     return NextResponse.json(
       {
         error: {

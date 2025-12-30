@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
     const payload = await request.text();
     const event = JSON.parse(payload);
 
-    log.info('Received GitHub webhook', {
+    log.info({
       eventType,
       installationId,
       action: event.action,
-    });
+    }, 'Received GitHub webhook');
 
     // Handle event
     await githubWebhookHandler.handleEvent(event, installationId, signature);
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
-    log.error('Webhook handling failed', error, { requestId });
+    log.error(error, 'Webhook handling failed');
     metrics.increment('webhooks.failed', { provider: 'github' });
 
     return NextResponse.json(

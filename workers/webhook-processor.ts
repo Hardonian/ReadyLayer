@@ -22,7 +22,7 @@ async function processWebhookEvent(payload: any): Promise<void> {
   const log = logger.child({ requestId, type, repositoryId: repository.id });
 
   try {
-    log.info('Processing webhook event', { type });
+    log.info({ type }, 'Processing webhook event');
 
     // Get installation
     const installation = await prisma.installation.findUnique({
@@ -51,12 +51,12 @@ async function processWebhookEvent(payload: any): Promise<void> {
         break;
 
       default:
-        log.warn('Unknown webhook event type', { type });
+        log.warn({ type }, 'Unknown webhook event type');
     }
 
     metrics.increment('webhooks.processed', { type, status: 'success' });
   } catch (error) {
-    log.error('Webhook processing failed', error);
+    log.error(error, 'Webhook processing failed');
     metrics.increment('webhooks.processed', { type, status: 'failed' });
     throw error;
   }
@@ -71,7 +71,7 @@ async function processPREvent(
   accessToken: string,
   log: any
 ): Promise<void> {
-  log.info('Processing PR event', { prNumber: pr.number });
+  log.info({ prNumber: pr.number }, 'Processing PR event');
 
   // Get PR diff
   const diff = await githubAPIClient.getPRDiff(
@@ -104,7 +104,7 @@ async function processPREvent(
         beforeContent: null, // Would fetch from base branch
       });
     } catch (error) {
-      log.warn('Failed to fetch file content', { file: file.filename, error });
+      log.warn({ file: file.filename, error }, 'Failed to fetch file content');
     }
   }
 
@@ -142,7 +142,7 @@ async function processPREvent(
       accessToken
     );
   } catch (error) {
-    log.error('Review Guard failed', error);
+    log.error(error, 'Review Guard failed');
     // Update status check to error
     await githubAPIClient.updateStatusCheck(
       repository.fullName,
@@ -171,7 +171,7 @@ async function processPREvent(
       }
     }
   } catch (error) {
-    log.error('Test Engine failed', error);
+    log.error(error, 'Test Engine failed');
   }
 }
 
@@ -181,10 +181,10 @@ async function processPREvent(
 async function processMergeEvent(
   repository: any,
   pr: any,
-  accessToken: string,
+  _accessToken: string,
   log: any
 ): Promise<void> {
-  log.info('Processing merge event', { prNumber: pr.number });
+    log.info({ prNumber: pr.number }, 'Processing merge event');
 
   // Run Doc Sync
   try {
@@ -194,7 +194,7 @@ async function processMergeEvent(
       format: 'openapi',
     });
   } catch (error) {
-    log.error('Doc Sync failed', error);
+    log.error(error, 'Doc Sync failed');
   }
 }
 
@@ -202,12 +202,12 @@ async function processMergeEvent(
  * Process CI completed event
  */
 async function processCIEvent(
-  repository: any,
-  pr: any,
-  accessToken: string,
+  _repository: any,
+  _pr: any,
+  _accessToken: string,
   log: any
 ): Promise<void> {
-  log.info('Processing CI event');
+  log.info('Processing CI event'); // No context needed
 
   // Check coverage (would parse CI output for coverage data)
   // This is a placeholder - would integrate with actual CI coverage reports

@@ -74,30 +74,32 @@ export class GitHubWebhookHandler {
       throw new Error('Invalid webhook signature');
     }
 
-    // Normalize event
-    const normalized = this.normalizeEvent(event, installation);
+    // Normalize event (getOrCreateRepository is now synchronous placeholder)
+    const normalized = await this.normalizeEvent(event, installation);
 
     // Queue event for processing
     await queueService.enqueue('webhook', {
       type: normalized.type,
-      repository: normalized.repository,
-      pr: normalized.pr,
-      installationId: installation.id,
+      data: {
+        repository: normalized.repository,
+        pr: normalized.pr,
+        installationId: installation.id,
+      },
     });
   }
 
   /**
    * Normalize GitHub event to internal format
    */
-  private normalizeEvent(
+  private async normalizeEvent(
     event: GitHubWebhookEvent,
     installation: any
-  ): NormalizedEvent {
+  ): Promise<NormalizedEvent> {
     const repository = event.repository || {};
     const fullName = repository.full_name || '';
 
     // Find or create repository
-    const repoId = this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId);
+    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId);
 
     if (event.action === 'opened' && event.pull_request) {
       return {
@@ -178,7 +180,7 @@ export class GitHubWebhookHandler {
     fullName: string,
     organizationId: string | null
   ): Promise<string> {
-    const [owner, name] = fullName.split('/');
+    const [, name] = fullName.split('/');
 
     const existing = await prisma.repository.findUnique({
       where: {
