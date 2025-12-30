@@ -5,10 +5,32 @@ This guide walks you through running the ReadyLayer database migration.
 ## Prerequisites
 
 - ✅ Supabase project created
-- ✅ Database URL available
-- ✅ Migration SQL file ready: `prisma/migrations/20241230000000_init_readylayer/migration.sql`
+- ✅ Database URL available (set in GitHub Secrets)
+- ✅ Migration SQL file ready: `backend/prisma/migrations/20241230000000_init_readylayer/migration.sql`
 
-## Option 1: Supabase SQL Editor (Recommended)
+## Important: Manual Execution Only
+
+⚠️ **Migrations do NOT run automatically** - they must be manually triggered via GitHub Actions workflow.
+
+## Option 1: GitHub Actions Workflow (Recommended)
+
+### Step 1: Ensure Migration File Exists
+Verify migration is in `backend/prisma/migrations/20241230000000_init_readylayer/migration.sql`
+
+### Step 2: Trigger Workflow
+1. Go to GitHub repository → **Actions** tab
+2. Select **Database Migration** workflow
+3. Click **Run workflow**
+4. Select branch: `main`
+5. Leave migration_file empty (runs latest) or specify a migration
+6. Set `archive_after: true` (default)
+7. Click **Run workflow**
+
+### Step 3: Monitor Execution
+- Watch workflow logs for progress
+- Migration will be archived automatically on success
+
+## Option 2: Supabase SQL Editor (Manual)
 
 ### Step 1: Open Supabase SQL Editor
 1. Go to your Supabase project dashboard
@@ -18,7 +40,7 @@ This guide walks you through running the ReadyLayer database migration.
 ### Step 2: Copy Migration SQL
 ```bash
 # Copy the entire contents of:
-cat prisma/migrations/20241230000000_init_readylayer/migration.sql
+cat backend/prisma/migrations/20241230000000_init_readylayer/migration.sql
 ```
 
 ### Step 3: Execute Migration
@@ -70,7 +92,7 @@ AND tablename IN ('Organization', 'Repository', 'Review');
 
 All should show `rowsecurity = true`.
 
-## Option 2: Prisma Migrate (Local Development)
+## Option 3: Prisma Script (Local Development)
 
 If you have `DATABASE_URL` set locally:
 
@@ -78,14 +100,14 @@ If you have `DATABASE_URL` set locally:
 # Generate Prisma Client
 npm run prisma:generate
 
-# Run migration via Prisma
-npm run migrate:run
+# Run specific migration file
+npx tsx scripts/run-migration-from-file.ts backend/prisma/migrations/20241230000000_init_readylayer/migration.sql
 
 # Verify migration
 npm run migrate:verify
 ```
 
-## Option 3: Direct psql Connection
+## Option 4: Direct psql Connection
 
 If you have `psql` installed and `DATABASE_URL`:
 
@@ -94,7 +116,7 @@ If you have `psql` installed and `DATABASE_URL`:
 export DATABASE_URL="postgresql://[user]:[password]@[host]:[port]/[database]"
 
 # Run migration
-psql "$DATABASE_URL" -f prisma/migrations/20241230000000_init_readylayer/migration.sql
+psql "$DATABASE_URL" -f backend/prisma/migrations/20241230000000_init_readylayer/migration.sql
 ```
 
 ## Verification Scripts

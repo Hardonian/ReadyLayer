@@ -74,22 +74,23 @@ Value: [your-project-id]
 
 ## Running Migration via GitHub Actions
 
-### Option 1: Manual Trigger
+### Important: Manual Execution Only
+
+⚠️ **Migrations do NOT run automatically** - they must be manually triggered.
+
+### Option 1: Manual Trigger (Recommended)
 
 1. Go to **Actions** tab in your GitHub repository
 2. Select **Database Migration** workflow
 3. Click **Run workflow**
 4. Choose branch (usually `main`)
-5. Optionally check "Only verify migration" to skip running
+5. Configure options:
+   - `migration_file`: Leave empty for latest, or specify migration name
+   - `verify_only`: Check to only verify (don't run)
+   - `archive_after`: Check to archive after success (default: true)
 6. Click **Run workflow**
 
-### Option 2: Automatic on Push
-
-The migration workflow runs automatically when:
-- You push changes to `prisma/migrations/**` files
-- You push to `main` branch with migration changes
-
-### Option 3: Via GitHub CLI
+### Option 2: Via GitHub CLI
 
 ```bash
 gh workflow run migrate.yml
