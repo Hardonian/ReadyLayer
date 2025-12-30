@@ -1,35 +1,55 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function AuthErrorPage() {
+function ErrorPageContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
 
-  const errorMessages: Record<string, string> = {
-    AuthError: 'An error occurred during authentication. Please try again.',
-    AccessDenied: 'You do not have permission to sign in.',
-    Configuration: 'There is a problem with the server configuration.',
-    Default: 'An error occurred during authentication.',
-  }
-
-  const message = errorMessages[error || ''] || errorMessages.Default
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-md w-full">
-        <h1 className="text-4xl font-bold mb-4 text-center">Authentication Error</h1>
-        <div className="bg-white p-8 rounded-lg shadow-lg">
-          <p className="text-red-600 mb-4">{message}</p>
+      <div className="z-10 max-w-2xl w-full">
+        <h1 className="text-4xl font-bold mb-4">Authentication Error</h1>
+        <p className="text-lg mb-8 text-gray-600">
+          {error === 'Configuration'
+            ? 'There is a problem with the server configuration.'
+            : error === 'AccessDenied'
+            ? 'You do not have permission to sign in.'
+            : error === 'Verification'
+            ? 'The verification token has expired or has already been used.'
+            : 'An error occurred during authentication.'}
+        </p>
+        <div className="flex gap-4">
           <Link
             href="/auth/signin"
-            className="block w-full bg-gray-900 text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-center"
+            className="bg-gray-900 text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            Try Again
+            Try again
+          </Link>
+          <Link
+            href="/"
+            className="bg-gray-100 text-gray-900 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Go home
           </Link>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ErrorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Loading...</h1>
+        </div>
+      </div>
+    }>
+      <ErrorPageContent />
+    </Suspense>
   )
 }

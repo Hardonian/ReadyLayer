@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -8,18 +8,20 @@ interface Repository {
   id: string
   name: string
   fullName: string
-  provider: string
   enabled: boolean
-  createdAt: string
+  organization: {
+    id: string
+    name: string
+  }
 }
 
 interface Review {
   id: string
-  repositoryId: string
-  prNumber: number
   status: string
   isBlocked: boolean
-  createdAt: string
+  repository: {
+    name: string
+  }
 }
 
 interface DashboardStats {
@@ -29,7 +31,7 @@ interface DashboardStats {
   activeRepos: number
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [repos, setRepos] = useState<Repository[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [stats, setStats] = useState<DashboardStats>({
@@ -40,12 +42,24 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createSupabaseClient()
 
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        // Get user session
+        // Check if Supabase env vars are available
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+          setError('Dashboard not available during build')
+          setLoading(false)
+          return
+        }
+        
+        const supabase = createSupabaseClient()
+        if (!supabase) {
+          setError('Failed to initialize client')
+          setLoading(false)
+          return
+        }
+        
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
           setError('Not authenticated')
@@ -53,35 +67,29 @@ export default function DashboardPage() {
           return
         }
 
-        // Fetch repositories
         const reposResponse = await fetch('/api/v1/repos?limit=10', {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
           },
         })
-
         if (!reposResponse.ok) {
           throw new Error('Failed to fetch repositories')
         }
-
         const reposData = await reposResponse.json()
         const repositories = reposData.repositories || []
         setRepos(repositories)
 
-        // Fetch recent reviews
         let reviewsData: { reviews?: Review[]; pagination?: { total: number } } = {}
         const reviewsResponse = await fetch('/api/v1/reviews?limit=10', {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
           },
         })
-
         if (reviewsResponse.ok) {
           reviewsData = await reviewsResponse.json()
           setReviews(reviewsData.reviews || [])
         }
 
-        // Calculate stats
         const activeRepos = repositories.filter((r: Repository) => r.enabled).length
         const reviewsList = reviewsData.reviews || []
         const blockedPRs = reviewsList.filter((r: Review) => r.isBlocked).length
@@ -92,25 +100,20 @@ export default function DashboardPage() {
           blockedPRs,
           activeRepos,
         })
-
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard')
         setLoading(false)
       }
     }
-
     fetchDashboardData()
-  }, [supabase])
+  }, [])
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboard...</p>
-          </div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading dashboard...</h1>
         </div>
       </div>
     )
@@ -118,127 +121,122 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold text-red-800 mb-2">Error</h2>
-          <p className="text-red-600">{error}</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Error</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Link
+            href="/"
+            className="bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Go home
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">ReadyLayer Dashboard</h1>
-      
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Total Repositories</h3>
-          <p className="text-3xl font-bold">{stats.totalRepos}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Active Repositories</h3>
-          <p className="text-3xl font-bold">{stats.activeRepos}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Total Reviews</h3>
-          <p className="text-3xl font-bold">{stats.totalReviews}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Blocked PRs</h3>
-          <p className="text-3xl font-bold text-red-600">{stats.blockedPRs}</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
 
-      {/* Repositories Section */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Repositories</h2>
-            <Link
-              href="/dashboard/repos"
-              className="text-sm text-blue-600 hover:underline"
-            >
-              View all →
-            </Link>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-600 mb-2">Total Repositories</h2>
+            <p className="text-3xl font-bold">{stats.totalRepos}</p>
           </div>
-          
-          {repos.length === 0 ? (
-            <p className="text-gray-600">No repositories found. Connect a repository to get started.</p>
-          ) : (
-            <div className="space-y-3">
-              {repos.map((repo) => (
-                <Link
-                  key={repo.id}
-                  href={`/dashboard/repos/${repo.id}`}
-                  className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex justify-between items-start">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-600 mb-2">Active Repositories</h2>
+            <p className="text-3xl font-bold">{stats.activeRepos}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-600 mb-2">Total Reviews</h2>
+            <p className="text-3xl font-bold">{stats.totalReviews}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-sm font-medium text-gray-600 mb-2">Blocked PRs</h2>
+            <p className="text-3xl font-bold text-red-600">{stats.blockedPRs}</p>
+          </div>
+        </div>
+
+        {/* Repositories */}
+        <div className="bg-white rounded-lg shadow mb-8">
+          <div className="p-6 border-b">
+            <h2 className="text-xl font-semibold">Repositories</h2>
+          </div>
+          <div className="p-6">
+            {repos.length === 0 ? (
+              <p className="text-gray-600">No repositories found. Connect your first repository to get started.</p>
+            ) : (
+              <div className="space-y-4">
+                {repos.map((repo) => (
+                  <div key={repo.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <h3 className="font-semibold">{repo.fullName}</h3>
-                      <p className="text-sm text-gray-600">{repo.provider}</p>
+                      <p className="text-sm text-gray-600">{repo.organization.name}</p>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded ${
-                      repo.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {repo.enabled ? 'Active' : 'Inactive'}
-                    </span>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-3 py-1 rounded-full text-sm ${repo.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                        {repo.enabled ? 'Active' : 'Inactive'}
+                      </span>
+                      <Link
+                        href={`/dashboard/repos/${repo.id}`}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        View
+                      </Link>
+                    </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Recent Reviews Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
+        {/* Recent Reviews */}
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b">
             <h2 className="text-xl font-semibold">Recent Reviews</h2>
-            <Link
-              href="/dashboard/reviews"
-              className="text-sm text-blue-600 hover:underline"
-            >
-              View all →
-            </Link>
           </div>
-          
-          {reviews.length === 0 ? (
-            <p className="text-gray-600">No reviews yet. Reviews will appear here after PRs are analyzed.</p>
-          ) : (
-            <div className="space-y-3">
-              {reviews.map((review) => (
-                <Link
-                  key={review.id}
-                  href={`/dashboard/reviews/${review.id}`}
-                  className="block p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex justify-between items-start">
+          <div className="p-6">
+            {reviews.length === 0 ? (
+              <p className="text-gray-600">No reviews yet. Create your first review to get started.</p>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
-                      <h3 className="font-semibold">PR #{review.prNumber}</h3>
-                      <p className="text-sm text-gray-600">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </p>
+                      <h3 className="font-semibold">{review.repository.name}</h3>
+                      <p className="text-sm text-gray-600">Status: {review.status}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        review.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        review.status === 'blocked' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {review.status}
+                    {review.isBlocked && (
+                      <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">
+                        Blocked
                       </span>
-                      {review.isBlocked && (
-                        <span className="text-xs text-red-600">Blocked</span>
-                      )}
-                    </div>
+                    )}
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading dashboard...</h1>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }

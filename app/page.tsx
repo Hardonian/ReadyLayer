@@ -1,128 +1,127 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 
-export default function Home() {
+interface User {
+  id: string
+  email?: string
+  name?: string
+}
+
+function HomePageContent() {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createSupabaseClient()
-
+  
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
-      setLoading(false)
+    async function checkUser() {
+      try {
+        // Check if Supabase env vars are available
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+          return // Skip during build
+        }
+        
+        const supabase = createSupabaseClient()
+        if (!supabase) return
+        
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || undefined,
+            name: session.user.user_metadata?.name || undefined,
+          })
+        }
+      } catch (error) {
+        // During build, env vars may not be set - ignore
+        console.debug('Supabase client not available during build')
+      }
     }
-
-    getUser()
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
+    checkUser()
   }, [])
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
-        <h1 className="text-4xl font-bold mb-4 text-center">ReadyLayer</h1>
-        <p className="text-xl mb-8 text-center">
-          AI Code Readiness Platform
-        </p>
-        <p className="text-lg mb-8 text-center text-gray-600">
-          Ensure AI-generated code is production-ready through automated review, testing, and documentation. Enforcement-first principles catch security vulnerabilities, ensure test coverage, and keep docs in sync.
-        </p>
-
-        {loading && (
-          <div className="text-center">Loading...</div>
-        )}
-
-        {!loading && !user && (
-          <div className="text-center">
-            <Link
-              href="/auth/signin"
-              className="inline-block bg-gray-900 text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              Sign in with GitHub
-            </Link>
-          </div>
-        )}
-
-        {!loading && user && (
-          <div className="space-y-4">
-            <div className="text-center mb-8">
-              <p className="text-lg">Welcome, {user.user_metadata?.full_name || user.email}!</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-                <h2 className="text-lg font-semibold mb-2">Review Guard</h2>
-                <p className="mb-4">AI-aware code review with enforcement-first principles</p>
+    <div className="flex min-h-screen flex-col">
+      {/* Hero Section */}
+      <section className="flex-1 flex items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-24">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl font-bold mb-6 text-gray-900">
+            AI Code Readiness Platform
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Ensure your code is production-ready with AI-powered reviews, automated testing, and comprehensive documentation.
+          </p>
+          <div className="flex gap-4 justify-center">
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="bg-gray-900 text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
                 <Link
-                  href="/dashboard"
-                  className="text-blue-600 hover:underline"
+                  href="/auth/signin"
+                  className="bg-gray-900 text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors"
                 >
-                  View Dashboard →
+                  Get Started
                 </Link>
-              </div>
-              <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-                <h2 className="text-lg font-semibold mb-2">Test Engine</h2>
-                <p className="mb-4">Automatic test generation with coverage enforcement</p>
                 <Link
-                  href="/dashboard"
-                  className="text-blue-600 hover:underline"
+                  href="/auth/signin"
+                  className="bg-gray-100 text-gray-900 py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  View Dashboard →
+                  Sign In
                 </Link>
-              </div>
-              <div className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
-                <h2 className="text-lg font-semibold mb-2">Doc Sync</h2>
-                <p className="mb-4">Keep API documentation in sync with code</p>
-                <Link
-                  href="/dashboard"
-                  className="text-blue-600 hover:underline"
-                >
-                  View Dashboard →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 border rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">🔍 AI Code Review</h3>
-            <p className="text-sm text-gray-600">
-              Automated code analysis detects security issues, quality problems, and suggests improvements.
-            </p>
-          </div>
-          <div className="p-6 border rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">👥 Human Verification</h3>
-            <p className="text-sm text-gray-600">
-              Engineers review and verify AI findings, ensuring accuracy and building team knowledge.
-            </p>
-          </div>
-          <div className="p-6 border rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">📚 Doc Sync</h3>
-            <p className="text-sm text-gray-600">
-              Automatic API documentation generation with drift prevention. Blocks PRs when code and docs are out of sync.
-            </p>
-          </div>
-          <div className="p-6 border rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">📊 Analytics</h3>
-            <p className="text-sm text-gray-600">
-              Track your code review performance, issues caught, and contributions to team quality.
-            </p>
+              </>
+            )}
           </div>
         </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-24 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+            Everything you need for production-ready code
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-4">AI Code Reviews</h3>
+              <p className="text-gray-600">
+                Automated code reviews with AI-powered analysis of security, performance, and best practices.
+              </p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-4">Automated Testing</h3>
+              <p className="text-gray-600">
+                Comprehensive test generation and execution to ensure code quality and reliability.
+              </p>
+            </div>
+            <div className="text-center">
+              <h3 className="text-xl font-semibold mb-4">Documentation Sync</h3>
+              <p className="text-gray-600">
+                Keep your documentation in sync with your codebase automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">ReadyLayer</h1>
+          <p className="text-lg text-gray-600">Loading...</p>
+        </div>
       </div>
-    </main>
+    }>
+      <HomePageContent />
+    </Suspense>
   )
 }

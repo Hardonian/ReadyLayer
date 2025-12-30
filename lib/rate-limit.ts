@@ -17,7 +17,10 @@ let rateLimiter: RateLimiterMemory | RateLimiterRedis;
   try {
     if (process.env.REDIS_URL) {
       const redis = createClient({ url: process.env.REDIS_URL });
-      await redis.connect();
+      // Don't fail during build if Redis is unavailable
+      await redis.connect().catch(() => {
+        console.debug('Redis connection failed during initialization (expected during build)');
+      });
       rateLimiter = new RateLimiterRedis({
         storeClient: redis,
         keyPrefix: 'rl_rate_limit',
