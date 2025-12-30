@@ -6,8 +6,6 @@
 
 import { prisma } from '../lib/prisma';
 import { billingService } from '../billing';
-import { checkBillingLimits } from '../lib/billing-middleware';
-import { NextRequest } from 'next/server';
 
 async function testBillingEnforcement() {
   console.log('💰 Testing Billing Enforcement...\n');

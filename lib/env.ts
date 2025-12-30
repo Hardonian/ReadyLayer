@@ -2,6 +2,7 @@
  * Environment Variable Validation
  * 
  * Runtime validation with safe defaults and clear error messages
+ * Uses lazy evaluation to avoid build-time errors
  */
 
 interface EnvConfig {
@@ -62,8 +63,11 @@ class EnvValidator {
     this.config.API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
     this.config.API_VERSION = process.env.API_VERSION || 'v1';
 
-    // Validate at least one LLM provider
-    if (!this.config.OPENAI_API_KEY && !this.config.ANTHROPIC_API_KEY) {
+    // Validate at least one LLM provider (skip during build)
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                        process.env.NEXT_PHASE === 'phase-development-build' ||
+                        process.env.NEXT_PUBLIC_SKIP_ENV_VALIDATION === 'true';
+    if (!isBuildTime && !this.config.OPENAI_API_KEY && !this.config.ANTHROPIC_API_KEY) {
       this.errors.push('At least one LLM provider API key is required (OPENAI_API_KEY or ANTHROPIC_API_KEY)');
     }
 
@@ -111,37 +115,81 @@ class EnvValidator {
   }
 }
 
-// Validate and export config
-let envConfig: EnvConfig;
+// Lazy validation - only validate when accessed, not at module load time
+let envConfig: EnvConfig | null = null;
+let validationAttempted = false;
 
-try {
-  const validator = new EnvValidator();
-  envConfig = validator.validate();
-} catch (error) {
-  // In development, log but don't crash
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('Environment validation warning:', error instanceof Error ? error.message : error);
-    // Use defaults for development
-    const validator = new EnvValidator();
-    const defaults = validator.getDefaults();
+function getEnvConfig(): EnvConfig {
+  if (envConfig) {
+    return envConfig;
+  }
+
+  // During build, use defaults without validation
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                      process.env.NEXT_PHASE === 'phase-development-build' ||
+                      typeof window === 'undefined' && !process.env.DATABASE_URL;
+
+  if (isBuildTime && !validationAttempted) {
+    validationAttempted = true;
+    // Return safe defaults for build
+    const defaults = new EnvValidator().getDefaults();
     envConfig = {
       DATABASE_URL: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/readylayer',
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-      NODE_ENV: 'development',
+      NODE_ENV: (process.env.NODE_ENV as any) || 'development',
       LOG_LEVEL: defaults.LOG_LEVEL,
       DEFAULT_LLM_PROVIDER: defaults.DEFAULT_LLM_PROVIDER,
       API_BASE_URL: defaults.API_BASE_URL,
       API_VERSION: defaults.API_VERSION,
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
     } as EnvConfig;
-  } else {
-    // In production, throw
-    throw error;
+    return envConfig;
+  }
+
+  // Runtime validation
+  try {
+    const validator = new EnvValidator();
+    envConfig = validator.validate();
+    validationAttempted = true;
+    return envConfig;
+  } catch (error) {
+    // In development, log but don't crash
+    if (process.env.NODE_ENV === 'development' || isBuildTime) {
+      console.warn('Environment validation warning:', error instanceof Error ? error.message : error);
+      // Use defaults for development/build
+      const defaults = new EnvValidator().getDefaults();
+      envConfig = {
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/readylayer',
+        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+        NODE_ENV: (process.env.NODE_ENV as any) || 'development',
+        LOG_LEVEL: defaults.LOG_LEVEL,
+        DEFAULT_LLM_PROVIDER: defaults.DEFAULT_LLM_PROVIDER,
+        API_BASE_URL: defaults.API_BASE_URL,
+        API_VERSION: defaults.API_VERSION,
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+      } as EnvConfig;
+      validationAttempted = true;
+      return envConfig;
+    } else {
+      // In production, throw
+      throw error;
+    }
   }
 }
 
-export const env = envConfig;
+// Export getter that lazily validates
+export const env = new Proxy({} as EnvConfig, {
+  get(_target, prop: keyof EnvConfig) {
+    const config = getEnvConfig();
+    return config[prop];
+  },
+});
 
 /**
  * Check if a feature is enabled based on environment

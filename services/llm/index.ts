@@ -34,17 +34,21 @@ export interface LLMProvider {
 // OpenAI Provider
 class OpenAIProvider implements LLMProvider {
   name = 'openai';
-  private apiKey: string;
+  private apiKey: string | null = null;
   private baseUrl = 'https://api.openai.com/v1';
 
-  constructor() {
-    this.apiKey = process.env.OPENAI_API_KEY || '';
+  private getApiKey(): string {
     if (!this.apiKey) {
-      throw new Error('OPENAI_API_KEY environment variable is required');
+      this.apiKey = process.env.OPENAI_API_KEY || '';
+      if (!this.apiKey) {
+        throw new Error('OPENAI_API_KEY environment variable is required');
+      }
     }
+    return this.apiKey;
   }
 
   async complete(request: LLMRequest): Promise<LLMResponse> {
+    const apiKey = this.getApiKey();
     const model = request.model || 'gpt-4-turbo-preview';
     const url = `${this.baseUrl}/chat/completions`;
 
@@ -52,7 +56,7 @@ class OpenAIProvider implements LLMProvider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model,
@@ -138,17 +142,21 @@ class OpenAIProvider implements LLMProvider {
 // Anthropic Provider
 class AnthropicProvider implements LLMProvider {
   name = 'anthropic';
-  private apiKey: string;
+  private apiKey: string | null = null;
   private baseUrl = 'https://api.anthropic.com/v1';
 
-  constructor() {
-    this.apiKey = process.env.ANTHROPIC_API_KEY || '';
+  private getApiKey(): string {
     if (!this.apiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is required');
+      this.apiKey = process.env.ANTHROPIC_API_KEY || '';
+      if (!this.apiKey) {
+        throw new Error('ANTHROPIC_API_KEY environment variable is required');
+      }
     }
+    return this.apiKey;
   }
 
   async complete(request: LLMRequest): Promise<LLMResponse> {
+    const apiKey = this.getApiKey();
     const model = request.model || 'claude-3-opus-20240229';
     const url = `${this.baseUrl}/messages`;
 
@@ -156,7 +164,7 @@ class AnthropicProvider implements LLMProvider {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': this.apiKey,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
@@ -244,6 +252,15 @@ export class LLMService {
   private defaultProvider: string;
 
   constructor() {
+    this.defaultProvider = process.env.DEFAULT_LLM_PROVIDER || 'openai';
+    // Providers initialized lazily in initializeProviders()
+  }
+
+  private initializeProviders(): void {
+    if (this.providers.size > 0) {
+      return; // Already initialized
+    }
+
     // Initialize providers
     if (process.env.OPENAI_API_KEY) {
       this.providers.set('openai', new OpenAIProvider());
@@ -252,9 +269,12 @@ export class LLMService {
       this.providers.set('anthropic', new AnthropicProvider());
     }
 
-    this.defaultProvider = process.env.DEFAULT_LLM_PROVIDER || 'openai';
+    // During build time, skip validation
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                        process.env.NEXT_PHASE === 'phase-development-build' ||
+                        typeof window === 'undefined' && !process.env.DATABASE_URL;
 
-    if (this.providers.size === 0) {
+    if (!isBuildTime && this.providers.size === 0) {
       throw new Error('At least one LLM provider API key must be configured');
     }
   }
@@ -263,6 +283,9 @@ export class LLMService {
    * Complete a prompt with caching support
    */
   async complete(request: LLMRequest): Promise<LLMResponse> {
+    // Initialize providers lazily
+    this.initializeProviders();
+
     // Check cache if enabled
     if (request.cache !== false) {
       const cached = await this.getCachedResponse(request);
@@ -370,4 +393,20 @@ export class LLMService {
 }
 
 // Export singleton instance
-export const llmService = new LLMService();
+// LLM Service Singleton (lazy initialization)
+let llmServiceInstance: LLMService | null = null;
+
+function getLLMService(): LLMService {
+  if (!llmServiceInstance) {
+    llmServiceInstance = new LLMService();
+  }
+  return llmServiceInstance;
+}
+
+// Export getter that lazily initializes
+export const llmService = new Proxy({} as LLMService, {
+  get(_target, prop: keyof LLMService) {
+    const service = getLLMService();
+    return service[prop];
+  },
+});
