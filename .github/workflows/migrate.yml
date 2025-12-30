@@ -76,9 +76,16 @@ jobs:
           if [ -n "${{ github.event.inputs.migration_file }}" ]; then
             MIGRATION="${{ github.event.inputs.migration_file }}"
           else
-            # Find latest non-archived migration
-            MIGRATIONS=$(ls -1t backend/prisma/migrations/ 2>/dev/null | grep -v "^archived" | grep -v "^README" | head -1)
-            MIGRATION="$MIGRATIONS"
+            # Find latest non-archived migration (sorted by name/timestamp)
+            MIGRATIONS=$(ls -1t backend/prisma/migrations/ 2>/dev/null | grep -v "^archived" | grep -v "^README" || echo "")
+            if [ -z "$MIGRATIONS" ]; then
+              echo "No migrations found"
+              echo "migration=none" >> $GITHUB_OUTPUT
+              echo "migration_path=" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            # Get the first (latest) migration
+            MIGRATION=$(echo "$MIGRATIONS" | head -1)
           fi
           
           if [ -z "$MIGRATION" ] || [ "$MIGRATION" = "none" ]; then
@@ -102,8 +109,8 @@ jobs:
           
           echo "migration=$MIGRATION" >> $GITHUB_OUTPUT
           echo "migration_path=$MIGRATION_PATH" >> $GITHUB_OUTPUT
-          echo "Running migration: $MIGRATION"
-          echo "Migration path: $MIGRATION_PATH"
+          echo "✅ Running migration: $MIGRATION"
+          echo "📁 Migration path: $MIGRATION_PATH"
 
       - name: Run Migration
         if: |
@@ -111,7 +118,8 @@ jobs:
           github.event.inputs.verify_only != 'true'
         run: |
           MIGRATION_PATH="${{ steps.determine_migration.outputs.migration_path }}"
-          echo "Executing migration from: $MIGRATION_PATH"
+          echo "🚀 Executing migration from: $MIGRATION_PATH"
+          echo ""
           
           # Run migration using Prisma script
           npx tsx scripts/run-migration-from-file.ts "$MIGRATION_PATH/migration.sql"
@@ -122,6 +130,7 @@ jobs:
       - name: Verify Migration
         if: steps.determine_migration.outputs.migration != 'none'
         run: |
+          echo "🔍 Verifying migration..."
           npm run migrate:verify
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -130,6 +139,7 @@ jobs:
       - name: Test Tenant Isolation
         if: steps.determine_migration.outputs.migration != 'none'
         run: |
+          echo "🔒 Testing tenant isolation..."
           npm run test:tenant-isolation
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -139,6 +149,7 @@ jobs:
       - name: Test Billing Enforcement
         if: steps.determine_migration.outputs.migration != 'none'
         run: |
+          echo "💰 Testing billing enforcement..."
           npm run test:billing
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -155,7 +166,7 @@ jobs:
           MIGRATION="${{ steps.determine_migration.outputs.migration }}"
           MIGRATION_PATH="${{ steps.determine_migration.outputs.migration_path }}"
           
-          echo "Archiving migration: $MIGRATION"
+          echo "📦 Archiving migration: $MIGRATION"
           
           # Create archived directory if it doesn't exist
           mkdir -p backend/prisma/migrations/archived
@@ -163,7 +174,7 @@ jobs:
           # Move migration to archived
           mv "$MIGRATION_PATH" "backend/prisma/migrations/archived/$MIGRATION"
           
-          echo "Migration archived to: backend/prisma/migrations/archived/$MIGRATION"
+          echo "✅ Migration archived to: backend/prisma/migrations/archived/$MIGRATION"
           
           # Commit and push archived migration
           git config user.name "github-actions[bot]"
@@ -178,16 +189,24 @@ jobs:
             git commit -m "chore: archive migration $MIGRATION after successful execution [skip ci]"
             
             # Push to the same branch that triggered the workflow
-            git push origin HEAD:${{ github.ref_name }} || echo "Push failed (may need manual push or permissions)"
+            echo "Pushing archived migration to ${{ github.ref_name }}..."
+            git push origin HEAD:${{ github.ref_name }} || echo "⚠️ Push failed (may need manual push or permissions)"
           fi
 
       - name: Migration Summary
         if: always()
         run: |
           echo "## Migration Results" >> $GITHUB_STEP_SUMMARY
-          echo "- Migration: ${{ steps.determine_migration.outputs.migration }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Triggered by: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Migration:** ${{ steps.determine_migration.outputs.migration }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.determine_migration.outputs.migration }}" != "none" ]; then
-            echo "- Archived: ${{ github.event.inputs.archive_after != 'false' }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Archived:** ${{ github.event.inputs.archive_after != 'false' }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Migration completed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Migration failed. Check logs for details." >> $GITHUB_STEP_SUMMARY
           fi
