@@ -8,27 +8,30 @@ This guide walks you through running the ReadyLayer database migration.
 - ✅ Database URL available (set in GitHub Secrets)
 - ✅ Migration SQL file ready: `backend/prisma/migrations/20241230000000_init_readylayer/migration.sql`
 
-## Important: Manual Execution Only
+## Important: Automatic Execution
 
-⚠️ **Migrations do NOT run automatically** - they must be manually triggered via GitHub Actions workflow.
+✅ **Migrations run automatically** when you push migration files to main branch via GitHub Actions - no manual SQL editor or CLI needed!
 
-## Option 1: GitHub Actions Workflow (Recommended)
+## Option 1: Automatic Execution via GitHub Actions (Recommended)
 
-### Step 1: Ensure Migration File Exists
-Verify migration is in `backend/prisma/migrations/20241230000000_init_readylayer/migration.sql`
+### Step 1: Add Migration File
+1. Create migration in `backend/prisma/migrations/YYYYMMDDHHMMSS_description/`
+2. Add `migration.sql` file with your SQL
+3. Commit and push to main branch
 
-### Step 2: Trigger Workflow
-1. Go to GitHub repository → **Actions** tab
-2. Select **Database Migration** workflow
-3. Click **Run workflow**
-4. Select branch: `main`
-5. Leave migration_file empty (runs latest) or specify a migration
-6. Set `archive_after: true` (default)
-7. Click **Run workflow**
+### Step 2: Workflow Runs Automatically
+- GitHub Actions detects the migration file change
+- Workflow triggers automatically
+- Migration executes via Prisma script (no SQL editor needed!)
+- Verification tests run
+- Migration archived automatically on success
 
 ### Step 3: Monitor Execution
+- Go to **Actions** tab → **Database Migration**
 - Watch workflow logs for progress
 - Migration will be archived automatically on success
+
+**No manual steps required!** Just push and the workflow handles everything.
 
 ## Option 2: Supabase SQL Editor (Manual)
 

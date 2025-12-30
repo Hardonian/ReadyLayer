@@ -4,17 +4,21 @@ Get ReadyLayer running in production in 15 minutes.
 
 ## Step 1: Database Migration (5 min)
 
-⚠️ **Migrations do NOT run automatically** - manual trigger required.
+✅ **Migrations run automatically** when you push to main!
 
-**Option A: GitHub Actions (Recommended)**
+**Automatic Execution (Recommended):**
 
-1. Go to **Actions** tab → **Database Migration** workflow
-2. Click **Run workflow**
-3. Select branch: `main`
-4. Leave `migration_file` empty (runs latest)
-5. Set `archive_after: true`
-6. Click **Run workflow**
-7. Wait ~2-3 minutes
+1. Migration file already exists: `backend/prisma/migrations/20241230000000_init_readylayer/migration.sql`
+2. Commit and push to main branch:
+   ```bash
+   git add backend/prisma/migrations/
+   git commit -m "chore: add initial migration"
+   git push origin main
+   ```
+3. **Workflow runs automatically** - no manual steps needed!
+4. Wait ~2-3 minutes for completion
+5. Migration executes via GitHub Actions (no SQL editor needed)
+6. Auto-archived on success
 
 **Option B: Supabase SQL Editor**
 

@@ -17,12 +17,32 @@ backend/
 ## Migration Workflow
 
 1. **Create Migration**: Add new migration files to `backend/prisma/migrations/`
-2. **Run Migration**: Use GitHub Actions workflow (manual trigger only)
-3. **Archive**: After successful migration, it's automatically moved to `archived/`
+2. **Commit & Push**: Push to main branch
+3. **Automatic Execution**: GitHub Actions runs migration automatically
+4. **Archive**: After successful migration, it's automatically moved to `archived/`
+
+**No manual SQL editor or CLI needed!** All migrations execute via GitHub Actions.
 
 ## Running Migrations
 
-### Via GitHub Actions (Recommended)
+### Automatic Execution (Recommended)
+
+**Just push to main!**
+
+1. Add migration file to `backend/prisma/migrations/YYYYMMDDHHMMSS_description/`
+2. Create `migration.sql` file
+3. Commit and push to main branch
+4. **Workflow runs automatically** - no manual steps needed!
+
+The workflow will:
+- Detect the new migration
+- Execute it via GitHub Actions (no SQL editor needed)
+- Verify the migration
+- Archive it automatically on success
+
+### Manual Trigger (Optional)
+
+You can also manually trigger if needed:
 
 1. Go to **Actions** tab → **Database Migration** workflow
 2. Click **Run workflow**
@@ -32,7 +52,7 @@ backend/
    - `archive_after`: Archive after success (default: true)
 4. Click **Run workflow**
 
-### Manual (Local)
+### Manual (Local - Development Only)
 
 ```bash
 # Set DATABASE_URL
@@ -60,7 +80,8 @@ Example: `20241230000000_init_readylayer`
 
 ## Important Notes
 
-- ⚠️ Migrations do NOT run automatically on push or merge
-- ⚠️ Migrations must be manually triggered via GitHub Actions
+- ✅ Migrations run **automatically** on push to main
+- ✅ No manual SQL editor or CLI needed - all via GitHub Actions
 - ✅ Migrations are idempotent (safe to re-run)
 - ✅ Migrations use `IF NOT EXISTS` for safety
+- ✅ Successful migrations are automatically archived
