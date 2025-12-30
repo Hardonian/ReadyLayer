@@ -15,6 +15,8 @@
     "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@babel/parser": "^7.23.7",
+    "@babel/types": "^7.23.6",
     "@prisma/client": "^5.7.1",
     "@radix-ui/react-avatar": "^1.0.4",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -35,6 +37,7 @@
     "rate-limiter-flexible": "^9.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "redis": "^4.6.12",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4",
