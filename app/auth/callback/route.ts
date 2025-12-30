@@ -19,18 +19,23 @@ export async function GET(request: NextRequest) {
           return NextResponse.redirect(new URL(redirect, request.url))
         }
 
-        logger.warn(error, 'Failed to exchange code for session', {
+        logger.warn('Failed to exchange code for session', {
+          error: error instanceof Error ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          } : error,
           code: code.substring(0, 10) + '...',
         })
       } catch (error) {
-        logger.error(error, 'Error during auth callback');
+        logger.error(error, 'Error during auth callback')
       }
     }
 
     // If there's an error or no code, redirect to sign in
     return NextResponse.redirect(new URL('/auth/signin?error=AuthError', request.url))
   } catch (error) {
-    logger.error(error, 'Auth callback route failed');
+    logger.error(error, 'Auth callback route failed')
     return NextResponse.redirect(new URL('/auth/signin?error=AuthError', request.url))
   }
 }

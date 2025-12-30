@@ -16,7 +16,8 @@ function handleMiddlewareError(
   const errorMessage = error instanceof Error ? error.message : 'Unknown error'
   const errorStack = error instanceof Error ? error.stack : undefined
 
-  logger.error(error, `Middleware error in ${context}`, {
+  logger.error(error, {
+    message: `Middleware error in ${context}`,
     path: request.nextUrl.pathname,
     method: request.method,
     errorMessage,
@@ -142,7 +143,8 @@ export async function middleware(request: NextRequest) {
         })
       }
 
-      logger.error(supabaseError, 'Failed to create Supabase client', {
+      logger.error(supabaseError, {
+        message: 'Failed to create Supabase client',
         path: request.nextUrl.pathname,
       })
 
@@ -181,7 +183,12 @@ export async function middleware(request: NextRequest) {
         }
       } catch (error) {
         // Rate limiting failed - log but allow request through (fail open)
-        logger.warn(error, 'Rate limit check failed, allowing request', {
+        logger.warn('Rate limit check failed, allowing request', {
+          error: error instanceof Error ? {
+            message: error.message,
+            stack: error.stack,
+            name: error.name,
+          } : error,
           path: request.nextUrl.pathname,
         })
         // Continue processing
@@ -198,7 +205,12 @@ export async function middleware(request: NextRequest) {
         } = await supabase.auth.getUser()
 
         if (authError) {
-          logger.warn(authError, 'Auth check failed', {
+          logger.warn('Auth check failed', {
+            error: authError instanceof Error ? {
+              message: authError.message,
+              stack: authError.stack,
+              name: authError.name,
+            } : authError,
             path: request.nextUrl.pathname,
           })
           // Continue to check API key
@@ -237,7 +249,8 @@ export async function middleware(request: NextRequest) {
           }
         } catch (authzError) {
           // Authorization check failed - return error response
-          logger.error(authzError, 'Authorization check failed', {
+          logger.error(authzError, {
+            message: 'Authorization check failed',
             path: request.nextUrl.pathname,
           })
           return NextResponse.json(
@@ -274,7 +287,12 @@ export async function middleware(request: NextRequest) {
       } = await supabase.auth.getUser()
 
       if (getUserError) {
-        logger.warn(getUserError, 'Failed to get user for page route', {
+        logger.warn('Failed to get user for page route', {
+          error: getUserError instanceof Error ? {
+            message: getUserError.message,
+            stack: getUserError.stack,
+            name: getUserError.name,
+          } : getUserError,
           path: request.nextUrl.pathname,
         })
         // Redirect to sign in on auth error
@@ -290,7 +308,12 @@ export async function middleware(request: NextRequest) {
       }
     } catch (authError) {
       // Auth check failed for page route - redirect to sign in
-      logger.warn(authError, 'Auth check failed for page route', {
+      logger.warn('Auth check failed for page route', {
+        error: authError instanceof Error ? {
+          message: authError.message,
+          stack: authError.stack,
+          name: authError.name,
+        } : authError,
         path: request.nextUrl.pathname,
       })
       const signInUrl = new URL('/auth/signin', request.url)

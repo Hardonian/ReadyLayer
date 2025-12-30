@@ -10,12 +10,18 @@ export async function POST(request: NextRequest) {
     try {
       await supabase.auth.signOut()
     } catch (error) {
-      logger.warn(error, 'Error during sign out, redirecting anyway');
+      logger.warn('Error during sign out, redirecting anyway', {
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        } : error,
+      })
     }
     
     return NextResponse.redirect(new URL('/auth/signin', request.url))
   } catch (error) {
-    logger.error(error, 'Sign out route failed');
+    logger.error(error, 'Sign out route failed')
     // Still redirect even on error
     return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
