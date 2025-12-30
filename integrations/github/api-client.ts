@@ -37,18 +37,31 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
    */
   async getPRDiff(repo: string, prNumber: number, token: string): Promise<string> {
     const url = `${this.baseUrl}/repos/${repo}/pulls/${prNumber}`;
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github.v3.diff',
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'application/vnd.github.v3.diff',
+          Authorization: `Bearer ${token}`,
+        },
+        signal: AbortSignal.timeout(30000), // 30 second timeout
+      });
 
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`);
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => response.statusText);
+        throw new Error(`GitHub API error: ${response.status} ${errorText}`);
+      }
+
+      return await response.text();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new Error('GitHub API request timed out');
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('GitHub API request was aborted');
+      }
+      throw error;
     }
-
-    return response.text();
   }
 
   /**
@@ -126,6 +139,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
             Accept: 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
           },
+          signal: AbortSignal.timeout(30000), // 30 second timeout
         });
 
         // Handle rate limiting
@@ -136,12 +150,33 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
         }
 
         if (!response.ok) {
-          throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
+          let errorMessage = `${response.status} ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            // Ignore JSON parse errors, use status text
+          }
+          throw new Error(`GitHub API error: ${errorMessage}`);
         }
 
-        return response.json();
+        try {
+          return await response.json();
+        } catch (jsonError) {
+          throw new Error('Failed to parse GitHub API response as JSON');
+        }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        // Handle timeout/abort errors
+        if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+          if (attempt < maxRetries - 1) {
+            const delay = Math.pow(2, attempt) * 1000;
+            await this.sleep(delay);
+            continue;
+          }
+          throw new Error('GitHub API request timed out after retries');
+        }
         
         // Retry on transient errors
         if (attempt < maxRetries - 1 && this.isRetryableError(lastError)) {

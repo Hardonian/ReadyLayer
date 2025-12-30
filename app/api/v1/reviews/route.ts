@@ -27,7 +27,20 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_JSON',
+            message: 'Request body must be valid JSON',
+          },
+        },
+        { status: 400 }
+      );
+    }
     const { repositoryId, prNumber, prSha, prTitle, diff, files, config } = body;
 
     // Validate input
@@ -79,19 +92,6 @@ export async function POST(request: NextRequest) {
           },
         },
         { status: 403 }
-      );
-    }
-
-    // Validate input
-    if (!repositoryId || !prNumber || !prSha || !files) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Missing required fields: repositoryId, prNumber, prSha, files',
-          },
-        },
-        { status: 400 }
       );
     }
 

@@ -28,8 +28,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payload = await request.text();
-    const event = JSON.parse(payload);
+    let payload: string;
+    let event: any;
+    
+    try {
+      payload = await request.text();
+    } catch (error) {
+      log.error(error, 'Failed to read webhook payload');
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_PAYLOAD',
+            message: 'Failed to read webhook payload',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    try {
+      event = JSON.parse(payload);
+    } catch (error) {
+      log.error(error, 'Failed to parse webhook payload as JSON');
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_JSON',
+            message: 'Webhook payload is not valid JSON',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     log.info({
       eventType,

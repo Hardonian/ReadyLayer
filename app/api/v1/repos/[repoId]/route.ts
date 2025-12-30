@@ -54,18 +54,6 @@ export async function GET(
       );
     }
 
-    if (!repo) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'NOT_FOUND',
-            message: `Repository ${params.repoId} not found`,
-          },
-        },
-        { status: 404 }
-      );
-    }
-
     // Verify user belongs to repository's organization (tenant isolation)
     const membership = await prisma.organizationMember.findUnique({
       where: {
@@ -136,7 +124,20 @@ export async function PATCH(
       return authzResponse;
     }
 
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_JSON',
+            message: 'Request body must be valid JSON',
+          },
+        },
+        { status: 400 }
+      );
+    }
     const { config } = body;
 
     // Validate config

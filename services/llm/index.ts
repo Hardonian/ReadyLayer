@@ -52,34 +52,67 @@ class OpenAIProvider implements LLMProvider {
     const model = request.model || 'gpt-4-turbo-preview';
     const url = `${this.baseUrl}/chat/completions`;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: request.prompt }],
-        temperature: request.temperature || 0.7,
-        max_tokens: request.maxTokens || 2000,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: request.prompt }],
+          temperature: request.temperature || 0.7,
+          max_tokens: request.maxTokens || 2000,
+        }),
+        signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        throw new Error('OpenAI API request timed out');
+      }
+      if (error instanceof Error && error.message.includes('fetch')) {
+        throw new Error(`OpenAI API network error: ${error.message}`);
+      }
+      throw error;
     }
 
-    const data = await response.json();
+    if (!response.ok) {
+      let errorMessage = 'Unknown error';
+      try {
+        const error = await response.json();
+        errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
+      } catch {
+        errorMessage = `${response.status} ${response.statusText}`;
+      }
+      throw new Error(`OpenAI API error: ${errorMessage}`);
+    }
+
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (error) {
+      throw new Error('Failed to parse OpenAI API response as JSON');
+    }
+
     const content = data.choices[0]?.message?.content || '';
     const tokensUsed = data.usage?.total_tokens || 0;
+
+    if (!content) {
+      throw new Error('OpenAI API returned empty response');
+    }
 
     // Calculate cost (approximate, varies by model)
     const cost = this.calculateCost(model, tokensUsed);
 
-    // Track cost
-    await this.trackCost(request.organizationId, model, tokensUsed, cost);
+    // Track cost (don't fail on cost tracking errors)
+    try {
+      await this.trackCost(request.organizationId, model, tokensUsed, cost);
+    } catch (error) {
+      // Log but don't fail the request
+      console.error('Failed to track LLM cost:', error);
+    }
 
     return {
       content,
@@ -160,35 +193,68 @@ class AnthropicProvider implements LLMProvider {
     const model = request.model || 'claude-3-opus-20240229';
     const url = `${this.baseUrl}/messages`;
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: request.prompt }],
-        temperature: request.temperature || 0.7,
-        max_tokens: request.maxTokens || 2000,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(`Anthropic API error: ${error.error?.message || 'Unknown error'}`);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'user', content: request.prompt }],
+          temperature: request.temperature || 0.7,
+          max_tokens: request.maxTokens || 2000,
+        }),
+        signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        throw new Error('Anthropic API request timed out');
+      }
+      if (error instanceof Error && error.message.includes('fetch')) {
+        throw new Error(`Anthropic API network error: ${error.message}`);
+      }
+      throw error;
     }
 
-    const data = await response.json();
+    if (!response.ok) {
+      let errorMessage = 'Unknown error';
+      try {
+        const error = await response.json();
+        errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
+      } catch {
+        errorMessage = `${response.status} ${response.statusText}`;
+      }
+      throw new Error(`Anthropic API error: ${errorMessage}`);
+    }
+
+    let data: any;
+    try {
+      data = await response.json();
+    } catch (error) {
+      throw new Error('Failed to parse Anthropic API response as JSON');
+    }
+
     const content = data.content[0]?.text || '';
-    const tokensUsed = data.usage?.input_tokens + data.usage?.output_tokens || 0;
+    const tokensUsed = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0);
+
+    if (!content) {
+      throw new Error('Anthropic API returned empty response');
+    }
 
     // Calculate cost
     const cost = this.calculateCost(model, tokensUsed);
 
-    // Track cost
-    await this.trackCost(request.organizationId, model, tokensUsed, cost);
+    // Track cost (don't fail on cost tracking errors)
+    try {
+      await this.trackCost(request.organizationId, model, tokensUsed, cost);
+    } catch (error) {
+      // Log but don't fail the request
+      console.error('Failed to track LLM cost:', error);
+    }
 
     return {
       content,

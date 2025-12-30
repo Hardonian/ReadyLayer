@@ -141,7 +141,20 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_JSON',
+            message: 'Request body must be valid JSON',
+          },
+        },
+        { status: 400 }
+      );
+    }
     const { organizationId, name, fullName, provider, providerId, url, defaultBranch } = body;
 
     // Validate input
