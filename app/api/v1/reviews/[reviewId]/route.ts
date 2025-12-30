@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
-
-const prisma = new PrismaClient();
 
 /**
  * GET /api/v1/reviews/:reviewId

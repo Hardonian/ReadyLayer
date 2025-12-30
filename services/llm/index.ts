@@ -5,10 +5,8 @@
  * Supports OpenAI and Anthropic APIs with caching and cost tracking
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { createHash } from 'crypto';
-
-const prisma = new PrismaClient();
 
 export interface LLMRequest {
   prompt: string;

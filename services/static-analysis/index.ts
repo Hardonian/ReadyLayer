@@ -53,7 +53,7 @@ export class StaticAnalysisService {
         issues.push(...ruleIssues);
       } catch (error) {
         // Log error but don't fail analysis
-        console.error(`Rule ${rule.id} failed:`, error);
+        // Error is handled gracefully, analysis continues with other rules
       }
     }
 

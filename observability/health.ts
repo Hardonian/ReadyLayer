@@ -5,10 +5,8 @@
  * /ready - Readiness probe
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { createClient } from 'redis';
-
-const prisma = new PrismaClient();
 
 export interface HealthStatus {
   status: 'healthy' | 'unhealthy';

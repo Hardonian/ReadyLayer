@@ -4,10 +4,9 @@
  * Redis-backed durable queue with retries, idempotency, and DLQ
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { createClient } from 'redis';
-
-const prisma = new PrismaClient();
+import { logger } from '../observability/logging';
 
 export interface JobPayload {
   type: string;
@@ -40,14 +39,14 @@ export class QueueService {
     try {
       this.redis = createClient({ url: redisUrl });
       this.redis.on('error', (err) => {
-        console.error('Redis error:', err);
+        logger.error('Redis error', err);
         this.isConnected = false;
       });
 
       await this.redis.connect();
       this.isConnected = true;
     } catch (error) {
-      console.error('Failed to connect to Redis:', error);
+      logger.warn('Failed to connect to Redis, using database fallback', { error });
       // Fallback to database-only queue
       this.isConnected = false;
     }
@@ -114,7 +113,7 @@ export class QueueService {
         const jobData = JSON.parse(result.element);
         await this.processJob(jobData.id, handler);
       } catch (error) {
-        console.error('Queue processing error:', error);
+        logger.error('Queue processing error', error);
         await this.sleep(1000); // Wait before retrying
       }
     }
@@ -236,7 +235,7 @@ export class QueueService {
 
         await this.sleep(1000); // Poll every second
       } catch (error) {
-        console.error('Database queue processing error:', error);
+        logger.error('Database queue processing error', error);
         await this.sleep(5000);
       }
     }
@@ -254,7 +253,7 @@ export class QueueService {
    * Generate job ID
    */
   private generateJobId(): string {
-    return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `job_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   /**

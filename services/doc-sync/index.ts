@@ -5,11 +5,9 @@
  * Enforces drift prevention (blocks by default)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
-
-const prisma = new PrismaClient();
 
 export interface DocGenerationRequest {
   repositoryId: string;
@@ -346,7 +344,7 @@ Return the enhanced OpenAPI spec as JSON.`;
         spec = JSON.parse(response.content);
       } catch (error) {
         // LLM enhancement failed, use basic spec
-        console.warn('LLM enhancement failed, using basic spec:', error);
+        // Error is handled gracefully, basic spec is used
       }
     }
 

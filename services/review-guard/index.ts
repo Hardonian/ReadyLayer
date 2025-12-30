@@ -5,12 +5,10 @@
  * Enforces blocking by default for critical/high issues
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
 import { codeParserService } from '../code-parser';
-
-const prisma = new PrismaClient();
 
 export interface ReviewRequest {
   repositoryId: string;

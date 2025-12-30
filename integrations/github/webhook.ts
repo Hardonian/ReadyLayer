@@ -6,13 +6,8 @@
  */
 
 import { createHmac } from 'crypto';
-import { PrismaClient } from '@prisma/client';
-import { reviewGuardService } from '../../services/review-guard';
-import { testEngineService } from '../../services/test-engine';
-import { docSyncService } from '../../services/doc-sync';
+import { prisma } from '../../lib/prisma';
 import { queueService } from '../../queue';
-
-const prisma = new PrismaClient();
 
 export interface GitHubWebhookEvent {
   action: string;

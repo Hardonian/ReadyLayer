@@ -5,11 +5,9 @@
  * Enforces coverage thresholds (minimum 80%)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
-
-const prisma = new PrismaClient();
 
 export interface TestGenerationRequest {
   repositoryId: string;

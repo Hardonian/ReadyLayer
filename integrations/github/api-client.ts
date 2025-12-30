@@ -4,9 +4,7 @@
  * Wrapper for GitHub REST API with rate limiting and retries
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+// API client doesn't need Prisma
 
 export interface GitHubAPIClient {
   getPR(repo: string, prNumber: number, token: string): Promise<any>;

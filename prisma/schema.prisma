@@ -327,7 +327,7 @@ model CostTracking {
   organizationId String
   date           DateTime @db.Date
   service        String   // llm, api, storage
-  provider       String?  // openai, anthropic, etc.
+  provider       String   // openai, anthropic, etc.
   amount         Decimal  @db.Decimal(10, 4) // Cost in USD
   units          Int      // Tokens, API calls, etc.
   metadata       Json?    // Additional tracking data
