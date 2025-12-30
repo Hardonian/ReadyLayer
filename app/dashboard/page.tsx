@@ -40,11 +40,21 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createSupabaseClient()
 
   useEffect(() => {
     async function fetchDashboardData() {
+      // Check if env vars are available (not during build)
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!url || !key) {
+        setError('Configuration not available')
+        setLoading(false)
+        return
+      }
+
       try {
+        const supabase = createSupabaseClient()
         // Get user session
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
@@ -54,31 +64,51 @@ export default function DashboardPage() {
         }
 
         // Fetch repositories
-        const reposResponse = await fetch('/api/v1/repos?limit=10', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
+        let reposData: { repositories?: Repository[]; pagination?: { total: number } } = {}
+        try {
+          const reposResponse = await fetch('/api/v1/repos?limit=10', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            signal: AbortSignal.timeout(10000), // 10 second timeout
+          })
 
-        if (!reposResponse.ok) {
-          throw new Error('Failed to fetch repositories')
+          if (!reposResponse.ok) {
+            const errorData = await reposResponse.json().catch(() => ({}))
+            throw new Error(errorData.error?.message || 'Failed to fetch repositories')
+          }
+
+          reposData = await reposResponse.json()
+        } catch (error) {
+          if (error instanceof Error && error.name === 'TimeoutError') {
+            throw new Error('Request timed out while fetching repositories')
+          }
+          throw error
         }
 
-        const reposData = await reposResponse.json()
         const repositories = reposData.repositories || []
         setRepos(repositories)
 
         // Fetch recent reviews
         let reviewsData: { reviews?: Review[]; pagination?: { total: number } } = {}
-        const reviewsResponse = await fetch('/api/v1/reviews?limit=10', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
+        try {
+          const reviewsResponse = await fetch('/api/v1/reviews?limit=10', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            signal: AbortSignal.timeout(10000), // 10 second timeout
+          })
 
-        if (reviewsResponse.ok) {
-          reviewsData = await reviewsResponse.json()
-          setReviews(reviewsData.reviews || [])
+          if (reviewsResponse.ok) {
+            reviewsData = await reviewsResponse.json()
+            setReviews(reviewsData.reviews || [])
+          } else {
+            // Log but don't fail - reviews are optional
+            console.warn('Failed to fetch reviews:', reviewsResponse.status)
+          }
+        } catch (error) {
+          // Log but don't fail - reviews are optional
+          console.warn('Error fetching reviews:', error)
         }
 
         // Calculate stats
@@ -101,7 +131,7 @@ export default function DashboardPage() {
     }
 
     fetchDashboardData()
-  }, [supabase])
+  }, [])
 
   if (loading) {
     return (

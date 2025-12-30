@@ -8,7 +8,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  // Webhook raw body configuration for GitHub webhooks
+  // Force middleware to use Node.js runtime (not Edge)
+  // This is required because middleware uses Node.js modules (crypto, prisma, etc.)
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',

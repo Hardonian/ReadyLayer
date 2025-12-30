@@ -146,7 +146,21 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (error) {
+      log.error(error, 'Failed to parse request body as JSON');
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_JSON',
+            message: 'Request body must be valid JSON',
+          },
+        },
+        { status: 400 }
+      );
+    }
     const { config, rawConfig } = body;
 
     // Validate and update config
