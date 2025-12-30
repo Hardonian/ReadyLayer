@@ -1,3 +1,4 @@
+export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { githubWebhookHandler } from '../../../../integrations/github/webhook';
 import { logger } from '../../../../observability/logging';

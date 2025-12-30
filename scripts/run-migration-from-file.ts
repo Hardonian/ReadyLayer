@@ -6,7 +6,6 @@
 
 import { prisma } from '../lib/prisma';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 
 async function runMigrationFromFile(migrationFilePath: string) {
   console.log(`🚀 Running migration from: ${migrationFilePath}\n`);
