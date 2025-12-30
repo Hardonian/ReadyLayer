@@ -16,13 +16,26 @@ function handleMiddlewareError(
   const errorMessage = error instanceof Error ? error.message : 'Unknown error'
   const errorStack = error instanceof Error ? error.stack : undefined
 
-  logger.error(error, {
-    message: `Middleware error in ${context}`,
-    path: request.nextUrl.pathname,
-    method: request.method,
-    errorMessage,
-    errorStack,
-  })
+  // Safely log error - don't let logger throw
+  try {
+    logger.error(error, {
+      message: `Middleware error in ${context}`,
+      path: request.nextUrl.pathname,
+      method: request.method,
+      errorMessage,
+      errorStack,
+    })
+  } catch (logError) {
+    // If logger fails, use console as fallback
+    console.error('Middleware error:', {
+      context,
+      path: request.nextUrl.pathname,
+      method: request.method,
+      error: errorMessage,
+      stack: errorStack,
+      loggerError: logError,
+    })
+  }
 
   // For API routes, return JSON error response
   if (request.nextUrl.pathname.startsWith('/api/')) {
@@ -80,7 +93,11 @@ function createSupabaseClientSafely(request: NextRequest): {
           try {
             return request.cookies.getAll()
           } catch (error) {
-            logger.warn('Failed to get cookies', { error })
+            try {
+              logger.warn('Failed to get cookies', { error })
+            } catch {
+              // Logger failed, continue silently
+            }
             return []
           }
         },
@@ -96,7 +113,11 @@ function createSupabaseClientSafely(request: NextRequest): {
               response.cookies.set(name, value, options)
             )
           } catch (error) {
-            logger.warn('Failed to set cookies', { error })
+            try {
+              logger.warn('Failed to set cookies', { error })
+            } catch {
+              // Logger failed, continue silently
+            }
           }
         },
       },
@@ -111,18 +132,51 @@ function createSupabaseClientSafely(request: NextRequest): {
   }
 }
 
-export async function middleware(request: NextRequest) {
+// Wrap entire middleware in a safety net to prevent any unhandled errors
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  // Ultimate safety: wrap everything to prevent MIDDLEWARE_INVOCATION_FAILED
+  try {
+    return await executeMiddleware(request)
+  } catch (error) {
+    // This catch should never be hit if executeMiddleware handles everything,
+    // but it's here as a final safety net
+    try {
+      return handleMiddlewareError(error, request, 'middleware top-level')
+    } catch (fallbackError) {
+      // Even error handling failed - return a basic response
+      return new NextResponse(
+        JSON.stringify({
+          error: {
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'An error occurred',
+          },
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    }
+  }
+}
+
+async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
   try {
     // Health and ready endpoints are public - handle early to avoid any processing
     if (
       request.nextUrl.pathname === '/api/health' ||
       request.nextUrl.pathname === '/api/ready'
     ) {
-      return NextResponse.next({
-        request: {
-          headers: request.headers,
-        },
-      })
+      try {
+        return NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        })
+      } catch (error) {
+        // If NextResponse creation fails, return a basic response
+        return new NextResponse(null, { status: 200 })
+      }
     }
 
     // Create Supabase client with error handling
@@ -136,17 +190,25 @@ export async function middleware(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/auth/')
       ) {
         // Allow public routes even if Supabase is down
-        return NextResponse.next({
-          request: {
-            headers: request.headers,
-          },
-        })
+        try {
+          return NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+        } catch (error) {
+          return new NextResponse(null, { status: 200 })
+        }
       }
 
-      logger.error(supabaseError, {
-        message: 'Failed to create Supabase client',
-        path: request.nextUrl.pathname,
-      })
+      try {
+        logger.error(supabaseError, {
+          message: 'Failed to create Supabase client',
+          path: request.nextUrl.pathname,
+        })
+      } catch {
+        // Logger failed, continue
+      }
 
       if (request.nextUrl.pathname.startsWith('/api/')) {
         return NextResponse.json(
@@ -161,18 +223,28 @@ export async function middleware(request: NextRequest) {
       }
 
       // For page routes, try to continue but log the error
-      return NextResponse.next({
+      try {
+        return NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        })
+      } catch (error) {
+        return new NextResponse(null, { status: 200 })
+      }
+    }
+
+    let response: NextResponse
+    try {
+      response = NextResponse.next({
         request: {
           headers: request.headers,
         },
       })
+    } catch (error) {
+      // If response creation fails, create a basic response
+      response = new NextResponse(null, { status: 200 })
     }
-
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    })
 
     // Apply rate limiting to all API routes
     if (request.nextUrl.pathname.startsWith('/api/')) {
@@ -183,14 +255,18 @@ export async function middleware(request: NextRequest) {
         }
       } catch (error) {
         // Rate limiting failed - log but allow request through (fail open)
-        logger.warn('Rate limit check failed, allowing request', {
-          error: error instanceof Error ? {
-            message: error.message,
-            stack: error.stack,
-            name: error.name,
-          } : error,
-          path: request.nextUrl.pathname,
-        })
+        try {
+          logger.warn('Rate limit check failed, allowing request', {
+            error: error instanceof Error ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            } : error,
+            path: request.nextUrl.pathname,
+          })
+        } catch {
+          // Logger failed, continue
+        }
         // Continue processing
       }
     }
@@ -205,14 +281,18 @@ export async function middleware(request: NextRequest) {
         } = await supabase.auth.getUser()
 
         if (authError) {
-          logger.warn('Auth check failed', {
-            error: authError instanceof Error ? {
-              message: authError.message,
-              stack: authError.stack,
-              name: authError.name,
-            } : authError,
-            path: request.nextUrl.pathname,
-          })
+          try {
+            logger.warn('Auth check failed', {
+              error: authError instanceof Error ? {
+                message: authError.message,
+                stack: authError.stack,
+                name: authError.name,
+              } : authError,
+              path: request.nextUrl.pathname,
+            })
+          } catch {
+            // Logger failed, continue
+          }
           // Continue to check API key
         }
 
@@ -249,10 +329,14 @@ export async function middleware(request: NextRequest) {
           }
         } catch (authzError) {
           // Authorization check failed - return error response
-          logger.error(authzError, {
-            message: 'Authorization check failed',
-            path: request.nextUrl.pathname,
-          })
+          try {
+            logger.error(authzError, {
+              message: 'Authorization check failed',
+              path: request.nextUrl.pathname,
+            })
+          } catch {
+            // Logger failed, continue
+          }
           return NextResponse.json(
             {
               error: {
@@ -287,14 +371,18 @@ export async function middleware(request: NextRequest) {
       } = await supabase.auth.getUser()
 
       if (getUserError) {
-        logger.warn('Failed to get user for page route', {
-          error: getUserError instanceof Error ? {
-            message: getUserError.message,
-            stack: getUserError.stack,
-            name: getUserError.name,
-          } : getUserError,
-          path: request.nextUrl.pathname,
-        })
+        try {
+          logger.warn('Failed to get user for page route', {
+            error: getUserError instanceof Error ? {
+              message: getUserError.message,
+              stack: getUserError.stack,
+              name: getUserError.name,
+            } : getUserError,
+            path: request.nextUrl.pathname,
+          })
+        } catch {
+          // Logger failed, continue
+        }
         // Redirect to sign in on auth error
         const signInUrl = new URL('/auth/signin', request.url)
         signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
@@ -308,14 +396,18 @@ export async function middleware(request: NextRequest) {
       }
     } catch (authError) {
       // Auth check failed for page route - redirect to sign in
-      logger.warn('Auth check failed for page route', {
-        error: authError instanceof Error ? {
-          message: authError.message,
-          stack: authError.stack,
-          name: authError.name,
-        } : authError,
-        path: request.nextUrl.pathname,
-      })
+      try {
+        logger.warn('Auth check failed for page route', {
+          error: authError instanceof Error ? {
+            message: authError.message,
+            stack: authError.stack,
+            name: authError.name,
+          } : authError,
+          path: request.nextUrl.pathname,
+        })
+      } catch {
+        // Logger failed, continue
+      }
       const signInUrl = new URL('/auth/signin', request.url)
       signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
       return NextResponse.redirect(signInUrl)
