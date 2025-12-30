@@ -74,12 +74,23 @@ Required variables:
 # Generate Prisma client
 npm run prisma:generate
 
-# Run migrations
+# Run migrations (use canonical Supabase migration for production)
+npm run db:reconcile
+
+# Or use Prisma migrations for local development
 npm run prisma:migrate
+
+# Verify database contract matches expected schema
+npm run db:verify
+
+# Run smoke tests
+npm run db:smoke
 
 # (Optional) Seed database
 npm run prisma:seed
 ```
+
+**Backend Contract Verification**: See `BACKEND-CONTRACT-VERIFICATION.md` for details on verifying that your Supabase database matches the expected schema, RLS policies, and functions.
 
 ### 4. Start Development Server
 

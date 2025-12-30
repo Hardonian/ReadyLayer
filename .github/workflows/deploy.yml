@@ -27,6 +27,15 @@ jobs:
       - name: Type check
         run: npm run type-check
 
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Verify database contract (dry-run)
+        run: npm run db:verify || echo "⚠️ Database verification failed - check db-verification-report.json"
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Build
         run: npm run build
         env:
