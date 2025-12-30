@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 
-export default function SignInPage() {
+function SignInContent() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const [loading, setLoading] = useState(false)
@@ -65,5 +65,25 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen flex-col items-center justify-center p-24">
+        <div className="z-10 max-w-md w-full">
+          <h1 className="text-4xl font-bold mb-4 text-center">ReadyLayer</h1>
+          <p className="text-xl mb-8 text-center text-gray-600">
+            Sign in to continue
+          </p>
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <p className="text-center text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   )
 }

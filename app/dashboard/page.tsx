@@ -40,11 +40,21 @@ export default function DashboardPage() {
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createSupabaseClient()
 
   useEffect(() => {
     async function fetchDashboardData() {
+      // Check if env vars are available (not during build)
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!url || !key) {
+        setError('Configuration not available')
+        setLoading(false)
+        return
+      }
+
       try {
+        const supabase = createSupabaseClient()
         // Get user session
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
@@ -121,7 +131,7 @@ export default function DashboardPage() {
     }
 
     fetchDashboardData()
-  }, [supabase])
+  }, [])
 
   if (loading) {
     return (
