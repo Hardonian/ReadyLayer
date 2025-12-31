@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { reviewGuardService } from '../../../../services/review-guard';
+import { reviewGuardService, ReviewConfig } from '../../../../services/review-guard';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
 import { requireAuth } from '../../../../lib/auth';
@@ -77,6 +77,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate and type files array
+    const validatedFiles = files.filter((file): file is { path: string; content: string; beforeContent?: string | null } => {
+      return (
+        typeof file === 'object' &&
+        file !== null &&
+        'path' in file &&
+        'content' in file &&
+        typeof (file as { path: unknown }).path === 'string' &&
+        typeof (file as { content: unknown }).content === 'string' &&
+        (!('beforeContent' in file) || 
+         (file as { beforeContent: unknown }).beforeContent === null ||
+         typeof (file as { beforeContent: unknown }).beforeContent === 'string')
+      );
+    });
+
+    if (validatedFiles.length !== files.length) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid files array: each file must have path (string) and content (string)',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     // Verify user belongs to repository's organization (tenant isolation)
     const repo = await prisma.repository.findUnique({
       where: { id: repositoryId as string },
@@ -127,6 +154,38 @@ export async function POST(request: NextRequest) {
 
     log.info({ repositoryId: repositoryId as string, prNumber }, 'Starting review');
 
+    // Validate and type config if provided
+    let validatedConfig: ReviewConfig | undefined;
+    if (config !== undefined) {
+      if (typeof config !== 'object' || config === null || Array.isArray(config)) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Config must be an object',
+            },
+          },
+          { status: 400 }
+        );
+      }
+      const configObj = config as Record<string, unknown>;
+      validatedConfig = {
+        failOnCritical: configObj.failOnCritical === false ? false : true, // Always true by default
+        failOnHigh: configObj.failOnHigh === false ? false : true, // Default true
+        failOnMedium: configObj.failOnMedium === true ? true : false,
+        failOnLow: configObj.failOnLow === true ? true : false,
+        enabledRules: Array.isArray(configObj.enabledRules) 
+          ? configObj.enabledRules.filter((r): r is string => typeof r === 'string')
+          : undefined,
+        disabledRules: Array.isArray(configObj.disabledRules)
+          ? configObj.disabledRules.filter((r): r is string => typeof r === 'string')
+          : undefined,
+        excludedPaths: Array.isArray(configObj.excludedPaths)
+          ? configObj.excludedPaths.filter((p): p is string => typeof p === 'string')
+          : undefined,
+      };
+    }
+
     // Perform review
     const result = await reviewGuardService.review({
       repositoryId: repositoryId as string,
@@ -134,8 +193,8 @@ export async function POST(request: NextRequest) {
       prSha: prSha as string,
       prTitle: prTitle as string | undefined,
       diff: diff as string | undefined,
-      files: files as unknown[],
-      config: config as Record<string, unknown> | undefined,
+      files: validatedFiles,
+      config: validatedConfig,
     });
 
     metrics.increment('reviews.completed', { status: result.status });

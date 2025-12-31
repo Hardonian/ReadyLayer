@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { githubWebhookHandler } from '../../../../integrations/github/webhook';
+import { githubWebhookHandler, GitHubWebhookEvent } from '../../../../integrations/github/webhook';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
 
@@ -73,14 +73,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate event structure
+    const eventObj = event as Record<string, unknown>;
+    if (typeof eventObj.action !== 'string') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_EVENT',
+            message: 'Webhook event must have an action property',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     log.info({
       eventType,
       installationId,
-      action: (event as Record<string, unknown>).action,
+      action: eventObj.action,
     }, 'Received GitHub webhook');
 
     // Handle event
-    await githubWebhookHandler.handleEvent(event as Record<string, unknown>, installationId, signature);
+    await githubWebhookHandler.handleEvent(event as GitHubWebhookEvent, installationId, signature);
 
     metrics.increment('webhooks.received', { provider: 'github', event: eventType });
 
