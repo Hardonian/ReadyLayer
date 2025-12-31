@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
@@ -208,12 +209,12 @@ export async function PATCH(
     await prisma.repositoryConfig.upsert({
       where: { repositoryId: params.repoId },
       update: {
-        config: config as Record<string, unknown>,
+        config: config as Prisma.InputJsonValue,
         version: { increment: 1 },
       },
       create: {
         repositoryId: params.repoId,
-        config: config as Record<string, unknown>,
+        config: config as Prisma.InputJsonValue,
       },
     });
 
@@ -221,7 +222,7 @@ export async function PATCH(
 
     return NextResponse.json({
       id: params.repoId,
-      config: config as Record<string, unknown>,
+      config: config as Prisma.JsonValue,
       updatedAt: new Date(),
     });
   } catch (error) {
