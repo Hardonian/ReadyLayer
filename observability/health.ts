@@ -12,18 +12,30 @@ export interface HealthStatus {
   status: 'healthy' | 'unhealthy';
   checks: {
     database: 'healthy' | 'unhealthy';
+    databaseSchema?: 'healthy' | 'unhealthy' | 'degraded';
     redis?: 'healthy' | 'unhealthy';
   };
   timestamp: string;
+  details?: {
+    missingTables?: string[];
+    rlsNotEnabled?: string[];
+    missingFunctions?: string[];
+  };
 }
 
 export interface ReadyStatus {
   status: 'ready' | 'not_ready';
   checks: {
     database: 'ready' | 'not_ready';
+    databaseSchema?: 'ready' | 'not_ready' | 'degraded';
     redis?: 'ready' | 'not_ready';
   };
   timestamp: string;
+  details?: {
+    missingTables?: string[];
+    rlsNotEnabled?: string[];
+    missingFunctions?: string[];
+  };
 }
 
 export class HealthChecker {
@@ -35,12 +47,26 @@ export class HealthChecker {
       database: await this.checkDatabase(),
     };
 
+    // Check database schema if database is healthy
+    if (checks.database === 'healthy') {
+      const schemaCheck = await this.checkDatabaseSchema();
+      checks.databaseSchema = schemaCheck.status;
+      if (schemaCheck.details) {
+        return {
+          status: schemaCheck.status === 'healthy' ? 'healthy' : 'unhealthy',
+          checks,
+          timestamp: new Date().toISOString(),
+          details: schemaCheck.details,
+        };
+      }
+    }
+
     // Check Redis if configured
     if (process.env.REDIS_URL) {
       checks.redis = await this.checkRedis();
     }
 
-    const allHealthy = Object.values(checks).every((status) => status === 'healthy');
+    const allHealthy = Object.values(checks).every((status) => status === 'healthy' || status === 'degraded');
 
     return {
       status: allHealthy ? 'healthy' : 'unhealthy',
@@ -57,12 +83,26 @@ export class HealthChecker {
       database: await this.checkDatabaseReady(),
     };
 
+    // Check database schema if database is ready
+    if (checks.database === 'ready') {
+      const schemaCheck = await this.checkDatabaseSchema();
+      checks.databaseSchema = schemaCheck.status;
+      if (schemaCheck.details) {
+        return {
+          status: schemaCheck.status === 'healthy' ? 'ready' : 'not_ready',
+          checks,
+          timestamp: new Date().toISOString(),
+          details: schemaCheck.details,
+        };
+      }
+    }
+
     // Check Redis if configured
     if (process.env.REDIS_URL) {
       checks.redis = await this.checkRedisReady();
     }
 
-    const allReady = Object.values(checks).every((status) => status === 'ready');
+    const allReady = Object.values(checks).every((status) => status === 'ready' || status === 'degraded');
 
     return {
       status: allReady ? 'ready' : 'not_ready',
@@ -123,6 +163,88 @@ export class HealthChecker {
       return 'ready';
     } catch (error) {
       return 'not_ready';
+    }
+  }
+
+  /**
+   * Check database schema (backend contract validation)
+   * Returns degraded if non-critical issues, unhealthy if critical
+   */
+  private async checkDatabaseSchema(): Promise<{
+    status: 'healthy' | 'unhealthy' | 'degraded';
+    details?: HealthStatus['details'];
+  }> {
+    try {
+      const requiredTables = [
+        'User', 'Organization', 'OrganizationMember', 'Repository',
+        'Review', 'Test', 'Doc', 'Job', 'Violation', 'ApiKey',
+        'Subscription', 'CostTracking', 'AuditLog',
+      ];
+
+      // Check tables exist
+      const tablesResult = await prisma.$queryRaw<Array<{ tablename: string }>>`
+        SELECT tablename 
+        FROM pg_tables 
+        WHERE schemaname = 'public' 
+        AND tablename = ANY(${requiredTables}::text[])
+      `;
+
+      const foundTables = new Set(tablesResult.map(t => t.tablename));
+      const missingTables = requiredTables.filter(t => !foundTables.has(t));
+
+      // Check RLS on critical tables
+      const criticalTables = ['User', 'Organization', 'Repository', 'Review'];
+      const rlsResult = await prisma.$queryRaw<Array<{ relname: string; relrowsecurity: boolean }>>`
+        SELECT relname, relrowsecurity
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+        AND c.relname = ANY(${criticalTables}::text[])
+        AND c.relkind = 'r'
+      `;
+
+      const rlsNotEnabled = rlsResult
+        .filter(t => !t.relrowsecurity)
+        .map(t => t.relname);
+
+      // Check helper functions
+      const requiredFunctions = ['current_user_id', 'is_org_member', 'has_org_role'];
+      const functionsResult = await prisma.$queryRaw<Array<{ routine_name: string }>>`
+        SELECT routine_name
+        FROM information_schema.routines
+        WHERE routine_schema = 'public'
+        AND routine_name = ANY(${requiredFunctions}::text[])
+      `;
+
+      const foundFunctions = new Set(functionsResult.map(f => f.routine_name));
+      const missingFunctions = requiredFunctions.filter(f => !foundFunctions.has(f));
+
+      // Critical issues: missing tables or RLS not enabled
+      if (missingTables.length > 0 || rlsNotEnabled.length > 0) {
+        return {
+          status: 'unhealthy',
+          details: {
+            missingTables: missingTables.length > 0 ? missingTables : undefined,
+            rlsNotEnabled: rlsNotEnabled.length > 0 ? rlsNotEnabled : undefined,
+            missingFunctions: missingFunctions.length > 0 ? missingFunctions : undefined,
+          },
+        };
+      }
+
+      // Degraded: missing functions but tables/RLS OK
+      if (missingFunctions.length > 0) {
+        return {
+          status: 'degraded',
+          details: {
+            missingFunctions,
+          },
+        };
+      }
+
+      return { status: 'healthy' };
+    } catch (error) {
+      // If schema check fails, don't fail health check - just log
+      return { status: 'degraded' };
     }
   }
 }

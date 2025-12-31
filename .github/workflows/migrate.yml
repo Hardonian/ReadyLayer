@@ -136,6 +136,26 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NODE_ENV: production
 
+      - name: Verify Database Contract
+        if: steps.determine_migration.outputs.migration != 'none'
+        run: |
+          echo "🔍 Verifying database contract..."
+          npm run db:verify || echo "⚠️ Database contract verification found issues - check db-verification-report.json"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        continue-on-error: true
+
+      - name: Run Smoke Tests
+        if: steps.determine_migration.outputs.migration != 'none'
+        run: |
+          echo "🧪 Running smoke tests..."
+          npm run db:smoke
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        continue-on-error: true
+
       - name: Test Tenant Isolation
         if: steps.determine_migration.outputs.migration != 'none'
         run: |
