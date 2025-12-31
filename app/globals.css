@@ -3,49 +3,223 @@
 @tailwind utilities;
 
 @layer base {
+  /**
+   * LIGHT MODE - Professional, GitHub/IDE-grade palette
+   * Softened whites, clear hierarchy, reduced chroma
+   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    /* SURFACES - Layered elevation system */
+    --surface: 0 0% 100%;                    /* Base app background - pure white */
+    --surface-muted: 210 40% 98%;           /* Subtle panels, nav backgrounds */
+    --surface-raised: 0 0% 100%;            /* Cards, elevated panels */
+    --surface-overlay: 0 0% 100%;           /* Modals, popovers, dropdowns */
+    --surface-hover: 210 40% 96%;           /* Hover state for interactive surfaces */
+    
+    /* TEXT - Clear hierarchy */
+    --text: 222.2 84% 4.9%;                 /* Primary text - near black */
+    --text-muted: 215.4 16.3% 46.9%;        /* Secondary text - medium gray */
+    --text-subtle: 215.4 16.3% 65%;         /* Tertiary/meta text - lighter gray */
+    --text-inverse: 0 0% 100%;              /* Text on accent/brand surfaces */
+    
+    /* BORDERS & DIVIDERS */
+    --border: 214.3 31.8% 91.4%;            /* Subtle borders */
+    --border-strong: 214.3 31.8% 85%;        /* Emphasis borders */
+    --ring: 221.2 83.2% 53.3%;              /* Focus ring */
+    
+    /* ACCENT / BRAND */
+    --accent: 221.2 83.2% 53.3%;            /* Primary action color */
+    --accent-hover: 221.2 83.2% 48%;        /* Hover state */
+    --accent-muted: 221.2 83.2% 96%;        /* Background tint */
+    --accent-foreground: 0 0% 100%;         /* Text on accent */
+    
+    /* STATUS COLORS - WCAG AA compliant */
+    --success: 142 71% 45%;                 /* Success state */
+    --success-foreground: 0 0% 100%;        /* Text on success */
+    --success-muted: 142 71% 95%;           /* Success background */
+    
+    --warning: 38 92% 50%;                  /* Warning state */
+    --warning-foreground: 0 0% 100%;        /* Text on warning */
+    --warning-muted: 38 92% 95%;            /* Warning background */
+    
+    --danger: 0 84.2% 60.2%;                /* Danger/error state */
+    --danger-foreground: 0 0% 100%;         /* Text on danger */
+    --danger-muted: 0 84.2% 96%;            /* Danger background */
+    
+    --info: 217 91% 60%;                    /* Info state */
+    --info-foreground: 0 0% 100%;           /* Text on info */
+    --info-muted: 217 91% 96%;              /* Info background */
+    
+    /* LEGACY COMPATIBILITY - Map to new tokens */
+    --background: var(--surface);
+    --foreground: var(--text);
+    --card: var(--surface-raised);
+    --card-foreground: var(--text);
+    --popover: var(--surface-overlay);
+    --popover-foreground: var(--text);
+    --primary: var(--accent);
+    --primary-foreground: var(--accent-foreground);
+    --secondary: var(--surface-muted);
+    --secondary-foreground: var(--text);
+    --muted: var(--surface-muted);
+    --muted-foreground: var(--text-muted);
+    --destructive: var(--danger);
+    --destructive-foreground: var(--danger-foreground);
+    --input: var(--border);
+    
+    /* RADIUS */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius: var(--radius-md);
   }
 
+  /**
+   * DARK MODE - Separately tuned, lower chroma, clearer hierarchy
+   * Not inverted light mode - carefully crafted dark palette
+   */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* SURFACES - Dark mode surfaces with subtle elevation */
+    --surface: 222.2 84% 4.9%;              /* Base - very dark blue-gray */
+    --surface-muted: 217.2 32.6% 8%;        /* Subtle panels - slightly lighter */
+    --surface-raised: 217.2 32.6% 12%;      /* Cards - elevated */
+    --surface-overlay: 217.2 32.6% 15%;     /* Modals - highest elevation */
+    --surface-hover: 217.2 32.6% 18%;      /* Hover state */
+    
+    /* TEXT - Clear hierarchy in dark mode */
+    --text: 210 40% 98%;                    /* Primary - near white */
+    --text-muted: 215 20.2% 65.1%;         /* Secondary - medium gray */
+    --text-subtle: 215 20.2% 50%;          /* Tertiary - darker gray */
+    --text-inverse: 222.2 84% 4.9%;        /* Text on accent */
+    
+    /* BORDERS - More visible in dark mode */
+    --border: 217.2 32.6% 20%;              /* Subtle borders */
+    --border-strong: 217.2 32.6% 30%;       /* Emphasis borders */
+    --ring: 224.3 76.3% 48%;               /* Focus ring - brighter */
+    
+    /* ACCENT / BRAND - Adjusted for dark mode */
+    --accent: 217.2 91.2% 59.8%;            /* Primary action - brighter */
+    --accent-hover: 217.2 91.2% 65%;       /* Hover state */
+    --accent-muted: 217.2 32.6% 18%;        /* Background tint */
+    --accent-foreground: 222.2 47.4% 11.2%; /* Text on accent */
+    
+    /* STATUS COLORS - Dark mode adjusted */
+    --success: 142 71% 50%;                 /* Success - brighter */
+    --success-foreground: 0 0% 100%;        /* Text on success */
+    --success-muted: 142 71% 15%;           /* Success background */
+    
+    --warning: 38 92% 55%;                  /* Warning - brighter */
+    --warning-foreground: 0 0% 100%;        /* Text on warning */
+    --warning-muted: 38 92% 15%;            /* Warning background */
+    
+    --danger: 0 72% 50%;                    /* Danger - adjusted */
+    --danger-foreground: 0 0% 100%;         /* Text on danger */
+    --danger-muted: 0 72% 15%;              /* Danger background */
+    
+    --info: 217 91% 65%;                    /* Info - brighter */
+    --info-foreground: 0 0% 100%;           /* Text on info */
+    --info-muted: 217 91% 15%;              /* Info background */
+    
+    /* LEGACY COMPATIBILITY */
+    --background: var(--surface);
+    --foreground: var(--text);
+    --card: var(--surface-raised);
+    --card-foreground: var(--text);
+    --popover: var(--surface-overlay);
+    --popover-foreground: var(--text);
+    --primary: var(--accent);
+    --primary-foreground: var(--accent-foreground);
+    --secondary: var(--surface-muted);
+    --secondary-foreground: var(--text);
+    --muted: var(--surface-muted);
+    --muted-foreground: var(--text-muted);
+    --destructive: var(--danger);
+    --destructive-foreground: var(--danger-foreground);
+    --input: var(--border);
+  }
+
+  /**
+   * HIGH CONTRAST MODE - Maximum accessibility
+   */
+  .hc {
+    /* SURFACES - Higher contrast */
+    --surface: 0 0% 100%;
+    --surface-muted: 0 0% 95%;
+    --surface-raised: 0 0% 100%;
+    --surface-overlay: 0 0% 100%;
+    --surface-hover: 0 0% 90%;
+    
+    /* TEXT - Maximum contrast */
+    --text: 0 0% 0%;
+    --text-muted: 0 0% 30%;
+    --text-subtle: 0 0% 40%;
+    --text-inverse: 0 0% 100%;
+    
+    /* BORDERS - Very visible */
+    --border: 0 0% 60%;
+    --border-strong: 0 0% 40%;
+    --ring: 221.2 83.2% 40%;
+    
+    /* ACCENT - High contrast */
+    --accent: 221.2 83.2% 40%;
+    --accent-hover: 221.2 83.2% 35%;
+    --accent-muted: 221.2 83.2% 95%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* STATUS - High contrast */
+    --success: 142 71% 35%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 142 71% 95%;
+    
+    --warning: 38 92% 40%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 38 92% 95%;
+    
+    --danger: 0 84.2% 45%;
+    --danger-foreground: 0 0% 100%;
+    --danger-muted: 0 84.2% 95%;
+    
+    --info: 217 91% 45%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 217 91% 95%;
+  }
+
+  .dark.hc {
+    /* HIGH CONTRAST DARK MODE */
+    --surface: 0 0% 0%;
+    --surface-muted: 0 0% 10%;
+    --surface-raised: 0 0% 15%;
+    --surface-overlay: 0 0% 20%;
+    --surface-hover: 0 0% 25%;
+    
+    --text: 0 0% 100%;
+    --text-muted: 0 0% 80%;
+    --text-subtle: 0 0% 70%;
+    --text-inverse: 0 0% 0%;
+    
+    --border: 0 0% 50%;
+    --border-strong: 0 0% 70%;
+    --ring: 224.3 76.3% 60%;
+    
+    --accent: 217.2 91.2% 70%;
+    --accent-hover: 217.2 91.2% 75%;
+    --accent-muted: 217.2 32.6% 25%;
+    --accent-foreground: 0 0% 0%;
+    
+    --success: 142 71% 60%;
+    --success-foreground: 0 0% 0%;
+    --success-muted: 142 71% 20%;
+    
+    --warning: 38 92% 65%;
+    --warning-foreground: 0 0% 0%;
+    --warning-muted: 38 92% 20%;
+    
+    --danger: 0 72% 60%;
+    --danger-foreground: 0 0% 0%;
+    --danger-muted: 0 72% 20%;
+    
+    --info: 217 91% 70%;
+    --info-foreground: 0 0% 0%;
+    --info-muted: 217 91% 20%;
   }
 }
 
@@ -53,9 +227,24 @@
   * {
     @apply border-border;
   }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-surface text-text-primary;
     font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+  
+  /**
+   * Ensure interactive elements have proper focus styles
+   */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-surface;
+  }
+  
+  /**
+   * Disabled state styling
+   */
+  :disabled {
+    @apply opacity-50 cursor-not-allowed;
   }
 }
 
@@ -70,15 +259,6 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
-  }
-}
-
-/**
- * Focus visible styles for accessibility
- */
-@layer base {
-  :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 

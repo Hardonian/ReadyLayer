@@ -31,7 +31,7 @@ export function LoadingSpinner({
     >
       <motion.div
         className={cn(
-          'border-2 border-primary/20 border-t-primary rounded-full',
+          'border-2 border-accent/20 border-t-accent rounded-full',
           sizeClasses[size]
         )}
         animate={{ rotate: 360 }}
@@ -64,7 +64,7 @@ export function LoadingState({
       animate="visible"
     >
       <LoadingSpinner size="lg" className="mb-4" />
-      <p className="text-sm text-muted-foreground">{message}</p>
+      <p className="text-sm text-text-muted">{message}</p>
     </motion.div>
   )
 }
@@ -79,7 +79,7 @@ export function Skeleton({
 }: Omit<React.HTMLAttributes<HTMLDivElement>, 'onAnimationStart' | 'onDrag' | 'onDragStart' | 'onDragEnd'>) {
   return (
     <motion.div
-      className={cn('animate-pulse rounded-md bg-muted', className)}
+      className={cn('animate-pulse rounded-md bg-surface-muted', className)}
       variants={fadeIn}
       initial="hidden"
       animate="visible"
@@ -121,7 +121,7 @@ export function SkeletonText({
  */
 export function CardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-lg border bg-card p-6', className)}>
+    <div className={cn('rounded-lg border border-border-subtle bg-surface-raised p-6', className)}>
       <Skeleton className="h-6 w-1/3 mb-4" />
       <SkeletonText lines={3} />
     </div>
