@@ -277,7 +277,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Active Repositories</CardTitle>
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-success" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{stats.activeRepos}</div>
@@ -290,7 +290,7 @@ export default function DashboardPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>
-                <FileText className="h-4 w-4 text-purple-600" />
+                <FileText className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{stats.totalReviews}</div>
@@ -336,7 +336,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="bg-background/50 p-4 rounded-lg">
                   <div className="text-sm font-medium mb-1">Transparency</div>
-                  <div className="text-2xl font-bold text-green-600">100%</div>
+                  <div className="text-2xl font-bold text-success">100%</div>
                   <div className="text-xs text-muted-foreground mt-1">Every check is traceable and verifiable</div>
                 </div>
               </div>
@@ -379,7 +379,7 @@ export default function DashboardPage() {
                         className="block"
                       >
                         <motion.div
-                          className="p-4 border rounded-lg hover:bg-accent transition-colors"
+                          className="p-4 border border-border-subtle rounded-lg hover:bg-surface-hover transition-colors"
                           whileHover={{ x: 2 }}
                         >
                           <div className="flex justify-between items-start">
@@ -387,7 +387,7 @@ export default function DashboardPage() {
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-semibold">{repo.fullName}</h3>
                                 {repo.enabled && (
-                                  <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded flex items-center gap-1">
+                                  <span className="text-xs px-2 py-0.5 bg-success-muted text-success-foreground rounded flex items-center gap-1">
                                     <CheckCircle2 className="h-3 w-3" />
                                     Verified
                                   </span>
@@ -397,8 +397,8 @@ export default function DashboardPage() {
                             </div>
                             <span className={`px-2 py-1 text-xs rounded ${
                               repo.enabled 
-                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' 
-                                : 'bg-muted text-muted-foreground'
+                                ? 'bg-success-muted text-success-foreground' 
+                                : 'bg-surface-muted text-text-muted'
                             }`}>
                               {repo.enabled ? 'Active' : 'Inactive'}
                             </span>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                         className="block"
                       >
                         <motion.div
-                          className="p-4 border rounded-lg hover:bg-accent transition-colors"
+                          className="p-4 border border-border-subtle rounded-lg hover:bg-surface-hover transition-colors"
                           whileHover={{ x: 2 }}
                         >
                           <div className="flex justify-between items-start">
@@ -460,9 +460,9 @@ export default function DashboardPage() {
                               </p>
                             </div>
                             <span className={`px-2 py-1 text-xs rounded ${
-                              review.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200' :
-                              review.status === 'blocked' ? 'bg-destructive/10 text-destructive' :
-                              'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200'
+                              review.status === 'completed' ? 'bg-success-muted text-success-foreground' :
+                              review.status === 'blocked' ? 'bg-danger-muted text-danger-foreground' :
+                              'bg-warning-muted text-warning-foreground'
                             }`}>
                               {review.status}
                             </span>

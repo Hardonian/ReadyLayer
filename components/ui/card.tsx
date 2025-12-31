@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils'
 import { fadeIn } from '@/lib/design/motion'
 
 const cardVariants = cva(
-  'rounded-lg border bg-card text-card-foreground',
+  'rounded-lg border bg-surface-raised text-text-primary',
   {
     variants: {
       elevation: {
-        flat: 'border shadow-none',
-        raised: 'border shadow-sm',
-        overlay: 'border shadow-md',
+        flat: 'border-border-subtle shadow-surface-flat',
+        raised: 'border-border-subtle shadow-surface-raised',
+        overlay: 'border-border-strong shadow-surface-overlay bg-surface-overlay',
       },
     },
     defaultVariants: {
@@ -72,7 +72,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('text-sm text-muted-foreground', className)}
+    className={cn('text-sm text-text-muted', className)}
     {...props}
   />
 ))

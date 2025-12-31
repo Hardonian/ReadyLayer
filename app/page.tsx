@@ -71,13 +71,13 @@ export default function Home() {
               ReadyLayer
             </motion.h1>
             <motion.p 
-              className="text-xl text-muted-foreground max-w-2xl mx-auto"
+              className="text-xl text-text-muted max-w-2xl mx-auto"
               variants={fadeIn}
             >
               AI writes the code. ReadyLayer makes it production-ready.
             </motion.p>
             <motion.p 
-              className="text-lg text-muted-foreground max-w-3xl mx-auto"
+              className="text-lg text-text-muted max-w-3xl mx-auto"
               variants={fadeIn}
             >
               Integrates seamlessly with your existing tools and workflows. Adds verification layers that catch AI common errors—context slips, drift, security risks—before they reach production. Trust built through transparency at every step.
@@ -196,7 +196,7 @@ export default function Home() {
       )}
 
       {/* Integration Section */}
-      <section className="py-16 bg-muted/50">
+      <section className="py-16 bg-surface-muted/50">
         <Container size="lg">
           <motion.div
             className="text-center space-y-4 mb-12"
@@ -205,7 +205,7 @@ export default function Home() {
             animate="visible"
           >
             <h2 className="text-3xl font-bold">Works With Your Existing Tools</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-text-muted max-w-2xl mx-auto">
               ReadyLayer integrates seamlessly—no workflow disruption. Adds verification layers to your current setup.
             </p>
           </motion.div>
@@ -225,9 +225,9 @@ export default function Home() {
               <motion.div key={item.title} variants={staggerItem}>
                 <Card className="text-center">
                   <CardContent className="pt-6">
-                    <item.icon className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
+                    <item.icon className="h-8 w-8 mx-auto mb-3 text-text-muted" />
                     <h3 className="font-semibold mb-1">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    <p className="text-sm text-text-muted">{item.desc}</p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -250,29 +250,29 @@ export default function Home() {
                 icon: Shield,
                 title: 'AI Error Detection',
                 description: 'Specialized checks catch AI common errors: context slips, code drift, hallucinated dependencies, and security vulnerabilities. Each check is verified and transparent.',
-                color: 'text-blue-600',
-                bg: 'bg-blue-50 dark:bg-blue-950/20',
+                color: 'text-info',
+                bg: 'bg-info-muted',
               },
               {
                 icon: Zap,
                 title: 'Threat Detection & Analytics',
                 description: 'Security analysis, threat detection, and code quality metrics inform each other. Compound insights build confidence in every code submission.',
-                color: 'text-green-600',
-                bg: 'bg-green-50 dark:bg-green-950/20',
+                color: 'text-success',
+                bg: 'bg-success-muted',
               },
               {
                 icon: CheckCircle2,
                 title: 'Verifiable Assurance',
                 description: 'Every check is traceable. See exactly what was verified, when, and why. Build trust through transparency at every step of your workflow.',
-                color: 'text-purple-600',
-                bg: 'bg-purple-50 dark:bg-purple-950/20',
+                color: 'text-accent',
+                bg: 'bg-accent-muted',
               },
               {
                 icon: GitBranch,
                 title: 'No Workflow Disruption',
                 description: 'Adds verification layers without replacing your tools. Works alongside GitHub, your CI/CD, and existing review processes. Double-checks, not replacements.',
-                color: 'text-orange-600',
-                bg: 'bg-orange-50 dark:bg-orange-950/20',
+                color: 'text-warning',
+                bg: 'bg-warning-muted',
               },
             ].map((feature) => (
               <motion.div key={feature.title} variants={staggerItem}>
@@ -292,7 +292,7 @@ export default function Home() {
       </section>
 
       {/* Trust Indicators */}
-      <section className="py-16 bg-muted/50">
+      <section className="py-16 bg-surface-muted/50">
         <Container size="lg">
           <motion.div
             className="text-center space-y-8"
@@ -304,15 +304,15 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <div className="font-semibold mb-2">Transparent Checks</div>
-                <div className="text-sm text-muted-foreground">Every verification is visible and traceable</div>
+                <div className="text-sm text-text-muted">Every verification is visible and traceable</div>
               </div>
               <div>
                 <div className="font-semibold mb-2">Compound Insights</div>
-                <div className="text-sm text-muted-foreground">Analytics inform threat detection and vice versa</div>
+                <div className="text-sm text-text-muted">Analytics inform threat detection and vice versa</div>
               </div>
               <div>
                 <div className="font-semibold mb-2">Portable Integration</div>
-                <div className="text-sm text-muted-foreground">Works with all major dev platforms and tools</div>
+                <div className="text-sm text-text-muted">Works with all major dev platforms and tools</div>
               </div>
             </div>
           </motion.div>
