@@ -100,7 +100,7 @@ export async function checkRequiredTables(
       AND tablename = ANY(${tables}::text[])
     `;
 
-    const foundTables = new Set(result.map(t => t.tablename));
+    const foundTables = new Set(result.map((t: { tablename: string }) => t.tablename));
     const missing = tables.filter(t => !foundTables.has(t));
 
     return {
