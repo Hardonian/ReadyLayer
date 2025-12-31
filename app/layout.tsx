@@ -1,12 +1,17 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { AppLayout } from '@/components/layout/app-layout'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+})
 
 export const metadata: Metadata = {
-  title: 'ReadyLayer — Gamified Code Review Platform',
-  description: 'Engineers verify AI code reviews on pull requests. Earn badges, streaks, and recognition.',
+  title: 'ReadyLayer — AI Code Readiness Platform',
+  description: 'AI writes the code. ReadyLayer makes it production-ready.',
 }
 
 export default function RootLayout({
@@ -15,8 +20,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className}>
+        <AppLayout>{children}</AppLayout>
+      </body>
     </html>
   )
 }

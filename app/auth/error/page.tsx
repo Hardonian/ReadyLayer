@@ -3,6 +3,10 @@
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { motion } from 'framer-motion'
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
+import { Container } from '@/components/ui/container'
+import { fadeIn } from '@/lib/design/motion'
 
 function AuthErrorContent() {
   const searchParams = useSearchParams()
@@ -18,34 +22,39 @@ function AuthErrorContent() {
   const message = errorMessages[error || ''] || errorMessages.Default
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <div className="z-10 max-w-md w-full">
-        <h1 className="text-4xl font-bold mb-4 text-center">Authentication Error</h1>
-        <div className="bg-white p-8 rounded-lg shadow-lg">
-          <p className="text-red-600 mb-4">{message}</p>
-          <Link
-            href="/auth/signin"
-            className="block w-full bg-gray-900 text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors text-center"
-          >
-            Try Again
-          </Link>
-        </div>
-      </div>
-    </div>
+    <Container size="sm" className="min-h-screen flex items-center justify-center py-12">
+      <motion.div
+        className="w-full max-w-md"
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication Error</CardTitle>
+            <CardDescription>
+              {message}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link href="/auth/signin">Try Again</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </Container>
   )
 }
 
 export default function AuthErrorPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen flex-col items-center justify-center p-24">
-        <div className="z-10 max-w-md w-full">
-          <h1 className="text-4xl font-bold mb-4 text-center">Authentication Error</h1>
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <p className="text-gray-600 mb-4">Loading...</p>
-          </div>
+      <Container size="sm" className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading...</p>
         </div>
-      </div>
+      </Container>
     }>
       <AuthErrorContent />
     </Suspense>
