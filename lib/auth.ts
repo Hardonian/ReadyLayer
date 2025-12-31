@@ -59,7 +59,7 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthUs
       id: supabaseUser.id,
       email: supabaseUser.email,
       name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0],
-      organizationIds: memberships.map(m => m.organizationId),
+      organizationIds: memberships.map((m: { organizationId: string }) => m.organizationId),
     };
   } catch (error) {
     logger.error({
@@ -112,7 +112,7 @@ export async function authenticateApiKey(apiKey: string): Promise<AuthUser | nul
       id: apiKeyRecord.userId,
       email: apiKeyRecord.user.email || undefined,
       name: apiKeyRecord.user.name || undefined,
-      organizationIds: memberships.map(m => m.organizationId),
+      organizationIds: memberships.map((m: { organizationId: string }) => m.organizationId),
     };
   } catch (error) {
     logger.error({

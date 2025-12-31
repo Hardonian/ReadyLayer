@@ -190,7 +190,7 @@ export class HealthChecker {
       `;
 
       const foundTables = new Set(tablesResult.map((t: { tablename: string }) => t.tablename));
-      const missingTables = requiredTables.filter(t => !foundTables.has(t));
+      const missingTables = requiredTables.filter((t: string) => !foundTables.has(t));
 
       // Check RLS on critical tables
       const criticalTables = ['User', 'Organization', 'Repository', 'Review'];
@@ -217,7 +217,7 @@ export class HealthChecker {
       `;
 
       const foundFunctions = new Set(functionsResult.map((f: { routine_name: string }) => f.routine_name));
-      const missingFunctions = requiredFunctions.filter(f => !foundFunctions.has(f));
+      const missingFunctions = requiredFunctions.filter((f: string) => !foundFunctions.has(f));
 
       // Critical issues: missing tables or RLS not enabled
       if (missingTables.length > 0 || rlsNotEnabled.length > 0) {

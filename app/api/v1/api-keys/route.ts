@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    let body: any;
+    let body: unknown;
     try {
       body = await request.json();
     } catch (error) {
@@ -32,6 +32,17 @@ export async function POST(request: NextRequest) {
           error: {
             code: 'INVALID_JSON',
             message: 'Request body must be valid JSON',
+          },
+        },
+        { status: 400 }
+      );
+    }
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_BODY',
+            message: 'Request body must be an object',
           },
         },
         { status: 400 }

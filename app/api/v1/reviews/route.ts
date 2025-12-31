@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    let body: any;
+    let body: unknown;
     try {
       body = await request.json();
     } catch (error) {
@@ -41,7 +41,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { repositoryId, prNumber, prSha, prTitle, diff, files, config } = body;
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_BODY',
+            message: 'Request body must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
+    const { repositoryId, prNumber, prSha, prTitle, diff, files, config } = body as Record<string, unknown>;
 
     // Validate input
     if (!repositoryId || !prNumber || !prSha || !files) {
@@ -183,7 +194,7 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
       select: { organizationId: true },
     });
-    const userOrgIds = memberships.map(m => m.organizationId);
+    const userOrgIds = memberships.map((m: { organizationId: string }) => m.organizationId);
 
     if (userOrgIds.length === 0) {
       return NextResponse.json({
@@ -198,7 +209,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause with tenant isolation
-    const where: any = {
+    const where: Record<string, unknown> = {
       repository: {
         organizationId: { in: userOrgIds }, // Only show reviews from user's organizations
       },

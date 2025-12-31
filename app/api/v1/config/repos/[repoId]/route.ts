@@ -146,7 +146,7 @@ export async function PUT(
       );
     }
 
-    let body: any;
+    let body: unknown;
     try {
       body = await request.json();
     } catch (error) {
@@ -161,7 +161,18 @@ export async function PUT(
         { status: 400 }
       );
     }
-    const { config, rawConfig } = body;
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_BODY',
+            message: 'Request body must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
+    const { config, rawConfig } = body as Record<string, unknown>;
 
     // Validate and update config
     await configService.updateRepositoryConfig(params.repoId, config, rawConfig);

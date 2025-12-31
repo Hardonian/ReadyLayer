@@ -6,6 +6,7 @@
  */
 
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaClient } from '@prisma/client';
 import { logger } from './logger';
 
 export interface DatabaseGuardResult<T> {
@@ -89,7 +90,7 @@ export async function withDatabaseGuard<T>(
  * Check if required tables exist (for runtime validation)
  */
 export async function checkRequiredTables(
-  prisma: any,
+  prisma: PrismaClient,
   tables: string[]
 ): Promise<{ exists: boolean; missing: string[] }> {
   try {
@@ -101,7 +102,7 @@ export async function checkRequiredTables(
     `;
 
     const foundTables = new Set(result.map((t: { tablename: string }) => t.tablename));
-    const missing = tables.filter(t => !foundTables.has(t));
+    const missing = tables.filter((t: string) => !foundTables.has(t));
 
     return {
       exists: missing.length === 0,

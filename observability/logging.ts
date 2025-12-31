@@ -69,16 +69,20 @@ class Logger {
       };
       this.logger.error(errorContext, errorOrMessage);
     } else {
-      // Called as error(error, message) - pino style
+      // Called as error(error, message) or error(error, context)
+      const message = typeof messageOrContext === 'string' 
+        ? messageOrContext 
+        : (context as unknown as string) || '';
       const errorContext = {
-        ...(messageOrContext as LogContext || {}),
+        ...(typeof messageOrContext === 'object' ? messageOrContext : {}),
+        ...(context || {}),
         error: errorOrMessage instanceof Error ? {
           message: errorOrMessage.message,
           stack: errorOrMessage.stack,
           name: errorOrMessage.name,
         } : errorOrMessage,
       };
-      this.logger.error(errorContext, (context as any) || '');
+      this.logger.error(errorContext, message);
     }
   }
 
