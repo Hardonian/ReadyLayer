@@ -124,7 +124,7 @@ export async function PATCH(
       return authzResponse;
     }
 
-    let body: any;
+    let body: unknown;
     try {
       body = await request.json();
     } catch (error) {
@@ -138,10 +138,22 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    const { config } = body;
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_BODY',
+            message: 'Request body must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
+    const bodyObj = body as Record<string, unknown>;
+    const config = bodyObj.config;
 
     // Validate config
-    if (config && typeof config !== 'object') {
+    if (config !== undefined && (typeof config !== 'object' || config === null || Array.isArray(config))) {
       return NextResponse.json(
         {
           error: {
@@ -196,12 +208,12 @@ export async function PATCH(
     await prisma.repositoryConfig.upsert({
       where: { repositoryId: params.repoId },
       update: {
-        config,
+        config: config as Record<string, unknown>,
         version: { increment: 1 },
       },
       create: {
         repositoryId: params.repoId,
-        config,
+        config: config as Record<string, unknown>,
       },
     });
 
@@ -209,7 +221,7 @@ export async function PATCH(
 
     return NextResponse.json({
       id: params.repoId,
-      config,
+      config: config as Record<string, unknown>,
       updatedAt: new Date(),
     });
   } catch (error) {

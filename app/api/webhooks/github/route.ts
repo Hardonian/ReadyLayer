@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     let payload: string;
-    let event: any;
+    let event: unknown;
     
     try {
       payload = await request.text();
@@ -61,14 +61,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!event || typeof event !== 'object') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_EVENT',
+            message: 'Webhook event must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
     log.info({
       eventType,
       installationId,
-      action: event.action,
+      action: (event as Record<string, unknown>).action,
     }, 'Received GitHub webhook');
 
     // Handle event
-    await githubWebhookHandler.handleEvent(event, installationId, signature);
+    await githubWebhookHandler.handleEvent(event as Record<string, unknown>, installationId, signature);
 
     metrics.increment('webhooks.received', { provider: 'github', event: eventType });
 

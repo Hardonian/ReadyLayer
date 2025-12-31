@@ -81,10 +81,16 @@ export function createRateLimitMiddleware(options: RateLimitOptions = {}) {
 
       // Rate limit passed
       return null;
-    } catch (error: any) {
-      if (error.remainingPoints !== undefined) {
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'remainingPoints' in error &&
+        'msBeforeNext' in error &&
+        typeof (error as { msBeforeNext: unknown }).msBeforeNext === 'number'
+      ) {
         // Rate limit exceeded
-        const retryAfter = Math.ceil(error.msBeforeNext / 1000);
+        const retryAfter = Math.ceil((error as { msBeforeNext: number }).msBeforeNext / 1000);
         return NextResponse.json(
           {
             error: {
@@ -104,7 +110,9 @@ export function createRateLimitMiddleware(options: RateLimitOptions = {}) {
         );
       }
 
-      logger.error('Rate limit check failed', error);
+      logger.error({
+        err: error instanceof Error ? error : new Error(String(error)),
+      }, 'Rate limit check failed');
       // Allow request on error (fail open)
       return null;
     }

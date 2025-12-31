@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { configService } from '../../../../../../services/config';
+import { configService, type ReadyLayerConfig } from '../../../../../../services/config';
 import { logger } from '../../../../../../observability/logging';
 import { createAuthzMiddleware } from '../../../../../../lib/authz';
 import { requireAuth } from '../../../../../../lib/auth';
@@ -146,7 +146,7 @@ export async function PUT(
       );
     }
 
-    let body: any;
+    let body: unknown;
     try {
       body = await request.json();
     } catch (error) {
@@ -161,10 +161,41 @@ export async function PUT(
         { status: 400 }
       );
     }
-    const { config, rawConfig } = body;
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_BODY',
+            message: 'Request body must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
+    const bodyObj = body as Record<string, unknown>;
+    const config = bodyObj.config;
+    const rawConfig = bodyObj.rawConfig;
+
+    // Validate config - config is required
+    if (config === undefined || config === null || typeof config !== 'object' || Array.isArray(config)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'config is required and must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     // Validate and update config
-    await configService.updateRepositoryConfig(params.repoId, config, rawConfig);
+    // The service will validate the structure matches ReadyLayerConfig
+    await configService.updateRepositoryConfig(
+      params.repoId, 
+      config as ReadyLayerConfig,
+      rawConfig as string | undefined
+    );
 
     log.info({ repoId: params.repoId }, 'Repository config updated');
 

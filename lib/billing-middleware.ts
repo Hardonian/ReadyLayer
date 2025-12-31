@@ -78,7 +78,9 @@ export async function checkBillingLimits(
 
     return null; // All checks passed
   } catch (error) {
-    logger.error(error, 'Billing check failed');
+    logger.error({
+      err: error instanceof Error ? error : new Error(String(error)),
+    }, 'Billing check failed');
     // Don't block on billing check failures - log and allow
     return null;
   }

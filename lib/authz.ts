@@ -149,7 +149,9 @@ export function createAuthzMiddleware(options: AuthzOptions = {}) {
         );
       }
 
-      logger.error(error, 'Authorization error');
+      logger.error({
+        err: error instanceof Error ? error : new Error(String(error)),
+      }, 'Authorization error');
       return NextResponse.json(
         {
           error: {

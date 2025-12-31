@@ -86,7 +86,7 @@ export class HealthChecker {
     // Check database schema if database is ready
     if (checks.database === 'ready') {
       const schemaCheck = await this.checkDatabaseSchema();
-      checks.databaseSchema = schemaCheck.status;
+      checks.databaseSchema = schemaCheck.status === 'healthy' ? 'ready' : schemaCheck.status === 'unhealthy' ? 'not_ready' : 'degraded';
       if (schemaCheck.details) {
         return {
           status: schemaCheck.status === 'healthy' ? 'ready' : 'not_ready',
@@ -189,8 +189,8 @@ export class HealthChecker {
         AND tablename = ANY(${requiredTables}::text[])
       `;
 
-      const foundTables = new Set(tablesResult.map(t => t.tablename));
-      const missingTables = requiredTables.filter(t => !foundTables.has(t));
+      const foundTables = new Set(tablesResult.map((t: { tablename: string }) => t.tablename));
+      const missingTables = requiredTables.filter((t: string) => !foundTables.has(t));
 
       // Check RLS on critical tables
       const criticalTables = ['User', 'Organization', 'Repository', 'Review'];
@@ -204,8 +204,8 @@ export class HealthChecker {
       `;
 
       const rlsNotEnabled = rlsResult
-        .filter(t => !t.relrowsecurity)
-        .map(t => t.relname);
+        .filter((t: { relname: string; relrowsecurity: boolean }) => !t.relrowsecurity)
+        .map((t: { relname: string; relrowsecurity: boolean }) => t.relname);
 
       // Check helper functions
       const requiredFunctions = ['current_user_id', 'is_org_member', 'has_org_role'];
@@ -216,8 +216,8 @@ export class HealthChecker {
         AND routine_name = ANY(${requiredFunctions}::text[])
       `;
 
-      const foundFunctions = new Set(functionsResult.map(f => f.routine_name));
-      const missingFunctions = requiredFunctions.filter(f => !foundFunctions.has(f));
+      const foundFunctions = new Set(functionsResult.map((f: { routine_name: string }) => f.routine_name));
+      const missingFunctions = requiredFunctions.filter((f: string) => !foundFunctions.has(f));
 
       // Critical issues: missing tables or RLS not enabled
       if (missingTables.length > 0 || rlsNotEnabled.length > 0) {

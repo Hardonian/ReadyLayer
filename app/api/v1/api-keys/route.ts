@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    let body: any;
+    let body: unknown;
     try {
       body = await request.json();
     } catch (error) {
@@ -37,14 +37,41 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { name, scopes, expiresAt } = body;
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_BODY',
+            message: 'Request body must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
+    const bodyObj = body as Record<string, unknown>;
+    const name = bodyObj.name;
+    const scopes = bodyObj.scopes;
+    const expiresAt = bodyObj.expiresAt;
 
-    if (!name || !scopes || !Array.isArray(scopes)) {
+    if (!name || typeof name !== 'string' || !scopes || !Array.isArray(scopes)) {
       return NextResponse.json(
         {
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Missing required fields: name, scopes',
+            message: 'Missing required fields: name (string), scopes (array)',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate scopes array contains only strings
+    if (!scopes.every((s): s is string => typeof s === 'string')) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'scopes must be an array of strings',
           },
         },
         { status: 400 }
@@ -56,7 +83,7 @@ export async function POST(request: NextRequest) {
       user.id,
       name,
       scopes,
-      expiresAt ? new Date(expiresAt) : undefined
+      expiresAt && typeof expiresAt === 'string' ? new Date(expiresAt) : undefined
     );
 
     log.info({ userId: user.id, keyId: id }, 'API key created');
