@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
 import { Github, LogOut } from 'lucide-react'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -58,7 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col">
       {showNav && (
         <motion.nav
-          className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+          className="border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60"
           variants={fadeIn}
           initial="hidden"
           animate="visible"
@@ -75,10 +76,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        'text-sm font-medium transition-colors hover:text-foreground/80',
+                        'text-sm font-medium transition-colors hover:text-text-primary',
                         pathname === item.href
-                          ? 'text-foreground'
-                          : 'text-foreground/60'
+                          ? 'text-text-primary'
+                          : 'text-text-muted'
                       )}
                     >
                       {item.label}
@@ -88,6 +89,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </div>
               {!loading && (
                 <div className="flex items-center gap-4">
+                  <ThemeToggle />
                   {user ? (
                     <>
                       <span className="text-sm text-muted-foreground hidden sm:inline">

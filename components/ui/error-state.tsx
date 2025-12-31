@@ -47,18 +47,18 @@ export function ErrorState({
       animate="visible"
     >
       <motion.div
-        className="mb-4 text-destructive"
+        className="mb-4 text-danger"
         variants={slideUp}
       >
         <AlertCircle className="h-12 w-12" strokeWidth={1.5} />
       </motion.div>
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-md mb-6">
+      <p className="text-sm text-text-muted max-w-md mb-6">
         {message}
       </p>
       {showDetails && details && (
-        <div className="mb-6 p-4 bg-muted rounded-md text-left max-w-md">
-          <p className="text-xs font-mono text-muted-foreground break-all">
+        <div className="mb-6 p-4 bg-surface-muted rounded-md text-left max-w-md">
+          <p className="text-xs font-mono text-text-muted break-all">
             {details}
           </p>
         </div>

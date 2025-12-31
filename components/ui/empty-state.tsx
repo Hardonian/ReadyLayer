@@ -45,14 +45,14 @@ export function EmptyState({
     >
       {Icon && (
         <motion.div
-          className="mb-4 text-muted-foreground"
+          className="mb-4 text-text-muted"
           variants={slideUp}
         >
           <Icon className="h-12 w-12" strokeWidth={1.5} />
         </motion.div>
       )}
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-md mb-6">
+      <p className="text-sm text-text-muted max-w-md mb-6">
         {description}
       </p>
       {action && (
