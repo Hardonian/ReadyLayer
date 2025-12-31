@@ -55,10 +55,10 @@ export async function withDatabaseGuard<T>(
     const data = await operation();
     return { success: true, data };
   } catch (error) {
-    logger.error(error, {
-      message: `Database operation failed: ${context.operation}`,
-      context,
-    });
+    logger.error({
+      err: error instanceof Error ? error : new Error(String(error)),
+      ...context,
+    }, `Database operation failed: ${context.operation}`);
 
     if (isSchemaError(error)) {
       return {
@@ -108,7 +108,9 @@ export async function checkRequiredTables(
       missing,
     };
   } catch (error) {
-    logger.error(error, 'Failed to check required tables');
+    logger.error({
+      err: error instanceof Error ? error : new Error(String(error)),
+    }, 'Failed to check required tables');
     return {
       exists: false,
       missing: tables, // Assume all missing if check fails

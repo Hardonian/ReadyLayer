@@ -62,7 +62,9 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthUs
       organizationIds: memberships.map(m => m.organizationId),
     };
   } catch (error) {
-    logger.error(error, 'Failed to get authenticated user');
+    logger.error({
+      err: error instanceof Error ? error : new Error(String(error)),
+    }, 'Failed to get authenticated user');
     return null;
   }
 }
@@ -113,7 +115,9 @@ export async function authenticateApiKey(apiKey: string): Promise<AuthUser | nul
       organizationIds: memberships.map(m => m.organizationId),
     };
   } catch (error) {
-    logger.error(error, 'API key authentication failed');
+    logger.error({
+      err: error instanceof Error ? error : new Error(String(error)),
+    }, 'API key authentication failed');
     return null;
   }
 }

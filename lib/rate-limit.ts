@@ -104,7 +104,9 @@ export function createRateLimitMiddleware(options: RateLimitOptions = {}) {
         );
       }
 
-      logger.error('Rate limit check failed', error);
+      logger.error({
+        err: error instanceof Error ? error : new Error(String(error)),
+      }, 'Rate limit check failed');
       // Allow request on error (fail open)
       return null;
     }
