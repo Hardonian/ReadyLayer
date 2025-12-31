@@ -172,10 +172,29 @@ export async function PUT(
         { status: 400 }
       );
     }
-    const { config, rawConfig } = body as Record<string, unknown>;
+    const bodyObj = body as Record<string, unknown>;
+    const config = bodyObj.config;
+    const rawConfig = bodyObj.rawConfig;
+
+    // Validate config
+    if (config !== undefined && (typeof config !== 'object' || config === null || Array.isArray(config))) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'config must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     // Validate and update config
-    await configService.updateRepositoryConfig(params.repoId, config, rawConfig);
+    await configService.updateRepositoryConfig(
+      params.repoId, 
+      config as Record<string, unknown> | undefined,
+      rawConfig as string | undefined
+    );
 
     log.info({ repoId: params.repoId }, 'Repository config updated');
 

@@ -51,12 +51,21 @@ class EnvValidator {
     this.config.SUPABASE_SERVICE_ROLE_KEY = this.require('SUPABASE_SERVICE_ROLE_KEY');
 
     // Optional with defaults
-    this.config.NODE_ENV = (process.env.NODE_ENV as any) || 'development';
-    this.config.LOG_LEVEL = (process.env.LOG_LEVEL as any) || 'info';
+    const nodeEnv = process.env.NODE_ENV;
+    this.config.NODE_ENV = (nodeEnv === 'development' || nodeEnv === 'production' || nodeEnv === 'test') 
+      ? nodeEnv 
+      : 'development';
+    const logLevel = process.env.LOG_LEVEL;
+    this.config.LOG_LEVEL = (logLevel === 'debug' || logLevel === 'info' || logLevel === 'warn' || logLevel === 'error')
+      ? logLevel
+      : 'info';
     this.config.REDIS_URL = process.env.REDIS_URL;
     this.config.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
     this.config.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-    this.config.DEFAULT_LLM_PROVIDER = (process.env.DEFAULT_LLM_PROVIDER as any) || 'openai';
+    const defaultProvider = process.env.DEFAULT_LLM_PROVIDER;
+    this.config.DEFAULT_LLM_PROVIDER = (defaultProvider === 'openai' || defaultProvider === 'anthropic')
+      ? defaultProvider
+      : 'openai';
     this.config.GITHUB_APP_ID = process.env.GITHUB_APP_ID;
     this.config.GITHUB_APP_SECRET = process.env.GITHUB_APP_SECRET;
     this.config.GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
@@ -138,7 +147,9 @@ function getEnvConfig(): EnvConfig {
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-      NODE_ENV: (process.env.NODE_ENV as any) || 'development',
+      NODE_ENV: (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test')
+        ? process.env.NODE_ENV
+        : 'development',
       LOG_LEVEL: defaults.LOG_LEVEL,
       DEFAULT_LLM_PROVIDER: defaults.DEFAULT_LLM_PROVIDER,
       API_BASE_URL: defaults.API_BASE_URL,
@@ -166,7 +177,9 @@ function getEnvConfig(): EnvConfig {
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
         NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-        NODE_ENV: (process.env.NODE_ENV as any) || 'development',
+        NODE_ENV: (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test')
+        ? process.env.NODE_ENV
+        : 'development',
         LOG_LEVEL: defaults.LOG_LEVEL,
         DEFAULT_LLM_PROVIDER: defaults.DEFAULT_LLM_PROVIDER,
         API_BASE_URL: defaults.API_BASE_URL,

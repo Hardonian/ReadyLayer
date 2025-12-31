@@ -166,15 +166,25 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { organizationId, name, fullName, provider, providerId, url, defaultBranch } = body as Record<string, unknown>;
+    const bodyObj = body as Record<string, unknown>;
+    const organizationId = bodyObj.organizationId;
+    const name = bodyObj.name;
+    const fullName = bodyObj.fullName;
+    const provider = bodyObj.provider;
+    const providerId = bodyObj.providerId;
+    const url = bodyObj.url;
+    const defaultBranch = bodyObj.defaultBranch;
 
     // Validate input
-    if (!organizationId || !name || !fullName || !provider) {
+    if (!organizationId || typeof organizationId !== 'string' ||
+        !name || typeof name !== 'string' ||
+        !fullName || typeof fullName !== 'string' ||
+        !provider || typeof provider !== 'string') {
       return NextResponse.json(
         {
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Missing required fields: organizationId, name, fullName, provider',
+            message: 'Missing required fields: organizationId (string), name (string), fullName (string), provider (string)',
           },
         },
         { status: 400 }
@@ -185,7 +195,7 @@ export async function POST(request: NextRequest) {
     const membership = await prisma.organizationMember.findUnique({
       where: {
         organizationId_userId: {
-          organizationId,
+          organizationId: organizationId as string,
           userId: user.id,
         },
       },
@@ -204,7 +214,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check billing limits (repository limit)
-    const billingCheck = await checkBillingLimits(organizationId, {
+    const billingCheck = await checkBillingLimits(organizationId as string, {
       checkRepoLimit: true,
     });
     if (billingCheck) {
@@ -214,13 +224,13 @@ export async function POST(request: NextRequest) {
     // Create repository
     const repo = await prisma.repository.create({
       data: {
-        organizationId,
-        name,
-        fullName,
-        provider,
-        providerId,
-        url,
-        defaultBranch: defaultBranch || 'main',
+        organizationId: organizationId as string,
+        name: name as string,
+        fullName: fullName as string,
+        provider: provider as string,
+        providerId: providerId as string | undefined,
+        url: url as string | undefined,
+        defaultBranch: (defaultBranch as string | undefined) || 'main',
       },
       include: {
         organization: {

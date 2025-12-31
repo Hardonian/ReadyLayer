@@ -52,15 +52,25 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { repositoryId, prNumber, prSha, prTitle, diff, files, config } = body as Record<string, unknown>;
+    const bodyObj = body as Record<string, unknown>;
+    const repositoryId = bodyObj.repositoryId;
+    const prNumber = bodyObj.prNumber;
+    const prSha = bodyObj.prSha;
+    const prTitle = bodyObj.prTitle;
+    const diff = bodyObj.diff;
+    const files = bodyObj.files;
+    const config = bodyObj.config;
 
     // Validate input
-    if (!repositoryId || !prNumber || !prSha || !files) {
+    if (!repositoryId || typeof repositoryId !== 'string' || 
+        !prNumber || (typeof prNumber !== 'string' && typeof prNumber !== 'number') ||
+        !prSha || typeof prSha !== 'string' || 
+        !files || !Array.isArray(files)) {
       return NextResponse.json(
         {
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Missing required fields: repositoryId, prNumber, prSha, files',
+            message: 'Missing required fields: repositoryId (string), prNumber (string|number), prSha (string), files (array)',
           },
         },
         { status: 400 }
@@ -69,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     // Verify user belongs to repository's organization (tenant isolation)
     const repo = await prisma.repository.findUnique({
-      where: { id: repositoryId },
+      where: { id: repositoryId as string },
       select: { organizationId: true },
     });
 
@@ -115,17 +125,17 @@ export async function POST(request: NextRequest) {
       return billingCheck;
     }
 
-    log.info({ repositoryId, prNumber }, 'Starting review');
+    log.info({ repositoryId: repositoryId as string, prNumber }, 'Starting review');
 
     // Perform review
     const result = await reviewGuardService.review({
-      repositoryId,
-      prNumber,
-      prSha,
-      prTitle,
-      diff,
-      files,
-      config,
+      repositoryId: repositoryId as string,
+      prNumber: typeof prNumber === 'number' ? prNumber : parseInt(String(prNumber), 10),
+      prSha: prSha as string,
+      prTitle: prTitle as string | undefined,
+      diff: diff as string | undefined,
+      files: files as unknown[],
+      config: config as Record<string, unknown> | undefined,
     });
 
     metrics.increment('reviews.completed', { status: result.status });
