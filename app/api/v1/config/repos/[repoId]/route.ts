@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { configService } from '../../../../../../services/config';
+import { configService, type ReadyLayerConfig } from '../../../../../../services/config';
 import { logger } from '../../../../../../observability/logging';
 import { createAuthzMiddleware } from '../../../../../../lib/authz';
 import { requireAuth } from '../../../../../../lib/auth';
@@ -176,13 +176,13 @@ export async function PUT(
     const config = bodyObj.config;
     const rawConfig = bodyObj.rawConfig;
 
-    // Validate config
-    if (config !== undefined && (typeof config !== 'object' || config === null || Array.isArray(config))) {
+    // Validate config - config is required
+    if (config === undefined || config === null || typeof config !== 'object' || Array.isArray(config)) {
       return NextResponse.json(
         {
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'config must be an object',
+            message: 'config is required and must be an object',
           },
         },
         { status: 400 }
@@ -190,9 +190,10 @@ export async function PUT(
     }
 
     // Validate and update config
+    // The service will validate the structure matches ReadyLayerConfig
     await configService.updateRepositoryConfig(
       params.repoId, 
-      config as Record<string, unknown> | undefined,
+      config as ReadyLayerConfig,
       rawConfig as string | undefined
     );
 
