@@ -3,10 +3,10 @@
 ## Hero Section
 
 ### Headline
-**AI writes the code. ReadyLayer makes it production-ready.**
+**Verifiable Assurance for AI-Generated Code**
 
 ### Subheadline
-Automatically review, test, and document AI-generated code before merge. Catch security vulnerabilities, enforce test coverage, and keep docs in sync—all without slowing down development.
+Integrates seamlessly with your existing tools and workflows. Adds verification layers that catch AI common errors—context slips, drift, security risks—before they reach production. Trust built through transparency at every step.
 
 ### CTA Buttons
 - **Primary:** "Start Free Trial" (links to signup)
@@ -23,11 +23,12 @@ Screenshot of ReadyLayer PR comments, test generation, and doc updates in action
 **AI made you faster. But can you trust what's getting merged?**
 
 ### Problem Points
-- **Security risks:** AI-generated code introduces vulnerabilities that slip through manual review
+- **AI common errors:** Context slips, code drift, and hallucinated dependencies slip through
+- **Security risks:** AI-generated code introduces vulnerabilities that generic tools miss
 - **Missing tests:** AI writes features, but tests are still manual—coverage drops
 - **Documentation drift:** Code changes, docs don't—API specs fall behind
-- **Review fatigue:** Teams spend too much time reviewing AI-generated PRs
-- **Quality uncertainty:** Hard to know if AI code meets production standards
+- **Lack of transparency:** No visibility into what was checked and why
+- **Workflow disruption:** Tools that replace existing processes create friction
 
 ### Statistics
 - 73% of developers use AI code generation tools
@@ -40,7 +41,7 @@ Screenshot of ReadyLayer PR comments, test generation, and doc updates in action
 ## Solution Section
 
 ### Headline
-**ReadyLayer: The mandatory readiness layer for AI-generated code**
+**ReadyLayer: Verifiable Assurance That Integrates With Your Workflow**
 
 ### Three Pillars
 
@@ -48,13 +49,15 @@ Screenshot of ReadyLayer PR comments, test generation, and doc updates in action
 **Headline:** AI-aware code review that catches risks before merge
 
 **Description:**
-Review Guard analyzes every AI-touched diff for security vulnerabilities, code quality issues, and maintainability risks. It understands AI-generated patterns and catches issues that generic tools miss.
+Review Guard integrates with GitHub, GitLab, and your CI/CD. It adds specialized checks that catch AI common errors—context slips, code drift, hallucinated dependencies, security vulnerabilities—without replacing your workflow. Every check is transparent and traceable.
 
 **Features:**
+- Specialized AI error detection (context slips, drift, hallucinations)
 - Security-first analysis (SQL injection, XSS, secrets, etc.)
-- Quality gates that understand AI code context
+- Threat detection and analytics that inform each other
 - Inline PR comments with actionable fixes
-- Zero false positives through context-aware rules
+- Works alongside your existing review process
+- Verifiable assurance: every check is traceable
 
 **Visual:** Screenshot of inline PR comments showing security issues
 
@@ -116,7 +119,10 @@ Code is production-ready, with tests and docs in sync.
 ## Integrations
 
 ### Headline
-**Works where you already work**
+**Portable Integration—Works With All Your Tools**
+
+### Subheadline
+ReadyLayer doesn't replace your workflow. It integrates seamlessly with your existing tools, adding verification layers without disruption. Portable across all major dev platforms.
 
 ### Git Hosts
 - GitHub
