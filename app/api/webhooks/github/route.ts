@@ -3,9 +3,13 @@ import { githubWebhookHandler, GitHubWebhookEvent } from '../../../../integratio
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
 
+// Webhook routes must use Node runtime for signature verification and raw body access
+export const runtime = 'nodejs';
+
 /**
  * POST /api/webhooks/github
  * Handle GitHub webhooks
+ * Requires Node runtime for signature verification
  */
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;

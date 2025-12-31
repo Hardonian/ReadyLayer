@@ -24,7 +24,8 @@
     "db:smoke": "tsx scripts/db-smoke.ts",
     "db:reconcile": "psql \"$DATABASE_URL\" -f supabase/migrations/00000000000000_backend_contract_reconcile.sql",
     "test:tenant-isolation": "tsx scripts/test-tenant-isolation.ts",
-    "test:billing": "tsx scripts/test-billing-enforcement.ts"
+    "test:billing": "tsx scripts/test-billing-enforcement.ts",
+    "middleware:smoke": "tsx scripts/middleware-smoke.ts"
   },
   "dependencies": {
     "@babel/parser": "^7.23.7",

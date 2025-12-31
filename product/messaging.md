@@ -9,10 +9,10 @@
 **AI Code Readiness Platform**
 
 ### Tagline
-**AI writes the code. ReadyLayer makes it production-ready.**
+**Verifiable Assurance for AI-Generated Code**
 
 ### One-Liner
-ReadyLayer automatically reviews, tests, and documents AI-generated code before merge, ensuring production readiness without slowing down development.
+ReadyLayer integrates seamlessly with your existing tools and workflows, adding verification layers that catch AI common errors—context slips, drift, security risks—before they reach production. Trust built through transparency at every step.
 
 ---
 
@@ -24,16 +24,18 @@ ReadyLayer's value proposition is built on three core pillars, each mapped direc
 **Pillar:** AI-aware code review that catches risks before merge
 
 **Value Statement:**
-AI-generated code moves fast, but quality gates can't. Review Guard analyzes every AI-touched diff for security vulnerabilities, code quality issues, and maintainability risks—then blocks or warns based on your team's thresholds.
+Review Guard integrates with GitHub, GitLab, and your existing CI/CD. It adds specialized checks that catch AI common errors—context slips, code drift, hallucinated dependencies, security vulnerabilities—without replacing your workflow. Every check is transparent and traceable.
 
 **Key Benefits:**
+- Specialized AI error detection (context slips, drift, hallucinations)
 - Security-first analysis of AI-generated patterns
-- Quality gates that understand AI code context
+- Threat detection and analytics that inform each other
 - Inline PR comments with actionable fixes
-- Zero false positives through context-aware rules
+- Works alongside your existing review process—double-checks, not replacements
+- Verifiable assurance: every check is traceable
 
 **Target Outcome:**
-Teams merge AI code with confidence, knowing critical issues are caught automatically.
+Teams merge AI code with confidence, knowing specialized checks catch issues that generic tools miss. Trust built through transparency.
 
 ---
 
@@ -83,7 +85,10 @@ Documentation and API specs stay in sync with code, without manual maintenance.
 **Differentiator:** Automatic generation from code changes, merge-triggered updates, and drift prevention.
 
 ### vs. AI Code Assistants (Copilot, Cursor)
-**Differentiator:** ReadyLayer sits *after* AI generation, ensuring production readiness—complements, doesn't compete.
+**Differentiator:** ReadyLayer sits *after* AI generation, ensuring production readiness—complements, doesn't compete. Integrates seamlessly with all major dev platforms and tools. Portable and non-disruptive.
+
+### Core Positioning: Integration & Trust
+**Key Message:** ReadyLayer doesn't replace your workflow—it adds verification layers. Works with GitHub, GitLab, Bitbucket, your CI/CD, IDEs, and test frameworks. Portable across all dev platforms. Trust is built through verifiable assurance at every step.
 
 ---
 
@@ -91,9 +96,15 @@ Documentation and API specs stay in sync with code, without manual maintenance.
 
 **Before ReadyLayer:**
 - AI generates code → Manual review → Manual tests → Manual docs → Merge (maybe)
+- Context slips and drift slip through
+- Security risks go undetected
+- No visibility into what was checked
 
 **With ReadyLayer:**
-- AI generates code → ReadyLayer reviews, tests, documents → Merge (with confidence)
+- AI generates code → ReadyLayer adds verification layers → Your existing tools → Merge (with verifiable assurance)
+- Specialized checks catch AI common errors
+- Threat detection and analytics compound insights
+- Every check is transparent and traceable
 
 **Mental Model:**
-ReadyLayer is a mandatory readiness layer, not a developer tool. It's the quality gate that makes AI-generated code production-ready.
+ReadyLayer is a verification layer that integrates with your existing tools. It doesn't replace workflows—it adds trust through verifiable assurance. Portable across all dev platforms. Works alongside GitHub, GitLab, CI/CD, IDEs, and test frameworks.
