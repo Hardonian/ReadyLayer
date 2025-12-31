@@ -1,100 +1,91 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { reviewGuardService } from '../../../../services/review-guard';
-import { logger } from '../../../../observability/logging';
+/**
+ * Reviews API Routes
+ * 
+ * POST /api/v1/reviews - Create a new review
+ * GET /api/v1/reviews - List reviews (tenant-isolated)
+ */
+
+import { reviewGuardService, ReviewConfig } from '../../../../services/review-guard';
 import { metrics } from '../../../../observability/metrics';
-import { requireAuth } from '../../../../lib/auth';
-import { createAuthzMiddleware } from '../../../../lib/authz';
 import { prisma } from '../../../../lib/prisma';
 import { checkBillingLimits } from '../../../../lib/billing-middleware';
+import {
+  createRouteHandler,
+  parseJsonBody,
+  errorResponse,
+  successResponse,
+  parsePagination,
+  paginatedResponse,
+  RouteContext,
+} from '../../../../lib/api-route-helpers';
+import { z } from 'zod';
+
+// Validation schemas
+const reviewFileSchema = z.object({
+  path: z.string().min(1),
+  content: z.string(),
+  beforeContent: z.string().nullable().optional(),
+});
+
+const reviewConfigSchema = z.object({
+  failOnCritical: z.boolean().optional(),
+  failOnHigh: z.boolean().optional(),
+  failOnMedium: z.boolean().optional(),
+  failOnLow: z.boolean().optional(),
+  enabledRules: z.array(z.string()).optional(),
+  disabledRules: z.array(z.string()).optional(),
+  excludedPaths: z.array(z.string()).optional(),
+});
+
+const createReviewSchema = z.object({
+  repositoryId: z.string().min(1),
+  prNumber: z.union([z.string(), z.number()]).transform((val) => 
+    typeof val === 'number' ? val : parseInt(String(val), 10)
+  ),
+  prSha: z.string().min(1),
+  prTitle: z.string().optional(),
+  diff: z.string().optional(),
+  files: z.array(reviewFileSchema).min(1),
+  config: reviewConfigSchema.optional(),
+});
 
 /**
  * POST /api/v1/reviews
  * Create a new review (tenant-isolated)
  */
-export async function POST(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
+export const POST = createRouteHandler(
+  async (context: RouteContext) => {
+    const { request, user, log } = context;
 
-  try {
-    // Require authentication
-    const user = await requireAuth(request);
-
-    // Check authorization
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['write'],
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
+    // Parse and validate body
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch (error) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_JSON',
-            message: 'Request body must be valid JSON',
-          },
-        },
-        { status: 400 }
-      );
-    }
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_BODY',
-            message: 'Request body must be an object',
-          },
-        },
-        { status: 400 }
-      );
-    }
-    const bodyObj = body as Record<string, unknown>;
-    const repositoryId = bodyObj.repositoryId;
-    const prNumber = bodyObj.prNumber;
-    const prSha = bodyObj.prSha;
-    const prTitle = bodyObj.prTitle;
-    const diff = bodyObj.diff;
-    const files = bodyObj.files;
-    const config = bodyObj.config;
-
-    // Validate input
-    if (!repositoryId || typeof repositoryId !== 'string' || 
-        !prNumber || (typeof prNumber !== 'string' && typeof prNumber !== 'number') ||
-        !prSha || typeof prSha !== 'string' || 
-        !files || !Array.isArray(files)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Missing required fields: repositoryId (string), prNumber (string|number), prSha (string), files (array)',
-          },
-        },
-        { status: 400 }
+    const validationResult = createReviewSchema.safeParse(bodyResult.data);
+    if (!validationResult.success) {
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'Invalid request body',
+        400,
+        { errors: validationResult.error.errors }
       );
     }
 
-    // Verify user belongs to repository's organization (tenant isolation)
+    const { repositoryId, prNumber, prSha, prTitle, diff, files, config } = validationResult.data;
+
+    // Get repository and verify tenant isolation
     const repo = await prisma.repository.findUnique({
-      where: { id: repositoryId as string },
+      where: { id: repositoryId },
       select: { organizationId: true },
     });
 
     if (!repo) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'NOT_FOUND',
-            message: `Repository ${repositoryId} not found`,
-          },
-        },
-        { status: 404 }
-      );
+      return errorResponse('NOT_FOUND', `Repository ${repositoryId} not found`, 404);
     }
 
+    // Verify user belongs to repository's organization
     const membership = await prisma.organizationMember.findUnique({
       where: {
         organizationId_userId: {
@@ -105,18 +96,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!membership) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: 'Access denied to repository',
-          },
-        },
-        { status: 403 }
-      );
+      return errorResponse('FORBIDDEN', 'Access denied to repository', 403);
     }
 
-    // Check billing limits (feature access and LLM budget)
+    // Check billing limits
     const billingCheck = await checkBillingLimits(repo.organizationId, {
       requireFeature: 'reviewGuard',
       checkLLMBudget: true,
@@ -125,21 +108,31 @@ export async function POST(request: NextRequest) {
       return billingCheck;
     }
 
-    log.info({ repositoryId: repositoryId as string, prNumber }, 'Starting review');
+    log.info({ repositoryId, prNumber }, 'Starting review');
+
+    // Transform config to ReviewConfig format
+    const validatedConfig: ReviewConfig | undefined = config ? {
+      failOnCritical: config.failOnCritical ?? true,
+      failOnHigh: config.failOnHigh ?? true,
+      failOnMedium: config.failOnMedium ?? false,
+      failOnLow: config.failOnLow ?? false,
+      enabledRules: config.enabledRules,
+      disabledRules: config.disabledRules,
+      excludedPaths: config.excludedPaths,
+    } : undefined;
 
     // Perform review
     const result = await reviewGuardService.review({
-      repositoryId: repositoryId as string,
-      prNumber: typeof prNumber === 'number' ? prNumber : parseInt(String(prNumber), 10),
-      prSha: prSha as string,
-      prTitle: prTitle as string | undefined,
-      diff: diff as string | undefined,
-      files: files as unknown[],
-      config: config as Record<string, unknown> | undefined,
+      repositoryId,
+      prNumber,
+      prSha,
+      prTitle,
+      diff,
+      files,
+      config: validatedConfig,
     });
 
     metrics.increment('reviews.completed', { status: result.status });
-    // Note: metrics.increment signature may vary - adjust if needed
     if (result.summary.critical > 0) {
       metrics.increment('reviews.issues_found', { severity: 'critical' });
     }
@@ -155,73 +148,42 @@ export async function POST(request: NextRequest) {
       isBlocked: result.isBlocked,
     }, 'Review completed');
 
-    return NextResponse.json(result, { status: 201 });
-  } catch (error) {
-    log.error(error, 'Review failed');
-    metrics.increment('reviews.failed');
-
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      {
-        error: {
-          code: 'REVIEW_FAILED',
-          message: errorMessage,
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
+    return successResponse(result, 201);
+  },
+  { authz: { requiredScopes: ['write'] } }
+);
 
 /**
  * GET /api/v1/reviews
  * List reviews (tenant-isolated)
  */
-export async function GET(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
-
-  try {
-    // Require authentication
-    const user = await requireAuth(request);
-
-    // Check authorization
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['read'],
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
-    }
-
+export const GET = createRouteHandler(
+  async (context: RouteContext) => {
+    const { request, user } = context;
     const { searchParams } = new URL(request.url);
     const repositoryId = searchParams.get('repositoryId');
     const prNumber = searchParams.get('prNumber');
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
-    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const { limit, offset } = parsePagination(request);
 
     // Get user's organization memberships for tenant isolation
     const memberships = await prisma.organizationMember.findMany({
       where: { userId: user.id },
       select: { organizationId: true },
     });
-    const userOrgIds = memberships.map((m: { organizationId: string }) => m.organizationId);
+    const userOrgIds = memberships.map((m) => m.organizationId);
 
     if (userOrgIds.length === 0) {
-      return NextResponse.json({
-        reviews: [],
-        pagination: {
-          total: 0,
-          limit,
-          offset,
-          hasMore: false,
-        },
-      });
+      return paginatedResponse([], 0, limit, offset);
     }
 
     // Build where clause with tenant isolation
-    const where: Record<string, unknown> = {
+    const where: {
+      repository: { organizationId: { in: string[] } };
+      repositoryId?: string;
+      prNumber?: number;
+    } = {
       repository: {
-        organizationId: { in: userOrgIds }, // Only show reviews from user's organizations
+        organizationId: { in: userOrgIds },
       },
     };
 
@@ -233,22 +195,17 @@ export async function GET(request: NextRequest) {
       });
 
       if (!repo || !userOrgIds.includes(repo.organizationId)) {
-        return NextResponse.json(
-          {
-            error: {
-              code: 'FORBIDDEN',
-              message: 'Access denied to repository',
-            },
-          },
-          { status: 403 }
-        );
+        return errorResponse('FORBIDDEN', 'Access denied to repository', 403);
       }
 
       where.repositoryId = repositoryId;
     }
 
     if (prNumber) {
-      where.prNumber = parseInt(prNumber, 10);
+      const parsedPrNumber = parseInt(prNumber, 10);
+      if (!isNaN(parsedPrNumber)) {
+        where.prNumber = parsedPrNumber;
+      }
     }
 
     const [reviews, total] = await Promise.all([
@@ -271,8 +228,8 @@ export async function GET(request: NextRequest) {
       prisma.review.count({ where }),
     ]);
 
-    return NextResponse.json({
-      reviews: reviews.map((r) => ({
+    return paginatedResponse(
+      reviews.map((r) => ({
         id: r.id,
         repositoryId: r.repositoryId,
         prNumber: r.prNumber,
@@ -285,23 +242,10 @@ export async function GET(request: NextRequest) {
         createdAt: r.createdAt,
         completedAt: r.completedAt,
       })),
-      pagination: {
-        total,
-        limit,
-        offset,
-        hasMore: offset + limit < total,
-      },
-    });
-  } catch (error) {
-    log.error(error, 'Failed to list reviews');
-    return NextResponse.json(
-      {
-        error: {
-          code: 'LIST_REVIEWS_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        },
-      },
-      { status: 500 }
+      total,
+      limit,
+      offset
     );
-  }
-}
+  },
+  { authz: { requiredScopes: ['read'] } }
+);

@@ -81,9 +81,9 @@ class EnvValidator {
     }
 
     // Validate NODE_ENV
-    const nodeEnv = this.config.NODE_ENV;
-    if (nodeEnv && !['development', 'production', 'test'].includes(nodeEnv)) {
-      this.errors.push(`Invalid NODE_ENV: ${nodeEnv}. Must be development, production, or test`);
+    const validatedNodeEnv = this.config.NODE_ENV;
+    if (validatedNodeEnv && !['development', 'production', 'test'].includes(validatedNodeEnv)) {
+      this.errors.push(`Invalid NODE_ENV: ${validatedNodeEnv}. Must be development, production, or test`);
     }
 
     // Validate LOG_LEVEL

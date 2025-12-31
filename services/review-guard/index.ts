@@ -15,7 +15,7 @@ export interface ReviewRequest {
   prNumber: number;
   prSha: string;
   prTitle?: string;
-  diff: string;
+  diff?: string;
   files: Array<{ path: string; content: string; beforeContent?: string | null }>;
   config?: ReviewConfig;
 }
