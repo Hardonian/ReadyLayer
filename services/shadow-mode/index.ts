@@ -123,8 +123,6 @@ export class ShadowModeService {
   private async detectAITouchedFiles(
     files: Array<{ path: string; content: string; commitMessage?: string }>
   ): Promise<string[]> {
-    const aiTouched: string[] = [];
-
     // Use test engine's AI detection
     const detectionResult = await testEngineService.detectAITouchedFiles('', files.map(f => ({
       path: f.path,
