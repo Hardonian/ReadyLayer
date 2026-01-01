@@ -7,7 +7,6 @@
  * Based on founder pain event: Schema drift causing production issues
  */
 
-import { codeParserService } from '../code-parser';
 import { Issue } from '../static-analysis';
 
 export interface SchemaReconciliationRequest {
@@ -134,8 +133,6 @@ export class SchemaReconciliationService {
       }
 
       try {
-        const parseResult = await codeParserService.parse(file.path, file.content);
-
         // Find Prisma client usage
         const prismaUsage = file.content.matchAll(/prisma\.(\w+)\.(\w+)/g);
         for (const match of prismaUsage) {
