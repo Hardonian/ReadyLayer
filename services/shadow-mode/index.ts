@@ -123,8 +123,6 @@ export class ShadowModeService {
   private async detectAITouchedFiles(
     files: Array<{ path: string; content: string; commitMessage?: string }>
   ): Promise<string[]> {
-    const aiTouched: string[] = [];
-
     // Use test engine's AI detection
     const detectionResult = await testEngineService.detectAITouchedFiles('', files.map(f => ({
       path: f.path,
@@ -152,7 +150,7 @@ export class ShadowModeService {
       const issues: string[] = [];
 
       // Check if test file exists
-      const testFilePath = file.path.replace(/\.(ts|tsx|js|jsx)$/, '.test.$1');
+      // TODO: Implement actual test file existence check
       const hasTestFile = false; // Would check if test file exists in repo
 
       if (!hasTestFile) {

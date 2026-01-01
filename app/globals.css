@@ -291,3 +291,72 @@
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/**
+ * Glass morphism utility classes
+ */
+.glass {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.dark .glass {
+  background-color: rgba(17, 25, 40, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.glass-strong {
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-strong {
+  background-color: rgba(17, 25, 40, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/**
+ * Animated code preview hero effect
+ */
+@keyframes codeGlow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.code-preview-glow {
+  animation: codeGlow 4s ease-in-out infinite;
+}
+
+/**
+ * Floating animation for hero elements
+ */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.float-animation-delay-1 {
+  animation-delay: 1s;
+}
+
+.float-animation-delay-2 {
+  animation-delay: 2s;
+}

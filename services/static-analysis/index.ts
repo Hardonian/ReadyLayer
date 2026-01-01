@@ -349,7 +349,7 @@ export class StaticAnalysisService {
       category: 'ai',
       severity: 'high',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
         const lines = content.split('\n');
 
@@ -468,7 +468,7 @@ export class StaticAnalysisService {
       category: 'security',
       severity: 'critical',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
         const lines = content.split('\n');
 
@@ -620,7 +620,7 @@ export class StaticAnalysisService {
       category: 'security',
       severity: 'critical',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
         const lines = content.split('\n');
 
@@ -683,7 +683,7 @@ export class StaticAnalysisService {
       category: 'quality',
       severity: 'medium',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (parseResult, filePath, _content) => {
         const issues: Issue[] = [];
 
         // Check for inconsistent naming patterns
@@ -723,7 +723,7 @@ export class StaticAnalysisService {
       category: 'quality',
       severity: 'medium',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
         const lines = content.split('\n');
 
@@ -838,9 +838,8 @@ export class StaticAnalysisService {
           if (/export\s+(?:async\s+)?function\s+(\w+)/.test(line)) {
             const funcName = line.match(/export\s+(?:async\s+)?function\s+(\w+)/)?.[1];
             if (funcName && parseResult.functions.some(f => f.name === funcName)) {
-              const func = parseResult.functions.find(f => f.name === funcName);
               // Check if parameters changed (would need diff context for full validation)
-              // This is a simplified check
+              // This is a simplified check - full validation requires diff context
             }
           }
 
@@ -866,10 +865,10 @@ export class StaticAnalysisService {
     this.registerRule({
       id: 'opensource.license',
       name: 'License Compatibility Check',
-      category: 'legal',
+      category: 'security',
       severity: 'critical',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (parseResult, filePath, _content) => {
         const issues: Issue[] = [];
 
         // Check imports for known license-incompatible packages
@@ -910,8 +909,6 @@ export class StaticAnalysisService {
         // This is a simplified check for common inconsistencies
 
         const functions = parseResult.functions;
-        const asyncFunctions = functions.filter(f => f.isAsync);
-        const syncFunctions = functions.filter(f => !f.isAsync);
 
         // Flag if mixing async/await with callbacks
         const hasCallbacks = /\.then\(|\.catch\(|callback\(/i.test(content);
@@ -940,7 +937,7 @@ export class StaticAnalysisService {
       category: 'quality',
       severity: 'high',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
 
         // Check for incomplete implementations
@@ -1021,10 +1018,10 @@ export class StaticAnalysisService {
     this.registerRule({
       id: 'startup.scaling',
       name: 'Scaling Readiness Check',
-      category: 'performance',
+      category: 'quality',
       severity: 'high',
       enabled: true,
-      evaluate: (parseResult, filePath, content) => {
+      evaluate: (_parseResult, filePath, content) => {
         const issues: Issue[] = [];
         const lines = content.split('\n');
 

@@ -7,8 +7,6 @@
  * Based on founder pain event: Schema drift causing production issues
  */
 
-import { prisma } from '../../lib/prisma';
-import { codeParserService } from '../code-parser';
 import { Issue } from '../static-analysis';
 
 export interface SchemaReconciliationRequest {
@@ -135,8 +133,6 @@ export class SchemaReconciliationService {
       }
 
       try {
-        const parseResult = await codeParserService.parse(file.path, file.content);
-
         // Find Prisma client usage
         const prismaUsage = file.content.matchAll(/prisma\.(\w+)\.(\w+)/g);
         for (const match of prismaUsage) {
@@ -262,7 +258,13 @@ export class SchemaReconciliationService {
    * Check RLS policy mismatches (Supabase-specific)
    */
   private async checkRLSPolicies(
-    schemaChanges: Array<{ table: string }>,
+    schemaChanges: Array<{
+      table: string;
+      operation: 'create' | 'alter' | 'drop';
+      columns?: string[];
+      indexes?: string[];
+      constraints?: string[];
+    }>,
     codeModelUsage: Map<string, Set<string>>
   ): Promise<Issue[]> {
     const issues: Issue[] = [];

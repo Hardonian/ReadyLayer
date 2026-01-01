@@ -24,19 +24,13 @@ const GoogleIcon = () => (
   </svg>
 )
 
-const VercelIcon = () => (
+const BitbucketIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2L2 22h20L12 2z"/>
+    <path d="M.778 1.213a.768.768 0 00-.768.892l3.263 19.81c.084.5.515.868 1.022.873H19.95a.772.772 0 00.77-.646l3.27-20.03a.768.768 0 00-.768-.891L.778 1.213zM14.52 15.53H9.522L8.17 8.466h7.561l-1.211 7.064z"/>
   </svg>
 )
 
-const SupabaseIcon = () => (
-  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M21.362 9.354H12V.396a.396.396 0 0 0-.716-.233L2.203 12.424l-.401.562a1.04 1.04 0 0 0 .836 1.659H12v8.959a.396.396 0 0 0 .716.233l9.081-12.261.401-.562a1.04 1.04 0 0 0-.836-1.66z"/>
-  </svg>
-)
-
-type Provider = 'github' | 'gitlab' | 'google' | 'vercel' | 'supabase'
+type Provider = 'github' | 'gitlab' | 'google' | 'bitbucket'
 
 interface ProviderConfig {
   id: Provider
@@ -62,25 +56,18 @@ const providers: ProviderConfig[] = [
     bgColor: 'bg-[#FC6D26] hover:bg-[#FC6D26]/90',
   },
   {
+    id: 'bitbucket',
+    name: 'Bitbucket',
+    icon: <BitbucketIcon />,
+    color: 'text-white',
+    bgColor: 'bg-[#0052CC] hover:bg-[#0052CC]/90',
+  },
+  {
     id: 'google',
     name: 'Google',
     icon: <GoogleIcon />,
     color: 'text-gray-700',
     bgColor: 'bg-white hover:bg-gray-50 border border-gray-300',
-  },
-  {
-    id: 'vercel',
-    name: 'Vercel',
-    icon: <VercelIcon />,
-    color: 'text-white',
-    bgColor: 'bg-black hover:bg-black/90',
-  },
-  {
-    id: 'supabase',
-    name: 'Supabase',
-    icon: <SupabaseIcon />,
-    color: 'text-white',
-    bgColor: 'bg-[#3ECF8E] hover:bg-[#3ECF8E]/90',
   },
 ]
 
@@ -97,14 +84,11 @@ function SignInContent() {
       const supabase = createSupabaseClient()
       
       // Map provider names to Supabase OAuth provider IDs
-      // Note: Vercel and Supabase branding are shown, but they use GitHub OAuth
-      // To use actual Vercel/Supabase OAuth, configure custom OAuth providers in Supabase
-      const supabaseProviderMap: Record<Provider, 'github' | 'gitlab' | 'google'> = {
+      const supabaseProviderMap: Record<Provider, 'github' | 'gitlab' | 'google' | 'bitbucket'> = {
         github: 'github',
         gitlab: 'gitlab',
+        bitbucket: 'bitbucket',
         google: 'google',
-        vercel: 'github', // Vercel typically uses GitHub OAuth
-        supabase: 'github', // Supabase can use GitHub or configure custom provider
       }
 
       const supabaseProvider = supabaseProviderMap[provider]
@@ -159,8 +143,8 @@ function SignInContent() {
             </p>
           </motion.div>
 
-          <motion.div variants={slideUp}>
-            <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-700 shadow-2xl">
+            <motion.div variants={slideUp}>
+            <Card className="backdrop-blur-xl bg-white/70 dark:bg-gray-900/70 border-white/20 dark:border-gray-700/50 shadow-2xl backdrop-saturate-150">
               <CardHeader className="space-y-1 pb-4">
                 <CardTitle className="text-2xl font-semibold">Welcome back</CardTitle>
                 <CardDescription className="text-base">
