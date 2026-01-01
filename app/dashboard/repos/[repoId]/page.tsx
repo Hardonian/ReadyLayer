@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, LoadingState, ErrorState } from '@/components/ui'
+import { useToast } from '@/lib/hooks/use-toast'
+import { useCache, CACHE_KEYS } from '@/lib/hooks/use-cache'
 import { MetricsCard } from '@/components/ui/metrics-card'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
@@ -42,6 +44,9 @@ export default function RepositoryDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [enabled, setEnabled] = useState(false)
+  const [toggling, setToggling] = useState(false)
+  const { toast } = useToast()
+  const { invalidate } = useCache()
 
   useEffect(() => {
     async function fetchRepo() {
@@ -130,10 +135,27 @@ export default function RepositoryDetailPage() {
   }, [repoId])
 
   const handleToggleEnabled = async () => {
+    if (toggling) return // Prevent double-submit
+    
+    const newEnabled = !enabled
+    setToggling(true)
+    
+    // Optimistic update
+    setEnabled(newEnabled)
+
     try {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
+      if (!session) {
+        setEnabled(enabled) // Revert
+        toast({
+          variant: 'destructive',
+          title: 'Authentication required',
+          description: 'Please sign in to update repository settings.',
+        })
+        setToggling(false)
+        return
+      }
 
       const response = await fetch(`/api/v1/repos/${repoId}`, {
         method: 'PATCH',
@@ -141,18 +163,40 @@ export default function RepositoryDetailPage() {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ enabled: !enabled }),
+        body: JSON.stringify({ enabled: newEnabled }),
       })
 
       if (response.ok) {
-        setEnabled(!enabled)
+        // Invalidate cache for this repo and repos list
+        invalidate(CACHE_KEYS.REPO(repoId))
+        invalidate(CACHE_KEYS.REPOS)
+        invalidate(CACHE_KEYS.DASHBOARD)
+        
+        toast({
+          variant: 'success',
+          title: newEnabled ? 'Repository enabled' : 'Repository disabled',
+          description: `Verification is now ${newEnabled ? 'active' : 'inactive'} for this repository.`,
+        })
       } else {
         // Revert on error
         setEnabled(enabled)
+        const errorData = await response.json().catch(() => ({}))
+        toast({
+          variant: 'destructive',
+          title: 'Failed to update repository',
+          description: errorData.error?.message || 'An error occurred while updating the repository.',
+        })
       }
     } catch (err) {
       // Revert on error
       setEnabled(enabled)
+      toast({
+        variant: 'destructive',
+        title: 'Network error',
+        description: err instanceof Error ? err.message : 'Failed to update repository. Please try again.',
+      })
+    } finally {
+      setToggling(false)
     }
   }
 
@@ -205,9 +249,18 @@ export default function RepositoryDetailPage() {
             <Button
               variant={enabled ? "default" : "outline"}
               onClick={handleToggleEnabled}
+              disabled={toggling}
               className="flex items-center gap-2"
             >
-              {enabled ? (
+              {toggling ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {enabled ? 'Disabling...' : 'Enabling...'}
+                </>
+              ) : enabled ? (
                 <>
                   <ToggleRight className="h-4 w-4" />
                   Enabled
@@ -324,8 +377,21 @@ export default function RepositoryDetailPage() {
                     variant={enabled ? "default" : "outline"}
                     size="sm"
                     onClick={handleToggleEnabled}
+                    disabled={toggling}
                   >
-                    {enabled ? 'Disable' : 'Enable'}
+                    {toggling ? (
+                      <>
+                        <svg className="animate-spin h-3 w-3 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {enabled ? 'Disabling...' : 'Enabling...'}
+                      </>
+                    ) : enabled ? (
+                      'Disable'
+                    ) : (
+                      'Enable'
+                    )}
                   </Button>
                 </div>
 

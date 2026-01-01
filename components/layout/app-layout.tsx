@@ -12,6 +12,7 @@ import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
 import { Github, LogOut } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { MobileNav } from './mobile-nav'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -42,9 +43,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleSignOut = async () => {
-    const supabase = createSupabaseClient()
-    await supabase.auth.signOut()
-    window.location.href = '/'
+    try {
+      const supabase = createSupabaseClient()
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    } catch (error) {
+      // If sign-out fails, still redirect (session may be invalid)
+      console.error('Sign out error:', error)
+      window.location.href = '/'
+    }
   }
 
   const navItems = [
@@ -70,7 +77,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         >
           <Container>
             <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center gap-8">
+              <div className="flex items-center gap-8 flex-1">
                 <Link href="/dashboard" className="text-xl font-bold" aria-label="ReadyLayer Home">
                   ReadyLayer
                 </Link>
@@ -92,6 +99,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     </li>
                   ))}
                 </ul>
+                <MobileNav navItems={navItems} />
               </div>
               {!loading && (
                 <div className="flex items-center gap-4">
@@ -105,6 +113,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         variant="ghost"
                         size="sm"
                         onClick={handleSignOut}
+                        aria-label="Sign out"
                       >
                         <LogOut className="h-4 w-4" />
                       </Button>

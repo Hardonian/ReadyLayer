@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -26,6 +26,8 @@ import {
 } from 'lucide-react'
 import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
+import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 interface Repository {
   id: string
@@ -61,6 +63,7 @@ interface VerificationStatus {
 
 export default function DashboardPage() {
   const { persona } = usePersona()
+  const { registerRefetch } = useRefetch()
   const [repos, setRepos] = useState<Repository[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [stats, setStats] = useState<DashboardStats>({
@@ -78,10 +81,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const fetchDashboardData = useCallback(async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       
       if (!url || !key) {
         setError('Configuration not available')
@@ -168,10 +170,17 @@ export default function DashboardPage() {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard')
         setLoading(false)
       }
-    }
-
-    fetchDashboardData()
   }, [])
+
+  // Register refetch callback for cache invalidation
+  useEffect(() => {
+    const unregister = registerRefetch(CACHE_KEYS.DASHBOARD, fetchDashboardData)
+    return unregister
+  }, [registerRefetch, fetchDashboardData])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   if (loading) {
     return (
@@ -206,7 +215,11 @@ export default function DashboardPage() {
           message={error}
           action={{
             label: 'Try Again',
-            onClick: () => window.location.reload(),
+            onClick: () => {
+              setLoading(true)
+              setError(null)
+              fetchDashboardData()
+            },
           }}
         />
       </Container>
@@ -214,7 +227,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <Container className="py-8">
+    <ErrorBoundary>
+      <Container className="py-8">
       <motion.div
         className="space-y-8"
         variants={fadeIn}
@@ -368,15 +382,17 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {repos.length === 0 ? (
-                  <EmptyState
-                    icon={GitBranch}
-                    title="No repositories"
-                    description="Connect a repository to start verifying AI-generated code."
-                    action={{
-                      label: 'Connect Repository',
-                      onClick: () => {},
-                    }}
-                  />
+                    <EmptyState
+                      icon={GitBranch}
+                      title="No repositories"
+                      description="Connect a repository to start verifying AI-generated code."
+                      action={{
+                        label: 'Connect Repository',
+                        onClick: () => {
+                          window.location.href = '/dashboard/repos/connect'
+                        },
+                      }}
+                    />
                 ) : (
                   <div className="space-y-3">
                     {repos.map((repo) => (
@@ -487,5 +503,6 @@ export default function DashboardPage() {
         </div>
       </motion.div>
     </Container>
+    </ErrorBoundary>
   )
 }
