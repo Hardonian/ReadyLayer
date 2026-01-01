@@ -67,8 +67,6 @@ export class PersonaDetectionService {
 
     // Detect based on organization/repository characteristics
     const org = repository.organization;
-    const repoName = repository.name.toLowerCase();
-    const fullName = repository.fullName.toLowerCase();
 
     // Enterprise CTO indicators
     if (this.isEnterprise(org, repository)) {
