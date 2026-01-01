@@ -7,7 +7,6 @@
  * Based on founder pain event: Schema drift causing production issues
  */
 
-import { prisma } from '../../lib/prisma';
 import { codeParserService } from '../code-parser';
 import { Issue } from '../static-analysis';
 
