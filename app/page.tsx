@@ -9,6 +9,7 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Load
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { Shield, TestTube, FileText, CheckCircle2, Github, GitBranch, Code, Zap, Gitlab } from 'lucide-react'
+import { FeatureShowcase } from '@/components/feature-showcase'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
@@ -375,8 +376,11 @@ export default function Home() {
         </Container>
       </section>
 
+      {/* Feature Showcase */}
+      {user && <FeatureShowcase />}
+
       {/* Trust Indicators */}
-      <section className="py-16 bg-surface-muted/50">
+      <section className="py-16 bg-surface-muted/50" aria-labelledby="trust-heading">
         <Container size="lg">
           <motion.div
             className="text-center space-y-8"
@@ -384,7 +388,7 @@ export default function Home() {
             initial="hidden"
             animate="visible"
           >
-            <h3 className="text-2xl font-semibold">Built for Trust</h3>
+            <h3 id="trust-heading" className="text-2xl font-semibold">Built for Trust</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <div className="font-semibold mb-2">Transparent Checks</div>
