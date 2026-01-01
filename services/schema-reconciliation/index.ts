@@ -258,7 +258,13 @@ export class SchemaReconciliationService {
    * Check RLS policy mismatches (Supabase-specific)
    */
   private async checkRLSPolicies(
-    schemaChanges: Array<{ table: string }>,
+    schemaChanges: Array<{
+      table: string;
+      operation: 'create' | 'alter' | 'drop';
+      columns?: string[];
+      indexes?: string[];
+      constraints?: string[];
+    }>,
     codeModelUsage: Map<string, Set<string>>
   ): Promise<Issue[]> {
     const issues: Issue[] = [];
