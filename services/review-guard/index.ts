@@ -68,7 +68,7 @@ export class ReviewGuardService {
       const allIssues: Issue[] = [];
 
       // FOUNDER-SPECIFIC: Diff-level analysis for overconfident refactors
-      const diffIssues = await this.analyzeDiffForLargeRefactors(filesToReview, request.diff);
+      const diffIssues = await this.analyzeDiffForLargeRefactors(filesToReview);
       allIssues.push(...diffIssues);
 
       for (const file of filesToReview) {
@@ -357,8 +357,7 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
    * FOUNDER-SPECIFIC: Analyze diff for large refactors (overconfident AI changes)
    */
   private async analyzeDiffForLargeRefactors(
-    files: Array<{ path: string; content: string; beforeContent?: string | null }>,
-    diff?: string
+    files: Array<{ path: string; content: string; beforeContent?: string | null }>
   ): Promise<Issue[]> {
     const issues: Issue[] = [];
 
