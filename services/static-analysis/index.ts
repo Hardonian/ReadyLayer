@@ -270,6 +270,342 @@ export class StaticAnalysisService {
         return issues;
       },
     });
+
+    // FOUNDER-SPECIFIC RULES (based on real pain events)
+
+    // Edge Runtime Compatibility Check
+    this.registerRule({
+      id: 'founder.edge-runtime',
+      name: 'Edge Runtime Compatibility',
+      category: 'ai',
+      severity: 'critical',
+      enabled: true,
+      evaluate: (parseResult, filePath, content) => {
+        const issues: Issue[] = [];
+
+        // Check if this is middleware or Edge runtime code
+        const isEdgeCode = filePath.includes('middleware') || 
+                          filePath.includes('edge-') ||
+                          content.includes('export const runtime = \'edge\'') ||
+                          content.includes('export const config = { runtime: \'edge\' }');
+
+        if (!isEdgeCode) {
+          return issues; // Skip if not Edge code
+        }
+
+        // Node-only modules that break Edge runtime
+        const nodeOnlyModules = [
+          'fs', 'path', 'crypto', 'stream', 'util', 'os', 'http', 'https',
+          '@prisma/client', 'prisma', 'redis', 'pino', 'ioredis',
+          'rate-limiter-flexible', 'bull', 'kue'
+        ];
+
+        parseResult.imports.forEach((imp) => {
+          const importSource = imp.source;
+          
+          // Check for Node-only modules
+          nodeOnlyModules.forEach((module) => {
+            if (importSource.includes(module)) {
+              issues.push({
+                ruleId: 'founder.edge-runtime',
+                severity: 'critical',
+                file: filePath,
+                line: imp.line,
+                message: `Edge runtime incompatible: '${module}' is Node-only and will crash at runtime`,
+                fix: `Remove import of '${module}' or move this code to Node.js runtime (export const runtime = 'nodejs')`,
+                confidence: 0.95,
+              });
+            }
+          });
+
+          // Check for relative imports that might transitively import Node modules
+          if (importSource.startsWith('.') || importSource.startsWith('..')) {
+            // This would require transitive analysis - flag for manual review
+            if (importSource.includes('prisma') || 
+                importSource.includes('redis') || 
+                importSource.includes('rate-limit') ||
+                importSource.includes('logging') && !importSource.includes('edge-')) {
+              issues.push({
+                ruleId: 'founder.edge-runtime',
+                severity: 'high',
+                file: filePath,
+                line: imp.line,
+                message: `Potential Edge runtime issue: Import '${importSource}' may transitively import Node-only modules`,
+                fix: 'Verify this import chain is Edge-safe or use edge-safe alternatives',
+                confidence: 0.7,
+              });
+            }
+          }
+        });
+
+        return issues;
+      },
+    });
+
+    // Type Safety Erosion Detection
+    this.registerRule({
+      id: 'founder.type-erosion',
+      name: 'Type Safety Erosion',
+      category: 'ai',
+      severity: 'high',
+      enabled: true,
+      evaluate: (parseResult, filePath, content) => {
+        const issues: Issue[] = [];
+        const lines = content.split('\n');
+
+        lines.forEach((line, index) => {
+          const lineNum = index + 1;
+
+          // Detect unnecessary 'any' types
+          if (/\b:\s*any\b/.test(line) && !line.includes('// @ts-ignore') && !line.includes('// eslint-disable')) {
+            // Allow in specific contexts (type definitions, generics)
+            if (!line.includes('Record<') && !line.includes('Map<') && !line.includes('Set<')) {
+              issues.push({
+                ruleId: 'founder.type-erosion',
+                severity: 'high',
+                file: filePath,
+                line: lineNum,
+                message: `Type safety erosion: Unnecessary 'any' type detected`,
+                fix: 'Replace with proper type or use `unknown` if type is truly unknown',
+                confidence: 0.8,
+              });
+            }
+          }
+
+          // Detect type assertions that might hide problems
+          if (/\bas\s+any\b/.test(line)) {
+            issues.push({
+              ruleId: 'founder.type-erosion',
+              severity: 'high',
+              file: filePath,
+              line: lineNum,
+              message: `Type safety erosion: 'as any' assertion hides type errors`,
+              fix: 'Fix the underlying type issue instead of using type assertion',
+              confidence: 0.9,
+            });
+          }
+
+          // Detect loose object types
+          if (/\b:\s*\{\s*\[key:\s*string\]:\s*any\s*\}\b/.test(line)) {
+            issues.push({
+              ruleId: 'founder.type-erosion',
+              severity: 'medium',
+              file: filePath,
+              line: lineNum,
+              message: `Type safety erosion: Loose object type with string index signature`,
+              fix: 'Use Record<string, SpecificType> or define proper interface',
+              confidence: 0.7,
+            });
+          }
+        });
+
+        return issues;
+      },
+    });
+
+    // Unused Imports Detection
+    this.registerRule({
+      id: 'founder.unused-imports',
+      name: 'Unused Imports',
+      category: 'quality',
+      severity: 'medium',
+      enabled: true,
+      evaluate: (parseResult, filePath, content) => {
+        const issues: Issue[] = [];
+
+        parseResult.imports.forEach((imp) => {
+          // Check if imported symbols are actually used
+          imp.specifiers.forEach((specifier) => {
+            // Skip default imports and namespace imports
+            if (specifier === 'default' || specifier === '*') {
+              return;
+            }
+
+            // Check if specifier is used in code
+            const usagePattern = new RegExp(`\\b${specifier}\\b`);
+            const isUsed = usagePattern.test(content);
+
+            if (!isUsed && specifier.length > 0) {
+              issues.push({
+                ruleId: 'founder.unused-imports',
+                severity: 'medium',
+                file: filePath,
+                line: imp.line,
+                message: `Unused import: '${specifier}' is imported but never used`,
+                fix: `Remove '${specifier}' from import statement`,
+                confidence: 0.85,
+              });
+            }
+          });
+
+          // Check default imports
+          if (imp.specifiers.includes('default')) {
+            const defaultName = imp.source.split('/').pop()?.replace(/['"]/g, '') || '';
+            // This is heuristic - would need better analysis
+            const defaultUsagePattern = new RegExp(`\\b${defaultName}\\b|import\\s+${defaultName}`);
+            if (!defaultUsagePattern.test(content) && defaultName.length > 0) {
+              issues.push({
+                ruleId: 'founder.unused-imports',
+                severity: 'medium',
+                file: filePath,
+                line: imp.line,
+                message: `Potentially unused default import from '${imp.source}'`,
+                fix: 'Verify this import is actually used, remove if not',
+                confidence: 0.6,
+              });
+            }
+          }
+        });
+
+        return issues;
+      },
+    });
+
+    // Auth Pattern Detection
+    this.registerRule({
+      id: 'founder.auth-patterns',
+      name: 'Auth Pattern Detection',
+      category: 'security',
+      severity: 'critical',
+      enabled: true,
+      evaluate: (parseResult, filePath, content) => {
+        const issues: Issue[] = [];
+        const lines = content.split('\n');
+
+        // Check for common auth anti-patterns
+        lines.forEach((line, index) => {
+          const lineNum = index + 1;
+
+          // Pattern 1: userId from request body (should be from auth)
+          if (/userId.*=.*(?:req\.body|body\.|request\.body|params\.body)/i.test(line) &&
+              !line.includes('getAuthenticatedUser') &&
+              !line.includes('requireAuth') &&
+              !line.includes('// TODO') &&
+              !line.includes('// FIXME')) {
+            issues.push({
+              ruleId: 'founder.auth-patterns',
+              severity: 'critical',
+              file: filePath,
+              line: lineNum,
+              message: `CRITICAL: userId taken from request body - allows impersonation`,
+              fix: 'Use authenticated user ID from requireAuth() or getAuthenticatedUser()',
+              confidence: 0.95,
+            });
+          }
+
+          // Pattern 2: fromUserId/toUserId confusion
+          if (/fromUserId.*=.*toUserId/i.test(line) || /toUserId.*=.*fromUserId/i.test(line)) {
+            issues.push({
+              ruleId: 'founder.auth-patterns',
+              severity: 'critical',
+              file: filePath,
+              line: lineNum,
+              message: `CRITICAL: fromUserId/toUserId confusion - potential auth bug`,
+              fix: 'Verify user ID assignment is correct',
+              confidence: 0.9,
+            });
+          }
+
+          // Pattern 3: Missing auth check before resource access
+          if (/await\s+prisma\.\w+\.(?:find|create|update|delete)/i.test(line) &&
+              !content.substring(0, content.indexOf(line)).includes('requireAuth') &&
+              !content.substring(0, content.indexOf(line)).includes('getAuthenticatedUser') &&
+              filePath.includes('/api/')) {
+            // This is heuristic - would need better context analysis
+            issues.push({
+              ruleId: 'founder.auth-patterns',
+              severity: 'high',
+              file: filePath,
+              line: lineNum,
+              message: `Potential missing auth check: Database operation without visible auth check`,
+              fix: 'Ensure requireAuth() or getAuthenticatedUser() is called before database operations',
+              confidence: 0.6,
+            });
+          }
+        });
+
+        return issues;
+      },
+    });
+
+    // Error Handling Detection
+    this.registerRule({
+      id: 'founder.error-handling',
+      name: 'Error Handling Completeness',
+      category: 'quality',
+      severity: 'high',
+      enabled: true,
+      evaluate: (parseResult, filePath, content) => {
+        const issues: Issue[] = [];
+
+        parseResult.functions.forEach((func) => {
+          const funcContent = this.getFunctionContent(content, func);
+          const isAsync = func.isAsync;
+          const hasAwait = /await\s+/.test(funcContent);
+          const hasTryCatch = /try\s*\{/.test(funcContent);
+
+          // Async functions with await should have error handling
+          if (isAsync && hasAwait && !hasTryCatch) {
+            issues.push({
+              ruleId: 'founder.error-handling',
+              severity: 'high',
+              file: filePath,
+              line: func.line,
+              message: `Async function '${func.name}' has await but no try/catch error handling`,
+              fix: 'Wrap async operations in try/catch blocks',
+              confidence: 0.8,
+            });
+          }
+
+          // Functions that call prisma should have error handling
+          if (/prisma\.\w+\.(?:find|create|update|delete|upsert)/.test(funcContent) && !hasTryCatch) {
+            issues.push({
+              ruleId: 'founder.error-handling',
+              severity: 'high',
+              file: filePath,
+              line: func.line,
+              message: `Function '${func.name}' calls Prisma without error handling`,
+              fix: 'Wrap database operations in try/catch blocks',
+              confidence: 0.75,
+            });
+          }
+        });
+
+        return issues;
+      },
+    });
+
+    // Large Refactor Detection (overconfident AI changes)
+    this.registerRule({
+      id: 'founder.large-refactor',
+      name: 'Large Refactor Flag',
+      category: 'ai',
+      severity: 'medium',
+      enabled: true,
+      evaluate: (parseResult, filePath, content) => {
+        const issues: Issue[] = [];
+
+        // This rule works best with diff context, but we can flag files with many changes
+        // In practice, this would be called with diff context from Review Guard
+        const functionCount = parseResult.functions.length;
+        const lineCount = content.split('\n').length;
+
+        // Flag files with many functions as potentially risky refactors
+        if (functionCount > 20 && lineCount > 500) {
+          issues.push({
+            ruleId: 'founder.large-refactor',
+            severity: 'medium',
+            file: filePath,
+            line: 1,
+            message: `Large file detected (${functionCount} functions, ${lineCount} lines) - ensure refactor doesn't break edge cases`,
+            fix: 'Review diff carefully, test edge cases, consider breaking into smaller changes',
+            confidence: 0.5,
+          });
+        }
+
+        return issues;
+      },
+    });
   }
 
   /**
@@ -277,8 +613,33 @@ export class StaticAnalysisService {
    */
   private getFunctionContent(content: string, func: any): string {
     const lines = content.split('\n');
-    // Simplified: return function line (would parse full function body in production)
-    return lines[func.line - 1] || '';
+    const startLine = func.line - 1;
+    
+    // Try to get function body by finding matching braces
+    let braceCount = 0;
+    let inFunction = false;
+    let endLine = startLine;
+    
+    for (let i = startLine; i < lines.length; i++) {
+      const line = lines[i];
+      const openBraces = (line.match(/\{/g) || []).length;
+      const closeBraces = (line.match(/\}/g) || []).length;
+      
+      if (openBraces > 0) {
+        inFunction = true;
+        braceCount += openBraces;
+      }
+      if (closeBraces > 0) {
+        braceCount -= closeBraces;
+        if (inFunction && braceCount === 0) {
+          endLine = i;
+          break;
+        }
+      }
+    }
+    
+    // Return function body (or at least the function line if parsing fails)
+    return lines.slice(startLine, endLine + 1).join('\n') || lines[startLine] || '';
   }
 
   /**
