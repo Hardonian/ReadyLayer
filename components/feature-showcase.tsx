@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { Shield, TestTube, FileText, GitBranch, Zap, CheckCircle2, AlertTriangle, MessageSquare } from 'lucide-react'
+import { Shield, TestTube, FileText, GitBranch, CheckCircle2, AlertTriangle, MessageSquare } from 'lucide-react'
 
 interface Feature {
   icon: typeof Shield
@@ -72,7 +72,7 @@ export function FeatureShowcase() {
           initial="hidden"
           animate="visible"
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <motion.div key={feature.title} variants={staggerItem}>
               <Card className="glass-strong backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-white/20 dark:border-gray-700/50 h-full hover:shadow-lg transition-shadow">
                 <CardHeader>

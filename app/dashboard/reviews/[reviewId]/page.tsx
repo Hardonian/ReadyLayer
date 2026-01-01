@@ -21,7 +21,6 @@ import {
   AlertTriangle, 
   XCircle,
   MessageSquare,
-  GitBranch,
   Clock,
   User,
   FileCode,

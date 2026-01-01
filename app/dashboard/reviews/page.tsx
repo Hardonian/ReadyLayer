@@ -6,8 +6,6 @@ import { motion } from 'framer-motion'
 import { 
   Card, 
   CardContent, 
-  CardHeader, 
-  CardTitle,
   Button,
   ErrorState,
   LoadingState,
@@ -20,7 +18,6 @@ import {
   FileCode,
   Clock,
   Search,
-  Filter,
 } from 'lucide-react'
 import Link from 'next/link'
 

@@ -27,8 +27,8 @@ export function usePersona() {
         // In production, this would be determined by analyzing user's repositories
         setPersona('founder')
         setLoading(false)
-      } catch (error) {
-        console.error('Failed to detect persona:', error)
+      } catch {
+        // Silently handle persona detection errors
         setPersona(null)
         setLoading(false)
       }

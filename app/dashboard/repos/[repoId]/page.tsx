@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, Load
 import { MetricsCard } from '@/components/ui/metrics-card'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { Settings, BarChart3, GitBranch, CheckCircle2, AlertTriangle, FileCode, Clock, Shield, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Settings, CheckCircle2, AlertTriangle, FileCode, Clock, Shield, ToggleLeft, ToggleRight } from 'lucide-react'
 import Link from 'next/link'
 
 interface Repository {
@@ -89,19 +89,31 @@ export default function RepositoryDetailPage() {
           const reviewsData = await reviewsResponse.json()
           const reviews = reviewsData.reviews || []
           
-          const blockedPRs = reviews.filter((r: any) => r.isBlocked).length
-          const totalIssues = reviews.reduce((sum: number, r: any) => 
+          interface ReviewItem {
+            createdAt: string
+            isBlocked: boolean
+            summary?: {
+              critical: number
+              high: number
+              medium: number
+              low: number
+            }
+          }
+
+          const reviewsTyped = reviews as ReviewItem[]
+          const blockedPRs = reviewsTyped.filter((r) => r.isBlocked).length
+          const totalIssues = reviewsTyped.reduce((sum: number, r) => 
             sum + (r.summary?.critical || 0) + (r.summary?.high || 0) + (r.summary?.medium || 0) + (r.summary?.low || 0), 0
           )
-          const criticalIssues = reviews.reduce((sum: number, r: any) => sum + (r.summary?.critical || 0), 0)
+          const criticalIssues = reviewsTyped.reduce((sum: number, r) => sum + (r.summary?.critical || 0), 0)
 
           setMetrics({
-            totalReviews: reviews.length,
+            totalReviews: reviewsTyped.length,
             blockedPRs,
             issuesCaught: totalIssues,
             criticalIssues,
             averageReviewTime: 2.5,
-            lastReview: reviews.length > 0 ? reviews[0].createdAt : undefined,
+            lastReview: reviewsTyped.length > 0 ? reviewsTyped[0].createdAt : undefined,
           })
         }
 
@@ -134,9 +146,13 @@ export default function RepositoryDetailPage() {
 
       if (response.ok) {
         setEnabled(!enabled)
+      } else {
+        // Revert on error
+        setEnabled(enabled)
       }
     } catch (err) {
-      console.error('Failed to toggle repository:', err)
+      // Revert on error
+      setEnabled(enabled)
     }
   }
 

@@ -15,8 +15,6 @@ import {
   FileCode,
   GitBranch,
   Zap,
-  Users,
-  Activity,
 } from 'lucide-react'
 import { LoadingState, ErrorState } from '@/components/ui'
 
@@ -78,30 +76,43 @@ export default function MetricsPage() {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-        const reviewsThisWeek = reviews.filter((r: any) => 
+        interface ReviewItem {
+          createdAt: string
+          isBlocked: boolean
+          summary?: {
+            critical: number
+            high: number
+            medium: number
+            low: number
+          }
+        }
+
+        const reviewsTyped = reviews as ReviewItem[]
+
+        const reviewsThisWeek = reviewsTyped.filter((r) => 
           new Date(r.createdAt) >= weekAgo
         ).length
-        const reviewsLastWeek = reviews.filter((r: any) => {
+        const reviewsLastWeek = reviewsTyped.filter((r) => {
           const date = new Date(r.createdAt)
           return date >= twoWeeksAgo && date < weekAgo
         }).length
 
-        const issuesThisWeek = reviews
-          .filter((r: any) => new Date(r.createdAt) >= weekAgo)
-          .reduce((sum: number, r: any) => sum + (r.summary?.critical || 0) + (r.summary?.high || 0), 0)
+        const issuesThisWeek = reviewsTyped
+          .filter((r) => new Date(r.createdAt) >= weekAgo)
+          .reduce((sum: number, r) => sum + (r.summary?.critical || 0) + (r.summary?.high || 0), 0)
         
-        const issuesLastWeek = reviews
-          .filter((r: any) => {
+        const issuesLastWeek = reviewsTyped
+          .filter((r) => {
             const date = new Date(r.createdAt)
             return date >= twoWeeksAgo && date < weekAgo
           })
-          .reduce((sum: number, r: any) => sum + (r.summary?.critical || 0) + (r.summary?.high || 0), 0)
+          .reduce((sum: number, r) => sum + (r.summary?.critical || 0) + (r.summary?.high || 0), 0)
 
-        const blockedPRs = reviews.filter((r: any) => r.isBlocked).length
-        const totalIssues = reviews.reduce((sum: number, r: any) => 
+        const blockedPRs = reviewsTyped.filter((r) => r.isBlocked).length
+        const totalIssues = reviewsTyped.reduce((sum: number, r) => 
           sum + (r.summary?.critical || 0) + (r.summary?.high || 0) + (r.summary?.medium || 0) + (r.summary?.low || 0), 0
         )
-        const criticalIssues = reviews.reduce((sum: number, r: any) => sum + (r.summary?.critical || 0), 0)
+        const criticalIssues = reviewsTyped.reduce((sum: number, r) => sum + (r.summary?.critical || 0), 0)
 
         // Fetch repositories
         const reposResponse = await fetch('/api/v1/repos', {
@@ -110,8 +121,12 @@ export default function MetricsPage() {
           },
         })
         const reposData = reposResponse.ok ? await reposResponse.json() : { repositories: [] }
-        const repos = reposData.repositories || []
-        const activeRepos = repos.filter((r: any) => r.enabled).length
+        interface RepoItem {
+          enabled: boolean
+        }
+
+        const repos = (reposData.repositories || []) as RepoItem[]
+        const activeRepos = repos.filter((r) => r.enabled).length
 
         setMetrics({
           totalReviews: reviews.length,

@@ -137,11 +137,10 @@ export default function DashboardPage() {
           if (reviewsResponse.ok) {
             reviewsData = await reviewsResponse.json()
             setReviews(reviewsData.reviews || [])
-          } else {
-            console.warn('Failed to fetch reviews:', reviewsResponse.status)
           }
+          // Silently handle failed review fetch - not critical for dashboard
         } catch (error) {
-          console.warn('Error fetching reviews:', error)
+          // Silently handle review fetch errors - not critical for dashboard
         }
 
         // Calculate stats

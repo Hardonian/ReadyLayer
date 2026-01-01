@@ -25,8 +25,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         setUser(user)
-      } catch (error) {
-        console.error('Failed to get user:', error)
+      } catch {
+        // Silently handle auth errors - user will see sign-in prompt
       } finally {
         setLoading(false)
       }
