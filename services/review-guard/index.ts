@@ -8,7 +8,6 @@
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
-import { codeParserService } from '../code-parser';
 import { schemaReconciliationService } from '../schema-reconciliation';
 
 export interface ReviewRequest {
