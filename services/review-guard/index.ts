@@ -8,7 +8,8 @@
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
-// import { codeParserService } from '../code-parser'; // Reserved for future use
+import { codeParserService } from '../code-parser';
+import { schemaReconciliationService } from '../schema-reconciliation';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -67,9 +68,13 @@ export class ReviewGuardService {
       // Analyze each file
       const allIssues: Issue[] = [];
 
+      // FOUNDER-SPECIFIC: Diff-level analysis for overconfident refactors
+      const diffIssues = await this.analyzeDiffForLargeRefactors(filesToReview, request.diff);
+      allIssues.push(...diffIssues);
+
       for (const file of filesToReview) {
         try {
-          // Static analysis
+          // Static analysis (includes founder-specific rules)
           const staticIssues = await staticAnalysisService.analyze(file.path, file.content);
           allIssues.push(...staticIssues);
 
@@ -92,6 +97,34 @@ export class ReviewGuardService {
             `Failed to analyze ${file.path}: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
             `This PR is BLOCKED until all files can be analyzed.`
           );
+        }
+      }
+
+      // FOUNDER-SPECIFIC: Schema reconciliation check
+      const migrationFiles = filesToReview.filter(f => 
+        f.path.includes('migration') || f.path.includes('migrations') || f.path.endsWith('.sql')
+      );
+      if (migrationFiles.length > 0) {
+        try {
+          const schemaResult = await schemaReconciliationService.reconcile({
+            repositoryId: request.repositoryId,
+            prNumber: request.prNumber,
+            prSha: request.prSha,
+            migrationFiles: migrationFiles.map(f => ({ path: f.path, content: f.content })),
+            codeFiles: filesToReview.map(f => ({ path: f.path, content: f.content })),
+          });
+          allIssues.push(...schemaResult.issues);
+        } catch (error) {
+          // Schema reconciliation failure is high severity but doesn't block
+          allIssues.push({
+            ruleId: 'founder.schema-reconciliation',
+            severity: 'high',
+            file: 'migration',
+            line: 1,
+            message: `Schema reconciliation check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            fix: 'Manually verify schema changes match code expectations',
+            confidence: 0.8,
+          });
         }
       }
 
@@ -319,6 +352,107 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
       '^' + pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$'
     );
     return regex.test(path);
+  }
+
+  /**
+   * FOUNDER-SPECIFIC: Analyze diff for large refactors (overconfident AI changes)
+   */
+  private async analyzeDiffForLargeRefactors(
+    files: Array<{ path: string; content: string; beforeContent?: string | null }>,
+    diff?: string
+  ): Promise<Issue[]> {
+    const issues: Issue[] = [];
+
+    // Detect large refactors
+    const largeFiles = files.filter(f => {
+      const lineCount = f.content.split('\n').length;
+      return lineCount > 300; // Large file threshold
+    });
+
+    for (const file of largeFiles) {
+      // If beforeContent exists, this is a modification (not new file)
+      if (file.beforeContent) {
+        const beforeLines = file.beforeContent.split('\n').length;
+        const afterLines = file.content.split('\n').length;
+        const changeRatio = Math.abs(afterLines - beforeLines) / beforeLines;
+
+        // Flag files with >30% change as potentially risky refactor
+        if (changeRatio > 0.3) {
+          issues.push({
+            ruleId: 'founder.large-refactor',
+            severity: 'high',
+            file: file.path,
+            line: 1,
+            message: `Large refactor detected: ${Math.round(changeRatio * 100)}% of file changed - ensure edge cases are tested`,
+            fix: 'Review diff carefully, test edge cases, consider breaking into smaller PRs',
+            confidence: 0.8,
+          });
+        }
+
+        // Analyze diff for common AI refactor patterns
+        const diffAnalysis = this.analyzeDiffPatterns(file.beforeContent, file.content);
+        issues.push(...diffAnalysis);
+      }
+    }
+
+    return issues;
+  }
+
+  /**
+   * Analyze diff for common AI refactor anti-patterns
+   */
+  private analyzeDiffPatterns(before: string, after: string): Issue[] {
+    const issues: Issue[] = [];
+
+    // Pattern 1: Many functions changed at once
+    const beforeFunctions = (before.match(/(?:function|const\s+\w+\s*=\s*(?:async\s+)?\(|export\s+(?:async\s+)?function)/g) || []).length;
+    const afterFunctions = (after.match(/(?:function|const\s+\w+\s*=\s*(?:async\s+)?\(|export\s+(?:async\s+)?function)/g) || []).length;
+    
+    if (Math.abs(afterFunctions - beforeFunctions) > 5) {
+      issues.push({
+        ruleId: 'founder.large-refactor',
+        severity: 'medium',
+        file: 'diff',
+        line: 1,
+        message: `Many functions changed (${beforeFunctions} → ${afterFunctions}) - verify all functions still work correctly`,
+        fix: 'Test each changed function individually',
+        confidence: 0.7,
+      });
+    }
+
+    // Pattern 2: Type changes (type erosion or over-typing)
+    const beforeAnyCount = (before.match(/\b:\s*any\b/g) || []).length;
+    const afterAnyCount = (after.match(/\b:\s*any\b/g) || []).length;
+    
+    if (afterAnyCount > beforeAnyCount) {
+      issues.push({
+        ruleId: 'founder.type-erosion',
+        severity: 'high',
+        file: 'diff',
+        line: 1,
+        message: `Type safety regression: 'any' types increased (${beforeAnyCount} → ${afterAnyCount})`,
+        fix: 'Replace any types with proper types',
+        confidence: 0.9,
+      });
+    }
+
+    // Pattern 3: Error handling removed
+    const beforeTryCatch = (before.match(/\btry\s*\{/g) || []).length;
+    const afterTryCatch = (after.match(/\btry\s*\{/g) || []).length;
+    
+    if (afterTryCatch < beforeTryCatch) {
+      issues.push({
+        ruleId: 'founder.error-handling',
+        severity: 'high',
+        file: 'diff',
+        line: 1,
+        message: `Error handling removed: try/catch blocks decreased (${beforeTryCatch} → ${afterTryCatch})`,
+        fix: 'Ensure error handling is not removed without proper replacement',
+        confidence: 0.85,
+      });
+    }
+
+    return issues;
   }
 }
 
