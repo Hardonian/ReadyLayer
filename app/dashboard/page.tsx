@@ -26,6 +26,8 @@ import {
 } from 'lucide-react'
 import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
+import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
+import { ErrorBoundary } from '@/components/error-boundary'
 
 interface Repository {
   id: string
@@ -61,6 +63,7 @@ interface VerificationStatus {
 
 export default function DashboardPage() {
   const { persona } = usePersona()
+  const { registerRefetch } = useRefetch()
   const [repos, setRepos] = useState<Repository[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [stats, setStats] = useState<DashboardStats>({
@@ -79,8 +82,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchDashboardData = useCallback(async () => {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       
       if (!url || !key) {
         setError('Configuration not available')
@@ -167,7 +170,13 @@ export default function DashboardPage() {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard')
         setLoading(false)
       }
-    }, [])
+  }, [])
+
+  // Register refetch callback for cache invalidation
+  useEffect(() => {
+    const unregister = registerRefetch(CACHE_KEYS.DASHBOARD, fetchDashboardData)
+    return unregister
+  }, [registerRefetch, fetchDashboardData])
 
   useEffect(() => {
     fetchDashboardData()
@@ -218,7 +227,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <Container className="py-8">
+    <ErrorBoundary>
+      <Container className="py-8">
       <motion.div
         className="space-y-8"
         variants={fadeIn}
@@ -493,5 +503,6 @@ export default function DashboardPage() {
         </div>
       </motion.div>
     </Container>
+    </ErrorBoundary>
   )
 }

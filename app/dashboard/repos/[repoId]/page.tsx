@@ -6,6 +6,7 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, LoadingState, ErrorState } from '@/components/ui'
 import { useToast } from '@/lib/hooks/use-toast'
+import { useCache, CACHE_KEYS } from '@/lib/hooks/use-cache'
 import { MetricsCard } from '@/components/ui/metrics-card'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
@@ -45,6 +46,7 @@ export default function RepositoryDetailPage() {
   const [enabled, setEnabled] = useState(false)
   const [toggling, setToggling] = useState(false)
   const { toast } = useToast()
+  const { invalidate } = useCache()
 
   useEffect(() => {
     async function fetchRepo() {
@@ -165,6 +167,11 @@ export default function RepositoryDetailPage() {
       })
 
       if (response.ok) {
+        // Invalidate cache for this repo and repos list
+        invalidate(CACHE_KEYS.REPO(repoId))
+        invalidate(CACHE_KEYS.REPOS)
+        invalidate(CACHE_KEYS.DASHBOARD)
+        
         toast({
           variant: 'success',
           title: newEnabled ? 'Repository enabled' : 'Repository disabled',
