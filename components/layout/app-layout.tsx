@@ -42,9 +42,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [])
 
   const handleSignOut = async () => {
-    const supabase = createSupabaseClient()
-    await supabase.auth.signOut()
-    window.location.href = '/'
+    try {
+      const supabase = createSupabaseClient()
+      await supabase.auth.signOut()
+      window.location.href = '/'
+    } catch (error) {
+      // If sign-out fails, still redirect (session may be invalid)
+      console.error('Sign out error:', error)
+      window.location.href = '/'
+    }
   }
 
   const navItems = [

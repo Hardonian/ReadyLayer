@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -78,8 +78,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchDashboardData() {
+  const fetchDashboardData = useCallback(async () => {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       
@@ -168,10 +167,11 @@ export default function DashboardPage() {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard')
         setLoading(false)
       }
-    }
+    }, [])
 
+  useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [fetchDashboardData])
 
   if (loading) {
     return (
@@ -206,7 +206,11 @@ export default function DashboardPage() {
           message={error}
           action={{
             label: 'Try Again',
-            onClick: () => window.location.reload(),
+            onClick: () => {
+              setLoading(true)
+              setError(null)
+              fetchDashboardData()
+            },
           }}
         />
       </Container>
@@ -368,15 +372,17 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 {repos.length === 0 ? (
-                  <EmptyState
-                    icon={GitBranch}
-                    title="No repositories"
-                    description="Connect a repository to start verifying AI-generated code."
-                    action={{
-                      label: 'Connect Repository',
-                      onClick: () => {},
-                    }}
-                  />
+                    <EmptyState
+                      icon={GitBranch}
+                      title="No repositories"
+                      description="Connect a repository to start verifying AI-generated code."
+                      action={{
+                        label: 'Connect Repository',
+                        onClick: () => {
+                          window.location.href = '/dashboard/repos/connect'
+                        },
+                      }}
+                    />
                 ) : (
                   <div className="space-y-3">
                     {repos.map((repo) => (

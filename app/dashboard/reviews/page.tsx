@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
 import { 
@@ -41,61 +41,82 @@ export default function ReviewsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'blocked' | 'approved'>('all')
 
-  useEffect(() => {
-    async function fetchReviews() {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
-      if (!url || !key) {
-        setError('Configuration not available')
+  const fetchReviews = useCallback(async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    
+    if (!url || !key) {
+      setError('Configuration not available')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const supabase = createSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setError('Not authenticated')
         setLoading(false)
         return
       }
 
-      try {
-        const supabase = createSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          setError('Not authenticated')
-          setLoading(false)
-          return
-        }
+      const response = await fetch('/api/v1/reviews?limit=50', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        signal: AbortSignal.timeout(10000),
+      })
 
-        const response = await fetch('/api/v1/reviews?limit=50', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch reviews')
-        }
-
-        const data = await response.json()
-        setReviews(data.reviews || [])
-        setLoading(false)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load reviews')
-        setLoading(false)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error?.message || 'Failed to fetch reviews')
       }
-    }
 
-    fetchReviews()
+      const data = await response.json()
+      setReviews(data.reviews || [])
+      setError(null)
+      setLoading(false)
+    } catch (err) {
+      if (err instanceof Error && err.name === 'TimeoutError') {
+        setError('Request timed out while fetching reviews')
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to load reviews')
+      }
+      setLoading(false)
+    }
   }, [])
 
-  const filteredReviews = reviews.filter((review) => {
-    const matchesSearch = searchQuery === '' || 
-      review.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.prNumber.toString().includes(searchQuery)
+  useEffect(() => {
+    fetchReviews()
+  }, [fetchReviews])
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 300)
     
-    const matchesFilter = filterStatus === 'all' ||
-      (filterStatus === 'blocked' && review.isBlocked) ||
-      (filterStatus === 'approved' && !review.isBlocked)
-    
-    return matchesSearch && matchesFilter
-  })
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [searchQuery])
+
+  const filteredReviews = useMemo(() => {
+    return reviews.filter((review) => {
+      const matchesSearch = debouncedSearchQuery === '' || 
+        review.id.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        review.prNumber.toString().includes(debouncedSearchQuery)
+      
+      const matchesFilter = filterStatus === 'all' ||
+        (filterStatus === 'blocked' && review.isBlocked) ||
+        (filterStatus === 'approved' && !review.isBlocked)
+      
+      return matchesSearch && matchesFilter
+    })
+  }, [reviews, debouncedSearchQuery, filterStatus])
 
   if (loading) {
     return (
@@ -111,8 +132,12 @@ export default function ReviewsPage() {
         <ErrorState
           message={error}
           action={{
-            label: 'Back to Dashboard',
-            onClick: () => window.location.href = '/dashboard',
+            label: 'Try Again',
+            onClick: () => {
+              setLoading(true)
+              setError(null)
+              fetchReviews()
+            },
           }}
         />
       </Container>

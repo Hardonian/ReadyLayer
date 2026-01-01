@@ -463,9 +463,16 @@ export default function ReviewDetailPage() {
                                   onChange={(e) =>
                                     setNewComment({ ...newComment, [issue.id]: e.target.value })
                                   }
-                                  placeholder="Add a comment..."
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                      e.preventDefault()
+                                      handleAddComment(issue.id)
+                                    }
+                                  }}
+                                  placeholder="Add a comment... (Ctrl/Cmd+Enter to submit)"
                                   className="w-full p-3 text-sm border border-border rounded-lg bg-surface focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
                                   rows={3}
+                                  aria-label="Add a comment"
                                 />
                                 <div className="flex justify-end">
                                   <Button
