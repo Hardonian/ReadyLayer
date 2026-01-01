@@ -25,8 +25,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         setUser(user)
-      } catch (error) {
-        console.error('Failed to get user:', error)
+      } catch {
+        // Silently handle auth errors - user will see sign-in prompt
       } finally {
         setLoading(false)
       }
@@ -50,6 +50,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/dashboard/repos', label: 'Repositories' },
+    { href: '/dashboard/reviews', label: 'Reviews' },
+    { href: '/dashboard/metrics', label: 'Metrics' },
   ]
 
   // Don't show nav on auth pages or landing page
@@ -63,29 +65,33 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           variants={fadeIn}
           initial="hidden"
           animate="visible"
+          role="navigation"
+          aria-label="Main navigation"
         >
           <Container>
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center gap-8">
-                <Link href="/dashboard" className="text-xl font-bold">
+                <Link href="/dashboard" className="text-xl font-bold" aria-label="ReadyLayer Home">
                   ReadyLayer
                 </Link>
-                <div className="hidden md:flex items-center gap-6">
+                <ul className="hidden md:flex items-center gap-6 list-none">
                   {navItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        'text-sm font-medium transition-colors hover:text-text-primary',
-                        pathname === item.href
-                          ? 'text-text-primary'
-                          : 'text-text-muted'
-                      )}
-                    >
-                      {item.label}
-                    </Link>
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          'text-sm font-medium transition-colors hover:text-text-primary',
+                          pathname === item.href
+                            ? 'text-text-primary'
+                            : 'text-text-muted'
+                        )}
+                        aria-current={pathname === item.href ? 'page' : undefined}
+                      >
+                        {item.label}
+                      </Link>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
               {!loading && (
                 <div className="flex items-center gap-4">

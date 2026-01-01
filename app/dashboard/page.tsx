@@ -24,6 +24,8 @@ import {
   ArrowRight,
   Database,
 } from 'lucide-react'
+import { usePersona } from '@/lib/hooks/use-persona'
+import { PersonaBadge } from '@/components/persona'
 
 interface Repository {
   id: string
@@ -58,6 +60,7 @@ interface VerificationStatus {
 }
 
 export default function DashboardPage() {
+  const { persona } = usePersona()
   const [repos, setRepos] = useState<Repository[]>([])
   const [reviews, setReviews] = useState<Review[]>([])
   const [stats, setStats] = useState<DashboardStats>({
@@ -134,11 +137,10 @@ export default function DashboardPage() {
           if (reviewsResponse.ok) {
             reviewsData = await reviewsResponse.json()
             setReviews(reviewsData.reviews || [])
-          } else {
-            console.warn('Failed to fetch reviews:', reviewsResponse.status)
           }
+          // Silently handle failed review fetch - not critical for dashboard
         } catch (error) {
-          console.warn('Error fetching reviews:', error)
+          // Silently handle review fetch errors - not critical for dashboard
         }
 
         // Calculate stats
@@ -221,8 +223,11 @@ export default function DashboardPage() {
       >
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold" id="dashboard-heading">Dashboard</h1>
+            {persona && <PersonaBadge persona={persona} />}
+          </div>
+          <p className="text-muted-foreground" id="dashboard-description">
             Verifiable assurance for AI-generated code. Every check is transparent and traceable.
           </p>
         </div>
@@ -259,15 +264,17 @@ export default function DashboardPage() {
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
+          role="region"
+          aria-label="Dashboard statistics"
         >
           <motion.div variants={staggerItem}>
-            <Card>
+            <Card role="article" aria-labelledby="total-repos-title">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Repositories</CardTitle>
-                <Database className="h-4 w-4 text-muted-foreground" />
+                <CardTitle id="total-repos-title" className="text-sm font-medium">Total Repositories</CardTitle>
+                <Database className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats.totalRepos}</div>
+                <div className="text-3xl font-bold" aria-label={`${stats.totalRepos} total repositories`}>{stats.totalRepos}</div>
                 <p className="text-xs text-muted-foreground mt-1">Connected to your Git provider</p>
               </CardContent>
             </Card>
@@ -377,6 +384,7 @@ export default function DashboardPage() {
                         key={repo.id}
                         href={`/dashboard/repos/${repo.id}`}
                         className="block"
+                        aria-label={`View repository ${repo.fullName}`}
                       >
                         <motion.div
                           className="p-4 border border-border-subtle rounded-lg hover:bg-surface-hover transition-colors"
@@ -439,6 +447,7 @@ export default function DashboardPage() {
                         key={review.id}
                         href={`/dashboard/reviews/${review.id}`}
                         className="block"
+                        aria-label={`View review for PR #${review.prNumber}`}
                       >
                         <motion.div
                           className="p-4 border border-border-subtle rounded-lg hover:bg-surface-hover transition-colors"

@@ -152,6 +152,7 @@ export async function PATCH(
     }
     const bodyObj = body as Record<string, unknown>;
     const config = bodyObj.config;
+    const enabled = bodyObj.enabled;
 
     // Validate config
     if (config !== undefined && (typeof config !== 'object' || config === null || Array.isArray(config))) {
@@ -160,6 +161,19 @@ export async function PATCH(
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Config must be an object',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate enabled
+    if (enabled !== undefined && typeof enabled !== 'boolean') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Enabled must be a boolean',
           },
         },
         { status: 400 }
@@ -206,24 +220,47 @@ export async function PATCH(
       );
     }
 
-    await prisma.repositoryConfig.upsert({
-      where: { repositoryId: params.repoId },
-      update: {
-        config: config as Prisma.InputJsonValue,
-        version: { increment: 1 },
-      },
-      create: {
-        repositoryId: params.repoId,
-        config: config as Prisma.InputJsonValue,
+    // Update repository enabled status if provided
+    if (enabled !== undefined) {
+      await prisma.repository.update({
+        where: { id: params.repoId },
+        data: { enabled },
+      });
+    }
+
+    // Update config if provided
+    if (config !== undefined) {
+      await prisma.repositoryConfig.upsert({
+        where: { repositoryId: params.repoId },
+        update: {
+          config: config as Prisma.InputJsonValue,
+          version: { increment: 1 },
+        },
+        create: {
+          repositoryId: params.repoId,
+          config: config as Prisma.InputJsonValue,
+        },
+      });
+    }
+
+    // Fetch updated repository
+    const updatedRepo = await prisma.repository.findUnique({
+      where: { id: params.repoId },
+      include: {
+        configs: true,
       },
     });
 
-    log.info({ repoId: params.repoId }, 'Repository config updated');
+    log.info({ repoId: params.repoId, enabled }, 'Repository updated');
 
     return NextResponse.json({
-      id: params.repoId,
-      config: config as Prisma.JsonValue,
-      updatedAt: new Date(),
+      id: updatedRepo!.id,
+      name: updatedRepo!.name,
+      fullName: updatedRepo!.fullName,
+      provider: updatedRepo!.provider,
+      enabled: updatedRepo!.enabled,
+      config: updatedRepo!.configs[0]?.config || {},
+      updatedAt: updatedRepo!.updatedAt,
     });
   } catch (error) {
     log.error(error, 'Failed to update repository config');
