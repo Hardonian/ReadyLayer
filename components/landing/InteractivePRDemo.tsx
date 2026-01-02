@@ -74,19 +74,21 @@ export function InteractivePRDemo({
 
   // State machine for demo animation
   React.useEffect(() => {
-    if (!autoPlay || state !== 'playing' || prefersReducedMotion) return
+    if (!autoPlay || state !== 'playing' || prefersReducedMotion) {
+      return undefined
+    }
 
     try {
       const totalSteps = demoChecks.length
       if (currentStep >= totalSteps) {
         setState('completed')
-        return
+        return undefined
       }
 
       const check = demoChecks[currentStep]
       if (!check) {
         setState('completed')
-        return
+        return undefined
       }
       
       // Update check to running
@@ -115,6 +117,7 @@ export function InteractivePRDemo({
     } catch {
       // If anything fails, stop the demo gracefully
       setState('completed')
+      return undefined
     }
   }, [autoPlay, state, currentStep, prefersReducedMotion])
 
