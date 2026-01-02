@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { githubWebhookHandler, GitHubWebhookEvent } from '../../../../integrations/github/webhook';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
+import { UsageLimitExceededError } from '../../../../lib/usage-enforcement';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
@@ -106,6 +107,23 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     log.error(error, 'Webhook handling failed');
     metrics.increment('webhooks.failed', { provider: 'github' });
+
+    // Handle usage limit errors with proper status codes
+    if (error instanceof UsageLimitExceededError) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'USAGE_LIMIT_EXCEEDED',
+            message: error.message,
+            limitType: error.limitType,
+            current: error.current,
+            limit: error.limit,
+            remaining: error.limit - error.current,
+          },
+        },
+        { status: error.httpStatus }
+      );
+    }
 
     return NextResponse.json(
       {

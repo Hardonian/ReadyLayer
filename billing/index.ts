@@ -6,10 +6,25 @@
 
 import { prisma } from '../lib/prisma';
 
+export interface PlanLimits {
+  // LLM limits
+  llmTokensPerDay: number; // Daily token limit
+  llmTokensPerMonth: number; // Monthly token limit (alternative to budget)
+  llmBudget: number; // Monthly LLM spend limit (USD)
+  
+  // Usage limits
+  runsPerDay: number; // Daily review/test runs
+  concurrentJobs: number; // Max concurrent processing jobs
+  
+  // Fail-open/closed policy
+  failOpenOnLimit: boolean; // If true, allow requests but log; if false, reject
+}
+
 export interface BillingTier {
   name: 'starter' | 'growth' | 'scale';
   monthlyPrice: number;
   llmBudget: number; // Monthly LLM spend limit
+  limits: PlanLimits;
   features: {
     reviewGuard: boolean;
     testEngine: boolean;
@@ -24,6 +39,14 @@ export const BILLING_TIERS: Record<string, BillingTier> = {
     name: 'starter',
     monthlyPrice: 0,
     llmBudget: 50,
+    limits: {
+      llmTokensPerDay: 100000, // 100k tokens/day
+      llmTokensPerMonth: 2000000, // 2M tokens/month
+      llmBudget: 50,
+      runsPerDay: 50, // 50 reviews/tests per day
+      concurrentJobs: 2, // Max 2 concurrent jobs
+      failOpenOnLimit: false, // Reject when limit hit
+    },
     features: {
       reviewGuard: true,
       testEngine: true,
@@ -36,6 +59,14 @@ export const BILLING_TIERS: Record<string, BillingTier> = {
     name: 'growth',
     monthlyPrice: 99,
     llmBudget: 500,
+    limits: {
+      llmTokensPerDay: 1000000, // 1M tokens/day
+      llmTokensPerMonth: 20000000, // 20M tokens/month
+      llmBudget: 500,
+      runsPerDay: 500, // 500 reviews/tests per day
+      concurrentJobs: 10, // Max 10 concurrent jobs
+      failOpenOnLimit: false, // Reject when limit hit
+    },
     features: {
       reviewGuard: true,
       testEngine: true,
@@ -48,6 +79,14 @@ export const BILLING_TIERS: Record<string, BillingTier> = {
     name: 'scale',
     monthlyPrice: 499,
     llmBudget: 5000,
+    limits: {
+      llmTokensPerDay: 10000000, // 10M tokens/day
+      llmTokensPerMonth: 200000000, // 200M tokens/month
+      llmBudget: 5000,
+      runsPerDay: 5000, // 5000 reviews/tests per day
+      concurrentJobs: 50, // Max 50 concurrent jobs
+      failOpenOnLimit: true, // Allow but log (graceful degradation)
+    },
     features: {
       reviewGuard: true,
       testEngine: true,

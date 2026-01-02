@@ -71,9 +71,15 @@ export function formatPolicyComment(
  */
 export function generateStatusCheckDescription(
   evaluationResult: PolicyEvaluationInput,
-  _provider?: GitProvider
+  _provider?: GitProvider,
+  blockedReason?: string | null
 ): string {
   const issuesCount = evaluationResult.nonWaivedFindings.length
+  
+  // Check if blocked due to usage limits
+  if (blockedReason && blockedReason.includes('Usage limit exceeded')) {
+    return `Usage limit exceeded. Upgrade your plan or wait for limits to reset. See details in check run.`
+  }
   
   if (evaluationResult.blocked) {
     return `Policy check failed: ${issuesCount} issue(s) found. Score: ${evaluationResult.score.toFixed(1)}/100`

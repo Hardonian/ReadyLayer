@@ -285,8 +285,14 @@ async function processPREvent(
         status: 'completed',
         conclusion: reviewResult.isBlocked ? 'failure' : 'success',
         output: {
-          title: reviewResult.isBlocked ? 'Policy check failed' : 'Policy check passed',
-          summary,
+          title: reviewResult.isBlocked 
+            ? (reviewResult.blockedReason?.includes('Usage limit exceeded') 
+                ? 'Usage Limit Exceeded' 
+                : 'Policy check failed')
+            : 'Policy check passed',
+          summary: reviewResult.blockedReason?.includes('Usage limit exceeded')
+            ? `⚠️ **Usage limit exceeded**\n\n${reviewResult.blockedReason}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
+            : summary,
           annotations: limitedAnnotations.length > 0 ? limitedAnnotations : undefined,
         },
         details_url: process.env.NEXT_PUBLIC_APP_URL
@@ -378,6 +384,12 @@ async function processPREvent(
     }
   } catch (error) {
     log.error(error, 'Review Guard failed');
+    
+    // Check if this is a usage limit error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isUsageLimitError = errorMessage.includes('Usage limit exceeded') || 
+                              errorMessage.includes('usage limit');
+    
     // Create check run with error status
     try {
       await githubAPIClient.createOrUpdateCheckRun(
@@ -389,8 +401,10 @@ async function processPREvent(
           status: 'completed',
           conclusion: 'failure',
           output: {
-            title: 'Review failed',
-            summary: '⚠️ Review failed - please check logs or contact support',
+            title: isUsageLimitError ? 'Usage Limit Exceeded' : 'Review failed',
+            summary: isUsageLimitError
+              ? `⚠️ **Usage limit exceeded**\n\n${errorMessage}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
+              : '⚠️ Review failed - please check logs or contact support',
           },
         },
         accessToken
