@@ -27,6 +27,7 @@ model User {
   jobs          Job[]
   auditLogs     AuditLog[]
   subscriptions Subscription[]
+  consents      UserConsent[]
 
   @@index([email])
 }
@@ -105,6 +106,9 @@ model Repository {
   jobs          Job[]
   waivers       Waiver[]
   policyPacks   PolicyPack[]
+  aiAnomalies   AIAnomaly[]
+  aiSuggestions AIOptimizationSuggestion[]
+  tokenUsage    TokenUsage[]
   predictiveAlerts PredictiveAlert[]
 
   @@unique([fullName, provider])
@@ -593,6 +597,138 @@ model TokenUsage {
   @@index([reviewId])
   @@index([service])
   @@index([createdAt])
+}
+
+// Self-Learning & Performance Tracking Models
+
+// Model Performance (individual performance records)
+model ModelPerformance {
+  id            String   @id @default(cuid())
+  organizationId String
+  modelId       String
+  provider      String // openai, anthropic
+  predictionId String? // Link to prediction/alert
+  success       Boolean
+  responseTimeMs Int
+  tokensUsed    Int
+  cost          Decimal  @db.Decimal(10, 4)
+  metadata      Json? // Additional performance data (anonymized)
+  timestamp     DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([provider])
+  @@index([timestamp])
+  @@index([predictionId])
+}
+
+// Model Performance Aggregate (aggregated metrics per model)
+model ModelPerformanceAggregate {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  modelId            String
+  provider           String
+  totalRequests      Int      @default(0)
+  successfulRequests Int     @default(0)
+  failedRequests     Int      @default(0)
+  averageResponseTime Decimal @db.Decimal(10, 2)
+  averageTokensUsed  Int
+  averageCost         Decimal  @db.Decimal(10, 4)
+  accuracyScore      Decimal  @db.Decimal(5, 4) // 0-1
+  confidenceScore    Decimal  @db.Decimal(5, 4) // 0-1
+  trustScore         Decimal  @db.Decimal(5, 4) // 0-1
+  lastUpdated        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, modelId, provider])
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([provider])
+  @@index([trustScore])
+  @@index([confidenceScore])
+}
+
+// Prediction Feedback (feedback on predictions/alerts)
+model PredictionFeedback {
+  id                    String   @id @default(cuid())
+  predictionId          String
+  wasCorrect            Boolean
+  actualOutcome         Json? // What actually happened
+  feedbackType          String // explicit, implicit, outcome_based
+  confidenceAtPrediction Decimal @db.Decimal(5, 4)
+  userId                String?
+  timestamp             DateTime @default(now())
+
+  @@index([predictionId])
+  @@index([wasCorrect])
+  @@index([timestamp])
+  @@index([userId])
+}
+
+// Aggregated Insights (patterns, anomalies, optimizations)
+model AggregatedInsight {
+  id          String   @id @default(cuid())
+  organizationId String
+  insightType String // pattern, anomaly, optimization, prediction
+  confidence   Decimal  @db.Decimal(5, 4) // 0-1
+  trustLevel   Decimal  @db.Decimal(5, 4) // 0-1
+  dataPoints   Int // Number of data points supporting this
+  firstSeen    DateTime
+  lastSeen     DateTime
+  trend        String // increasing, decreasing, stable
+  metadata     Json? // Insight-specific data
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([insightType])
+  @@index([confidence])
+  @@index([trustLevel])
+  @@index([lastSeen])
+}
+
+// Compliance & Privacy Models
+
+// Data Retention Policy
+model DataRetentionPolicy {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  gdprEnabled    Boolean  @default(true)
+  retentionDays  Int      @default(365)
+  requireConsent Boolean  @default(true)
+  anonymizePII   Boolean  @default(true)
+  allowAggregation Boolean @default(true)
+  aggregationWindow Int   @default(30) // Days
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// User Consent (GDPR compliance)
+model UserConsent {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  consentType    String // data_processing, aggregation, analytics
+  granted        Boolean
+  grantedAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId, consentType])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([granted])
 }
 
 // Predictive Alerts (predictions made by the system)
