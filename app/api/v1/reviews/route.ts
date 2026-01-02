@@ -82,7 +82,14 @@ export const POST = createRouteHandler(
     });
 
     if (!repo) {
-      return errorResponse('NOT_FOUND', `Repository ${repositoryId} not found`, 404);
+      const { ErrorMessages } = await import('../../../../lib/errors');
+      return errorResponse(
+        'NOT_FOUND',
+        ErrorMessages.NOT_FOUND('Repository', repositoryId).message,
+        404,
+        ErrorMessages.NOT_FOUND('Repository', repositoryId).context,
+        ErrorMessages.NOT_FOUND('Repository', repositoryId).fix
+      );
     }
 
     // Verify user belongs to repository's organization
@@ -96,7 +103,14 @@ export const POST = createRouteHandler(
     });
 
     if (!membership) {
-      return errorResponse('FORBIDDEN', 'Access denied to repository', 403);
+      const { ErrorMessages } = await import('../../../../lib/errors');
+      return errorResponse(
+        'FORBIDDEN',
+        ErrorMessages.FORBIDDEN.message,
+        403,
+        { repositoryId, organizationId: repo.organizationId },
+        ErrorMessages.FORBIDDEN.fix
+      );
     }
 
     // Check billing limits
@@ -105,10 +119,27 @@ export const POST = createRouteHandler(
       checkLLMBudget: true,
     });
     if (billingCheck) {
+      // Audit log billing limit exceeded
+      try {
+        const { createAuditLog, AuditActions } = await import('../../../../lib/audit');
+        await createAuditLog({
+          organizationId: repo.organizationId,
+          userId: user.id,
+          action: AuditActions.BILLING_LIMIT_EXCEEDED,
+          resourceType: 'review',
+          details: {
+            repositoryId,
+            prNumber,
+            limitType: 'llm_budget',
+          },
+        });
+      } catch {
+        // Don't fail on audit log errors
+      }
       return billingCheck;
     }
 
-    log.info({ repositoryId, prNumber }, 'Starting review');
+    log.info({ repositoryId, prNumber, userId: user.id }, 'Starting review - billing check passed');
 
     // Transform config to ReviewConfig format
     const validatedConfig: ReviewConfig | undefined = config ? {

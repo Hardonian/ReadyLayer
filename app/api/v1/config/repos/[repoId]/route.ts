@@ -35,11 +35,15 @@ export async function GET(
     });
 
     if (!repo) {
+      const { ErrorMessages } = await import('../../../../../../lib/errors');
+      const notFound = ErrorMessages.NOT_FOUND('Repository', params.repoId);
       return NextResponse.json(
         {
           error: {
             code: 'NOT_FOUND',
-            message: `Repository ${params.repoId} not found`,
+            message: notFound.message,
+            context: notFound.context,
+            fix: notFound.fix,
           },
         },
         { status: 404 }
@@ -56,11 +60,14 @@ export async function GET(
     });
 
     if (!membership) {
+      const { ErrorMessages } = await import('../../../../../../lib/errors');
       return NextResponse.json(
         {
           error: {
             code: 'FORBIDDEN',
-            message: 'Access denied to repository',
+            message: ErrorMessages.FORBIDDEN.message,
+            context: { repositoryId: params.repoId },
+            fix: ErrorMessages.FORBIDDEN.fix,
           },
         },
         { status: 403 }
@@ -135,11 +142,14 @@ export async function PUT(
     });
 
     if (!membership || !['owner', 'admin'].includes(membership.role)) {
+      const { ErrorMessages } = await import('../../../../../../lib/errors');
       return NextResponse.json(
         {
           error: {
             code: 'FORBIDDEN',
-            message: 'Admin role required to update repository configuration',
+            message: ErrorMessages.FORBIDDEN.message,
+            context: { repositoryId: params.repoId, userRole: membership?.role || 'none' },
+            fix: 'You must be an organization owner or admin to update repository configuration. Contact an organization admin to grant you admin access.',
           },
         },
         { status: 403 }
@@ -197,20 +207,45 @@ export async function PUT(
       rawConfig as string | undefined
     );
 
-    log.info({ repoId: params.repoId }, 'Repository config updated');
+    // Audit log
+    try {
+      const { createAuditLog, AuditActions } = await import('../../../../../../lib/audit');
+      await createAuditLog({
+        organizationId: repo.organizationId,
+        userId: user.id,
+        action: AuditActions.REPO_CONFIG_UPDATED,
+        resourceType: 'repository_config',
+        resourceId: params.repoId,
+        details: {
+          repositoryId: params.repoId,
+          configVersion: (config as any).version,
+        },
+      });
+    } catch {
+      // Don't fail on audit log errors
+    }
+
+    log.info({ repoId: params.repoId, userId: user.id }, 'Repository config updated successfully');
 
     return NextResponse.json({
       id: params.repoId,
       config,
       updatedAt: new Date(),
+      message: 'Configuration updated successfully. Changes will apply to the next PR review.',
     });
   } catch (error) {
     log.error(error, 'Failed to update repository config');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const isConfigError = errorMessage.includes('Invalid config') || errorMessage.includes('configuration');
+    
     return NextResponse.json(
       {
         error: {
           code: 'UPDATE_CONFIG_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
+          message: errorMessage,
+          fix: isConfigError 
+            ? errorMessage 
+            : 'Check your configuration format and try again. See https://docs.readylayer.com/config for valid configuration options. If the problem persists, contact support@readylayer.com',
         },
       },
       { status: 400 }
