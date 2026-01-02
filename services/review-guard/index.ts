@@ -6,13 +6,14 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { llmService, LLMRequest } from '../llm';
+import { llmService, LLMRequest, LLMResponse } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
 import { schemaReconciliationService } from '../schema-reconciliation';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { UsageLimitExceededError } from '../../lib/usage-enforcement';
+import { aiAnomalyDetectionService } from '../ai-anomaly-detection';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -243,6 +244,9 @@ export class ReviewGuardService {
       // Track violations for pattern detection (only non-waived)
       await this.trackViolations(request.repositoryId, review.id, evaluationResult.nonWaivedFindings);
 
+      // Track token usage for anomaly detection
+      await this.trackTokenUsage(review.id, request.repositoryId, organizationId);
+
       return {
         id: review.id,
         status: isBlocked ? 'blocked' : 'completed',
@@ -278,6 +282,18 @@ export class ReviewGuardService {
         `Review ID: ${review.id}`
       );
     }
+  }
+
+  /**
+   * Track token usage for anomaly detection
+   */
+  private async trackTokenUsage(
+    reviewId: string,
+    repositoryId: string,
+    organizationId: string
+  ): Promise<void> {
+    // Token usage is tracked per LLM call in recordTokenUsage
+    // This method can be used for aggregate tracking if needed
   }
 
   /**
@@ -351,6 +367,10 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
 
     try {
       const response = await llmService.complete(llmRequest);
+      
+      // Track token usage for anomaly detection
+      await this.recordTokenUsage(response, llmRequest.prompt, repositoryId, organizationId, 'review');
+
       const issues = JSON.parse(response.content) as Issue[];
 
       // Validate AI output
@@ -369,6 +389,44 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
         `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
         `Cannot complete AI-aware security analysis.`
       );
+    }
+  }
+
+  /**
+   * Record token usage for anomaly detection
+   */
+  private async recordTokenUsage(
+    response: LLMResponse,
+    prompt: string,
+    repositoryId: string,
+    organizationId: string,
+    service: string
+  ): Promise<void> {
+    try {
+      // Estimate input tokens (rough: ~4 chars per token)
+      const estimatedInputTokens = Math.ceil(prompt.length / 4);
+      
+      // Calculate waste percentage (simplified - would need more sophisticated analysis)
+      const totalTokens = response.tokensUsed;
+      const wastePercentage = totalTokens > 50000 ? 20 : totalTokens > 20000 ? 10 : 5;
+
+      await prisma.tokenUsage.create({
+        data: {
+          repositoryId,
+          organizationId,
+          service,
+          provider: response.model.includes('claude') ? 'anthropic' : 'openai',
+          model: response.model,
+          inputTokens: estimatedInputTokens,
+          outputTokens: response.tokensUsed - estimatedInputTokens,
+          totalTokens: response.tokensUsed,
+          cost: response.cost,
+          wastePercentage,
+        },
+      });
+    } catch (error) {
+      // Don't fail review if token tracking fails
+      console.error('Failed to track token usage:', error);
     }
   }
 

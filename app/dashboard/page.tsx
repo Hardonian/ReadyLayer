@@ -23,6 +23,10 @@ import {
   FileText,
   ArrowRight,
   Database,
+  Sparkles,
+  TrendingDown,
+  AlertCircle,
+  Lightbulb,
 } from 'lucide-react'
 import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
@@ -62,6 +66,50 @@ interface VerificationStatus {
   aiErrorsDetected: number
 }
 
+interface AIOptimizationData {
+  anomalies: Array<{
+    type: string
+    severity: string
+    description: string
+    detectedAt: string
+  }>
+  tokenWaste: {
+    totalTokensUsed: number
+    wastePercentage: number
+    wasteSources: Array<{
+      source: string
+      tokens: number
+      percentage: number
+      suggestion: string
+    }>
+  } | null
+  repeatedMistakes: Array<{
+    ruleId: string
+    count: number
+    suggestion: string
+    severity: string
+  }>
+  suggestions: Array<{
+    id: string
+    type: string
+    difficulty: string
+    title: string
+    description: string
+    impact: string
+    effort: string
+    estimatedSavings?: {
+      tokens?: number
+      cost?: number
+    }
+  }>
+  summary: {
+    totalAnomalies: number
+    totalTokenWaste: number
+    repeatedMistakeCount: number
+    suggestionCount: number
+  }
+}
+
 export default function DashboardPage() {
   const { persona } = usePersona()
   const { registerRefetch } = useRefetch()
@@ -83,6 +131,8 @@ export default function DashboardPage() {
   const [organizationId, setOrganizationId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [aiOptimization, setAiOptimization] = useState<AIOptimizationData | null>(null)
+  const [loadingOptimization, setLoadingOptimization] = useState(false)
 
   const fetchDashboardData = useCallback(async () => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -404,6 +454,207 @@ export default function DashboardPage() {
                   <div className="text-xs text-muted-foreground mt-1">Every check is traceable and verifiable</div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* AI Optimization Insights */}
+        <motion.div variants={fadeIn}>
+          <Card className="bg-gradient-to-r from-purple-500/5 to-blue-500/5 border-purple-500/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-6 w-6 text-purple-500" />
+                  <CardTitle>AI Optimization Insights</CardTitle>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!organizationId) return
+                    setLoadingOptimization(true)
+                    try {
+                      const supabase = createSupabaseClient()
+                      const { data: { session } } = await supabase.auth.getSession()
+                      if (!session) return
+
+                      const response = await fetch(
+                        `/api/v1/ai-optimization?organizationId=${organizationId}`,
+                        {
+                          headers: {
+                            'Authorization': `Bearer ${session.access_token}`,
+                          },
+                        }
+                      )
+                      if (response.ok) {
+                        const data = await response.json()
+                        setAiOptimization(data)
+                      }
+                    } catch (err) {
+                      console.error('Failed to fetch AI optimization:', err)
+                    } finally {
+                      setLoadingOptimization(false)
+                    }
+                  }}
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                  disabled={loadingOptimization}
+                >
+                  {loadingOptimization ? 'Analyzing...' : 'Analyze AI Usage'}
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {aiOptimization ? (
+                <div className="space-y-6">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-background/50 p-4 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Anomalies Detected</div>
+                      <div className="text-2xl font-bold text-purple-500">{aiOptimization.summary.totalAnomalies}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Drift, context slips, hallucinations</div>
+                    </div>
+                    <div className="bg-background/50 p-4 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Token Waste</div>
+                      <div className="text-2xl font-bold text-orange-500">
+                        {aiOptimization.tokenWaste?.wastePercentage.toFixed(1) || 0}%
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {aiOptimization.tokenWaste?.totalTokensUsed.toLocaleString() || 0} tokens used
+                      </div>
+                    </div>
+                    <div className="bg-background/50 p-4 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Repeated Mistakes</div>
+                      <div className="text-2xl font-bold text-red-500">{aiOptimization.summary.repeatedMistakeCount}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Patterns to address</div>
+                    </div>
+                    <div className="bg-background/50 p-4 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Optimization Suggestions</div>
+                      <div className="text-2xl font-bold text-green-500">{aiOptimization.summary.suggestionCount}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Personalized recommendations</div>
+                    </div>
+                  </div>
+
+                  {/* Top Suggestions */}
+                  {aiOptimization.suggestions.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-yellow-500" />
+                        Top Optimization Suggestions
+                      </h3>
+                      <div className="space-y-3">
+                        {aiOptimization.suggestions.slice(0, 3).map((suggestion) => (
+                          <div
+                            key={suggestion.id}
+                            className="p-4 border border-border-subtle rounded-lg bg-background/50"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h4 className="font-semibold">{suggestion.title}</h4>
+                                <p className="text-sm text-muted-foreground mt-1">{suggestion.description}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  suggestion.difficulty === 'easy' ? 'bg-green-500/20 text-green-600' :
+                                  suggestion.difficulty === 'intermediate' ? 'bg-yellow-500/20 text-yellow-600' :
+                                  'bg-red-500/20 text-red-600'
+                                }`}>
+                                  {suggestion.difficulty}
+                                </span>
+                                <span className={`text-xs px-2 py-1 rounded ${
+                                  suggestion.impact === 'high' ? 'bg-purple-500/20 text-purple-600' :
+                                  suggestion.impact === 'medium' ? 'bg-blue-500/20 text-blue-600' :
+                                  'bg-gray-500/20 text-gray-600'
+                                }`}>
+                                  {suggestion.impact} impact
+                                </span>
+                              </div>
+                            </div>
+                            {suggestion.estimatedSavings && (
+                              <div className="flex items-center gap-4 mt-2 text-sm">
+                                {suggestion.estimatedSavings.tokens && (
+                                  <span className="text-muted-foreground">
+                                    Save ~{suggestion.estimatedSavings.tokens.toLocaleString()} tokens
+                                  </span>
+                                )}
+                                {suggestion.estimatedSavings.cost && (
+                                  <span className="text-muted-foreground">
+                                    Save ~${suggestion.estimatedSavings.cost.toFixed(2)}/month
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Repeated Mistakes */}
+                  {aiOptimization.repeatedMistakes.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                        Repeated Mistakes
+                      </h3>
+                      <div className="space-y-2">
+                        {aiOptimization.repeatedMistakes.slice(0, 5).map((mistake, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 border border-border-subtle rounded-lg bg-background/50"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{mistake.ruleId}</div>
+                                <div className="text-xs text-muted-foreground mt-1">{mistake.suggestion}</div>
+                              </div>
+                              <span className="text-xs font-semibold text-red-500">
+                                {mistake.count}x
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">
+                    Get personalized AI optimization suggestions based on your codebase patterns
+                  </p>
+                  <button
+                    onClick={async () => {
+                      if (!organizationId) return
+                      setLoadingOptimization(true)
+                      try {
+                        const supabase = createSupabaseClient()
+                        const { data: { session } } = await supabase.auth.getSession()
+                        if (!session) return
+
+                        const response = await fetch(
+                          `/api/v1/ai-optimization?organizationId=${organizationId}`,
+                          {
+                            headers: {
+                              'Authorization': `Bearer ${session.access_token}`,
+                            },
+                          }
+                        )
+                        if (response.ok) {
+                          const data = await response.json()
+                          setAiOptimization(data)
+                        }
+                      } catch (err) {
+                        console.error('Failed to fetch AI optimization:', err)
+                      } finally {
+                        setLoadingOptimization(false)
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    disabled={loadingOptimization || !organizationId}
+                  >
+                    {loadingOptimization ? 'Analyzing...' : 'Analyze AI Usage'}
+                  </button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
