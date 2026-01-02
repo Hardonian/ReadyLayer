@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../lib/prisma';
-import { logger } from '../../../../observability/logging';
-import { getGitProviderAdapter } from '../../../../integrations/git-provider-adapter';
-import { getInstallationByProviderWithDecryptedToken } from '../../../../lib/secrets/installation-helpers';
-import { errorResponse, successResponse } from '../../../../lib/api-route-helpers';
-import { githubWebhookHandler } from '../../../../integrations/github/webhook';
-import { gitlabWebhookHandler } from '../../../../integrations/gitlab/webhook';
-import { bitbucketWebhookHandler } from '../../../../integrations/bitbucket/webhook';
+import { prisma } from '../../../../../lib/prisma';
+import { logger } from '../../../../../observability/logging';
+import { getGitProviderAdapter } from '../../../../../integrations/git-provider-adapter';
+import { getInstallationByProviderWithDecryptedToken } from '../../../../../lib/secrets/installation-helpers';
+import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
+import { githubWebhookHandler } from '../../../../../integrations/github/webhook';
+import { gitlabWebhookHandler } from '../../../../../integrations/gitlab/webhook';
+import { bitbucketWebhookHandler } from '../../../../../integrations/bitbucket/webhook';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
