@@ -487,7 +487,12 @@ export class DocSyncService {
           }
         } catch (error) {
           // Evidence retrieval failed - proceed without it (graceful degradation)
-          console.warn('Evidence retrieval failed, proceeding without evidence:', error);
+          // Use structured logger instead of console.warn for observability
+          const { logger } = await import('../../observability/logging');
+          logger.warn({
+            err: error instanceof Error ? error : new Error(String(error)),
+            repositoryId,
+          }, 'Evidence retrieval failed, proceeding without evidence');
         }
       }
 

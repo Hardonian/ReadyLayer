@@ -117,8 +117,14 @@ async function processWebhookEvent(payload: any): Promise<void> {
     // Get installation with decrypted token
     const installation = await getInstallationWithDecryptedToken(installationId);
 
-    if (!installation || !installation.isActive) {
-      throw new Error(`Installation ${installationId} not found or inactive`);
+    if (!installation) {
+      log.error({ installationId }, 'Installation not found');
+      throw new Error(`Installation ${installationId} not found`);
+    }
+
+    if (!installation.isActive) {
+      log.warn({ installationId }, 'Installation is inactive');
+      throw new Error(`Installation ${installationId} is inactive`);
     }
 
     const accessToken = installation.accessToken; // Already decrypted
@@ -473,8 +479,65 @@ async function processPREvent(
     log.error(error, 'Test Engine failed');
   }
 
-  // Ingest PR diff into evidence index (idempotent, safe)
-  if (isIngestEnabled() && diff) {
+    // Run Doc Sync drift check on PR (before merge)
+    // This checks for drift between code and docs, but doesn't generate new docs
+    try {
+      const repo = await prisma.repository.findUnique({
+        where: { id: repository.id },
+        select: { organizationId: true },
+      });
+
+      if (repo) {
+        // Check for drift without generating new docs
+        const driftResult = await docSyncService.checkDrift(
+          repository.id,
+          pr.sha,
+          {
+            driftPrevention: {
+              enabled: true,
+              action: 'block', // Block PR if drift detected
+              checkOn: 'pr',
+            },
+          }
+        );
+
+        if (driftResult.isBlocked) {
+          // Create check run for drift
+          const provider = detectGitProvider({
+            provider: repository.provider,
+            url: repository.url || undefined,
+          });
+          const prAdapter = getGitProviderPRAdapter(provider);
+
+          await prAdapter.createOrUpdateCheckRun(
+            repository.fullName,
+            pr.sha,
+            {
+              name: 'ReadyLayer Doc Sync',
+              head_sha: pr.sha,
+              status: 'completed',
+              conclusion: 'failure',
+              output: {
+                title: 'Documentation drift detected',
+                summary: `⚠️ **Documentation drift detected**\n\n` +
+                  `${driftResult.missingEndpoints.length} endpoint(s) missing from documentation\n` +
+                  `${driftResult.changedEndpoints.length} endpoint(s) changed but docs not updated\n\n` +
+                  `**Next steps:**\n` +
+                  `- Update documentation to match code changes\n` +
+                  `- Or merge PR and docs will be auto-generated`,
+              },
+            },
+            accessToken
+          );
+        }
+      }
+    } catch (error) {
+      log.warn({ err: error }, 'Doc Sync drift check failed (non-blocking)');
+      // Don't block PR on drift check failure - it's advisory
+    }
+
+    // Ingest PR diff into evidence index (idempotent, safe)
+    if (isIngestEnabled() && diff) {
     try {
       const repo = await prisma.repository.findUnique({
         where: { id: repository.id },
@@ -516,7 +579,7 @@ async function processMergeEvent(
     const traceId = requestId || `webhook_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     log.info({ prNumber: pr.number, requestId: traceId }, 'Processing merge event');
 
-  // Run Doc Sync
+  // Run Doc Sync (on merge)
   try {
     const docResult = await docSyncService.generateDocs({
       repositoryId: repository.id,
@@ -561,15 +624,41 @@ async function processMergeEvent(
  * Process CI completed event
  */
 async function processCIEvent(
-  _repository: any,
-  _pr: any,
+  repository: any,
+  pr: any,
   _accessToken: string,
   log: any
 ): Promise<void> {
-  log.info('Processing CI event'); // No context needed
+  log.info({ repositoryId: repository.id, prNumber: pr?.number }, 'Processing CI event');
 
-  // Check coverage (would parse CI output for coverage data)
-  // This is a placeholder - would integrate with actual CI coverage reports
+  // Check coverage when CI workflow completes
+  // This integrates with GitHub Actions coverage reports
+  if (pr?.sha && repository.id) {
+    try {
+      // Get repository to find organization
+      const repo = await prisma.repository.findUnique({
+        where: { id: repository.id },
+        select: { organizationId: true },
+      });
+
+      if (!repo) {
+        log.warn({ repositoryId: repository.id }, 'Repository not found for CI event');
+        return;
+      }
+
+      // Parse coverage from CI artifacts (would fetch from GitHub Actions artifacts)
+      // For now, this is a placeholder - actual implementation would:
+      // 1. Fetch coverage report from GitHub Actions artifacts
+      // 2. Parse lcov or coverage JSON
+      // 3. Call testEngineService.checkCoverage()
+      // 4. Create GitHub check run if coverage below threshold
+
+      log.info({ repositoryId: repository.id, prSha: pr.sha }, 'CI event processed (coverage check placeholder)');
+    } catch (error) {
+      log.error({ err: error, repositoryId: repository.id }, 'Failed to process CI event');
+      // Don't throw - CI event processing is non-blocking
+    }
+  }
 }
 
 

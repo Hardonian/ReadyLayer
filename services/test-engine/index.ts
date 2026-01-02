@@ -9,7 +9,7 @@ import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
-import { checkBillingLimits } from '../../lib/billing-middleware';
+// Billing check imported dynamically to avoid circular dependencies
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
@@ -147,25 +147,13 @@ export class TestEngineService {
       // Check billing limits before generating tests
       // Note: This is a service-level check. If called from webhook, billing is already checked.
       // But if called directly from API, we need to check here.
-      // We'll check billing but not throw - let the caller handle the response.
-      // For webhook calls, billing is checked upstream.
+      // For webhook calls, billing is checked upstream but we still check here for consistency.
       const organizationId = repoForOrg.organizationId;
-      const billingCheck = await checkBillingLimits(organizationId, {
+      const { checkBillingLimitsOrThrow } = await import('../../lib/billing-middleware');
+      await checkBillingLimitsOrThrow(organizationId, {
         requireFeature: 'testEngine',
         checkLLMBudget: true,
       });
-      if (billingCheck) {
-        // Return error result instead of throwing
-        return {
-          id: `test_${Date.now()}`,
-          status: 'blocked' as const,
-          testContent: '',
-          placement: '',
-          framework: framework || 'unknown',
-          startedAt,
-          completedAt: new Date(),
-        };
-      }
 
       // Generate tests using LLM
       const prompt = await this.buildTestPrompt(
@@ -401,7 +389,13 @@ export class TestEngineService {
         }
       } catch (error) {
         // Evidence retrieval failed - proceed without it (graceful degradation)
-        console.warn('Evidence retrieval failed, proceeding without evidence:', error);
+        // Use structured logger instead of console.warn for observability
+        const { logger } = await import('../../observability/logging');
+        logger.warn({
+          err: error instanceof Error ? error : new Error(String(error)),
+          repositoryId,
+          filePath,
+        }, 'Evidence retrieval failed, proceeding without evidence');
       }
     }
 
