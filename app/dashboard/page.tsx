@@ -32,6 +32,11 @@ import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
 import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
 import { ErrorBoundary } from '@/components/error-boundary'
+
+// Functional wrapper for ErrorBoundary to avoid Next.js parsing issues
+function ErrorBoundaryWrapper({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>
+}
 import { UsageLimitBanner, UsageStats } from '@/components/ui/usage-limit-banner'
 
 interface Repository {
@@ -325,7 +330,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundaryWrapper>
       <Container className="py-8">
       <motion.div
         className="space-y-8"
@@ -813,6 +818,6 @@ export default function DashboardPage() {
         </div>
       </motion.div>
     </Container>
-    </ErrorBoundary>
+    </ErrorBoundaryWrapper>
   )
 }
