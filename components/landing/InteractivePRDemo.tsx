@@ -50,7 +50,13 @@ export function InteractivePRDemo({
   const [activeTab, setActiveTab] = React.useState<'checks' | 'diff' | 'docs'>('checks')
   const [selectedCheck, setSelectedCheck] = React.useState<string | null>(null)
   const [checkStates, setCheckStates] = React.useState<Map<string, CheckStatus>>(
-    new Map(demoChecks.map((check) => [check.id, 'queued']))
+    React.useMemo(() => {
+      try {
+        return new Map(demoChecks.map((check) => [check.id, 'queued']))
+      } catch {
+        return new Map()
+      }
+    }, [])
   )
   const [currentStep, setCurrentStep] = React.useState(0)
 
@@ -70,28 +76,45 @@ export function InteractivePRDemo({
   React.useEffect(() => {
     if (!autoPlay || state !== 'playing' || prefersReducedMotion) return
 
-    const totalSteps = demoChecks.length
-    if (currentStep >= totalSteps) {
+    try {
+      const totalSteps = demoChecks.length
+      if (currentStep >= totalSteps) {
+        setState('completed')
+        return
+      }
+
+      const check = demoChecks[currentStep]
+      if (!check) {
+        setState('completed')
+        return
+      }
+      
+      // Update check to running
+      const runningTimer = setTimeout(() => {
+        try {
+          setCheckStates((prev) => new Map(prev).set(check.id, 'running'))
+        } catch {
+          // Silently handle state update errors
+        }
+      }, 500)
+
+      // Then update to final status after delay
+      const statusTimer = setTimeout(() => {
+        try {
+          setCheckStates((prev) => new Map(prev).set(check.id, check.status))
+          setCurrentStep((prev) => prev + 1)
+        } catch {
+          // Silently handle state update errors
+        }
+      }, (check.duration ? check.duration * 100 : 2000) + 500)
+
+      return () => {
+        clearTimeout(runningTimer)
+        clearTimeout(statusTimer)
+      }
+    } catch {
+      // If anything fails, stop the demo gracefully
       setState('completed')
-      return
-    }
-
-    const check = demoChecks[currentStep]
-    
-    // Update check to running
-    const runningTimer = setTimeout(() => {
-      setCheckStates((prev) => new Map(prev).set(check.id, 'running'))
-    }, 500)
-
-    // Then update to final status after delay
-    const statusTimer = setTimeout(() => {
-      setCheckStates((prev) => new Map(prev).set(check.id, check.status))
-      setCurrentStep((prev) => prev + 1)
-    }, (check.duration ? check.duration * 100 : 2000) + 500)
-
-    return () => {
-      clearTimeout(runningTimer)
-      clearTimeout(statusTimer)
     }
   }, [autoPlay, state, currentStep, prefersReducedMotion])
 

@@ -76,7 +76,10 @@ export function HeroProof({ user }: HeroProofProps) {
                 Runs in your PR checks. Review Guard → Test Engine → Doc Sync. Deterministic gates with full audit trail.
               </p>
               <p className="text-sm text-text-muted max-w-xl">
-                <strong className="text-text-primary">AI-aware detection:</strong> Identifies AI-generated code patterns, context slips, and security risks. Every check is traceable with metrics and review IDs.
+                <strong className="text-text-primary">AI-aware detection:</strong> Identifies AI-generated code patterns, context slips, and security risks. Every check is traceable with metrics and review IDs.{' '}
+                <Link href="/how-it-works" className="text-accent hover:underline font-medium">
+                  See how it works →
+                </Link>
               </p>
             </motion.div>
 
@@ -203,6 +206,17 @@ export function HeroProof({ user }: HeroProofProps) {
                   <Link href="/dashboard">Go to Dashboard</Link>
                 </Button>
               )}
+            </motion.div>
+            <motion.div
+              className="flex flex-wrap gap-4 text-sm"
+              variants={prefersReducedMotion ? fadeIn : staggerItem}
+            >
+              <Link href="/how-it-works" className="text-accent hover:underline">
+                How it works →
+              </Link>
+              <Link href="/pricing" className="text-accent hover:underline">
+                Pricing →
+              </Link>
             </motion.div>
 
             {/* Works With */}
