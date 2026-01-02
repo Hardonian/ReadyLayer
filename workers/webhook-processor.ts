@@ -8,7 +8,7 @@ import { queueService } from '../queue';
 import { reviewGuardService } from '../services/review-guard';
 import { testEngineService } from '../services/test-engine';
 import { docSyncService } from '../services/doc-sync';
-import { githubAPIClient } from '../integrations/github/api-client';
+import { githubAPIClient, type CheckRunAnnotation, type CheckRunDetails } from '../integrations/github/api-client';
 import { formatPolicyComment, generateStatusCheckDescription } from '../lib/git-provider-ui/comment-formatter';
 import { detectGitProvider } from '../lib/git-provider-ui';
 import { prisma } from '../lib/prisma';
@@ -19,6 +19,83 @@ import { getInstallationWithDecryptedToken } from '../lib/secrets/installation-h
 import { checkBillingLimits } from '../lib/billing-middleware';
 import { redactSecret } from '../lib/crypto';
 import { isKeyConfigured } from '../lib/crypto';
+import type { Issue } from '../services/static-analysis';
+
+/**
+ * Convert issues to check-run annotations
+ */
+function issuesToAnnotations(issues: Issue[]): CheckRunAnnotation[] {
+  const annotations: CheckRunAnnotation[] = [];
+  
+  for (const issue of issues) {
+    // Map severity to annotation_level
+    let annotationLevel: 'notice' | 'warning' | 'failure';
+    switch (issue.severity) {
+      case 'critical':
+      case 'high':
+        annotationLevel = 'failure';
+        break;
+      case 'medium':
+        annotationLevel = 'warning';
+        break;
+      case 'low':
+      default:
+        annotationLevel = 'notice';
+        break;
+    }
+
+    annotations.push({
+      path: issue.file,
+      start_line: issue.line,
+      end_line: issue.line,
+      start_column: issue.column,
+      end_column: issue.column,
+      annotation_level: annotationLevel,
+      message: issue.message,
+      title: `${issue.ruleId}: ${issue.severity}`,
+      raw_details: issue.fix ? `Suggested fix: ${issue.fix}` : undefined,
+    });
+  }
+
+  return annotations;
+}
+
+/**
+ * Generate suggested fix as unified diff (minimal, safe fixes only)
+ * Only generates fixes for trivial deterministic issues
+ * 
+ * Note: Currently, GitHub check runs include fix suggestions in annotation raw_details.
+ * This function is kept for potential future use (e.g., creating patch files).
+ */
+function generateSuggestedFix(issue: Issue, fileContent: string): string | null {
+  if (!issue.fix) {
+    return null;
+  }
+
+  // Only generate fixes for safe, deterministic issues
+  const safeRulePatterns = [
+    /^security\.(sql-injection|unsafe-eval|missing-await)$/,
+    /^quality\.(missing-await|unused-import)$/,
+  ];
+
+  const isSafe = safeRulePatterns.some(pattern => pattern.test(issue.ruleId));
+  if (!isSafe) {
+    return null;
+  }
+
+  const lines = fileContent.split('\n');
+  const lineIndex = issue.line - 1;
+  
+  if (lineIndex < 0 || lineIndex >= lines.length) {
+    return null;
+  }
+
+  const originalLine = lines[lineIndex];
+  const fixedLine = issue.fix;
+
+  // Generate minimal unified diff
+  return `--- a/${issue.file}\n+++ b/${issue.file}\n@@ -${issue.line},1 +${issue.line},1 @@\n-${originalLine}\n+${fixedLine}`;
+}
 
 /**
  * Process webhook event
@@ -144,15 +221,27 @@ async function processPREvent(
     checkLLMBudget: true,
   });
   if (billingCheck) {
-    // Billing check failed - update status check and return
-    await githubAPIClient.updateStatusCheck(
-      repository.fullName,
-      pr.sha,
-      'error',
-      '⚠️ Billing limit exceeded - please upgrade',
-      'readylayer/review',
-      accessToken
-    );
+    // Billing check failed - create check run and return
+    try {
+      await githubAPIClient.createOrUpdateCheckRun(
+        repository.fullName,
+        pr.sha,
+        {
+          name: 'ReadyLayer Report',
+          head_sha: pr.sha,
+          status: 'completed',
+          conclusion: 'action_required',
+          output: {
+            title: 'Billing limit exceeded',
+            summary: '⚠️ Billing limit exceeded - please upgrade',
+          },
+        },
+        accessToken
+      );
+    } catch (error) {
+      log.error({ error }, 'Failed to create check run for billing error');
+      // Degrade gracefully - don't crash worker
+    }
     throw new Error(`Billing limit exceeded for organization ${repo.organizationId}`);
   }
 
@@ -167,86 +256,93 @@ async function processPREvent(
       files,
     });
 
-    // Post review comments with provider-aware formatting
-    if (reviewResult.issues.length > 0) {
-      // Try to get policy evaluation result from review
-      const review = await prisma.review.findUnique({
-        where: { id: reviewResult.id },
-        include: {
-          repository: true,
-        },
-      });
+    // Get review details for check run
+    const review = await prisma.review.findUnique({
+      where: { id: reviewResult.id },
+    });
 
-      const provider = detectGitProvider({
-        provider: repository.provider,
-        url: repository.url || undefined,
-      });
-
-      // Format comment using provider-aware formatter
-      const commentBody = formatPolicyComment(
-        {
-          blocked: reviewResult.isBlocked,
-          score: (review as any)?.policyScore || 100,
-          rulesFired: (review as any)?.rulesFired || [],
-          nonWaivedFindings: reviewResult.issues.map((issue) => ({
-            ruleId: issue.ruleId,
-            severity: issue.severity,
-            message: issue.message,
-            file: issue.file,
-            line: issue.line || 0,
-          })),
-        },
-        {
-          provider,
-          repository: {
-            provider: repository.provider,
-            url: repository.url || undefined,
-          },
-        }
-      );
-
-      await githubAPIClient.postPRComment(
-        repository.fullName,
-        pr.number,
-        commentBody,
-        accessToken
-      );
-    }
-
-    // Update status check with provider-aware description
     const provider = detectGitProvider({
       provider: repository.provider,
       url: repository.url || undefined,
     });
 
-    const review = await prisma.review.findUnique({
-      where: { id: reviewResult.id },
-    });
+    // Convert issues to annotations
+    const annotations = issuesToAnnotations(reviewResult.issues);
+    
+    // Limit annotations to 50 (GitHub API limit)
+    const limitedAnnotations = annotations.slice(0, 50);
 
-    const statusDescription = generateStatusCheckDescription(
-      {
-        blocked: reviewResult.isBlocked,
-        score: (review as any)?.policyScore || 100,
-        rulesFired: (review as any)?.rulesFired || [],
-        nonWaivedFindings: reviewResult.issues.map((issue) => ({
-          ruleId: issue.ruleId,
-          severity: issue.severity,
-          message: issue.message,
-          file: issue.file,
-          line: issue.line || 0,
-        })),
-      },
-      provider
-    );
+    // Generate summary text
+    const summary = reviewResult.isBlocked
+      ? `Policy check failed: ${reviewResult.issues.length} issue(s) found. Score: ${((review as any)?.policyScore || 100).toFixed(1)}/100`
+      : `Policy check passed. Score: ${((review as any)?.policyScore || 100).toFixed(1)}/100`;
 
-    await githubAPIClient.updateStatusCheck(
-      repository.fullName,
-      pr.sha,
-      reviewResult.isBlocked ? 'failure' : 'success',
-      statusDescription,
-      'readylayer/review',
-      accessToken
-    );
+    // Create or update check run with annotations
+    try {
+      const checkRunDetails: CheckRunDetails = {
+        name: 'ReadyLayer Report',
+        head_sha: pr.sha,
+        status: 'completed',
+        conclusion: reviewResult.isBlocked ? 'failure' : 'success',
+        output: {
+          title: reviewResult.isBlocked ? 'Policy check failed' : 'Policy check passed',
+          summary,
+          annotations: limitedAnnotations.length > 0 ? limitedAnnotations : undefined,
+        },
+        details_url: process.env.NEXT_PUBLIC_APP_URL
+          ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reviews/${reviewResult.id}`
+          : undefined,
+      };
+
+      await githubAPIClient.createOrUpdateCheckRun(
+        repository.fullName,
+        pr.sha,
+        checkRunDetails,
+        accessToken
+      );
+    } catch (error) {
+      log.error({ error }, 'Failed to create/update check run');
+      // Degrade gracefully - log error but don't crash worker
+      // Store review result even if check run fails
+    }
+
+    // Post PR comment only when blocked OR when user explicitly asks
+    // For non-blocking issues, rely on check run UI
+    if (reviewResult.isBlocked && reviewResult.issues.length > 0) {
+      try {
+        const commentBody = formatPolicyComment(
+          {
+            blocked: reviewResult.isBlocked,
+            score: (review as any)?.policyScore || 100,
+            rulesFired: (review as any)?.rulesFired || [],
+            nonWaivedFindings: reviewResult.issues.map((issue) => ({
+              ruleId: issue.ruleId,
+              severity: issue.severity,
+              message: issue.message,
+              file: issue.file,
+              line: issue.line || 0,
+            })),
+          },
+          {
+            provider,
+            repository: {
+              provider: repository.provider,
+              url: repository.url || undefined,
+            },
+          }
+        );
+
+        await githubAPIClient.postPRComment(
+          repository.fullName,
+          pr.number,
+          commentBody,
+          accessToken
+        );
+      } catch (error) {
+        log.error({ error }, 'Failed to post PR comment');
+        // Degrade gracefully - check run already shows the issues
+      }
+    }
 
     // Ingest review result into evidence index (idempotent, safe)
     if (isIngestEnabled()) {
@@ -282,15 +378,27 @@ async function processPREvent(
     }
   } catch (error) {
     log.error(error, 'Review Guard failed');
-    // Update status check to error
-    await githubAPIClient.updateStatusCheck(
-      repository.fullName,
-      pr.sha,
-      'error',
-      '⚠️ Review failed',
-      'readylayer/review',
-      accessToken
-    );
+    // Create check run with error status
+    try {
+      await githubAPIClient.createOrUpdateCheckRun(
+        repository.fullName,
+        pr.sha,
+        {
+          name: 'ReadyLayer Report',
+          head_sha: pr.sha,
+          status: 'completed',
+          conclusion: 'failure',
+          output: {
+            title: 'Review failed',
+            summary: '⚠️ Review failed - please check logs or contact support',
+          },
+        },
+        accessToken
+      );
+    } catch (checkRunError) {
+      log.error({ error: checkRunError }, 'Failed to create check run for review error');
+      // Degrade gracefully - log error but don't crash worker
+    }
   }
 
   // Run Test Engine

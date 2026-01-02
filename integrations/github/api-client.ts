@@ -6,6 +6,33 @@
 
 // API client doesn't need Prisma
 
+export interface CheckRunAnnotation {
+  path: string;
+  start_line: number;
+  end_line?: number;
+  start_column?: number;
+  end_column?: number;
+  annotation_level: 'notice' | 'warning' | 'failure';
+  message: string;
+  title?: string;
+  raw_details?: string;
+}
+
+export interface CheckRunDetails {
+  name: string;
+  head_sha: string;
+  status: 'queued' | 'in_progress' | 'completed';
+  conclusion?: 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required';
+  output?: {
+    title: string;
+    summary: string;
+    text?: string;
+    annotations?: CheckRunAnnotation[];
+  };
+  details_url?: string;
+  external_id?: string;
+}
+
 export interface GitHubAPIClient {
   getPR(repo: string, prNumber: number, token: string): Promise<any>;
   getPRDiff(repo: string, prNumber: number, token: string): Promise<string>;
@@ -16,6 +43,12 @@ export interface GitHubAPIClient {
     state: 'success' | 'failure' | 'pending' | 'error',
     description: string,
     context: string,
+    token: string
+  ): Promise<any>;
+  createOrUpdateCheckRun(
+    repo: string,
+    sha: string,
+    details: CheckRunDetails,
     token: string
   ): Promise<any>;
   getFileContent(repo: string, path: string, ref: string, token: string): Promise<string>;
@@ -116,6 +149,82 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
     }
 
     throw new Error('File content not found');
+  }
+
+  /**
+   * Create or update check run (idempotent)
+   * Uses check-run name to find existing check-run and update it, or create new one
+   * 
+   * Rate limiting and retries are handled by the request() method
+   */
+  async createOrUpdateCheckRun(
+    repo: string,
+    sha: string,
+    details: CheckRunDetails,
+    token: string
+  ): Promise<any> {
+    // Try to find existing check-run by name
+    try {
+      const checkRunsUrl = `${this.baseUrl}/repos/${repo}/commits/${sha}/check-runs?check_name=${encodeURIComponent(details.name)}`;
+      const checkRunsResponse = await fetch(checkRunsUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      // Handle rate limiting
+      if (checkRunsResponse.status === 429) {
+        const retryAfter = parseInt(checkRunsResponse.headers.get('Retry-After') || '60', 10);
+        await this.sleep(retryAfter * 1000);
+        // Retry lookup after rate limit delay
+        return this.createOrUpdateCheckRun(repo, sha, details, token);
+      }
+
+      if (checkRunsResponse.ok) {
+        const checkRunsData = await checkRunsResponse.json();
+        const existingCheckRun = checkRunsData.check_runs?.find(
+          (cr: any) => cr.name === details.name && cr.head_sha === sha
+        );
+
+        if (existingCheckRun) {
+          // Update existing check-run (idempotent)
+          const updateUrl = `${this.baseUrl}/repos/${repo}/check-runs/${existingCheckRun.id}`;
+          return this.request(updateUrl, token, {
+            method: 'PATCH',
+            body: JSON.stringify({
+              name: details.name,
+              head_sha: sha,
+              status: details.status,
+              conclusion: details.conclusion,
+              output: details.output,
+              details_url: details.details_url,
+              external_id: details.external_id,
+            }),
+          });
+        }
+      }
+    } catch (error) {
+      // If lookup fails, proceed to create new check-run
+      // This is safe - worst case we create a duplicate which GitHub will handle gracefully
+      // The request() method will handle retries and rate limiting for the create call
+    }
+
+    // Create new check-run
+    const createUrl = `${this.baseUrl}/repos/${repo}/check-runs`;
+    return this.request(createUrl, token, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: details.name,
+        head_sha: sha,
+        status: details.status,
+        conclusion: details.conclusion,
+        output: details.output,
+        details_url: details.details_url,
+        external_id: details.external_id,
+      }),
+    });
   }
 
   /**

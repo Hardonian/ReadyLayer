@@ -32,6 +32,9 @@ export interface CommentFormatOptions {
 
 /**
  * Format policy evaluation result as a Git provider comment
+ * 
+ * Note: For non-blocking issues, rely on check run UI instead of posting comments.
+ * This function is primarily used when blocked OR when user explicitly requests a comment.
  */
 export function formatPolicyComment(
   evaluationResult: PolicyEvaluationInput,
@@ -40,12 +43,12 @@ export function formatPolicyComment(
   const provider = options.provider || (options.repository ? detectGitProvider(options.repository) : 'generic')
   
   const title = evaluationResult.blocked
-    ? 'Policy Check Failed'
-    : 'Policy Check Passed'
+    ? '🚫 Policy Check Failed - PR Blocked'
+    : '✅ Policy Check Passed'
 
   const body = evaluationResult.blocked
-    ? `This PR/MR has been blocked due to policy violations. Please review the issues below and address them before merging.`
-    : `This PR/MR has passed all policy checks and is ready for review.`
+    ? `This PR/MR has been **blocked** due to policy violations. Please review the issues below and address them before merging.\n\nView detailed report in the ReadyLayer check run above.`
+    : `This PR/MR has passed all policy checks. See the ReadyLayer check run for details.`
 
   const issues = evaluationResult.nonWaivedFindings.map((finding) => ({
     severity: finding.severity,
@@ -54,10 +57,11 @@ export function formatPolicyComment(
     line: finding.line || 0,
   }))
 
+  // Only include issues in comment when blocked (for non-blocking, check run UI shows them)
   return formatProviderComment(provider, {
     title,
     body,
-    issues: options.includeIssues !== false ? issues : undefined,
+    issues: evaluationResult.blocked && options.includeIssues !== false ? issues : undefined,
     score: options.includeScore !== false ? evaluationResult.score : undefined,
   })
 }
