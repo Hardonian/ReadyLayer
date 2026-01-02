@@ -14,6 +14,7 @@ export interface GitHubWebhookEvent {
   pull_request?: any;
   repository?: any;
   check_run?: any;
+  workflow_run?: any;
   installation?: any;
 }
 
@@ -159,6 +160,19 @@ export class GitHubWebhookHandler {
     }
 
     if (event.action === 'completed' && event.check_run) {
+      return {
+        type: 'ci.completed',
+        repository: {
+          id: repoId,
+          fullName,
+          provider: 'github',
+        },
+        installationId: installation.id,
+      };
+    }
+
+    // Handle workflow_run events (for Test Engine)
+    if (event.action === 'completed' && event.workflow_run) {
       return {
         type: 'ci.completed',
         repository: {

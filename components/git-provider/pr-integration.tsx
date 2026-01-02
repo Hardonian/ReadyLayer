@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { PolicyStatusWidget } from './policy-status-widget'
+import { TestRunStatus } from './test-run-status'
 import { formatProviderComment, getStatusCheckDescription, type GitProvider } from '@/lib/git-provider-ui'
 
 interface PRIntegrationProps {
@@ -86,12 +87,19 @@ export function PRIntegration({ repository, prNumber: _prNumber, prSha: _prSha, 
   }
 
   return (
-    <PolicyStatusWidget
-      repository={repository}
-      policyResult={policyResult}
-      evidenceBundleId={evidenceBundleId || undefined}
-      reviewId={reviewId}
-    />
+    <div className="space-y-4">
+      <PolicyStatusWidget
+        repository={repository}
+        policyResult={policyResult}
+        evidenceBundleId={evidenceBundleId || undefined}
+        reviewId={reviewId}
+      />
+      <TestRunStatus
+        repository={repository}
+        prNumber={prNumber}
+        prSha={prSha}
+      />
+    </div>
   )
 }
 
