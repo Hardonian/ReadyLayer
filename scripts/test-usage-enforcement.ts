@@ -86,7 +86,7 @@ async function setupTestOrg() {
   });
 
   // Create test organization
-  const org = await prisma.organization.upsert({
+  await prisma.organization.upsert({
     where: { id: testOrgId },
     create: {
       id: testOrgId,

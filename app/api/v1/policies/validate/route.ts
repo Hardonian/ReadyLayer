@@ -3,10 +3,9 @@
  * Validate policy syntax and structure
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
-import { policyEngineService } from '../../../../../services/policy-engine';
 import { logger } from '../../../../../observability/logging';
 import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
 import { z } from 'zod';
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { source, organizationId, repositoryId } = validation.data;
+    const { source, organizationId } = validation.data;
 
     // Validate policy syntax
     try {

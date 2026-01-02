@@ -5,6 +5,62 @@
  * Provides inline code review, test generation, and policy enforcement
  */
 
+// Type declarations for Cursor IDE global API
+declare const cursor: {
+  commands: {
+    registerCommand(command: string, callback: (...args: unknown[]) => Promise<void> | void): void;
+  };
+  activeEditor?: {
+    document: {
+      uri: {
+        fsPath: string;
+      };
+    };
+  };
+  window: {
+    showInformationMessage(message: string, ...actions: string[]): Promise<string | undefined> | void;
+    showWarningMessage(message: string, ...actions: string[]): Promise<string | undefined>;
+    showErrorMessage(message: string): void;
+    createOutputChannel(name: string): {
+      clear(): void;
+      appendLine(text: string): void;
+      show(): void;
+    };
+    showTextDocument(document: { uri: { fsPath: string } }): Promise<void> | void;
+  };
+  workspace: {
+    fs: {
+      readFile(path: string): Promise<Uint8Array>;
+    };
+    onDidSaveTextDocument(callback: (document: { uri: { fsPath: string } }) => void | Promise<void>): void;
+    onDidOpenTextDocument(callback: (document: { uri: { fsPath: string } }) => void | Promise<void>): void;
+    openTextDocument(pathOrOptions: string | { content: string; language?: string }): Promise<{ uri: { fsPath: string } }>;
+  };
+  languages: {
+    createDiagnosticCollection(name: string): {
+      set(uri: { fsPath: string }, diagnostics: Array<{
+        range: { start: { line: number; character: number }; end: { line: number; character: number } };
+        message: string;
+        severity: number;
+        source?: string;
+      }>): void;
+    };
+  };
+  Range: new (startLine: number, startChar: number, endLine: number, endChar: number) => {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  };
+  DiagnosticSeverity: {
+    Error: number;
+    Warning: number;
+    Information: number;
+    Hint: number;
+  };
+  env: {
+    openExternal(url: string): void;
+  };
+};
+
 interface CursorConfig {
   readyLayer: {
     enabled: boolean;
@@ -102,7 +158,7 @@ async function reviewFile(filePath: string, config: CursorConfig) {
       cursor.window.showWarningMessage(
         `Found ${result.data.issuesCount} issue(s)`,
         'View Details'
-      ).then((action) => {
+      ).then((action: string | undefined) => {
         if (action === 'View Details') {
           showIssuesPanel(result.data.issues);
         }
@@ -174,7 +230,7 @@ function setupInlineDiagnostics(config: CursorConfig) {
   // Register diagnostic collection
   const diagnosticCollection = cursor.languages.createDiagnosticCollection('readylayer');
 
-  cursor.workspace.onDidOpenTextDocument(async (document) => {
+  cursor.workspace.onDidOpenTextDocument(async (document: { uri: { fsPath: string } }) => {
     // Review file on open
     const issues = await getFileIssues(document.uri.fsPath, config);
     if (issues) {
@@ -242,7 +298,7 @@ async function getFileIssues(filePath: string, config: CursorConfig): Promise<an
 /**
  * Show issues panel
  */
-function showIssuesPanel(issues: any[]) {
+function showIssuesPanel(issues: Array<{ severity: string; ruleId: string; file: string; line: number; message: string; fix?: string }>) {
   // Create output panel with issues
   const outputChannel = cursor.window.createOutputChannel('ReadyLayer Issues');
   outputChannel.clear();
@@ -266,18 +322,24 @@ function showIssuesPanel(issues: any[]) {
  */
 function showTestPreview(testContent: string, placement: string) {
   // Open test file in editor or show preview
-  cursor.window.showInformationMessage(
+  const messageResult = cursor.window.showInformationMessage(
     `Tests generated. Placement: ${placement}`,
     'Open Test File'
-  ).then((action) => {
-    if (action === 'Open Test File') {
-      // Open test file
-      cursor.workspace.openTextDocument({
-        content: testContent,
-        language: 'typescript',
-      }).then((doc) => {
-        cursor.window.showTextDocument(doc);
-      });
-    }
-  });
+  );
+  if (messageResult && typeof messageResult.then === 'function') {
+    messageResult.then((action: string | undefined) => {
+      if (action === 'Open Test File') {
+        // Open test file
+        const docPromise = cursor.workspace.openTextDocument({
+          content: testContent,
+          language: 'typescript',
+        });
+        if (docPromise && typeof docPromise.then === 'function') {
+          docPromise.then((doc: { uri: { fsPath: string } }) => {
+            cursor.window.showTextDocument(doc);
+          });
+        }
+      }
+    });
+  }
 }

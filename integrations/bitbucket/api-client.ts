@@ -55,8 +55,8 @@ export interface BitbucketAPIClient {
     workspace: string,
     repoSlug: string,
     ref: string,
-    variables?: PipelineVariable[],
-    token: string
+    token: string,
+    variables?: PipelineVariable[]
   ): Promise<Pipeline>;
   getPipeline(
     workspace: string,
@@ -67,8 +67,8 @@ export interface BitbucketAPIClient {
   listPipelines(
     workspace: string,
     repoSlug: string,
-    ref?: string,
-    token: string
+    token: string,
+    ref?: string
   ): Promise<{ values: Pipeline[] }>;
   getPipelineArtifacts(
     workspace: string,
@@ -198,8 +198,8 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     workspace: string,
     repoSlug: string,
     ref: string,
-    variables: PipelineVariable[] = [],
-    token: string
+    token: string,
+    variables: PipelineVariable[] = []
   ): Promise<Pipeline> {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pipelines/`;
     const payload: any = {
@@ -243,8 +243,8 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
   async listPipelines(
     workspace: string,
     repoSlug: string,
-    ref: string | undefined,
-    token: string
+    token: string,
+    ref?: string
   ): Promise<{ values: Pipeline[] }> {
     let url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pipelines/`;
     if (ref) {

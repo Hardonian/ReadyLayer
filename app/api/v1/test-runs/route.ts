@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { logger } from '../../../../observability/logging';
 import { requireAuth } from '../../../../lib/auth';

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
@@ -73,9 +73,14 @@ export async function POST(request: NextRequest) {
     // Run review (lightweight, no PR context needed)
     const reviewResult = await reviewGuardService.review({
       repositoryId: repository.id,
-      filePath,
-      fileContent,
-      ref: ref || 'HEAD',
+      prNumber: 0, // IDE review doesn't have a PR number
+      prSha: ref || 'HEAD',
+      files: [
+        {
+          path: filePath,
+          content: fileContent,
+        },
+      ],
     });
 
     // Filter by line if specified
@@ -106,7 +111,6 @@ export async function POST(request: NextRequest) {
         fix: issue.fix,
       })),
       isBlocked: reviewResult.isBlocked,
-      score: reviewResult.score || 100,
     });
   } catch (error) {
     log.error(error, 'IDE review failed');

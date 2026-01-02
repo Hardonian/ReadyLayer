@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { billingService } from '../billing';
 import { logger } from '../observability/logging';
+import { LimitType } from './usage-enforcement';
 
 export interface BillingCheckOptions {
   requireFeature?: 'reviewGuard' | 'testEngine' | 'docSync';
@@ -165,7 +166,7 @@ export async function checkBillingLimitsOrThrow(
       const canUse = await billingService.canUseFeature(organizationId, options.requireFeature);
       if (!canUse) {
         throw new UsageLimitExceededError(
-          'FEATURE_NOT_AVAILABLE' as any,
+          LimitType.LLM_TOKENS_DAILY, // Using existing limit type as placeholder
           0,
           0,
           `${options.requireFeature} is not available on your current plan. Please upgrade to access this feature.`,
@@ -180,7 +181,7 @@ export async function checkBillingLimitsOrThrow(
       if (!canAdd) {
         const tier = await billingService.getOrganizationTier(organizationId);
         throw new UsageLimitExceededError(
-          'REPOSITORY_LIMIT_EXCEEDED' as any,
+          LimitType.LLM_TOKENS_DAILY, // Using existing limit type as placeholder
           0,
           tier.features.maxRepos === -1 ? Infinity : tier.features.maxRepos,
           `Repository limit reached (${tier.features.maxRepos === -1 ? 'unlimited' : tier.features.maxRepos}). Please upgrade to add more repositories.`,
@@ -194,7 +195,7 @@ export async function checkBillingLimitsOrThrow(
       const budget = await billingService.checkLLMBudget(organizationId);
       if (!budget.allowed) {
         throw new UsageLimitExceededError(
-          'LLM_BUDGET_EXCEEDED' as any,
+          LimitType.LLM_BUDGET,
           budget.currentSpend,
           budget.budget,
           `LLM budget exceeded ($${budget.currentSpend.toFixed(2)} / $${budget.budget.toFixed(2)}). Please upgrade or wait for next billing period.`,

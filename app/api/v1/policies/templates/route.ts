@@ -6,7 +6,7 @@
  * Create a new policy template
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { logger } from '../../../../../observability/logging';

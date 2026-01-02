@@ -79,7 +79,7 @@ export class GitHubWebhookHandler {
     const normalized = await this.normalizeEvent(event, installation);
 
     // Get organizationId from installation for usage enforcement
-    const organizationId = installation.organizationId || null;
+    const organizationId = installation.organizationId ?? undefined;
 
     // Queue event for processing
     await queueService.enqueue('webhook', {

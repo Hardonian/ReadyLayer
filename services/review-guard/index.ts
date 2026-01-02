@@ -13,7 +13,7 @@ import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../li
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { UsageLimitExceededError } from '../../lib/usage-enforcement';
-import { aiAnomalyDetectionService } from '../ai-anomaly-detection';
+// import { aiAnomalyDetectionService } from '../ai-anomaly-detection'; // Reserved for future use
 import { selfLearningService } from '../self-learning';
 import { predictiveDetectionService } from '../predictive-detection';
 
@@ -68,7 +68,6 @@ export interface ReviewResult {
  * - Token usage tracking for cost control
  * 
  * @example
- * ```typescript
  * const result = await reviewGuardService.review({
  *   repositoryId: 'repo_123',
  *   prNumber: 42,
@@ -79,7 +78,6 @@ export interface ReviewResult {
  * if (result.isBlocked) {
  *   console.log('PR blocked:', result.blockedReason);
  * }
- * ```
  */
 export class ReviewGuardService {
   /**
@@ -105,7 +103,6 @@ export class ReviewGuardService {
    * @throws {Error} If file parsing fails (PR blocked)
    * 
    * @example
-   * ```typescript
    * const result = await reviewGuardService.review({
    *   repositoryId: 'repo_123',
    *   prNumber: 42,
@@ -115,12 +112,11 @@ export class ReviewGuardService {
    *     { path: 'src/auth.ts', content: '...', beforeContent: '...' }
    *   ],
    *   config: {
-   *     failOnCritical: true,  // Always true
-   *     failOnHigh: true,     // Can disable with admin approval
-   *     excludedPaths: ['**/*.test.ts']
+   *     failOnCritical: true,
+   *     failOnHigh: true,
+   *     excludedPaths: ['test.ts']
    *   }
    * });
-   * ```
    */
   async review(request: ReviewRequest): Promise<ReviewResult> {
     const startedAt = new Date();
@@ -164,21 +160,21 @@ export class ReviewGuardService {
               organizationId
             );
             allIssues.push(...aiIssues);
-      } catch (error) {
-        // Handle usage limit errors with clear messaging
-        if (error instanceof UsageLimitExceededError) {
-          // Re-throw as-is to preserve error type and HTTP status
-          throw error;
-        }
-        
-        // LLM failure MUST block PR (enforcement-first)
-        throw new Error(
-          `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
-          `This PR is BLOCKED until analysis completes. ` +
-          `Cause: LLM API unavailable. ` +
-          `Action: Retry in 60 seconds or contact support@readylayer.com`
-        );
-      }
+          } catch (error) {
+            // Handle usage limit errors with clear messaging
+            if (error instanceof UsageLimitExceededError) {
+              // Re-throw as-is to preserve error type and HTTP status
+              throw error;
+            }
+            
+            // LLM failure MUST block PR (enforcement-first)
+            throw new Error(
+              `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
+              `This PR is BLOCKED until analysis completes. ` +
+              `Cause: LLM API unavailable. ` +
+              `Action: Retry in 60 seconds or contact support@readylayer.com`
+            );
+          }
         } catch (error) {
           // Parse errors MUST block PR
           throw new Error(
@@ -363,7 +359,8 @@ export class ReviewGuardService {
         });
 
         // Store high-confidence alerts
-        for (const alert of predictiveAlerts.filter((a) => a.confidence.finalConfidence > 0.7)) {
+        // Store high-confidence alerts (alerts are stored by predictive detection service)
+        for (const _alert of predictiveAlerts.filter((a) => a.confidence.finalConfidence > 0.7)) {
           // Alerts are stored by predictive detection service
         }
       } catch (error) {
@@ -439,9 +436,9 @@ export class ReviewGuardService {
    * Track token usage for anomaly detection
    */
   private async trackTokenUsage(
-    reviewId: string,
-    repositoryId: string,
-    organizationId: string
+    _reviewId: string,
+    _repositoryId: string,
+    _organizationId: string
   ): Promise<void> {
     // Token usage is tracked per LLM call in recordTokenUsage
     // This method can be used for aggregate tracking if needed
@@ -495,13 +492,15 @@ export class ReviewGuardService {
       }
     }
 
+    const codeBlockStart = '```';
+    const codeBlockEnd = '```';
     const prompt = `Analyze the following code for security vulnerabilities, quality issues, and potential bugs.
 
 File: ${filePath}
 
-\`\`\`
+${codeBlockStart}
 ${content}
-\`\`\`
+${codeBlockEnd}
 ${evidenceSection}
 
 Return a JSON array of issues found, each with:
@@ -602,7 +601,7 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
    */
   private async recordModelPerformance(
     organizationId: string,
-    repositoryId: string,
+    _repositoryId: string,
     reviewId: string,
     evaluationResult: any,
     durationMs: number

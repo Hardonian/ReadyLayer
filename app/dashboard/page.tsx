@@ -24,7 +24,6 @@ import {
   ArrowRight,
   Database,
   Sparkles,
-  TrendingDown,
   AlertCircle,
   Lightbulb,
 } from 'lucide-react'

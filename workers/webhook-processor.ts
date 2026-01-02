@@ -9,7 +9,7 @@ import { reviewGuardService } from '../services/review-guard';
 import { testEngineService } from '../services/test-engine';
 import { docSyncService } from '../services/doc-sync';
 import { getGitProviderPRAdapter, type CheckRunAnnotation, type CheckRunDetails } from '../integrations/git-provider-pr-adapter';
-import { formatPolicyComment, generateStatusCheckDescription } from '../lib/git-provider-ui/comment-formatter';
+import { formatPolicyComment } from '../lib/git-provider-ui/comment-formatter';
 import { detectGitProvider } from '../lib/git-provider-ui';
 import { prisma } from '../lib/prisma';
 import { logger } from '../observability/logging';
@@ -67,6 +67,8 @@ function issuesToAnnotations(issues: Issue[]): CheckRunAnnotation[] {
  * Note: Currently, GitHub check runs include fix suggestions in annotation raw_details.
  * This function is kept for potential future use (e.g., creating patch files).
  */
+// Reserved for future use
+/*
 function generateSuggestedFix(issue: Issue, fileContent: string): string | null {
   if (!issue.fix) {
     return null;
@@ -96,6 +98,7 @@ function generateSuggestedFix(issue: Issue, fileContent: string): string | null 
   // Generate minimal unified diff
   return `--- a/${issue.file}\n+++ b/${issue.file}\n@@ -${issue.line},1 +${issue.line},1 @@\n-${originalLine}\n+${fixedLine}`;
 }
+*/
 
 /**
  * Process webhook event
@@ -177,10 +180,12 @@ async function processPREvent(
   log.info({ prNumber: pr.number, requestId: traceId }, 'Processing PR event');
 
   // Get provider-specific adapter
-  const provider = detectGitProvider({
+  const detectedProvider = detectGitProvider({
     provider: repository.provider,
     url: repository.url || undefined,
   });
+  // Cast 'generic' to adapter type (adapter doesn't support generic)
+  const provider = (detectedProvider === 'generic' ? 'github' : detectedProvider) as 'github' | 'gitlab' | 'bitbucket';
   const prAdapter = getGitProviderPRAdapter(provider);
 
   // Get PR diff
@@ -246,7 +251,7 @@ async function processPREvent(
           conclusion: 'action_required',
           output: {
             title: 'Billing limit exceeded',
-            summary: '⚠️ Billing limit exceeded - please upgrade',
+            summary: '?? Billing limit exceeded - please upgrade',
           },
         },
         accessToken
@@ -299,7 +304,7 @@ async function processPREvent(
                 : 'Policy check failed')
             : 'Policy check passed',
           summary: reviewResult.blockedReason?.includes('Usage limit exceeded')
-            ? `⚠️ **Usage limit exceeded**\n\n${reviewResult.blockedReason}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
+            ? `?? **Usage limit exceeded**\n\n${reviewResult.blockedReason}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
             : summary,
           annotations: limitedAnnotations.length > 0 ? limitedAnnotations : undefined,
         },
@@ -400,10 +405,12 @@ async function processPREvent(
     
     // Create check run with error status
     try {
-      const provider = detectGitProvider({
+      const detectedProvider = detectGitProvider({
         provider: repository.provider,
         url: repository.url || undefined,
       });
+      // Cast 'generic' to adapter type (adapter doesn't support generic)
+      const provider = (detectedProvider === 'generic' ? 'github' : detectedProvider) as 'github' | 'gitlab' | 'bitbucket';
       const prAdapter = getGitProviderPRAdapter(provider);
       
       await prAdapter.createOrUpdateCheckRun(
@@ -417,8 +424,8 @@ async function processPREvent(
           output: {
             title: isUsageLimitError ? 'Usage Limit Exceeded' : 'Review failed',
             summary: isUsageLimitError
-              ? `⚠️ **Usage limit exceeded**\n\n${errorMessage}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
-              : '⚠️ Review failed - please check logs or contact support',
+              ? `?? **Usage limit exceeded**\n\n${errorMessage}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
+              : '?? Review failed - please check logs or contact support',
           },
         },
         accessToken
@@ -498,15 +505,19 @@ async function processPREvent(
               action: 'block', // Block PR if drift detected
               checkOn: 'pr',
             },
+            updateStrategy: 'pr',
+            branch: 'main',
           }
         );
 
         if (driftResult.isBlocked) {
           // Create check run for drift
-          const provider = detectGitProvider({
+          const detectedProvider = detectGitProvider({
             provider: repository.provider,
             url: repository.url || undefined,
           });
+          // Cast 'generic' to adapter type (adapter doesn't support generic)
+          const provider = (detectedProvider === 'generic' ? 'github' : detectedProvider) as 'github' | 'gitlab' | 'bitbucket';
           const prAdapter = getGitProviderPRAdapter(provider);
 
           await prAdapter.createOrUpdateCheckRun(
@@ -519,7 +530,7 @@ async function processPREvent(
               conclusion: 'failure',
               output: {
                 title: 'Documentation drift detected',
-                summary: `⚠️ **Documentation drift detected**\n\n` +
+                summary: `?? **Documentation drift detected**\n\n` +
                   `${driftResult.missingEndpoints.length} endpoint(s) missing from documentation\n` +
                   `${driftResult.changedEndpoints.length} endpoint(s) changed but docs not updated\n\n` +
                   `**Next steps:**\n` +

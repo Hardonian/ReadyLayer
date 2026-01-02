@@ -23,7 +23,7 @@ interface PRIntegrationProps {
  * Embeds policy status into Git provider PR/MR UI
  * Adapts styling and behavior to match provider
  */
-export function PRIntegration({ repository, prNumber: _prNumber, prSha: _prSha, reviewId }: PRIntegrationProps) {
+export function PRIntegration({ repository, prNumber, prSha, reviewId }: PRIntegrationProps) {
   const [policyResult, setPolicyResult] = useState<{
     blocked: boolean
     score: number

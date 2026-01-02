@@ -49,9 +49,38 @@ export async function GET(request: NextRequest) {
 
     if (userOrgIds.length === 0) {
       return NextResponse.json({
-        insights: [],
-        predictions: [],
-        modelPerformance: [],
+        insights: [] as Array<{
+          id: string;
+          type: string;
+          confidence: number;
+          trustLevel: number;
+          dataPoints: number;
+          firstSeen: Date;
+          lastSeen: Date;
+          trend: string;
+          metadata: Record<string, unknown>;
+        }>,
+        predictions: [] as Array<{
+          id: string;
+          type: string;
+          severity: string;
+          confidence: { finalConfidence: number; trustLevel: number };
+          prediction: string;
+          rationale: string;
+          suggestedAction: string;
+          estimatedLikelihood: number;
+          historicalAccuracy: number;
+          dataPoints: number;
+        }>,
+        modelPerformance: [] as Array<{
+          modelId: string;
+          provider: string;
+          averageResponseTime: number;
+          averageTokensUsed: number;
+          averageCost: number;
+          successRate: number;
+          totalRequests: number;
+        }>,
       });
     }
 
@@ -59,8 +88,18 @@ export async function GET(request: NextRequest) {
     let targetOrganizationId: string;
     if (organizationId && userOrgIds.includes(organizationId)) {
       targetOrganizationId = organizationId;
-    } else {
+    } else if (userOrgIds.length > 0) {
       targetOrganizationId = userOrgIds[0];
+    } else {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'NO_ORGANIZATIONS',
+            message: 'User is not a member of any organizations',
+          },
+        },
+        { status: 403 }
+      );
     }
 
     // Verify repository access if specified

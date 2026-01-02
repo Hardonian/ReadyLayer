@@ -83,12 +83,15 @@ export const POST = createRouteHandler(
 
     if (!repo) {
       const { ErrorMessages } = await import('../../../../lib/errors');
+      const errorInfo = ErrorMessages.NOT_FOUND('Repository', repositoryId);
       return errorResponse(
         'NOT_FOUND',
-        ErrorMessages.NOT_FOUND('Repository', repositoryId).message,
+        errorInfo.message,
         404,
-        ErrorMessages.NOT_FOUND('Repository', repositoryId).context,
-        ErrorMessages.NOT_FOUND('Repository', repositoryId).fix
+        {
+          ...errorInfo.context,
+          fix: errorInfo.fix,
+        }
       );
     }
 
@@ -104,12 +107,16 @@ export const POST = createRouteHandler(
 
     if (!membership) {
       const { ErrorMessages } = await import('../../../../lib/errors');
+      const errorInfo = ErrorMessages.FORBIDDEN;
       return errorResponse(
         'FORBIDDEN',
-        ErrorMessages.FORBIDDEN.message,
+        errorInfo.message,
         403,
-        { repositoryId, organizationId: repo.organizationId },
-        ErrorMessages.FORBIDDEN.fix
+        {
+          repositoryId,
+          organizationId: repo.organizationId,
+          fix: errorInfo.fix,
+        }
       );
     }
 

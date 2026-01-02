@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     log.info({
       eventType,
       installationId,
-      eventKey: (event as any).eventKey,
+      eventKey: typeof event === 'object' && event !== null && 'eventKey' in event ? String((event as { eventKey?: string }).eventKey) : undefined,
     }, 'Received Bitbucket webhook');
 
     // Handle event

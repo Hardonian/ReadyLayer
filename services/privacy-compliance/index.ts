@@ -178,7 +178,7 @@ export class PrivacyComplianceService {
   /**
    * Get compliance configuration
    */
-  getConfig(organizationId: string): ComplianceConfig {
+  getConfig(_organizationId: string): ComplianceConfig {
     // In production, this would fetch from database
     // For now, return default
     return this.defaultConfig;

@@ -335,4 +335,4 @@ program
     console.log('✅ Tabnine agent integration installed');
   });
 
-program.parse();
+program.parse(process.argv);

@@ -171,7 +171,9 @@ export async function getRuleFalsePositiveRate(
 
   const totalFindings = reviews.reduce((sum, review) => {
     const issues = Array.isArray(review.issuesFound) ? review.issuesFound : [];
-    return sum + issues.filter((issue: any) => issue.ruleId === ruleId).length;
+    return sum + issues.filter((issue: unknown) => {
+      return typeof issue === 'object' && issue !== null && 'ruleId' in issue && (issue as { ruleId?: string }).ruleId === ruleId;
+    }).length;
   }, 0);
 
   return totalFindings > 0 ? waiverCount / totalFindings : 0;

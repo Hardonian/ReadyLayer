@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     log.info({
       eventType,
       installationId,
-      objectKind: (event as any).object_kind,
+      objectKind: typeof event === 'object' && event !== null && 'object_kind' in event ? String((event as { object_kind?: string }).object_kind) : undefined,
     }, 'Received GitLab webhook');
 
     // Handle event

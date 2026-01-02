@@ -38,7 +38,7 @@ export class GitLabWebhookHandler {
   /**
    * Validate webhook token
    */
-  validateToken(payload: string, token: string, secret: string): boolean {
+  validateToken(_payload: string, token: string, secret: string): boolean {
     // GitLab uses token-based validation
     return token === secret;
   }

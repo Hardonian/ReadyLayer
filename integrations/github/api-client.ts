@@ -82,15 +82,15 @@ export interface GitHubAPIClient {
     repo: string,
     workflowId: string,
     ref: string,
-    inputs?: WorkflowDispatchInputs,
-    token: string
+    token: string,
+    inputs?: WorkflowDispatchInputs
   ): Promise<void>;
   getWorkflowRun(repo: string, runId: number, token: string): Promise<WorkflowRun>;
   listWorkflowRuns(
     repo: string,
     workflowId: string,
-    branch?: string,
-    token: string
+    token: string,
+    branch?: string
   ): Promise<{ workflow_runs: WorkflowRun[] }>;
   listWorkflowRunArtifacts(repo: string, runId: number, token: string): Promise<{ artifacts: WorkflowArtifact[] }>;
   downloadArtifact(repo: string, artifactId: number, token: string): Promise<ArrayBuffer>;
@@ -363,8 +363,8 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
     repo: string,
     workflowId: string,
     ref: string,
-    inputs: WorkflowDispatchInputs = {},
-    token: string
+    token: string,
+    inputs: WorkflowDispatchInputs = {}
   ): Promise<void> {
     const url = `${this.baseUrl}/repos/${repo}/actions/workflows/${workflowId}/dispatches`;
     await this.request(url, token, {
@@ -390,8 +390,8 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
   async listWorkflowRuns(
     repo: string,
     workflowId: string,
-    branch: string | undefined,
-    token: string
+    token: string,
+    branch?: string
   ): Promise<{ workflow_runs: WorkflowRun[] }> {
     let url = `${this.baseUrl}/repos/${repo}/actions/workflows/${workflowId}/runs`;
     if (branch) {

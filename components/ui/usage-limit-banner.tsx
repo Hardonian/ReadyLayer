@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Card, CardContent } from './card'
-import { AlertTriangle, TrendingUp, Zap } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 import { Button } from './button'
@@ -24,7 +24,7 @@ interface UsageLimitBannerProps {
   className?: string
 }
 
-export function UsageLimitBanner({ stats, organizationId, className }: UsageLimitBannerProps) {
+export function UsageLimitBanner({ stats, organizationId: _organizationId, className }: UsageLimitBannerProps) {
   const warnings: Array<{
     type: 'warning' | 'error'
     message: string
