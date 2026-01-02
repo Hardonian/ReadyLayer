@@ -120,8 +120,8 @@ export class PolicyEngineService {
     const activePack = repoPolicyPack || orgPolicyPack;
 
     if (!activePack) {
-      // Return safe defaults if no policy configured
-      return this.getDefaultPolicy(organizationId, repositoryId);
+      // Return safe defaults if no policy configured (respects tier enforcement strength)
+      return await this.getDefaultPolicy(organizationId, repositoryId);
     }
 
     // Load active waivers
@@ -168,10 +168,11 @@ export class PolicyEngineService {
     let totalScore = 100; // Start at 100, deduct for issues
 
     for (const finding of nonWaivedFindings) {
-      const rule = policy.rules.get(finding.ruleId);
+      // Try to find specific rule for this ruleId, fallback to wildcard rule
+      const rule = policy.rules.get(finding.ruleId) || policy.rules.get('*');
       const action = rule
         ? rule.severityMapping[finding.severity] || 'block'
-        : this.getDefaultAction(finding.severity);
+        : this.getDefaultActionSync(finding.severity);
 
       if (action === 'block') {
         blocked = true;
@@ -387,9 +388,13 @@ export class PolicyEngineService {
   }
 
   /**
-   * Get default action for severity
+   * Get default action for severity (synchronous version for evaluate method)
+   * Note: This uses conservative defaults. Tier-specific enforcement is handled
+   * by ensuring policy rules are loaded with correct severity mappings.
    */
-  private getDefaultAction(severity: string): 'block' | 'warn' | 'allow' {
+  private getDefaultActionSync(severity: string): 'block' | 'warn' | 'allow' {
+    // Conservative defaults: block critical/high, warn medium, allow low
+    // Tier-specific enforcement is handled by policy rules loaded in loadEffectivePolicy
     const defaults: Record<string, 'block' | 'warn' | 'allow'> = {
       critical: 'block',
       high: 'block',
@@ -401,11 +406,55 @@ export class PolicyEngineService {
 
   /**
    * Get default policy (safe defaults when no policy configured)
+   * Respects tier enforcement strength by creating default rules
    */
-  private getDefaultPolicy(organizationId: string, repositoryId: string | null): EffectivePolicy {
+  private async getDefaultPolicy(
+    organizationId: string,
+    repositoryId: string | null
+  ): Promise<EffectivePolicy> {
+    // Get tier enforcement strength
+    const { billingService } = await import('../../billing');
+    const enforcementStrength = await billingService.getEnforcementStrength(organizationId);
+
+    // Create default severity mappings based on tier
+    const severityMappings: Record<string, Record<string, 'block' | 'warn' | 'allow'>> = {
+      basic: {
+        critical: 'block',
+        high: 'warn', // Basic tier: only critical blocks
+        medium: 'allow',
+        low: 'allow',
+      },
+      moderate: {
+        critical: 'block',
+        high: 'block', // Moderate tier: critical + high block
+        medium: 'warn',
+        low: 'allow',
+      },
+      maximum: {
+        critical: 'block',
+        high: 'block',
+        medium: 'block', // Maximum tier: critical + high + medium block
+        low: 'warn',
+      },
+    };
+
+    const defaultMapping = severityMappings[enforcementStrength] || severityMappings.basic;
+
+    // Create a default rule that applies to all rule IDs
+    const defaultRule: PolicyRule = {
+      id: 'default',
+      ruleId: '*', // Wildcard rule ID
+      severityMapping: defaultMapping,
+      enabled: true,
+    };
+
+    const rulesMap = new Map<string, PolicyRule>();
+    rulesMap.set('*', defaultRule);
+
     const defaultSource = JSON.stringify({
       version: '1.0.0',
-      rules: [],
+      rules: [defaultRule],
+      enforcementStrength,
     });
     const checksum = this.hashContent(defaultSource);
 
@@ -417,9 +466,9 @@ export class PolicyEngineService {
         version: '1.0.0',
         source: defaultSource,
         checksum,
-        rules: [],
+        rules: [defaultRule],
       },
-      rules: new Map(),
+      rules: rulesMap,
       waivers: [],
     };
   }
