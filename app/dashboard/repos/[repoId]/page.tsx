@@ -81,7 +81,7 @@ export default function RepositoryDetailPage() {
           throw new Error('Failed to fetch repository')
         }
 
-        const repoData = (await repoResponse.json()) as { enabled?: boolean }
+        const repoData = (await repoResponse.json()) as Repository
         setRepo(repoData)
         setEnabled(repoData.enabled ?? false)
 
@@ -93,9 +93,6 @@ export default function RepositoryDetailPage() {
         })
 
         if (reviewsResponse.ok) {
-          const reviewsData = (await reviewsResponse.json()) as { reviews?: unknown[] }
-          const reviews = reviewsData.reviews || []
-          
           interface ReviewItem {
             createdAt: string
             isBlocked: boolean
@@ -107,7 +104,9 @@ export default function RepositoryDetailPage() {
             }
           }
 
-          const reviewsTyped = reviews as ReviewItem[]
+          const reviewsData = (await reviewsResponse.json()) as { reviews?: ReviewItem[] }
+          const reviews = reviewsData.reviews || []
+          const reviewsTyped = reviews
           const blockedPRs = reviewsTyped.filter((r) => r.isBlocked).length
           const totalIssues = reviewsTyped.reduce((sum: number, r) => 
             sum + (r.summary?.critical || 0) + (r.summary?.high || 0) + (r.summary?.medium || 0) + (r.summary?.low || 0), 0

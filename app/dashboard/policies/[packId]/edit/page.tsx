@@ -68,10 +68,10 @@ export default function EditPolicyPage() {
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = (await response.json()) as { version?: string; source?: string }
+        const data = (await response.json()) as PolicyPack
         setPolicy(data)
         setVersion(data.version ?? '')
-        setSource(data.source)
+        setSource(data.source ?? '')
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load policy')

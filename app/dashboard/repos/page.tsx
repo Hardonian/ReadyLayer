@@ -70,7 +70,7 @@ export default function RepositoriesPage() {
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = (await response.json()) as { repositories?: unknown[] }
+        const data = (await response.json()) as { repositories?: Repository[] }
         setRepos(data.repositories || [])
         setLoading(false)
       } catch (err) {

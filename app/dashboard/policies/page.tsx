@@ -85,7 +85,7 @@ export default function PoliciesPage() {
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const data = (await response.json()) as { policies?: unknown[] }
+      const data = (await response.json()) as { policies?: PolicyPack[] }
       setPolicies(data.policies || [])
       setLoading(false)
     } catch (err) {

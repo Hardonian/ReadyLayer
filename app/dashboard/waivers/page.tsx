@@ -74,7 +74,7 @@ export default function WaiversPage() {
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const data = (await response.json()) as { waivers?: unknown[] }
+      const data = (await response.json()) as { waivers?: Waiver[] }
       setWaivers(data.waivers || [])
       setLoading(false)
     } catch (err) {

@@ -106,7 +106,7 @@ export default function PolicyDetailPage() {
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = (await response.json()) as { repository?: unknown }
+        const data = (await response.json()) as PolicyPack
         setPolicy(data)
         setLoading(false)
         

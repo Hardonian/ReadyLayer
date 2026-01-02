@@ -84,7 +84,13 @@ export default function EditRulePage() {
 
         setRule(foundRule)
         setEnabled(foundRule.enabled)
-        setSeverityMapping(foundRule.severityMapping)
+        // Convert Record to specific severity mapping type
+        setSeverityMapping({
+          critical: (foundRule.severityMapping.critical || 'block') as 'block' | 'warn' | 'allow',
+          high: (foundRule.severityMapping.high || 'block') as 'block' | 'warn' | 'allow',
+          medium: (foundRule.severityMapping.medium || 'warn') as 'block' | 'warn' | 'allow',
+          low: (foundRule.severityMapping.low || 'allow') as 'block' | 'warn' | 'allow',
+        })
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load rule')
