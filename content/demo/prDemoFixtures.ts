@@ -14,6 +14,15 @@ export interface PRCheck {
   duration?: number // in seconds
   category: 'review-guard' | 'test-engine' | 'doc-sync'
   details?: CheckDetails
+  aiDetected?: boolean // Whether AI-generated code was detected
+  reviewId?: string // Transparency: review ID for audit trail
+  timestamp?: string // When the check ran
+  metrics?: {
+    findingsCount?: number
+    coverageDelta?: number
+    testsGenerated?: number
+    docsUpdated?: number
+  }
 }
 
 export interface CheckDetails {
@@ -69,6 +78,12 @@ export const demoChecks: PRCheck[] = [
     status: 'success',
     duration: 12,
     category: 'review-guard',
+    aiDetected: true,
+    reviewId: 'rev-abc123',
+    timestamp: '2024-01-15T10:23:45Z',
+    metrics: {
+      findingsCount: 2,
+    },
     details: {
       findings: [
         {
@@ -96,6 +111,12 @@ export const demoChecks: PRCheck[] = [
     status: 'success',
     duration: 8,
     category: 'review-guard',
+    aiDetected: true,
+    reviewId: 'rev-def456',
+    timestamp: '2024-01-15T10:23:53Z',
+    metrics: {
+      findingsCount: 0,
+    },
   },
   {
     id: 'rg-quality',
@@ -103,6 +124,12 @@ export const demoChecks: PRCheck[] = [
     status: 'failure',
     duration: 15,
     category: 'review-guard',
+    aiDetected: true,
+    reviewId: 'rev-ghi789',
+    timestamp: '2024-01-15T10:24:01Z',
+    metrics: {
+      findingsCount: 1,
+    },
     details: {
       findings: [
         {
@@ -122,6 +149,12 @@ export const demoChecks: PRCheck[] = [
     status: 'success',
     duration: 20,
     category: 'test-engine',
+    aiDetected: true,
+    reviewId: 'rev-jkl012',
+    timestamp: '2024-01-15T10:24:16Z',
+    metrics: {
+      testsGenerated: 3,
+    },
     details: {
       testLog: [
         'Generated test: auth.test.ts',
@@ -137,6 +170,12 @@ export const demoChecks: PRCheck[] = [
     status: 'success',
     duration: 5,
     category: 'test-engine',
+    aiDetected: true,
+    reviewId: 'rev-mno345',
+    timestamp: '2024-01-15T10:24:36Z',
+    metrics: {
+      coverageDelta: 3,
+    },
     details: {
       testLog: [
         'Coverage: 87% (+3%)',
@@ -150,6 +189,12 @@ export const demoChecks: PRCheck[] = [
     status: 'success',
     duration: 6,
     category: 'doc-sync',
+    aiDetected: true,
+    reviewId: 'rev-pqr678',
+    timestamp: '2024-01-15T10:24:41Z',
+    metrics: {
+      docsUpdated: 1,
+    },
     details: {
       docChanges: [
         {
@@ -166,6 +211,12 @@ export const demoChecks: PRCheck[] = [
     status: 'success',
     duration: 4,
     category: 'doc-sync',
+    aiDetected: true,
+    reviewId: 'rev-stu901',
+    timestamp: '2024-01-15T10:24:47Z',
+    metrics: {
+      docsUpdated: 1,
+    },
     details: {
       docChanges: [
         {
@@ -181,6 +232,12 @@ export const demoChecks: PRCheck[] = [
     status: 'success',
     duration: 3,
     category: 'doc-sync',
+    aiDetected: true,
+    reviewId: 'rev-vwx234',
+    timestamp: '2024-01-15T10:24:51Z',
+    metrics: {
+      docsUpdated: 1,
+    },
     details: {
       docChanges: [
         {

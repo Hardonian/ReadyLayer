@@ -13,6 +13,9 @@ import {
   FileCode,
   Zap,
   FileText,
+  Bot,
+  BarChart3,
+  Eye,
 } from 'lucide-react'
 
 interface ProofCard {
@@ -23,6 +26,58 @@ interface ProofCard {
 }
 
 const proofCards: ProofCard[] = [
+  {
+    id: 'ai-detection',
+    icon: Bot,
+    title: 'AI detection on every diff',
+    visual: (
+      <div className="mt-2 space-y-1">
+        <Badge variant="info" className="text-xs flex items-center gap-1 w-fit">
+          <Bot className="h-3 w-3" />
+          AI code detected
+        </Badge>
+        <div className="text-xs text-text-muted">
+          Identifies AI-generated patterns, context slips, and risks
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'metrics',
+    icon: BarChart3,
+    title: 'Real-time metrics & insights',
+    visual: (
+      <div className="mt-2 space-y-1 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-text-muted">Findings:</span>
+          <span className="font-semibold">3</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-text-muted">Coverage Δ:</span>
+          <span className="font-semibold text-success">+3%</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-text-muted">Tests:</span>
+          <span className="font-semibold">12 generated</span>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'transparency',
+    icon: Eye,
+    title: 'Full transparency every step',
+    visual: (
+      <div className="mt-2 text-xs text-text-muted space-y-1">
+        <div className="flex items-center gap-1">
+          <Eye className="h-3 w-3 text-accent" />
+          <span>Review ID: rev-abc123</span>
+        </div>
+        <div>✓ Timestamp: 2024-01-15 10:23</div>
+        <div>✓ Audit trail link</div>
+      </div>
+    ),
+  },
   {
     id: 'pr-checks',
     icon: GitBranch,
@@ -105,6 +160,18 @@ export function ProofGrid() {
   return (
     <section className="py-16">
       <Container size="lg">
+        <motion.div
+          className="text-center mb-12"
+          variants={prefersReducedMotion ? fadeIn : staggerItem}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <h2 className="text-3xl font-bold mb-2">AI Detection, Metrics & Transparency</h2>
+          <p className="text-lg text-text-muted max-w-2xl mx-auto">
+            Every check is AI-aware, metrics-driven, and fully traceable. See exactly what was detected, when, and why.
+          </p>
+        </motion.div>
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           variants={prefersReducedMotion ? fadeIn : staggerContainer}

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Container } from '@/components/ui/container'
 import { fadeIn, slideUp, staggerContainer, staggerItem } from '@/lib/design/motion'
-import { Shield, TestTube, FileText, Github, Gitlab, Code, Play } from 'lucide-react'
+import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye } from 'lucide-react'
 import { InteractivePRDemo } from './InteractivePRDemo'
 import { cn } from '@/lib/utils'
 
@@ -55,18 +55,28 @@ export function HeroProof({ user }: HeroProofProps) {
             animate="visible"
           >
             <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-              <Badge variant="outline" className="mb-4">
-                AI Code Readiness Platform
-              </Badge>
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="outline" className="flex items-center gap-1.5">
+                  <Bot className="h-3.5 w-3.5" />
+                  AI Detection Enabled
+                </Badge>
+                <Badge variant="info" className="flex items-center gap-1.5">
+                  <Eye className="h-3.5 w-3.5" />
+                  Full Transparency
+                </Badge>
+              </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Blocks risky AI code
+                  Detects & blocks risky AI code
                 </span>
                 <br />
                 <span className="text-text-primary">before it reaches main</span>
               </h1>
-              <p className="text-xl text-text-muted max-w-xl">
+              <p className="text-xl text-text-muted max-w-xl mb-2">
                 Runs in your PR checks. Review Guard → Test Engine → Doc Sync. Deterministic gates with full audit trail.
+              </p>
+              <p className="text-sm text-text-muted max-w-xl">
+                <strong className="text-text-primary">AI-aware detection:</strong> Identifies AI-generated code patterns, context slips, and security risks. Every check is traceable with metrics and review IDs.
               </p>
             </motion.div>
 
@@ -125,7 +135,31 @@ export function HeroProof({ user }: HeroProofProps) {
 
             {/* Proof Microcopy */}
             <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-              <div className="flex flex-wrap gap-4 text-sm text-text-muted">
+              <div className="p-4 rounded-lg border border-border-subtle bg-surface-muted">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="h-4 w-4 text-accent" />
+                  <span className="text-sm font-semibold">Real-time Metrics & Transparency</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-3.5 w-3.5 text-info" />
+                    <span className="text-text-muted">AI detection</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-3.5 w-3.5 text-accent" />
+                    <span className="text-text-muted">Review IDs</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-3.5 w-3.5 text-success" />
+                    <span className="text-text-muted">Coverage metrics</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-3.5 w-3.5 text-warning" />
+                    <span className="text-text-muted">Finding counts</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm text-text-muted mt-3">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-success" />
                   Runs on every AI-touched diff
@@ -136,7 +170,7 @@ export function HeroProof({ user }: HeroProofProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  Audit trail
+                  Full audit trail
                 </div>
               </div>
             </motion.div>

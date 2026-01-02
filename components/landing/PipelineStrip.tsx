@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/container'
 import { Badge } from '@/components/ui/badge'
 import { fadeIn, slideUp } from '@/lib/design/motion'
-import { GitBranch, Shield, TestTube, FileText, CheckCircle2, ArrowRight } from 'lucide-react'
+import { GitBranch, Shield, TestTube, FileText, CheckCircle2, ArrowRight, Bot, BarChart3, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface PipelineNode {
@@ -134,6 +134,34 @@ export function PipelineStrip() {
             })}
           </div>
         </div>
+
+        {/* Metrics & Transparency Summary */}
+        <motion.div
+          className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6"
+          variants={prefersReducedMotion ? fadeIn : slideUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <div className="p-4 rounded-lg border border-border-subtle bg-surface-raised text-center">
+            <Bot className="h-6 w-6 text-info mx-auto mb-2" />
+            <div className="text-2xl font-bold mb-1">100%</div>
+            <div className="text-sm text-text-muted">AI Detection Rate</div>
+            <div className="text-xs text-text-muted mt-1">Every AI-touched diff identified</div>
+          </div>
+          <div className="p-4 rounded-lg border border-border-subtle bg-surface-raised text-center">
+            <BarChart3 className="h-6 w-6 text-success mx-auto mb-2" />
+            <div className="text-2xl font-bold mb-1">3</div>
+            <div className="text-sm text-text-muted">Real-time Metrics</div>
+            <div className="text-xs text-text-muted mt-1">Findings, coverage, tests tracked</div>
+          </div>
+          <div className="p-4 rounded-lg border border-border-subtle bg-surface-raised text-center">
+            <Eye className="h-6 w-6 text-accent mx-auto mb-2" />
+            <div className="text-2xl font-bold mb-1">100%</div>
+            <div className="text-sm text-text-muted">Transparency</div>
+            <div className="text-xs text-text-muted mt-1">Every check has review ID & timestamp</div>
+          </div>
+        </motion.div>
 
         {/* Artifacts Summary */}
         <motion.div

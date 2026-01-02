@@ -17,6 +17,10 @@ import {
   FileText,
   AlertTriangle,
   ChevronRight,
+  Bot,
+  BarChart3,
+  Eye,
+  ExternalLink,
 } from 'lucide-react'
 import type {
   PRCheck,
@@ -159,11 +163,87 @@ export function InteractivePRDemo({
   }
 
   const renderCheckDetails = (check: PRCheck) => {
-    if (!check.details) return null
-
     return (
       <div className="mt-4 space-y-3 text-sm">
-        {check.details.findings && (
+        {/* Transparency Header */}
+        {(check.reviewId || check.timestamp) && (
+          <div className="flex items-center justify-between p-2 rounded-md bg-accent-muted/30 border border-accent/20">
+            <div className="flex items-center gap-2 text-xs">
+              <Eye className="h-3 w-3 text-accent" />
+              <span className="font-medium text-accent">Full transparency</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-text-muted">
+              {check.reviewId && (
+                <span className="font-mono">Review ID: {check.reviewId}</span>
+              )}
+              {check.timestamp && (
+                <span>{new Date(check.timestamp).toLocaleString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}</span>
+              )}
+              {check.reviewId && (
+                <button
+                  className="flex items-center gap-1 text-accent hover:text-accent-hover transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    // In real app, this would link to audit trail
+                    console.log('View audit trail:', check.reviewId)
+                  }}
+                  aria-label="View audit trail"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Metrics Summary */}
+        {check.metrics && (
+          <div className="grid grid-cols-2 gap-2 p-2 rounded-md bg-surface-hover border border-border-subtle">
+            {check.metrics.findingsCount !== undefined && (
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-info" />
+                <div>
+                  <div className="text-xs text-text-muted">Findings</div>
+                  <div className="font-semibold">{check.metrics.findingsCount}</div>
+                </div>
+              </div>
+            )}
+            {check.metrics.coverageDelta !== undefined && (
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-success" />
+                <div>
+                  <div className="text-xs text-text-muted">Coverage Δ</div>
+                  <div className="font-semibold text-success">+{check.metrics.coverageDelta}%</div>
+                </div>
+              </div>
+            )}
+            {check.metrics.testsGenerated !== undefined && (
+              <div className="flex items-center gap-2">
+                <TestTube className="h-4 w-4 text-success" />
+                <div>
+                  <div className="text-xs text-text-muted">Tests</div>
+                  <div className="font-semibold">{check.metrics.testsGenerated}</div>
+                </div>
+              </div>
+            )}
+            {check.metrics.docsUpdated !== undefined && (
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-accent" />
+                <div>
+                  <div className="text-xs text-text-muted">Docs</div>
+                  <div className="font-semibold">{check.metrics.docsUpdated}</div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {check.details?.findings && (
           <div className="space-y-2">
             {check.details.findings.map((finding) => (
               <div
@@ -197,7 +277,7 @@ export function InteractivePRDemo({
           </div>
         )}
 
-        {check.details.testLog && (
+        {check.details?.testLog && (
           <div className="space-y-1">
             {check.details.testLog.map((log, idx) => (
               <div key={idx} className="font-mono text-xs text-text-muted">
@@ -207,7 +287,7 @@ export function InteractivePRDemo({
           </div>
         )}
 
-        {check.details.docChanges && (
+        {check.details?.docChanges && (
           <div className="space-y-2">
             {check.details.docChanges.map((change, idx) => (
               <div key={idx} className="rounded-md border border-border-subtle bg-surface-muted p-3">
@@ -229,18 +309,27 @@ export function InteractivePRDemo({
     <div className={cn('w-full', className)}>
       <Card className="overflow-hidden">
         <CardHeader className="border-b border-border-subtle pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <div className="flex gap-1">
                 <div className="w-3 h-3 rounded-full bg-danger" />
                 <div className="w-3 h-3 rounded-full bg-warning" />
                 <div className="w-3 h-3 rounded-full bg-success" />
               </div>
               <CardTitle className="text-base font-semibold">Pull Request #42</CardTitle>
+              <Badge variant="outline" className="text-xs flex items-center gap-1">
+                <Bot className="h-3 w-3" />
+                AI Detected
+              </Badge>
               <Badge variant="outline" className="text-xs">
                 Interactive Preview
               </Badge>
             </div>
+            <div className="flex items-center gap-2 text-xs text-text-muted">
+              <Eye className="h-3 w-3" />
+              <span>All checks traceable</span>
+            </div>
+          </div>
             <div className="flex items-center gap-2">
               {state === 'idle' && (
                 <button
@@ -317,15 +406,55 @@ export function InteractivePRDemo({
                         <div className="p-3 flex items-center gap-3">
                           {getStatusIcon(status)}
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               {getCategoryIcon(check.category)}
                               <span className="text-sm font-medium truncate">{check.name}</span>
+                              {check.aiDetected && (
+                                <Badge variant="info" className="text-xs px-1.5 py-0 flex items-center gap-1">
+                                  <Bot className="h-3 w-3" />
+                                  AI detected
+                                </Badge>
+                              )}
+                              {check.metrics && (
+                                <div className="flex items-center gap-2 ml-auto">
+                                  {check.metrics.findingsCount !== undefined && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0 flex items-center gap-1">
+                                      <BarChart3 className="h-3 w-3" />
+                                      {check.metrics.findingsCount} finding{check.metrics.findingsCount !== 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                  {check.metrics.coverageDelta !== undefined && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                      +{check.metrics.coverageDelta}% coverage
+                                    </Badge>
+                                  )}
+                                  {check.metrics.testsGenerated !== undefined && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                      {check.metrics.testsGenerated} test{check.metrics.testsGenerated !== 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                  {check.metrics.docsUpdated !== undefined && (
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0">
+                                      {check.metrics.docsUpdated} doc{check.metrics.docsUpdated !== 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            {status !== 'queued' && check.duration && (
-                              <div className="text-xs text-text-muted">
-                                {status === 'running' ? 'Running...' : `${check.duration}s`}
-                              </div>
-                            )}
+                            <div className="flex items-center gap-3 text-xs text-text-muted">
+                              {status !== 'queued' && check.duration && (
+                                <span>{status === 'running' ? 'Running...' : `${check.duration}s`}</span>
+                              )}
+                              {check.reviewId && (
+                                <span className="flex items-center gap-1 font-mono">
+                                  <Eye className="h-3 w-3" />
+                                  {check.reviewId}
+                                </span>
+                              )}
+                              {check.timestamp && status !== 'queued' && (
+                                <span>{new Date(check.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                              )}
+                            </div>
                           </div>
                           <ChevronRight
                             className={cn(
