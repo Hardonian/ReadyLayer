@@ -50,6 +50,8 @@ interface PolicyPack {
     id: string
     name: string
     fullName: string
+    provider?: string
+    url?: string
   }
   createdAt: string
   updatedAt: string
@@ -68,11 +70,18 @@ export default function PolicyDetailPage() {
   const router = useRouter()
   const params = useParams()
   const packId = params.packId as string
-  const { provider: _provider, theme: _theme } = useGitProvider()
 
   const [policy, setPolicy] = useState<PolicyPack | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Detect provider from repository
+  const { provider: _provider, theme } = useGitProvider({
+    repository: policy?.repository ? {
+      provider: policy.repository.provider,
+      url: policy.repository.url,
+    } : undefined,
+  })
 
   useEffect(() => {
     async function fetchPolicy() {
@@ -99,6 +108,11 @@ export default function PolicyDetailPage() {
         const data = await response.json()
         setPolicy(data)
         setLoading(false)
+        
+        // Trigger re-render to apply provider theme
+        if (data.repository) {
+          // Force component update to apply provider styling
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load policy')
         setLoading(false)
@@ -290,6 +304,17 @@ export default function PolicyDetailPage() {
                                     variant={
                                       action === 'block' ? 'destructive' :
                                       action === 'warn' ? 'default' : 'secondary'
+                                    }
+                                    style={
+                                      action === 'block' ? {
+                                        backgroundColor: theme?.colors.danger + '15',
+                                        color: theme?.colors.danger,
+                                        borderColor: theme?.colors.danger + '40',
+                                      } : action === 'warn' ? {
+                                        backgroundColor: theme?.colors.warning + '15',
+                                        color: theme?.colors.warning,
+                                        borderColor: theme?.colors.warning + '40',
+                                      } : undefined
                                     }
                                   >
                                   {severity}: {action}

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'
+import { useGitProvider } from '@/lib/git-provider-ui/hooks'
 
 interface Waiver {
   id: string
@@ -45,6 +46,9 @@ export default function WaiversPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeOnly, setActiveOnly] = useState(false)
+  
+  // Get provider theme for adaptive styling
+  const { theme } = useGitProvider()
 
   const fetchWaivers = useCallback(async () => {
     try {
@@ -189,7 +193,10 @@ export default function WaiversPage() {
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <ShieldCheck className="h-8 w-8 text-primary" />
+              <ShieldCheck 
+                className="h-8 w-8" 
+                style={{ color: theme?.colors.primary || 'currentColor' }}
+              />
               <h1 className="text-3xl font-bold">Waivers</h1>
             </div>
             <p className="text-muted-foreground">

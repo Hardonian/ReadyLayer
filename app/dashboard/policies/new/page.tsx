@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'
+import { useGitProvider } from '@/lib/git-provider-ui/hooks'
 
 export default function NewPolicyPage() {
   const { toast } = useToast()
@@ -37,6 +38,9 @@ export default function NewPolicyPage() {
   const [viewMode, setViewMode] = useState<'json' | 'yaml'>('json')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Get provider theme (will adapt when repository is selected)
+  const { theme } = useGitProvider()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,7 +118,10 @@ export default function NewPolicyPage() {
             </Button>
           </Link>
           <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-primary" />
+            <Shield 
+              className="h-8 w-8" 
+              style={{ color: theme?.colors.primary || 'currentColor' }}
+            />
             <h1 className="text-3xl font-bold">Create Policy Pack</h1>
           </div>
         </div>

@@ -8,7 +8,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
-import { Prisma } from '@prisma/client';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';

@@ -34,6 +34,13 @@ interface PolicyPack {
   version: string
   checksum: string
   rules: PolicyRule[]
+  repository?: {
+    id: string
+    name: string
+    fullName: string
+    provider?: string
+    url?: string
+  }
   createdAt: string
   updatedAt: string
 }
@@ -200,7 +207,10 @@ export default function PoliciesPage() {
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-primary" />
+              <Shield 
+                className="h-8 w-8" 
+                style={{ color: '#6366f1' }} // Default primary color
+              />
               <h1 className="text-3xl font-bold">Policy Management</h1>
             </div>
             <p className="text-muted-foreground">
