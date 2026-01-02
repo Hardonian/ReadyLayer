@@ -76,7 +76,7 @@ export default function ReviewsPage() {
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const data = (await response.json()) as { reviews?: unknown[] }
+      const data = (await response.json()) as { reviews?: Review[] }
       setReviews(data.reviews || [])
       setError(null)
       setLoading(false)
