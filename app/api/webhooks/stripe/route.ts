@@ -312,6 +312,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
   const log = logger.child({ invoiceId: invoice.id });
 
   try {
+    if (!invoice.customer) {
+      log.warn({ invoiceId: invoice.id }, 'Invoice has no customer');
+      return;
+    }
     const customerId = typeof invoice.customer === 'string'
       ? invoice.customer
       : invoice.customer.id;

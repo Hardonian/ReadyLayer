@@ -307,8 +307,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Try to fetch artifacts and extract coverage/summary
-    let coverage: Record<string, unknown> | null = null;
-    let summary: Record<string, unknown> | null = null;
+    const coverage: Record<string, unknown> | null = null;
+    const summary: Record<string, unknown> | null = null;
     let artifactsUrl: string | null = pipelineUrl || null;
 
     try {

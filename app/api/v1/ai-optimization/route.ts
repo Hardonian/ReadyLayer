@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { logger } from '../../../../observability/logging';
 import { requireAuth } from '../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../lib/authz';
@@ -121,8 +122,8 @@ export async function GET(request: NextRequest) {
             update: {
               title: suggestion.title,
               description: suggestion.description,
-              steps: suggestion.steps as any,
-              estimatedSavings: suggestion.estimatedSavings as any,
+              steps: suggestion.steps,
+              estimatedSavings: suggestion.estimatedSavings ? (suggestion.estimatedSavings as Prisma.InputJsonValue) : undefined,
             },
             create: {
               id: suggestion.id,
@@ -137,8 +138,8 @@ export async function GET(request: NextRequest) {
               stack: suggestion.stack || [],
               llmAccess: suggestion.llmAccess || [],
               codeExample: suggestion.codeExample,
-              steps: suggestion.steps as any,
-              estimatedSavings: suggestion.estimatedSavings as any,
+              steps: suggestion.steps,
+              estimatedSavings: suggestion.estimatedSavings ? (suggestion.estimatedSavings as Prisma.InputJsonValue) : undefined,
             },
           })
         )

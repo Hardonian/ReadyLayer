@@ -229,11 +229,20 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
 
     // Check authentication for API routes
     try {
-      const user = await getEdgeAuthUser(
-        request,
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseAnonKey) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'SERVICE_UNAVAILABLE',
+              message: 'Authentication service is temporarily unavailable',
+            },
+          },
+          { status: 503 }
+        );
+      }
+      const user = await getEdgeAuthUser(request, supabaseUrl, supabaseAnonKey);
 
       // If no user, check for API key in header
       // Note: Full API key validation requires Prisma (Node runtime)

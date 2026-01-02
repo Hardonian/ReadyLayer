@@ -82,7 +82,8 @@ class OpenAIProvider implements LLMProvider {
     if (!response.ok) {
       let errorMessage = 'Unknown error';
       try {
-        const error = await response.json();
+        const errorData = await response.json() as unknown;
+        const error = errorData as { error?: { message?: string }; message?: string };
         errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
       } catch {
         errorMessage = `${response.status} ${response.statusText}`;
@@ -90,14 +91,18 @@ class OpenAIProvider implements LLMProvider {
       throw new Error(`OpenAI API error: ${errorMessage}`);
     }
 
-    let data: any;
+    let data: {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: { total_tokens?: number; prompt_tokens?: number; completion_tokens?: number };
+    };
     try {
-      data = await response.json();
+      const jsonData = await response.json() as unknown;
+      data = jsonData as typeof data;
     } catch (error) {
       throw new Error('Failed to parse OpenAI API response as JSON');
     }
 
-    const content = data.choices[0]?.message?.content || '';
+    const content = data.choices?.[0]?.message?.content || '';
     const tokensUsed = data.usage?.total_tokens || 0;
 
     if (!content) {
@@ -224,7 +229,8 @@ class AnthropicProvider implements LLMProvider {
     if (!response.ok) {
       let errorMessage = 'Unknown error';
       try {
-        const error = await response.json();
+        const errorData = await response.json() as unknown;
+        const error = errorData as { error?: { message?: string }; message?: string };
         errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
       } catch {
         errorMessage = `${response.status} ${response.statusText}`;
@@ -232,14 +238,18 @@ class AnthropicProvider implements LLMProvider {
       throw new Error(`Anthropic API error: ${errorMessage}`);
     }
 
-    let data: any;
+    let data: {
+      content?: Array<{ text?: string; type?: string }>;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
     try {
-      data = await response.json();
+      const jsonData = await response.json() as unknown;
+      data = jsonData as typeof data;
     } catch (error) {
       throw new Error('Failed to parse Anthropic API response as JSON');
     }
 
-    const content = data.content[0]?.text || '';
+    const content = data.content?.[0]?.text || '';
     const tokensUsed = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0);
 
     if (!content) {

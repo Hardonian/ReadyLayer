@@ -218,7 +218,7 @@ export async function PUT(
         resourceId: params.repoId,
         details: {
           repositoryId: params.repoId,
-          configVersion: (config as any).version,
+          configVersion: typeof config === 'object' && config !== null && 'version' in config ? (config as { version?: number }).version : undefined,
         },
       });
     } catch {

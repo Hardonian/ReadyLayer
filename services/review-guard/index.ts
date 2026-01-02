@@ -13,7 +13,7 @@ import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../li
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { UsageLimitExceededError } from '../../lib/usage-enforcement';
-import { aiAnomalyDetectionService } from '../ai-anomaly-detection';
+// import { aiAnomalyDetectionService } from '../ai-anomaly-detection'; // Reserved for future use
 import { selfLearningService } from '../self-learning';
 import { predictiveDetectionService } from '../predictive-detection';
 
@@ -359,7 +359,8 @@ export class ReviewGuardService {
         });
 
         // Store high-confidence alerts
-        for (const alert of predictiveAlerts.filter((a) => a.confidence.finalConfidence > 0.7)) {
+        // Store high-confidence alerts (alerts are stored by predictive detection service)
+        for (const _alert of predictiveAlerts.filter((a) => a.confidence.finalConfidence > 0.7)) {
           // Alerts are stored by predictive detection service
         }
       } catch (error) {
@@ -435,9 +436,9 @@ export class ReviewGuardService {
    * Track token usage for anomaly detection
    */
   private async trackTokenUsage(
-    reviewId: string,
-    repositoryId: string,
-    organizationId: string
+    _reviewId: string,
+    _repositoryId: string,
+    _organizationId: string
   ): Promise<void> {
     // Token usage is tracked per LLM call in recordTokenUsage
     // This method can be used for aggregate tracking if needed
@@ -600,7 +601,7 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
    */
   private async recordModelPerformance(
     organizationId: string,
-    repositoryId: string,
+    _repositoryId: string,
     reviewId: string,
     evaluationResult: any,
     durationMs: number

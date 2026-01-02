@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
@@ -22,7 +21,7 @@ export async function GET(request: NextRequest) {
   const log = logger.child({ requestId });
 
   try {
-    const user = await requireAuth(request);
+    await requireAuth(request);
     const authzResponse = await createAuthzMiddleware({
       requiredScopes: ['read'],
     })(request);
@@ -30,13 +29,11 @@ export async function GET(request: NextRequest) {
       return authzResponse;
     }
 
-    // Get user's organizations
-    const memberships = await prisma.organizationMember.findMany({
-      where: { userId: user.id },
-      select: { organizationId: true },
-    });
-    // User's organization IDs available for future use
-    // const orgIds = memberships.map((m) => m.organizationId);
+    // Get user's organizations (for future use)
+    // const memberships = await prisma.organizationMember.findMany({
+    //   where: { userId: user.id },
+    //   select: { organizationId: true },
+    // });
 
     // For now, return mock integrations (would be stored in DB)
     // In production, you'd have an Integration model

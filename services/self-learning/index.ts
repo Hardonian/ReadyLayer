@@ -130,7 +130,7 @@ export class SelfLearningService {
     organizationId: string,
     modelId?: string
   ): Promise<ModelPerformanceMetrics[]> {
-    const where: any = { organizationId };
+    const where: { organizationId: string; modelId?: string } = { organizationId };
     if (modelId) {
       where.modelId = modelId;
     }
@@ -141,16 +141,23 @@ export class SelfLearningService {
       take: 1000, // Last 1000 records for aggregation
     });
 
-    // Aggregate metrics
-    return this.aggregatePerformanceMetrics(performances);
+    // Aggregate metrics - map Prisma records to expected format
+    return this.aggregatePerformanceMetrics(performances.map(p => ({
+      modelId: p.modelId,
+      provider: p.provider,
+      success: p.success,
+      responseTimeMs: p.responseTimeMs,
+      tokensUsed: p.tokensUsed,
+      cost: Number(p.cost),
+    })));
   }
 
   /**
    * Calculate confidence score for a prediction
    */
   async calculateConfidenceScore(
-    predictionType: string,
-    context: Record<string, unknown>,
+    _predictionType: string,
+    _context: Record<string, unknown>,
     historicalData?: {
       similarPredictions: number;
       accuracyRate: number;
@@ -590,7 +597,7 @@ export class SelfLearningService {
           metadata: {
             modelId,
             averageTokens: avgTokens,
-            averageCost,
+            averageCost: avgCost,
             suggestion: 'Consider using smaller context windows or model',
           },
         });

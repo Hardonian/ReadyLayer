@@ -68,12 +68,12 @@ class GitHubAdapter implements GitProviderAdapter {
       repo,
       workflowId,
       ref,
-      Object.fromEntries(variables.map(v => [v.key, v.value])),
-      token
+      token,
+      Object.fromEntries(variables.map(v => [v.key, v.value]))
     );
 
     // Get the workflow run that was just created
-    const runs = await githubAPIClient.listWorkflowRuns(repo, workflowId, ref, token);
+    const runs = await githubAPIClient.listWorkflowRuns(repo, workflowId, token, ref);
     const run = runs.workflow_runs?.[0];
 
     if (!run) {
@@ -102,7 +102,7 @@ class GitHubAdapter implements GitProviderAdapter {
 
   async listPipelineRuns(repo: string, token: string, ref?: string): Promise<PipelineRun[]> {
     const workflowId = '.github/workflows/readylayer-tests.yml';
-    const runs = await githubAPIClient.listWorkflowRuns(repo, workflowId, ref, token);
+    const runs = await githubAPIClient.listWorkflowRuns(repo, workflowId, token, ref);
     return (runs.workflow_runs || []).map(run => ({
       id: String(run.id),
       status: run.status === 'completed' ? 'completed' : run.status === 'in_progress' ? 'in_progress' : 'pending',

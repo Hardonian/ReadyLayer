@@ -49,19 +49,19 @@ export class PredictiveDetectionService {
     const historicalData = await this.getHistoricalData(context);
 
     // Get model performance to calculate confidence
-    const modelPerformance = await selfLearningService.getModelPerformance(
+    const _modelPerformance = await selfLearningService.getModelPerformance(
       context.organizationId
     );
 
     // Predict drift
-    const driftAlert = await this.predictDrift(context, historicalData, modelPerformance);
+    const driftAlert = await this.predictDrift(context, historicalData, _modelPerformance);
     if (driftAlert) alerts.push(driftAlert);
 
     // Predict token waste
     const tokenWasteAlert = await this.predictTokenWaste(
       context,
       historicalData,
-      modelPerformance
+      _modelPerformance
     );
     if (tokenWasteAlert) alerts.push(tokenWasteAlert);
 
@@ -69,7 +69,7 @@ export class PredictiveDetectionService {
     const mistakeAlert = await this.predictRepeatedMistakes(
       context,
       historicalData,
-      modelPerformance
+      _modelPerformance
     );
     if (mistakeAlert) alerts.push(mistakeAlert);
 
@@ -77,7 +77,7 @@ export class PredictiveDetectionService {
     const securityAlert = await this.predictSecurityIssues(
       context,
       historicalData,
-      modelPerformance
+      _modelPerformance
     );
     if (securityAlert) alerts.push(securityAlert);
 
@@ -93,7 +93,7 @@ export class PredictiveDetectionService {
   private async predictDrift(
     context: DetectionContext,
     historicalData: Record<string, unknown>[],
-    modelPerformance: any[]
+    _modelPerformance: unknown[]
   ): Promise<PredictiveAlert | null> {
     // Check for patterns suggesting upcoming drift
     const recentDocs = await prisma.doc.findMany({
@@ -127,7 +127,7 @@ export class PredictiveDetectionService {
       // Code changing faster than docs - drift likely
       const confidence = await selfLearningService.calculateConfidenceScore(
         'drift_prediction',
-        context,
+        context as unknown as Record<string, unknown>,
         {
           similarPredictions: historicalData.length,
           accuracyRate: 0.75, // Would come from feedback
@@ -161,7 +161,7 @@ export class PredictiveDetectionService {
   private async predictTokenWaste(
     context: DetectionContext,
     historicalData: Record<string, unknown>[],
-    modelPerformance: any[]
+    _modelPerformance: unknown[]
   ): Promise<PredictiveAlert | null> {
     // Check recent token usage
     const recentUsage = await prisma.tokenUsage.findMany({
@@ -183,7 +183,7 @@ export class PredictiveDetectionService {
     if (avgWaste > 20 && avgTokens > 30000) {
       const confidence = await selfLearningService.calculateConfidenceScore(
         'token_waste_prediction',
-        context,
+        context as unknown as Record<string, unknown>,
         {
           similarPredictions: historicalData.length,
           accuracyRate: 0.8,
@@ -215,7 +215,7 @@ export class PredictiveDetectionService {
   private async predictRepeatedMistakes(
     context: DetectionContext,
     historicalData: Record<string, unknown>[],
-    modelPerformance: any[]
+    _modelPerformance: unknown[]
   ): Promise<PredictiveAlert | null> {
     // Check for violation patterns
     const recentViolations = await prisma.violation.findMany({
@@ -253,7 +253,7 @@ export class PredictiveDetectionService {
       if (recent > older && recent >= 3) {
         const confidence = await selfLearningService.calculateConfidenceScore(
           'repeated_mistake_prediction',
-          context,
+          context as unknown as Record<string, unknown>,
           {
             similarPredictions: historicalData.length,
             accuracyRate: 0.85,
@@ -286,7 +286,7 @@ export class PredictiveDetectionService {
   private async predictSecurityIssues(
     context: DetectionContext,
     historicalData: Record<string, unknown>[],
-    modelPerformance: any[]
+    _modelPerformance: unknown[]
   ): Promise<PredictiveAlert | null> {
     // Check for security violation patterns
     const recentSecurityViolations = await prisma.violation.findMany({
@@ -315,7 +315,7 @@ export class PredictiveDetectionService {
     if (recent > 0 && recent >= older) {
       const confidence = await selfLearningService.calculateConfidenceScore(
         'security_prediction',
-        context,
+        context as unknown as Record<string, unknown>,
         {
           similarPredictions: historicalData.length,
           accuracyRate: 0.9, // Security predictions are high accuracy
@@ -352,7 +352,9 @@ export class PredictiveDetectionService {
       prisma.review.findMany({
         where: {
           repositoryId: context.repositoryId || undefined,
-          organizationId: context.organizationId,
+          repository: context.repositoryId ? undefined : {
+            organizationId: context.organizationId,
+          },
           createdAt: {
             gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
           },

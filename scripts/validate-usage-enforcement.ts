@@ -16,7 +16,7 @@ interface ValidationResult {
 
 const results: ValidationResult[] = [];
 
-function validate(name: string, fn: () => boolean | string[]): void {
+function validate(name: string, fn: () => boolean | string | string[]): void {
   try {
     const result = fn();
     if (result === true) {

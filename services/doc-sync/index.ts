@@ -552,10 +552,10 @@ export class DocSyncService {
       // Query evidence if RAG is enabled
       let evidenceSection = '';
       if (isQueryEnabled()) {
+        // Get repository ID from endpoints if available
+        const repoId = endpoints.length > 0 ? endpoints[0].file?.split('/')[0] : undefined;
+        
         try {
-          // Get repository ID from endpoints if available
-          const repoId = endpoints.length > 0 ? endpoints[0].file?.split('/')[0] : undefined;
-          
           const evidenceQueries = [
             `prior API docs patterns`,
             `OpenAPI fragments or route descriptions`,
@@ -585,7 +585,7 @@ export class DocSyncService {
           const { logger } = await import('../../observability/logging');
           logger.warn({
             err: error instanceof Error ? error : new Error(String(error)),
-            repositoryId,
+            repositoryId: repoId,
           }, 'Evidence retrieval failed, proceeding without evidence');
         }
       }
