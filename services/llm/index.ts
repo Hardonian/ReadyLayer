@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
+import { usageEnforcementService } from '../../lib/usage-enforcement';
 // import { createHash } from 'crypto'; // Reserved for future caching
 
 export interface LLMRequest {
@@ -360,8 +361,20 @@ export class LLMService {
       }
     }
 
-    // Check budget limits
-    await this.checkBudget(request.organizationId);
+    // Estimate tokens (rough estimate: ~4 chars per token)
+    const estimatedTokens = Math.ceil((request.prompt.length / 4) + (request.maxTokens || 2000));
+
+    // Check usage limits before making API call
+    try {
+      await usageEnforcementService.checkLLMRequest(
+        request.organizationId,
+        request.userId || null,
+        estimatedTokens
+      );
+    } catch (error) {
+      // Re-throw usage limit errors as-is (they have proper HTTP status codes)
+      throw error;
+    }
 
     // Get provider
     const providerName = request.model?.includes('claude') ? 'anthropic' : this.defaultProvider;
@@ -389,56 +402,7 @@ export class LLMService {
     }
   }
 
-  /**
-   * Check budget limits for organization
-   */
-  private async checkBudget(organizationId: string): Promise<void> {
-    const org = await prisma.organization.findUnique({
-      where: { id: organizationId },
-      include: { subscriptions: true },
-    });
-
-    if (!org) {
-      throw new Error(`Organization ${organizationId} not found`);
-    }
-
-    const subscription = org.subscriptions[0];
-    if (!subscription || subscription.status !== 'active') {
-      throw new Error(`Organization ${organizationId} has no active subscription`);
-    }
-
-    // Budget limits by plan (monthly)
-    const budgets: Record<string, number> = {
-      starter: 50, // $50/month
-      growth: 500, // $500/month
-      scale: 5000, // $5000/month
-    };
-
-    const budget = budgets[subscription.plan] || budgets.starter;
-
-    // Check current month spend
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const monthSpend = await prisma.costTracking.aggregate({
-      where: {
-        organizationId,
-        date: { gte: startOfMonth },
-        service: 'llm',
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const totalSpend = Number(monthSpend._sum.amount || 0);
-    if (totalSpend >= budget) {
-      throw new Error(
-        `Budget limit exceeded: $${totalSpend.toFixed(2)} / $${budget} for ${subscription.plan} plan`
-      );
-    }
-  }
+  // Removed checkBudget - now handled by usageEnforcementService
 
   /**
    * Get cached response

@@ -28,6 +28,7 @@ import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
 import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
 import { ErrorBoundary } from '@/components/error-boundary'
+import { UsageLimitBanner, UsageStats } from '@/components/ui/usage-limit-banner'
 
 interface Repository {
   id: string
@@ -78,6 +79,8 @@ export default function DashboardPage() {
     lastVerified: null,
     aiErrorsDetected: 0,
   })
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
+  const [organizationId, setOrganizationId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -165,6 +168,39 @@ export default function DashboardPage() {
           activeRepos,
         })
 
+        // Fetch usage stats
+        try {
+          const usageResponse = await fetch('/api/v1/usage', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          })
+          
+          if (usageResponse.ok) {
+            const usageData = await usageResponse.json()
+            setUsageStats(usageData.data)
+            
+            // Set organizationId from response if available
+            if (usageData.data.organizationId) {
+              setOrganizationId(usageData.data.organizationId)
+            } else if (repositories.length > 0) {
+              // Fallback: get from first repo
+              const repo = repositories[0]
+              const repoDetails = await fetch(`/api/v1/repos/${repo.id}`, {
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                },
+              }).then((r) => r.ok ? r.json() : null).catch(() => null)
+              
+              if (repoDetails?.data?.organizationId) {
+                setOrganizationId(repoDetails.data.organizationId)
+              }
+            }
+          }
+        } catch {
+          // Silently handle usage stats fetch errors
+        }
+
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load dashboard')
@@ -245,6 +281,13 @@ export default function DashboardPage() {
             Verifiable assurance for AI-generated code. Every check is transparent and traceable.
           </p>
         </div>
+
+        {/* Usage Limit Banner */}
+        {usageStats && organizationId && (
+          <motion.div variants={fadeIn}>
+            <UsageLimitBanner stats={usageStats} organizationId={organizationId} />
+          </motion.div>
+        )}
 
         {/* Verification Status Banner */}
         <motion.div variants={fadeIn}>

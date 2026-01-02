@@ -78,6 +78,9 @@ export class GitHubWebhookHandler {
     // Normalize event (getOrCreateRepository is now synchronous placeholder)
     const normalized = await this.normalizeEvent(event, installation);
 
+    // Get organizationId from installation for usage enforcement
+    const organizationId = installation.organizationId || null;
+
     // Queue event for processing
     await queueService.enqueue('webhook', {
       type: normalized.type,
@@ -85,7 +88,9 @@ export class GitHubWebhookHandler {
         repository: normalized.repository,
         pr: normalized.pr,
         installationId: installation.id,
+        repositoryId: normalized.repository.id,
       },
+      organizationId,
     });
   }
 

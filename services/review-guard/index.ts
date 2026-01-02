@@ -12,6 +12,7 @@ import { schemaReconciliationService } from '../schema-reconciliation';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
+import { UsageLimitExceededError } from '../../lib/usage-enforcement';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -97,6 +98,17 @@ export class ReviewGuardService {
             );
             allIssues.push(...aiIssues);
           } catch (error) {
+            // Handle usage limit errors with clear messaging
+            if (error instanceof UsageLimitExceededError) {
+              throw new Error(
+                `Usage limit exceeded: ${error.message}. ` +
+                `This PR check cannot complete due to plan limits. ` +
+                `Current usage: ${error.current}/${error.limit}. ` +
+                `Next steps: Upgrade your plan at /dashboard/billing or wait for limits to reset. ` +
+                `For help, contact support@readylayer.com`
+              );
+            }
+            
             // LLM failure MUST block PR (enforcement-first)
             throw new Error(
               `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +

@@ -7,12 +7,15 @@
 import { prisma } from '../lib/prisma';
 import { createClient } from 'redis';
 import { logger } from '../observability/logging';
+import { usageEnforcementService } from '../lib/usage-enforcement';
 
 export interface JobPayload {
   type: string;
   data: any;
   idempotencyKey?: string;
   maxRetries?: number;
+  organizationId?: string; // For usage enforcement
+  userId?: string; // For usage enforcement
 }
 
 export interface JobResult {
@@ -66,6 +69,23 @@ export class QueueService {
       }
     }
 
+    // Check usage limits before enqueueing (if organizationId provided)
+    if (payload.organizationId) {
+      try {
+        await usageEnforcementService.checkJobEnqueue(
+          payload.organizationId,
+          payload.userId || null,
+          payload.type
+        );
+      } catch (error) {
+        // Re-throw usage limit errors as-is (they have proper HTTP status codes)
+        throw error;
+      }
+    }
+
+    // Get repositoryId from payload.data if available (for job record)
+    const repositoryId = payload.data?.repositoryId || payload.data?.repoId || null;
+
     // Create job in database (for durability)
     await prisma.job.create({
       data: {
@@ -75,6 +95,8 @@ export class QueueService {
         payload: payload.data,
         maxRetries: payload.maxRetries || 3,
         scheduledAt: new Date(),
+        repositoryId,
+        userId: payload.userId || null,
       },
     });
 

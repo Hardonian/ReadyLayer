@@ -11,6 +11,7 @@ import { logger } from '../observability/logging';
 import { requireAuth, AuthUser } from './auth';
 import { createAuthzMiddleware, AuthzOptions } from './authz';
 import { ApiErrorResponse, ErrorCodes } from './errors';
+import { UsageLimitExceededError } from './usage-enforcement';
 
 /**
  * Standard API response wrapper
@@ -211,6 +212,21 @@ export function createRouteHandler(
       // Handle known error types
       if (error instanceof ApiErrorResponse) {
         return errorResponse(error.error.code, error.error.message, error.statusCode, error.error.context);
+      }
+
+      // Handle usage limit errors (429/402)
+      if (error instanceof UsageLimitExceededError) {
+        return errorResponse(
+          'USAGE_LIMIT_EXCEEDED',
+          error.message,
+          error.httpStatus,
+          {
+            limitType: error.limitType,
+            current: error.current,
+            limit: error.limit,
+            remaining: error.limit - error.current,
+          }
+        );
       }
 
       // Handle Prisma errors
