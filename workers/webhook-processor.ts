@@ -8,7 +8,7 @@ import { queueService } from '../queue';
 import { reviewGuardService } from '../services/review-guard';
 import { testEngineService } from '../services/test-engine';
 import { docSyncService } from '../services/doc-sync';
-import { githubAPIClient, type CheckRunAnnotation, type CheckRunDetails } from '../integrations/github/api-client';
+import { getGitProviderPRAdapter, type CheckRunAnnotation, type CheckRunDetails } from '../integrations/git-provider-pr-adapter';
 import { formatPolicyComment, generateStatusCheckDescription } from '../lib/git-provider-ui/comment-formatter';
 import { detectGitProvider } from '../lib/git-provider-ui';
 import { prisma } from '../lib/prisma';
@@ -170,15 +170,22 @@ async function processPREvent(
   const traceId = requestId || `webhook_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   log.info({ prNumber: pr.number, requestId: traceId }, 'Processing PR event');
 
+  // Get provider-specific adapter
+  const provider = detectGitProvider({
+    provider: repository.provider,
+    url: repository.url || undefined,
+  });
+  const prAdapter = getGitProviderPRAdapter(provider);
+
   // Get PR diff
-  const diff = await githubAPIClient.getPRDiff(
+  const diff = await prAdapter.getPRDiff(
     repository.fullName,
     pr.number,
     accessToken
   );
 
   // Get changed files
-  const prDetails = await githubAPIClient.getPR(
+  const prDetails = await prAdapter.getPR(
     repository.fullName,
     pr.number,
     accessToken
@@ -189,7 +196,7 @@ async function processPREvent(
   // Fetch file contents (simplified - would fetch all changed files)
   for (const file of prDetails.files || []) {
     try {
-      const content = await githubAPIClient.getFileContent(
+      const content = await prAdapter.getFileContent(
         repository.fullName,
         file.filename,
         pr.sha,
@@ -223,7 +230,7 @@ async function processPREvent(
   if (billingCheck) {
     // Billing check failed - create check run and return
     try {
-      await githubAPIClient.createOrUpdateCheckRun(
+      await prAdapter.createOrUpdateCheckRun(
         repository.fullName,
         pr.sha,
         {
@@ -261,15 +268,10 @@ async function processPREvent(
       where: { id: reviewResult.id },
     });
 
-    const provider = detectGitProvider({
-      provider: repository.provider,
-      url: repository.url || undefined,
-    });
-
-    // Convert issues to annotations
+    // Convert issues to annotations (GitHub-specific, but we'll use them for other providers too)
     const annotations = issuesToAnnotations(reviewResult.issues);
     
-    // Limit annotations to 50 (GitHub API limit)
+    // Limit annotations to 50 (GitHub API limit, but we'll apply to all providers)
     const limitedAnnotations = annotations.slice(0, 50);
 
     // Generate summary text
@@ -294,7 +296,7 @@ async function processPREvent(
           : undefined,
       };
 
-      await githubAPIClient.createOrUpdateCheckRun(
+      await prAdapter.createOrUpdateCheckRun(
         repository.fullName,
         pr.sha,
         checkRunDetails,
@@ -332,10 +334,10 @@ async function processPREvent(
           }
         );
 
-        await githubAPIClient.postPRComment(
+        await prAdapter.postPRComment(
           repository.fullName,
           pr.number,
-          commentBody,
+          { body: commentBody },
           accessToken
         );
       } catch (error) {
@@ -380,7 +382,13 @@ async function processPREvent(
     log.error(error, 'Review Guard failed');
     // Create check run with error status
     try {
-      await githubAPIClient.createOrUpdateCheckRun(
+      const provider = detectGitProvider({
+        provider: repository.provider,
+        url: repository.url || undefined,
+      });
+      const prAdapter = getGitProviderPRAdapter(provider);
+      
+      await prAdapter.createOrUpdateCheckRun(
         repository.fullName,
         pr.sha,
         {

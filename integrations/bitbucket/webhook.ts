@@ -1,7 +1,7 @@
 /**
- * GitHub Webhook Handler
+ * Bitbucket Webhook Handler
  * 
- * Handles GitHub webhooks with HMAC validation
+ * Handles Bitbucket webhooks with HMAC validation
  * Normalizes events to internal format
  */
 
@@ -9,13 +9,12 @@ import { createHmac } from 'crypto';
 import { prisma } from '../../lib/prisma';
 import { queueService } from '../../queue';
 
-export interface GitHubWebhookEvent {
-  action: string;
-  pull_request?: any;
+export interface BitbucketWebhookEvent {
+  eventKey: string;
+  pullRequest?: any;
   repository?: any;
-  check_run?: any;
-  workflow_run?: any;
-  installation?: any;
+  buildStatus?: any;
+  commit?: any;
 }
 
 export interface NormalizedEvent {
@@ -23,7 +22,7 @@ export interface NormalizedEvent {
   repository: {
     id: string;
     fullName: string;
-    provider: 'github';
+    provider: 'bitbucket';
   };
   pr?: {
     number: number;
@@ -35,23 +34,24 @@ export interface NormalizedEvent {
   installationId?: string;
 }
 
-export class GitHubWebhookHandler {
+export class BitbucketWebhookHandler {
   /**
    * Validate webhook signature
    */
   validateSignature(payload: string, signature: string, secret: string): boolean {
     const hmac = createHmac('sha256', secret);
     hmac.update(payload);
-    const expectedSignature = `sha256=${hmac.digest('hex')}`;
+    const expectedSignature = hmac.digest('hex');
 
-    return signature === expectedSignature;
+    // Bitbucket sends signature as hex string (no 'sha256=' prefix)
+    return signature === expectedSignature || signature === `sha256=${expectedSignature}`;
   }
 
   /**
    * Handle webhook event
    */
   async handleEvent(
-    event: GitHubWebhookEvent,
+    event: BitbucketWebhookEvent,
     installationId: string,
     signature: string
   ): Promise<void> {
@@ -59,7 +59,7 @@ export class GitHubWebhookHandler {
     const installation = await prisma.installation.findUnique({
       where: {
         provider_providerId: {
-          provider: 'github',
+          provider: 'bitbucket',
           providerId: installationId,
         },
       },
@@ -75,7 +75,7 @@ export class GitHubWebhookHandler {
       throw new Error('Invalid webhook signature');
     }
 
-    // Normalize event (getOrCreateRepository is now synchronous placeholder)
+    // Normalize event
     const normalized = await this.normalizeEvent(event, installation);
 
     // Queue event for processing
@@ -90,101 +90,113 @@ export class GitHubWebhookHandler {
   }
 
   /**
-   * Normalize GitHub event to internal format
+   * Normalize Bitbucket event to internal format
    */
   private async normalizeEvent(
-    event: GitHubWebhookEvent,
+    event: BitbucketWebhookEvent,
     installation: any
   ): Promise<NormalizedEvent> {
     const repository = event.repository || {};
-    const fullName = repository.full_name || '';
+    const workspace = repository.workspace?.slug || repository.owner?.username || '';
+    const repoSlug = repository.slug || '';
+    const fullName = workspace && repoSlug ? `${workspace}/${repoSlug}` : '';
 
     // Find or create repository
     const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId);
 
-    if (event.action === 'opened' && event.pull_request) {
+    if (event.eventKey === 'pr:opened' || event.eventKey === 'pullrequest:created') {
+      const pr = event.pullRequest || {};
       return {
         type: 'pr.opened',
         repository: {
           id: repoId,
           fullName,
-          provider: 'github',
+          provider: 'bitbucket',
         },
         pr: {
-          number: event.pull_request.number,
-          sha: event.pull_request.head.sha,
-          title: event.pull_request.title,
-          baseBranch: event.pull_request.base.ref,
-          headBranch: event.pull_request.head.ref,
+          number: pr.id || pr.number,
+          sha: pr.fromRef?.latestCommit || pr.source?.commit?.hash || '',
+          title: pr.title || '',
+          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
+          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
         },
         installationId: installation.id,
       };
     }
 
-    if (event.action === 'synchronize' && event.pull_request) {
+    if (event.eventKey === 'pr:updated' || event.eventKey === 'pullrequest:updated') {
+      const pr = event.pullRequest || {};
       return {
         type: 'pr.updated',
         repository: {
           id: repoId,
           fullName,
-          provider: 'github',
+          provider: 'bitbucket',
         },
         pr: {
-          number: event.pull_request.number,
-          sha: event.pull_request.head.sha,
-          title: event.pull_request.title,
-          baseBranch: event.pull_request.base.ref,
-          headBranch: event.pull_request.head.ref,
+          number: pr.id || pr.number,
+          sha: pr.fromRef?.latestCommit || pr.source?.commit?.hash || '',
+          title: pr.title || '',
+          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
+          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
         },
         installationId: installation.id,
       };
     }
 
-    if (event.action === 'closed' && event.pull_request?.merged) {
+    if (event.eventKey === 'pr:merged' || event.eventKey === 'pullrequest:fulfilled') {
+      const pr = event.pullRequest || {};
       return {
         type: 'merge.completed',
         repository: {
           id: repoId,
           fullName,
-          provider: 'github',
+          provider: 'bitbucket',
         },
         pr: {
-          number: event.pull_request.number,
-          sha: event.pull_request.merge_commit_sha,
-          title: event.pull_request.title,
-          baseBranch: event.pull_request.base.ref,
-          headBranch: event.pull_request.head.ref,
+          number: pr.id || pr.number,
+          sha: pr.mergeCommit?.hash || pr.fromRef?.latestCommit || '',
+          title: pr.title || '',
+          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
+          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
         },
         installationId: installation.id,
       };
     }
 
-    if (event.action === 'completed' && event.check_run) {
+    if (event.eventKey === 'pr:declined' || event.eventKey === 'pr:deleted') {
+      const pr = event.pullRequest || {};
+      return {
+        type: 'pr.closed',
+        repository: {
+          id: repoId,
+          fullName,
+          provider: 'bitbucket',
+        },
+        pr: {
+          number: pr.id || pr.number,
+          sha: pr.fromRef?.latestCommit || pr.source?.commit?.hash || '',
+          title: pr.title || '',
+          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
+          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
+        },
+        installationId: installation.id,
+      };
+    }
+
+    if (event.eventKey === 'build:status' || event.eventKey === 'build:completed') {
       return {
         type: 'ci.completed',
         repository: {
           id: repoId,
           fullName,
-          provider: 'github',
+          provider: 'bitbucket',
         },
         installationId: installation.id,
       };
     }
 
-    // Handle workflow_run events (for Test Engine)
-    if (event.action === 'completed' && event.workflow_run) {
-      return {
-        type: 'ci.completed',
-        repository: {
-          id: repoId,
-          fullName,
-          provider: 'github',
-        },
-        installationId: installation.id,
-      };
-    }
-
-    throw new Error(`Unsupported event type: ${event.action}`);
+    throw new Error(`Unsupported event type: ${event.eventKey}`);
   }
 
   /**
@@ -200,7 +212,7 @@ export class GitHubWebhookHandler {
       where: {
         fullName_provider: {
           fullName,
-          provider: 'github',
+          provider: 'bitbucket',
         },
       },
     });
@@ -218,7 +230,7 @@ export class GitHubWebhookHandler {
         organizationId,
         name,
         fullName,
-        provider: 'github',
+        provider: 'bitbucket',
         defaultBranch: 'main',
       },
     });
@@ -227,4 +239,4 @@ export class GitHubWebhookHandler {
   }
 }
 
-export const githubWebhookHandler = new GitHubWebhookHandler();
+export const bitbucketWebhookHandler = new BitbucketWebhookHandler();

@@ -33,6 +33,32 @@ export interface CheckRunDetails {
   external_id?: string;
 }
 
+export interface WorkflowDispatchInputs {
+  [key: string]: string;
+}
+
+export interface WorkflowRun {
+  id: number;
+  name: string;
+  status: 'queued' | 'in_progress' | 'completed';
+  conclusion: 'success' | 'failure' | 'cancelled' | 'skipped' | null;
+  workflow_id: number;
+  head_sha: string;
+  html_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkflowArtifact {
+  id: number;
+  name: string;
+  size_in_bytes: number;
+  url: string;
+  archive_download_url: string;
+  expired: boolean;
+  created_at: string;
+}
+
 export interface GitHubAPIClient {
   getPR(repo: string, prNumber: number, token: string): Promise<any>;
   getPRDiff(repo: string, prNumber: number, token: string): Promise<string>;
@@ -52,6 +78,22 @@ export interface GitHubAPIClient {
     token: string
   ): Promise<any>;
   getFileContent(repo: string, path: string, ref: string, token: string): Promise<string>;
+  dispatchWorkflow(
+    repo: string,
+    workflowId: string,
+    ref: string,
+    inputs?: WorkflowDispatchInputs,
+    token: string
+  ): Promise<void>;
+  getWorkflowRun(repo: string, runId: number, token: string): Promise<WorkflowRun>;
+  listWorkflowRuns(
+    repo: string,
+    workflowId: string,
+    branch?: string,
+    token: string
+  ): Promise<{ workflow_runs: WorkflowRun[] }>;
+  listWorkflowRunArtifacts(repo: string, runId: number, token: string): Promise<{ artifacts: WorkflowArtifact[] }>;
+  downloadArtifact(repo: string, artifactId: number, token: string): Promise<ArrayBuffer>;
 }
 
 export class GitHubAPIClientImpl implements GitHubAPIClient {
@@ -312,6 +354,84 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
    */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Dispatch a workflow
+   */
+  async dispatchWorkflow(
+    repo: string,
+    workflowId: string,
+    ref: string,
+    inputs: WorkflowDispatchInputs = {},
+    token: string
+  ): Promise<void> {
+    const url = `${this.baseUrl}/repos/${repo}/actions/workflows/${workflowId}/dispatches`;
+    await this.request(url, token, {
+      method: 'POST',
+      body: JSON.stringify({
+        ref,
+        inputs,
+      }),
+    });
+  }
+
+  /**
+   * Get workflow run details
+   */
+  async getWorkflowRun(repo: string, runId: number, token: string): Promise<WorkflowRun> {
+    const url = `${this.baseUrl}/repos/${repo}/actions/runs/${runId}`;
+    return this.request(url, token);
+  }
+
+  /**
+   * List workflow runs
+   */
+  async listWorkflowRuns(
+    repo: string,
+    workflowId: string,
+    branch: string | undefined,
+    token: string
+  ): Promise<{ workflow_runs: WorkflowRun[] }> {
+    let url = `${this.baseUrl}/repos/${repo}/actions/workflows/${workflowId}/runs`;
+    if (branch) {
+      url += `?branch=${encodeURIComponent(branch)}`;
+    }
+    return this.request(url, token);
+  }
+
+  /**
+   * List workflow run artifacts
+   */
+  async listWorkflowRunArtifacts(
+    repo: string,
+    runId: number,
+    token: string
+  ): Promise<{ artifacts: WorkflowArtifact[] }> {
+    const url = `${this.baseUrl}/repos/${repo}/actions/runs/${runId}/artifacts`;
+    return this.request(url, token);
+  }
+
+  /**
+   * Download artifact
+   */
+  async downloadArtifact(repo: string, artifactId: number, token: string): Promise<ArrayBuffer> {
+    const url = `${this.baseUrl}/repos/${repo}/actions/artifacts/${artifactId}/zip`;
+    
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github.v3+json',
+      },
+      signal: AbortSignal.timeout(60000), // 60 second timeout for downloads
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => response.statusText);
+      throw new Error(`GitHub API error: ${response.status} ${errorText}`);
+    }
+
+    return await response.arrayBuffer();
   }
 }
 

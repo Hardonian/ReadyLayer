@@ -89,6 +89,7 @@ model Repository {
   configs       RepositoryConfig[]
   reviews       Review[]
   tests         Test[]
+  testRuns      TestRun[]
   docs          Doc[]
   installations Installation[]
   violations    Violation[]
@@ -211,6 +212,34 @@ model Test {
   @@index([prNumber])
   @@index([status])
   @@index([filePath])
+}
+
+// Test Run Execution (CI/CD runs)
+model TestRun {
+  id            String    @id @default(cuid())
+  repositoryId  String
+  prNumber      Int?
+  prSha         String
+  workflowRunId String? // GitHub Actions workflow run ID
+  status        String    @default("pending") // pending, in_progress, completed, failed, cancelled
+  conclusion    String? // success, failure, cancelled, skipped
+  coverage      Json? // Coverage metrics: { total: number, lines: number, functions: number, branches: number }
+  summary       Json? // Test summary: { total: number, passed: number, failed: number, skipped: number }
+  artifactsUrl  String? // URL to download artifacts
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  repository Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, prSha, workflowRunId])
+  @@index([repositoryId])
+  @@index([prNumber])
+  @@index([prSha])
+  @@index([workflowRunId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 // Doc Sync Results
