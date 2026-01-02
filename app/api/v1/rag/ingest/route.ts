@@ -9,6 +9,7 @@ import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { ingestDocument, isIngestEnabled } from '../../../../../lib/rag';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
+import { checkBillingLimits } from '../../../../../lib/billing-middleware';
 import { z } from 'zod';
 
 const ingestSchema = z.object({
@@ -132,6 +133,14 @@ export async function POST(request: NextRequest) {
       organizationId = membership.organizationId;
     }
 
+    // Check billing limits (LLM budget for embeddings)
+    const billingCheck = await checkBillingLimits(organizationId, {
+      checkLLMBudget: true,
+    });
+    if (billingCheck) {
+      return billingCheck;
+    }
+
     // Ingest document
     const result = await ingestDocument(
       {
@@ -165,7 +174,8 @@ export async function POST(request: NextRequest) {
       err: error instanceof Error ? error : new Error(String(error)),
     }, 'RAG ingest failed');
 
-    // Never return 500 - graceful degradation
+    // Return 500 only for unexpected errors (catch block)
+    // Note: ingestDocument() already handles graceful degradation internally
     return NextResponse.json(
       {
         error: {
