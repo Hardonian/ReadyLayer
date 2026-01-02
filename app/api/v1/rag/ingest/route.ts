@@ -165,7 +165,8 @@ export async function POST(request: NextRequest) {
       err: error instanceof Error ? error : new Error(String(error)),
     }, 'RAG ingest failed');
 
-    // Never return 500 - graceful degradation
+    // Return 500 only for unexpected errors (catch block)
+    // Note: ingestDocument() already handles graceful degradation internally
     return NextResponse.json(
       {
         error: {
