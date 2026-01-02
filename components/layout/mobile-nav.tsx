@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -87,7 +88,19 @@ export function MobileNav({ navItems }: MobileNavProps) {
             >
               {/* Menu Header */}
               <div className="flex items-center justify-between p-4 border-b border-border-subtle">
-                <span className="text-xl font-bold">ReadyLayer</span>
+                <Link href="/dashboard" className="flex items-center" aria-label="ReadyLayer Home">
+                  <picture>
+                    <source srcSet="/logo-header.webp" type="image/webp" />
+                    <Image
+                      src="/logo-header.png"
+                      alt="ReadyLayer"
+                      width={120}
+                      height={24}
+                      priority
+                      className="h-6 w-auto dark:invert"
+                    />
+                  </picture>
+                </Link>
                 <Button
                   variant="ghost"
                   size="icon"
