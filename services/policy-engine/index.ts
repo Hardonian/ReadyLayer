@@ -96,6 +96,39 @@ export interface EvidenceExport {
   };
 }
 
+/**
+ * Policy Engine Service
+ * 
+ * Provides Policy-as-Code evaluation with deterministic behavior.
+ * Loads policy packs (org-level or repo-level), applies waivers, and evaluates findings.
+ * 
+ * Key Features:
+ * - Deterministic evaluation (same inputs → same outputs)
+ * - Policy pack versioning with checksums
+ * - Waiver support (temporary exceptions)
+ * - Evidence bundle creation (audit trail)
+ * - Tier-aware default policies
+ * 
+ * **Deterministic Behavior:**
+ * - Same policy pack → same evaluation result
+ * - Same findings → same blocking decision (policy-driven)
+ * - Default policies are deterministic (hardcoded mappings)
+ * 
+ * @example
+ * ```typescript
+ * const policy = await policyEngineService.loadEffectivePolicy(
+ *   organizationId,
+ *   repositoryId,
+ *   commitSha,
+ *   branchName
+ * );
+ * 
+ * const result = policyEngineService.evaluate(findings, policy);
+ * if (result.blocked) {
+ *   console.log('PR blocked:', result.blockingReason);
+ * }
+ * ```
+ */
 export class PolicyEngineService {
   /**
    * Load effective policy for org/repo/branch
@@ -407,16 +440,23 @@ export class PolicyEngineService {
   /**
    * Get default policy (safe defaults when no policy configured)
    * Respects tier enforcement strength by creating default rules
+   * 
+   * DETERMINISTIC: This function always returns the same policy for the same tier.
+   * The policy is deterministic because:
+   * 1. Tier enforcement strength is read from organization (immutable during request)
+   * 2. Severity mappings are hardcoded constants (same input → same output)
+   * 3. No random or time-based logic
    */
   private async getDefaultPolicy(
     organizationId: string,
     repositoryId: string | null
   ): Promise<EffectivePolicy> {
-    // Get tier enforcement strength
+    // Get tier enforcement strength (deterministic - reads from database, doesn't change during request)
     const { billingService } = await import('../../billing');
     const enforcementStrength = await billingService.getEnforcementStrength(organizationId);
 
-    // Create default severity mappings based on tier
+    // DETERMINISTIC: Hardcoded severity mappings - same tier always produces same mappings
+    // These mappings are deterministic constants, not computed dynamically
     const severityMappings: Record<string, Record<string, 'block' | 'warn' | 'allow'>> = {
       basic: {
         critical: 'block',

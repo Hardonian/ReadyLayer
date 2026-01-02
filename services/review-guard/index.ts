@@ -54,9 +54,73 @@ export interface ReviewResult {
   completedAt: Date;
 }
 
+/**
+ * Review Guard Service
+ * 
+ * Provides AI-aware code review and risk analysis for pull requests.
+ * Enforces blocking by default for critical/high issues based on policy configuration.
+ * 
+ * Key Features:
+ * - Deterministic static analysis with founder-specific rules
+ * - AI-powered analysis with RAG evidence integration
+ * - Policy-driven evaluation with waiver support
+ * - Complete audit trail via evidence bundles
+ * - Token usage tracking for cost control
+ * 
+ * @example
+ * ```typescript
+ * const result = await reviewGuardService.review({
+ *   repositoryId: 'repo_123',
+ *   prNumber: 42,
+ *   prSha: 'abc123',
+ *   files: [{ path: 'src/index.ts', content: '...' }]
+ * });
+ * 
+ * if (result.isBlocked) {
+ *   console.log('PR blocked:', result.blockedReason);
+ * }
+ * ```
+ */
 export class ReviewGuardService {
   /**
-   * Review a pull request
+   * Review a pull request for security vulnerabilities, quality issues, and potential bugs.
+   * 
+   * This is the main entry point for code review. It performs:
+   * 1. Static analysis (deterministic rules)
+   * 2. AI analysis (LLM-powered, with RAG evidence)
+   * 3. Schema reconciliation (for migration files)
+   * 4. Policy evaluation (determines blocking)
+   * 5. Evidence bundle creation (audit trail)
+   * 
+   * **Enforcement-First Behavior:**
+   * - Critical issues ALWAYS block (cannot disable)
+   * - High/Medium/Low blocking determined by policy
+   * - LLM failures block PR (fail-secure)
+   * - Parse errors block PR (fail-secure)
+   * 
+   * @param request - Review request with PR metadata and files to review
+   * @returns Review result with issues, summary, and blocking status
+   * @throws {UsageLimitExceededError} If billing limits exceeded (preserves HTTP status)
+   * @throws {Error} If LLM analysis fails (PR blocked)
+   * @throws {Error} If file parsing fails (PR blocked)
+   * 
+   * @example
+   * ```typescript
+   * const result = await reviewGuardService.review({
+   *   repositoryId: 'repo_123',
+   *   prNumber: 42,
+   *   prSha: 'abc123',
+   *   prTitle: 'Add user authentication',
+   *   files: [
+   *     { path: 'src/auth.ts', content: '...', beforeContent: '...' }
+   *   ],
+   *   config: {
+   *     failOnCritical: true,  // Always true
+   *     failOnHigh: true,     // Can disable with admin approval
+   *     excludedPaths: ['**/*.test.ts']
+   *   }
+   * });
+   * ```
    */
   async review(request: ReviewRequest): Promise<ReviewResult> {
     const startedAt = new Date();
@@ -100,26 +164,21 @@ export class ReviewGuardService {
               organizationId
             );
             allIssues.push(...aiIssues);
-          } catch (error) {
-            // Handle usage limit errors with clear messaging
-            if (error instanceof UsageLimitExceededError) {
-              throw new Error(
-                `Usage limit exceeded: ${error.message}. ` +
-                `This PR check cannot complete due to plan limits. ` +
-                `Current usage: ${error.current}/${error.limit}. ` +
-                `Next steps: Upgrade your plan at /dashboard/billing or wait for limits to reset. ` +
-                `For help, contact support@readylayer.com`
-              );
-            }
-            
-            // LLM failure MUST block PR (enforcement-first)
-            throw new Error(
-              `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
-              `This PR is BLOCKED until analysis completes. ` +
-              `Cause: LLM API unavailable. ` +
-              `Action: Retry in 60 seconds or contact support@readylayer.com`
-            );
-          }
+      } catch (error) {
+        // Handle usage limit errors with clear messaging
+        if (error instanceof UsageLimitExceededError) {
+          // Re-throw as-is to preserve error type and HTTP status
+          throw error;
+        }
+        
+        // LLM failure MUST block PR (enforcement-first)
+        throw new Error(
+          `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
+          `This PR is BLOCKED until analysis completes. ` +
+          `Cause: LLM API unavailable. ` +
+          `Action: Retry in 60 seconds or contact support@readylayer.com`
+        );
+      }
         } catch (error) {
           // Parse errors MUST block PR
           throw new Error(
@@ -373,7 +432,13 @@ export class ReviewGuardService {
         }
       } catch (error) {
         // Evidence retrieval failed - proceed without it (graceful degradation)
-        console.warn('Evidence retrieval failed, proceeding without evidence:', error);
+        // Use structured logger instead of console.warn for observability
+        const { logger } = await import('../../observability/logging');
+        logger.warn({
+          err: error instanceof Error ? error : new Error(String(error)),
+          repositoryId,
+          filePath,
+        }, 'Evidence retrieval failed, proceeding without evidence');
       }
     }
 

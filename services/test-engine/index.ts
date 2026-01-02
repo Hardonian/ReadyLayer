@@ -9,7 +9,7 @@ import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
-import { checkBillingLimits } from '../../lib/billing-middleware';
+// Billing check imported dynamically to avoid circular dependencies
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
@@ -56,9 +56,55 @@ export interface CoverageResult {
   isBlocked: boolean;
 }
 
+/**
+ * Test Engine Service
+ * 
+ * Automatic test generation and coverage enforcement for AI-touched files.
+ * Enforces minimum 80% coverage threshold (cannot go below).
+ * 
+ * Key Features:
+ * - AI-touched file detection (commit message, author, patterns)
+ * - Framework auto-detection (Jest, Mocha, pytest, etc.)
+ * - LLM-powered test generation with RAG evidence
+ * - Coverage threshold enforcement (minimum 80%)
+ * - Test placement strategies (co-located, separate, mirror)
+ * 
+ * **Enforcement-First Behavior:**
+ * - Coverage threshold minimum 80% (cannot disable)
+ * - failOnBelow always true (cannot disable)
+ * - Test generation failures don't block PR (fail-open)
+ * 
+ * @example
+ * ```typescript
+ * const result = await testEngineService.generateTests({
+ *   repositoryId: 'repo_123',
+ *   filePath: 'src/auth.ts',
+ *   fileContent: 'export function login() { ... }'
+ * });
+ * ```
+ */
 export class TestEngineService {
   /**
-   * Detect AI-touched files
+   * Detect files that were likely touched by AI coding tools.
+   * 
+   * Uses multiple heuristics:
+   * - Commit message keywords (copilot, cursor, claude, gpt, ai-generated)
+   * - Author patterns (github-actions, copilot, cursor)
+   * - Code patterns (generated comments, AI markers)
+   * 
+   * Returns files with confidence >= 0.5 (50% threshold).
+   * 
+   * @param _repositoryId - Repository ID (unused, reserved for future repo-specific patterns)
+   * @param files - Files to analyze with optional commit metadata
+   * @returns Array of AI-touched files with confidence scores and detection methods
+   * 
+   * @example
+   * ```typescript
+   * const aiTouched = await testEngineService.detectAITouchedFiles('repo_123', [
+   *   { path: 'src/auth.ts', content: '...', commitMessage: 'Added by Copilot' }
+   * ]);
+   * // Returns: [{ path: 'src/auth.ts', confidence: 0.4, methods: ['commit_message'] }]
+   * ```
    */
   async detectAITouchedFiles(
     _repositoryId: string,
@@ -112,7 +158,48 @@ export class TestEngineService {
   }
 
   /**
-   * Generate tests for a file
+   * Generate tests for a file using LLM-powered test generation.
+   * 
+   * **Process:**
+   * 1. Validates config (coverage threshold >= 80%, failOnBelow always true)
+   * 2. Detects test framework (or uses provided)
+   * 3. Parses code structure (functions, classes, exports)
+   * 4. Queries RAG evidence for similar test patterns
+   * 5. Generates tests via LLM with evidence context
+   * 6. Validates test syntax (framework-specific)
+   * 7. Determines test placement (co-located, separate, mirror)
+   * 8. Evaluates against policy (may block if policy requires)
+   * 9. Creates evidence bundle for audit trail
+   * 
+   * **Enforcement:**
+   * - Coverage threshold minimum 80% (enforced)
+   * - failOnBelow always true (enforced)
+   * - Billing limits checked (throws UsageLimitExceededError if exceeded)
+   * - Test generation failures don't block PR (fail-open)
+   * 
+   * @param request - Test generation request with file and config
+   * @returns Test generation result with test content and placement
+   * @throws {Error} If coverage threshold < 80% (validation error)
+   * @throws {Error} If failOnBelow is false (validation error)
+   * @throws {UsageLimitExceededError} If billing limits exceeded
+   * @throws {Error} If test generation fails (non-blocking, but logged)
+   * 
+   * @example
+   * ```typescript
+   * const result = await testEngineService.generateTests({
+   *   repositoryId: 'repo_123',
+   *   prNumber: 42,
+   *   prSha: 'abc123',
+   *   filePath: 'src/auth.ts',
+   *   fileContent: 'export function login() { ... }',
+   *   framework: 'jest', // Optional, auto-detected if not provided
+   *   config: {
+   *     coverageThreshold: 80,  // Minimum enforced
+   *     failOnBelow: true,       // Always true
+   *     placement: 'co-located'   // Test next to source file
+   *   }
+   * });
+   * ```
    */
   async generateTests(request: TestGenerationRequest): Promise<TestGenerationResult> {
     const startedAt = new Date();
@@ -147,25 +234,13 @@ export class TestEngineService {
       // Check billing limits before generating tests
       // Note: This is a service-level check. If called from webhook, billing is already checked.
       // But if called directly from API, we need to check here.
-      // We'll check billing but not throw - let the caller handle the response.
-      // For webhook calls, billing is checked upstream.
+      // For webhook calls, billing is checked upstream but we still check here for consistency.
       const organizationId = repoForOrg.organizationId;
-      const billingCheck = await checkBillingLimits(organizationId, {
+      const { checkBillingLimitsOrThrow } = await import('../../lib/billing-middleware');
+      await checkBillingLimitsOrThrow(organizationId, {
         requireFeature: 'testEngine',
         checkLLMBudget: true,
       });
-      if (billingCheck) {
-        // Return error result instead of throwing
-        return {
-          id: `test_${Date.now()}`,
-          status: 'blocked' as const,
-          testContent: '',
-          placement: '',
-          framework: framework || 'unknown',
-          startedAt,
-          completedAt: new Date(),
-        };
-      }
 
       // Generate tests using LLM
       const prompt = await this.buildTestPrompt(
@@ -401,7 +476,13 @@ export class TestEngineService {
         }
       } catch (error) {
         // Evidence retrieval failed - proceed without it (graceful degradation)
-        console.warn('Evidence retrieval failed, proceeding without evidence:', error);
+        // Use structured logger instead of console.warn for observability
+        const { logger } = await import('../../observability/logging');
+        logger.warn({
+          err: error instanceof Error ? error : new Error(String(error)),
+          repositoryId,
+          filePath,
+        }, 'Evidence retrieval failed, proceeding without evidence');
       }
     }
 
