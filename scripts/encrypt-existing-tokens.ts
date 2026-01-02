@@ -1,32 +1,48 @@
 /**
- * Encrypt Existing Installation Tokens
+ * Encrypt Existing Installation Tokens (Legacy Script)
  * 
  * This script encrypts all plaintext tokens in the Installation table.
- * Run this AFTER deploying the encryption utility.
+ * Uses the new crypto module with key rotation support.
  * 
  * Usage:
- *   ENCRYPTION_KEY=<your-key> tsx scripts/encrypt-existing-tokens.ts
+ *   READY_LAYER_KMS_KEY=<your-key> npm run secrets:encrypt-tokens
+ *   OR
+ *   READY_LAYER_MASTER_KEY=<your-key> npm run secrets:encrypt-tokens
+ *   OR
+ *   READY_LAYER_KEYS="v1:key1;v2:key2" npm run secrets:encrypt-tokens
+ * 
+ * For migration to new format, use: npm run secrets:migrate-tokens
  */
 
 import { prisma } from '../lib/prisma';
-import { encryptToken, isEncrypted } from '../lib/secrets';
+import { encryptToken, isEncrypted, redactSecret } from '../lib/secrets';
+import { isKeyConfigured } from '../lib/crypto';
 import { logger } from '../observability/logging';
 
 async function encryptExistingTokens() {
   logger.info('Starting token encryption migration');
 
+  // Check if encryption keys are configured
+  if (!isKeyConfigured()) {
+    logger.error(
+      'Encryption keys not configured. Set READY_LAYER_KMS_KEY, READY_LAYER_MASTER_KEY, or READY_LAYER_KEYS environment variable.'
+    );
+    process.exit(1);
+  }
+
   try {
-    // Get all installations with unencrypted tokens
+    // Get all installations
     const installations = await prisma.installation.findMany({
-      where: {
-        OR: [
-          { tokenEncrypted: false },
-          { tokenEncrypted: null },
-        ],
-      } as any, // Type assertion needed until Prisma types are regenerated
+      select: {
+        id: true,
+        accessToken: true,
+        tokenEncrypted: true,
+        provider: true,
+        providerId: true,
+      },
     });
 
-    logger.info({ count: installations.length }, 'Found installations to encrypt');
+    logger.info({ total: installations.length }, 'Found installations to check');
 
     let encrypted = 0;
     let skipped = 0;
@@ -34,18 +50,34 @@ async function encryptExistingTokens() {
 
     for (const installation of installations) {
       try {
-        // Check if already encrypted
+        // Check if already encrypted (new format)
         if (isEncrypted(installation.accessToken)) {
-          logger.info({ installationId: installation.id }, 'Token already encrypted, skipping');
-          await prisma.installation.update({
-            where: { id: installation.id },
-            data: { tokenEncrypted: true } as any, // Type assertion needed until Prisma types are regenerated
-          });
+          // Already encrypted, just ensure tokenEncrypted flag is set
+          if (!installation.tokenEncrypted) {
+            await prisma.installation.update({
+              where: { id: installation.id },
+              data: { tokenEncrypted: true },
+            });
+            logger.debug(
+              { installationId: installation.id, provider: installation.provider },
+              'Updated tokenEncrypted flag for already-encrypted token'
+            );
+          }
           skipped++;
           continue;
         }
 
-        // Encrypt token
+        // Encrypt plaintext token
+        logger.info(
+          {
+            installationId: installation.id,
+            provider: installation.provider,
+            providerId: installation.providerId,
+            tokenPreview: redactSecret(installation.accessToken),
+          },
+          'Encrypting installation token'
+        );
+
         const encryptedToken = encryptToken(installation.accessToken);
 
         // Update installation
@@ -54,17 +86,23 @@ async function encryptExistingTokens() {
           data: {
             accessToken: encryptedToken,
             tokenEncrypted: true,
-          } as any, // Type assertion needed until Prisma types are regenerated
+          },
         });
 
         encrypted++;
-        logger.info({ installationId: installation.id }, 'Token encrypted successfully');
+        logger.info(
+          { installationId: installation.id, provider: installation.provider },
+          'Token encrypted successfully'
+        );
       } catch (error) {
         errors++;
         logger.error(
           {
             err: error instanceof Error ? error : new Error(String(error)),
             installationId: installation.id,
+            provider: installation.provider,
+            providerId: installation.providerId,
+            tokenPreview: redactSecret(installation.accessToken),
           },
           'Failed to encrypt token'
         );

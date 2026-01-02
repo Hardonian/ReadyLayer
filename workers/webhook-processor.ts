@@ -9,12 +9,16 @@ import { reviewGuardService } from '../services/review-guard';
 import { testEngineService } from '../services/test-engine';
 import { docSyncService } from '../services/doc-sync';
 import { githubAPIClient } from '../integrations/github/api-client';
+import { formatPolicyComment, generateStatusCheckDescription } from '../lib/git-provider-ui/comment-formatter';
+import { detectGitProvider } from '../lib/git-provider-ui';
 import { prisma } from '../lib/prisma';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
 import { ingestDocument, isIngestEnabled } from '../lib/rag';
 import { getInstallationWithDecryptedToken } from '../lib/secrets/installation-helpers';
 import { checkBillingLimits } from '../lib/billing-middleware';
+import { redactSecret } from '../lib/crypto';
+import { isKeyConfigured } from '../lib/crypto';
 
 /**
  * Process webhook event
@@ -27,6 +31,12 @@ async function processWebhookEvent(payload: any): Promise<void> {
   try {
     log.info({ type }, 'Processing webhook event');
 
+    // Check if encryption keys are configured
+    if (!isKeyConfigured()) {
+      log.error('Encryption keys not configured - cannot decrypt installation tokens');
+      throw new Error('Encryption keys not configured - provider calls disabled');
+    }
+
     // Get installation with decrypted token
     const installation = await getInstallationWithDecryptedToken(installationId);
 
@@ -35,6 +45,8 @@ async function processWebhookEvent(payload: any): Promise<void> {
     }
 
     const accessToken = installation.accessToken; // Already decrypted
+    // Never log the token - use redacted version if needed
+    log.debug({ tokenPreview: redactSecret(accessToken) }, 'Using installation token');
 
     switch (type) {
       case 'pr.opened':
@@ -56,7 +68,13 @@ async function processWebhookEvent(payload: any): Promise<void> {
 
     metrics.increment('webhooks.processed', { type, status: 'success' });
   } catch (error) {
-    log.error(error, 'Webhook processing failed');
+    // Redact any secrets from error messages
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const redactedMessage = errorMessage.replace(/token[=:]\s*[\w-]+/gi, (match) => {
+      const tokenValue = match.split(/[=:]\s*/)[1];
+      return match.replace(tokenValue, redactSecret(tokenValue));
+    });
+    log.error({ err: error, message: redactedMessage }, 'Webhook processing failed');
     metrics.increment('webhooks.processed', { type, status: 'failed' });
     throw error;
   }
@@ -149,9 +167,44 @@ async function processPREvent(
       files,
     });
 
-    // Post review comments
+    // Post review comments with provider-aware formatting
     if (reviewResult.issues.length > 0) {
-      const commentBody = formatReviewComment(reviewResult);
+      // Try to get policy evaluation result from review
+      const review = await prisma.review.findUnique({
+        where: { id: reviewResult.id },
+        include: {
+          repository: true,
+        },
+      });
+
+      const provider = detectGitProvider({
+        provider: repository.provider,
+        url: repository.url || undefined,
+      });
+
+      // Format comment using provider-aware formatter
+      const commentBody = formatPolicyComment(
+        {
+          blocked: reviewResult.isBlocked,
+          score: (review as any)?.policyScore || 100,
+          rulesFired: (review as any)?.rulesFired || [],
+          nonWaivedFindings: reviewResult.issues.map((issue) => ({
+            ruleId: issue.ruleId,
+            severity: issue.severity,
+            message: issue.message,
+            file: issue.file,
+            line: issue.line || 0,
+          })),
+        },
+        {
+          provider,
+          repository: {
+            provider: repository.provider,
+            url: repository.url || undefined,
+          },
+        }
+      );
+
       await githubAPIClient.postPRComment(
         repository.fullName,
         pr.number,
@@ -160,14 +213,37 @@ async function processPREvent(
       );
     }
 
-    // Update status check
+    // Update status check with provider-aware description
+    const provider = detectGitProvider({
+      provider: repository.provider,
+      url: repository.url || undefined,
+    });
+
+    const review = await prisma.review.findUnique({
+      where: { id: reviewResult.id },
+    });
+
+    const statusDescription = generateStatusCheckDescription(
+      {
+        blocked: reviewResult.isBlocked,
+        score: (review as any)?.policyScore || 100,
+        rulesFired: (review as any)?.rulesFired || [],
+        nonWaivedFindings: reviewResult.issues.map((issue) => ({
+          ruleId: issue.ruleId,
+          severity: issue.severity,
+          message: issue.message,
+          file: issue.file,
+          line: issue.line || 0,
+        })),
+      },
+      provider
+    );
+
     await githubAPIClient.updateStatusCheck(
       repository.fullName,
       pr.sha,
       reviewResult.isBlocked ? 'failure' : 'success',
-      reviewResult.isBlocked
-        ? `❌ ${reviewResult.summary.critical} critical, ${reviewResult.summary.high} high issues`
-        : `✅ Review passed`,
+      statusDescription,
       'readylayer/review',
       accessToken
     );
@@ -366,38 +442,6 @@ async function processCIEvent(
   // This is a placeholder - would integrate with actual CI coverage reports
 }
 
-/**
- * Format review comment
- */
-function formatReviewComment(reviewResult: any): string {
-  const { issues, summary, isBlocked } = reviewResult;
-
-  let comment = `## 🔒 ReadyLayer Review Summary\n\n`;
-  comment += `**Status:** ${isBlocked ? '❌ **BLOCKED**' : '✅ **PASSED**'}\n\n`;
-  comment += `### Issues Found: ${summary.total}\n`;
-  comment += `- 🔴 **Critical:** ${summary.critical}\n`;
-  comment += `- 🟠 **High:** ${summary.high}\n`;
-  comment += `- 🟡 **Medium:** ${summary.medium}\n`;
-  comment += `- 🟢 **Low:** ${summary.low}\n\n`;
-
-  if (issues.length > 0) {
-    comment += `### Top Issues:\n\n`;
-    issues.slice(0, 10).forEach((issue: any) => {
-      comment += `- **${issue.severity.toUpperCase()}** ${issue.ruleId}: ${issue.message}\n`;
-      comment += `  - File: \`${issue.file}:${issue.line}\`\n`;
-      if (issue.fix) {
-        comment += `  - Fix: ${issue.fix}\n`;
-      }
-      comment += `\n`;
-    });
-  }
-
-  if (isBlocked) {
-    comment += `\n**This PR cannot merge until all critical and high issues are resolved.**\n`;
-  }
-
-  return comment;
-}
 
 /**
  * Start webhook processor worker

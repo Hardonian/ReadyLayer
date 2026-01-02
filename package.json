@@ -27,6 +27,7 @@
     "test:billing": "tsx scripts/test-billing-enforcement.ts",
     "middleware:smoke": "tsx scripts/middleware-smoke.ts",
     "secrets:encrypt-tokens": "tsx scripts/encrypt-existing-tokens.ts",
+    "secrets:migrate-tokens": "tsx scripts/migrate-installation-tokens.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed"

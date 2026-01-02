@@ -1,0 +1,56 @@
+name: Policy Engine Database Migration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'prisma/schema.prisma'
+      - 'supabase/migrations/00000000000004_policy_engine.sql'
+      - '.github/workflows/policy-engine-migration.yml'
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    name: Run Policy Engine Migration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "❌ DATABASE_URL secret not set"
+            exit 1
+          fi
+          echo "✅ DATABASE_URL is configured"
+
+      - name: Run Policy Engine Migration
+        run: |
+          echo "🚀 Running Policy Engine database migration..."
+          echo "Migration file: supabase/migrations/00000000000004_policy_engine.sql"
+          psql "${{ secrets.DATABASE_URL }}" -f supabase/migrations/00000000000004_policy_engine.sql
+
+      - name: Verify migration
+        run: |
+          echo "🔍 Verifying migration..."
+          npm run prisma:generate
+          npm run prisma:validate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Migration summary
+        if: always()
+        run: |
+          echo "Policy Engine migration completed. Check logs above for details."

@@ -58,6 +58,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/dashboard/repos', label: 'Repositories' },
     { href: '/dashboard/reviews', label: 'Reviews' },
+    { href: '/dashboard/policies', label: 'Policies' },
+    { href: '/dashboard/waivers', label: 'Waivers' },
+    { href: '/dashboard/evidence', label: 'Evidence' },
     { href: '/dashboard/metrics', label: 'Metrics' },
   ]
 
