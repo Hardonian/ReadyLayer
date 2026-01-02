@@ -282,7 +282,7 @@ export class UsageEnforcementService {
     await this.logEnforcementDecision(
       organizationId,
       userId,
-      LimitType.LLM_TOKENS_DAILY,
+      tokenCheck.limitType || LimitType.LLM_TOKENS_DAILY,
       tokenCheck.allowed,
       tokenCheck,
       'llm_request'
@@ -433,25 +433,25 @@ export class UsageEnforcementService {
 
     return {
       llmTokens: {
-        daily: Number(todayUsage._sum.units || 0),
-        monthly: Number(monthUsage._sum.units || 0),
+        daily: Math.max(0, Number(todayUsage._sum.units || 0)),
+        monthly: Math.max(0, Number(monthUsage._sum.units || 0)),
         limits: {
-          daily: limits.llmTokensPerDay,
-          monthly: limits.llmTokensPerMonth,
+          daily: Math.max(0, limits.llmTokensPerDay),
+          monthly: Math.max(0, limits.llmTokensPerMonth),
         },
       },
       runs: {
-        today: todayRuns,
-        limit: limits.runsPerDay,
+        today: Math.max(0, todayRuns),
+        limit: Math.max(0, limits.runsPerDay),
       },
       concurrentJobs: {
-        current: concurrentJobs,
-        limit: limits.concurrentJobs,
+        current: Math.max(0, concurrentJobs),
+        limit: Math.max(0, limits.concurrentJobs),
       },
       budget: {
-        current: budget.currentSpend,
-        limit: budget.budget,
-        remaining: budget.remaining,
+        current: Math.max(0, budget.currentSpend),
+        limit: Math.max(0, budget.budget),
+        remaining: Math.max(0, budget.remaining),
       },
     };
   }

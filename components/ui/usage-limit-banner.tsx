@@ -35,8 +35,10 @@ export function UsageLimitBanner({ stats, organizationId, className }: UsageLimi
   }> = []
 
   // Check LLM token daily limit (warn at 80%)
-  const dailyTokenPercentage = (stats.llmTokens.daily / stats.llmTokens.limits.daily) * 100
-  if (dailyTokenPercentage >= 80) {
+  const dailyTokenPercentage = stats.llmTokens.limits.daily > 0
+    ? (stats.llmTokens.daily / stats.llmTokens.limits.daily) * 100
+    : 0
+  if (stats.llmTokens.limits.daily > 0 && dailyTokenPercentage >= 80) {
     warnings.push({
       type: dailyTokenPercentage >= 100 ? 'error' : 'warning',
       message: `Daily LLM token limit: ${stats.llmTokens.daily.toLocaleString()} / ${stats.llmTokens.limits.daily.toLocaleString()}`,
@@ -48,8 +50,10 @@ export function UsageLimitBanner({ stats, organizationId, className }: UsageLimi
   }
 
   // Check LLM token monthly limit (warn at 80%)
-  const monthlyTokenPercentage = (stats.llmTokens.monthly / stats.llmTokens.limits.monthly) * 100
-  if (monthlyTokenPercentage >= 80) {
+  const monthlyTokenPercentage = stats.llmTokens.limits.monthly > 0
+    ? (stats.llmTokens.monthly / stats.llmTokens.limits.monthly) * 100
+    : 0
+  if (stats.llmTokens.limits.monthly > 0 && monthlyTokenPercentage >= 80) {
     warnings.push({
       type: monthlyTokenPercentage >= 100 ? 'error' : 'warning',
       message: `Monthly LLM token limit: ${stats.llmTokens.monthly.toLocaleString()} / ${stats.llmTokens.limits.monthly.toLocaleString()}`,
@@ -61,8 +65,10 @@ export function UsageLimitBanner({ stats, organizationId, className }: UsageLimi
   }
 
   // Check budget limit (warn at 80%)
-  const budgetPercentage = (stats.budget.current / stats.budget.limit) * 100
-  if (budgetPercentage >= 80) {
+  const budgetPercentage = stats.budget.limit > 0
+    ? (stats.budget.current / stats.budget.limit) * 100
+    : 0
+  if (stats.budget.limit > 0 && budgetPercentage >= 80) {
     warnings.push({
       type: budgetPercentage >= 100 ? 'error' : 'warning',
       message: `LLM budget: $${stats.budget.current.toFixed(2)} / $${stats.budget.limit.toFixed(2)}`,
@@ -74,8 +80,10 @@ export function UsageLimitBanner({ stats, organizationId, className }: UsageLimi
   }
 
   // Check runs limit (warn at 80%)
-  const runsPercentage = (stats.runs.today / stats.runs.limit) * 100
-  if (runsPercentage >= 80) {
+  const runsPercentage = stats.runs.limit > 0
+    ? (stats.runs.today / stats.runs.limit) * 100
+    : 0
+  if (stats.runs.limit > 0 && runsPercentage >= 80) {
     warnings.push({
       type: runsPercentage >= 100 ? 'error' : 'warning',
       message: `Daily runs: ${stats.runs.today} / ${stats.runs.limit}`,
@@ -87,8 +95,10 @@ export function UsageLimitBanner({ stats, organizationId, className }: UsageLimi
   }
 
   // Check concurrent jobs limit (warn at 80%)
-  const concurrentPercentage = (stats.concurrentJobs.current / stats.concurrentJobs.limit) * 100
-  if (concurrentPercentage >= 80) {
+  const concurrentPercentage = stats.concurrentJobs.limit > 0
+    ? (stats.concurrentJobs.current / stats.concurrentJobs.limit) * 100
+    : 0
+  if (stats.concurrentJobs.limit > 0 && concurrentPercentage >= 80) {
     warnings.push({
       type: concurrentPercentage >= 100 ? 'error' : 'warning',
       message: `Concurrent jobs: ${stats.concurrentJobs.current} / ${stats.concurrentJobs.limit}`,
