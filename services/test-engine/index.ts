@@ -8,6 +8,7 @@
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
+import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 
 export interface TestGenerationRequest {
   repositoryId: string;
@@ -129,8 +130,22 @@ export class TestEngineService {
       // Parse code structure
       const parseResult = await codeParserService.parse(request.filePath, request.fileContent);
 
+      // Get organization ID from repository
+      const repo = await prisma.repository.findUnique({
+        where: { id: request.repositoryId },
+        select: { organizationId: true },
+      });
+      const organizationId = repo?.organizationId || '';
+
       // Generate tests using LLM
-      const prompt = this.buildTestPrompt(request.filePath, request.fileContent, parseResult, framework);
+      const prompt = await this.buildTestPrompt(
+        request.filePath,
+        request.fileContent,
+        parseResult,
+        framework,
+        request.repositoryId,
+        organizationId
+      );
 
       const llmRequest: LLMRequest = {
         prompt,
@@ -218,12 +233,47 @@ export class TestEngineService {
   /**
    * Build test generation prompt
    */
-  private buildTestPrompt(
+  private async buildTestPrompt(
     filePath: string,
     content: string,
     parseResult: any,
-    framework: string
-  ): string {
+    framework: string,
+    repositoryId: string,
+    organizationId: string
+  ): Promise<string> {
+    // Query evidence if RAG is enabled
+    let evidenceSection = '';
+    if (isQueryEnabled()) {
+      try {
+        const evidenceQueries = [
+          `similar files previously tested in repository ${repositoryId}`,
+          `test framework conventions for ${framework}`,
+          `test patterns for ${filePath}`,
+        ];
+
+        const allEvidence = [];
+        for (const queryText of evidenceQueries) {
+          const results = await queryEvidence({
+            organizationId,
+            repositoryId,
+            queryText,
+            topK: 3,
+            filters: {
+              sourceTypes: ['test_precedent', 'repo_file'],
+            },
+          });
+          allEvidence.push(...results);
+        }
+
+        if (allEvidence.length > 0) {
+          evidenceSection = formatEvidenceForPrompt(allEvidence);
+        }
+      } catch (error) {
+        // Evidence retrieval failed - proceed without it (graceful degradation)
+        console.warn('Evidence retrieval failed, proceeding without evidence:', error);
+      }
+    }
+
     return `Generate comprehensive tests for the following code using ${framework}.
 
 File: ${filePath}
@@ -235,6 +285,7 @@ ${content}
 
 Functions to test:
 ${parseResult.functions.map((f: any) => `- ${f.name} (line ${f.line})`).join('\n')}
+${evidenceSection}
 
 Requirements:
 1. Cover all functions and edge cases

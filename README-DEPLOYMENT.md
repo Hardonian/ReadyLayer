@@ -29,6 +29,17 @@ ReadyLayer deployment involves:
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
 - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` - LLM provider key
 
+**Optional RAG Secrets (Evidence RAG Layer):**
+- `RAG_ENABLED` - Enable RAG features (default: false)
+- `RAG_INGEST_ENABLED` - Enable document ingestion (default: false)
+- `RAG_QUERY_ENABLED` - Enable evidence queries (default: false)
+- `RAG_PROVIDER` - Embeddings provider: "openai" or "disabled" (default: "disabled")
+- `RAG_EMBED_MODEL` - Embedding model (default: "text-embedding-3-small")
+- `RAG_MAX_CHUNKS_PER_DOC` - Max chunks per document (default: 100)
+- `RAG_CHUNK_SIZE` - Chunk size in characters (default: 1000)
+- `RAG_CHUNK_OVERLAP` - Chunk overlap in characters (default: 200)
+- `RAG_MAX_CONTEXT_TOKENS` - Max tokens for prompt assembly (default: 4000)
+
 **Full list:** See `GITHUB-SECRETS-SETUP.md`
 
 ### 2. Run Database Migration
@@ -56,6 +67,19 @@ npm run migrate:verify
 ```
 
 **Migration Details:** See `MIGRATION-INSTRUCTIONS.md`
+
+**Note:** The Evidence RAG Layer migration (`00000000000001_rag_evidence_layer.sql`) adds:
+- pgvector extension for vector similarity search
+- `RagDocument` and `RagChunk` tables with RLS
+- Vector search functions (`rag_match_chunks`, `rag_search_chunks_lexical`)
+- Indexes for performance
+
+**To enable RAG:**
+1. Run the migration (includes pgvector extension)
+2. Set `RAG_ENABLED=true`, `RAG_INGEST_ENABLED=true`, `RAG_QUERY_ENABLED=true`
+3. Set `RAG_PROVIDER=openai` and ensure `OPENAI_API_KEY` is set
+4. RAG will automatically ingest PR diffs, review results, test precedents, and doc conventions
+5. Review Guard, Test Engine, and Doc Sync will use evidence retrieval when enabled
 
 ### 3. Set Vercel Environment Variables
 
@@ -115,11 +139,12 @@ export API_BASE_URL="https://your-app.vercel.app"
 ## Verification Checklist
 
 ### Database Migration
-- [ ] All 16 tables created
+- [ ] All 16 tables created (+ 2 RAG tables if RAG enabled)
 - [ ] RLS enabled on all tables
 - [ ] Helper functions exist
 - [ ] Indexes created (30+)
 - [ ] Triggers created (10+)
+- [ ] pgvector extension enabled (if RAG enabled)
 
 ### Application Deployment
 - [ ] Build succeeds
