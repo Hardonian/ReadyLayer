@@ -12,6 +12,7 @@ import { githubAPIClient } from '../integrations/github/api-client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
+import { ingestDocument, isIngestEnabled } from '../lib/rag';
 
 /**
  * Process webhook event
@@ -39,11 +40,11 @@ async function processWebhookEvent(payload: any): Promise<void> {
     switch (type) {
       case 'pr.opened':
       case 'pr.updated':
-        await processPREvent(repository, pr, accessToken, log);
+        await processPREvent(repository, pr, accessToken, log, requestId);
         break;
 
       case 'merge.completed':
-        await processMergeEvent(repository, pr, accessToken, log);
+        await processMergeEvent(repository, pr, accessToken, log, requestId);
         break;
 
       case 'ci.completed':
@@ -69,9 +70,11 @@ async function processPREvent(
   repository: any,
   pr: any,
   accessToken: string,
-  log: any
+  log: any,
+  requestId?: string
 ): Promise<void> {
-  log.info({ prNumber: pr.number }, 'Processing PR event');
+  const traceId = requestId || `webhook_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  log.info({ prNumber: pr.number, requestId: traceId }, 'Processing PR event');
 
   // Get PR diff
   const diff = await githubAPIClient.getPRDiff(
@@ -141,6 +144,39 @@ async function processPREvent(
       'readylayer/review',
       accessToken
     );
+
+    // Ingest review result into evidence index (idempotent, safe)
+    if (isIngestEnabled()) {
+      try {
+        const repo = await prisma.repository.findUnique({
+          where: { id: repository.id },
+          select: { organizationId: true },
+        });
+
+        if (repo) {
+          await ingestDocument({
+            organizationId: repo.organizationId,
+            repositoryId: repository.id,
+            sourceType: 'review_result',
+            sourceRef: `pr-${pr.number}`,
+            title: `Review for PR #${pr.number}: ${pr.title}`,
+            content: JSON.stringify({
+              summary: reviewResult.summary,
+              issues: reviewResult.issues.slice(0, 50), // Limit to top 50 issues
+              isBlocked: reviewResult.isBlocked,
+            }),
+            metadata: {
+              prNumber: pr.number,
+              prSha: pr.sha,
+              reviewId: reviewResult.id,
+            },
+          }, requestId);
+        }
+      } catch (error) {
+        // Ingestion failure should not block PR processing
+        log.warn({ error }, 'Failed to ingest review result into evidence index');
+      }
+    }
   } catch (error) {
     log.error(error, 'Review Guard failed');
     // Update status check to error
@@ -161,17 +197,76 @@ async function processPREvent(
     for (const file of aiTouchedFiles) {
       const fileContent = files.find(f => f.path === file.path)?.content;
       if (fileContent) {
-        await testEngineService.generateTests({
+        const testResult = await testEngineService.generateTests({
           repositoryId: repository.id,
           prNumber: pr.number,
           prSha: pr.sha,
           filePath: file.path,
           fileContent,
         });
+
+        // Ingest test precedent into evidence index (idempotent, safe)
+        if (isIngestEnabled() && testResult.testContent) {
+          try {
+            const repo = await prisma.repository.findUnique({
+              where: { id: repository.id },
+              select: { organizationId: true },
+            });
+
+            if (repo) {
+              await ingestDocument({
+                organizationId: repo.organizationId,
+                repositoryId: repository.id,
+                sourceType: 'test_precedent',
+                sourceRef: file.path,
+                title: `Test for ${file.path}`,
+                content: testResult.testContent,
+                metadata: {
+                  filePath: file.path,
+                  framework: testResult.framework,
+                  placement: testResult.placement,
+                  prNumber: pr.number,
+                },
+              }, requestId);
+            }
+          } catch (error) {
+            // Ingestion failure should not block test generation
+            log.warn({ error, filePath: file.path }, 'Failed to ingest test precedent');
+          }
+        }
       }
     }
   } catch (error) {
     log.error(error, 'Test Engine failed');
+  }
+
+  // Ingest PR diff into evidence index (idempotent, safe)
+  if (isIngestEnabled() && diff) {
+    try {
+      const repo = await prisma.repository.findUnique({
+        where: { id: repository.id },
+        select: { organizationId: true },
+      });
+
+      if (repo && diff.length > 0 && diff.length < 50000) { // Limit diff size
+        await ingestDocument({
+          organizationId: repo.organizationId,
+          repositoryId: repository.id,
+          sourceType: 'pr_diff',
+          sourceRef: `pr-${pr.number}`,
+          title: `PR #${pr.number}: ${pr.title}`,
+          content: diff.substring(0, 50000), // Cap at 50KB
+          metadata: {
+            prNumber: pr.number,
+            prSha: pr.sha,
+            fileCount: files.length,
+          },
+        }, requestId);
+      }
+    } catch (error) {
+      // Ingestion failure should not block PR processing
+      log.warn({ error }, 'Failed to ingest PR diff into evidence index');
+    }
   }
 }
 
@@ -182,17 +277,48 @@ async function processMergeEvent(
   repository: any,
   pr: any,
   _accessToken: string,
-  log: any
+  log: any,
+  requestId?: string
 ): Promise<void> {
-    log.info({ prNumber: pr.number }, 'Processing merge event');
+    const traceId = requestId || `webhook_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    log.info({ prNumber: pr.number, requestId: traceId }, 'Processing merge event');
 
   // Run Doc Sync
   try {
-    await docSyncService.generateDocs({
+    const docResult = await docSyncService.generateDocs({
       repositoryId: repository.id,
       ref: pr.sha,
       format: 'openapi',
     });
+
+    // Ingest doc convention into evidence index (idempotent, safe)
+    if (isIngestEnabled() && docResult.content) {
+      try {
+        const repo = await prisma.repository.findUnique({
+          where: { id: repository.id },
+          select: { organizationId: true },
+        });
+
+        if (repo) {
+          await ingestDocument({
+            organizationId: repo.organizationId,
+            repositoryId: repository.id,
+            sourceType: 'doc_convention',
+            sourceRef: `openapi-${pr.sha.substring(0, 8)}`,
+            title: `OpenAPI Spec for ${pr.sha.substring(0, 8)}`,
+            content: docResult.content.substring(0, 50000), // Cap at 50KB
+            metadata: {
+              format: docResult.format,
+              ref: pr.sha,
+              prNumber: pr.number,
+            },
+          }, traceId);
+        }
+      } catch (error) {
+        // Ingestion failure should not block doc generation
+        log.warn({ error }, 'Failed to ingest doc convention into evidence index');
+      }
+    }
   } catch (error) {
     log.error(error, 'Doc Sync failed');
   }

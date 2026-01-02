@@ -7,6 +7,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
+import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 
 export interface DocGenerationRequest {
   repositoryId: string;
@@ -322,12 +323,49 @@ export class DocSyncService {
 
     // Enhance with LLM if enabled
     if (enhanceWithLLM) {
+      // Query evidence if RAG is enabled
+      let evidenceSection = '';
+      if (isQueryEnabled()) {
+        try {
+          // Get repository ID from endpoints if available
+          const repoId = endpoints.length > 0 ? endpoints[0].file?.split('/')[0] : undefined;
+          
+          const evidenceQueries = [
+            `prior API docs patterns`,
+            `OpenAPI fragments or route descriptions`,
+            `API documentation conventions`,
+          ];
+
+          const allEvidence = [];
+          for (const queryText of evidenceQueries) {
+            const results = await queryEvidence({
+              organizationId,
+              repositoryId: repoId,
+              queryText,
+              topK: 3,
+              filters: {
+                sourceTypes: ['doc_convention', 'repo_file'],
+              },
+            });
+            allEvidence.push(...results);
+          }
+
+          if (allEvidence.length > 0) {
+            evidenceSection = formatEvidenceForPrompt(allEvidence);
+          }
+        } catch (error) {
+          // Evidence retrieval failed - proceed without it (graceful degradation)
+          console.warn('Evidence retrieval failed, proceeding without evidence:', error);
+        }
+      }
+
       const prompt = `Enhance the following OpenAPI spec with detailed descriptions, parameters, and examples.
 
 OpenAPI Spec:
 \`\`\`json
 ${JSON.stringify(spec, null, 2)}
 \`\`\`
+${evidenceSection}
 
 Return the enhanced OpenAPI spec as JSON.`;
 

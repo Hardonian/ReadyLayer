@@ -9,6 +9,7 @@ import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
 import { schemaReconciliationService } from '../schema-reconciliation';
+import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -79,7 +80,19 @@ export class ReviewGuardService {
 
           // AI analysis (if LLM available)
           try {
-            const aiIssues = await this.analyzeWithAI(file.path, file.content, request.repositoryId);
+            // Get organization ID from repository
+            const repo = await prisma.repository.findUnique({
+              where: { id: request.repositoryId },
+              select: { organizationId: true },
+            });
+            const organizationId = repo?.organizationId || '';
+            
+            const aiIssues = await this.analyzeWithAI(
+              file.path,
+              file.content,
+              request.repositoryId,
+              organizationId
+            );
             allIssues.push(...aiIssues);
           } catch (error) {
             // LLM failure MUST block PR (enforcement-first)
@@ -212,8 +225,42 @@ export class ReviewGuardService {
   private async analyzeWithAI(
     filePath: string,
     content: string,
+    repositoryId: string,
     organizationId: string
   ): Promise<Issue[]> {
+    // Query evidence if RAG is enabled
+    let evidenceSection = '';
+    if (isQueryEnabled()) {
+      try {
+        const evidenceQueries = [
+          `similar violations in repository ${repositoryId}`,
+          `prior enforcement decisions for ${filePath}`,
+          `repo config constraints`,
+        ];
+
+        const allEvidence = [];
+        for (const queryText of evidenceQueries) {
+          const results = await queryEvidence({
+            organizationId,
+            repositoryId,
+            queryText,
+            topK: 3,
+            filters: {
+              sourceTypes: ['review_result', 'repo_file', 'policy_doc'],
+            },
+          });
+          allEvidence.push(...results);
+        }
+
+        if (allEvidence.length > 0) {
+          evidenceSection = formatEvidenceForPrompt(allEvidence);
+        }
+      } catch (error) {
+        // Evidence retrieval failed - proceed without it (graceful degradation)
+        console.warn('Evidence retrieval failed, proceeding without evidence:', error);
+      }
+    }
+
     const prompt = `Analyze the following code for security vulnerabilities, quality issues, and potential bugs.
 
 File: ${filePath}
@@ -221,6 +268,7 @@ File: ${filePath}
 \`\`\`
 ${content}
 \`\`\`
+${evidenceSection}
 
 Return a JSON array of issues found, each with:
 - ruleId: string (e.g., "security.sql-injection")

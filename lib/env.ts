@@ -34,6 +34,17 @@ interface EnvConfig {
   // API Configuration
   API_BASE_URL?: string;
   API_VERSION?: string;
+  
+  // RAG Configuration (Evidence RAG Layer)
+  RAG_ENABLED?: boolean;
+  RAG_INGEST_ENABLED?: boolean;
+  RAG_QUERY_ENABLED?: boolean;
+  RAG_PROVIDER?: 'openai' | 'disabled';
+  RAG_EMBED_MODEL?: string;
+  RAG_MAX_CHUNKS_PER_DOC?: number;
+  RAG_CHUNK_SIZE?: number;
+  RAG_CHUNK_OVERLAP?: number;
+  RAG_MAX_CONTEXT_TOKENS?: number;
 }
 
 class EnvValidator {
@@ -71,6 +82,27 @@ class EnvValidator {
     this.config.GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
     this.config.API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
     this.config.API_VERSION = process.env.API_VERSION || 'v1';
+    
+    // RAG Configuration (defaults to disabled for safety)
+    this.config.RAG_ENABLED = process.env.RAG_ENABLED === 'true';
+    this.config.RAG_INGEST_ENABLED = process.env.RAG_INGEST_ENABLED === 'true';
+    this.config.RAG_QUERY_ENABLED = process.env.RAG_QUERY_ENABLED === 'true';
+    this.config.RAG_PROVIDER = (process.env.RAG_PROVIDER === 'openai' || process.env.RAG_PROVIDER === 'disabled')
+      ? process.env.RAG_PROVIDER
+      : 'disabled';
+    this.config.RAG_EMBED_MODEL = process.env.RAG_EMBED_MODEL || 'text-embedding-3-small';
+    this.config.RAG_MAX_CHUNKS_PER_DOC = process.env.RAG_MAX_CHUNKS_PER_DOC
+      ? parseInt(process.env.RAG_MAX_CHUNKS_PER_DOC, 10)
+      : 100;
+    this.config.RAG_CHUNK_SIZE = process.env.RAG_CHUNK_SIZE
+      ? parseInt(process.env.RAG_CHUNK_SIZE, 10)
+      : 1000;
+    this.config.RAG_CHUNK_OVERLAP = process.env.RAG_CHUNK_OVERLAP
+      ? parseInt(process.env.RAG_CHUNK_OVERLAP, 10)
+      : 200;
+    this.config.RAG_MAX_CONTEXT_TOKENS = process.env.RAG_MAX_CONTEXT_TOKENS
+      ? parseInt(process.env.RAG_MAX_CONTEXT_TOKENS, 10)
+      : 4000;
 
     // Validate at least one LLM provider (skip during build)
     const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
@@ -153,10 +185,19 @@ function getEnvConfig(): EnvConfig {
       LOG_LEVEL: defaults.LOG_LEVEL,
       DEFAULT_LLM_PROVIDER: defaults.DEFAULT_LLM_PROVIDER,
       API_BASE_URL: defaults.API_BASE_URL,
-      API_VERSION: defaults.API_VERSION,
-      OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
-      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
-    } as EnvConfig;
+        API_VERSION: defaults.API_VERSION,
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+        RAG_ENABLED: false,
+        RAG_INGEST_ENABLED: false,
+        RAG_QUERY_ENABLED: false,
+        RAG_PROVIDER: 'disabled',
+        RAG_EMBED_MODEL: 'text-embedding-3-small',
+        RAG_MAX_CHUNKS_PER_DOC: 100,
+        RAG_CHUNK_SIZE: 1000,
+        RAG_CHUNK_OVERLAP: 200,
+        RAG_MAX_CONTEXT_TOKENS: 4000,
+      } as EnvConfig;
     return envConfig;
   }
 
@@ -186,6 +227,15 @@ function getEnvConfig(): EnvConfig {
         API_VERSION: defaults.API_VERSION,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
         ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+        RAG_ENABLED: false,
+        RAG_INGEST_ENABLED: false,
+        RAG_QUERY_ENABLED: false,
+        RAG_PROVIDER: 'disabled',
+        RAG_EMBED_MODEL: 'text-embedding-3-small',
+        RAG_MAX_CHUNKS_PER_DOC: 100,
+        RAG_CHUNK_SIZE: 1000,
+        RAG_CHUNK_OVERLAP: 200,
+        RAG_MAX_CONTEXT_TOKENS: 4000,
       } as EnvConfig;
       validationAttempted = true;
       return envConfig;
