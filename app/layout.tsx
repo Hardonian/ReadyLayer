@@ -50,9 +50,9 @@ export const metadata: Metadata = {
     description: 'AI writes the code. ReadyLayer makes it production-ready.',
     images: [
       {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
+        url: '/logo-seo.png',
+        width: 359,
+        height: 344,
         alt: 'ReadyLayer - AI Code Readiness Platform',
       },
     ],
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'ReadyLayer — AI Code Readiness Platform',
     description: 'AI writes the code. ReadyLayer makes it production-ready.',
-    images: ['/og-image.png'],
+    images: ['/logo-seo.png'],
   },
   robots: {
     index: true,
@@ -87,8 +87,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+        <link rel="icon" type="image/webp" sizes="32x32" href="/favicon.webp" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={inter.className}>

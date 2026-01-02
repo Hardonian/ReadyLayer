@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
@@ -81,8 +82,18 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <Container>
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center gap-8 flex-1">
-                <Link href="/dashboard" className="text-xl font-bold" aria-label="ReadyLayer Home">
-                  ReadyLayer
+                <Link href="/dashboard" className="flex items-center" aria-label="ReadyLayer Home">
+                  <picture>
+                    <source srcSet="/logo-header.webp" type="image/webp" />
+                    <Image
+                      src="/logo-header.png"
+                      alt="ReadyLayer"
+                      width={140}
+                      height={28}
+                      priority
+                      className="h-7 w-auto dark:invert"
+                    />
+                  </picture>
                 </Link>
                 <ul className="hidden md:flex items-center gap-6 list-none">
                   {navItems.map((item) => (
