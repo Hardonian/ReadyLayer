@@ -67,9 +67,54 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Don't show nav on auth pages or landing page
   const showNav = !pathname?.startsWith('/auth') && pathname !== '/'
+  const isLandingPage = pathname === '/'
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Landing page header banner */}
+      {isLandingPage && (
+        <motion.header
+          className="border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60"
+          variants={fadeIn}
+          initial="hidden"
+          animate="visible"
+        >
+          <Container>
+            <div className="flex h-16 items-center justify-between">
+              <Link href="/" className="flex items-center" aria-label="ReadyLayer Home">
+                <picture>
+                  <source srcSet="/logo-header.webp" type="image/webp" />
+                  <Image
+                    src="/logo-header.png"
+                    alt="ReadyLayer"
+                    width={140}
+                    height={28}
+                    priority
+                    className="h-7 w-auto dark:invert"
+                  />
+                </picture>
+              </Link>
+              {!loading && (
+                <div className="flex items-center gap-4">
+                  <ThemeToggle />
+                  {user ? (
+                    <Button asChild variant="default" size="sm">
+                      <Link href="/dashboard">Go to Dashboard</Link>
+                    </Button>
+                  ) : (
+                    <Button asChild variant="default" size="sm">
+                      <Link href="/auth/signin">
+                        <Github className="h-4 w-4 mr-2" />
+                        Sign in
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </Container>
+        </motion.header>
+      )}
       {showNav && (
         <motion.nav
           className="border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60"
