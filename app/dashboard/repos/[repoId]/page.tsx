@@ -12,6 +12,7 @@ import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { Settings, CheckCircle2, AlertTriangle, FileCode, Clock, Shield, ToggleLeft, ToggleRight } from 'lucide-react'
 import Link from 'next/link'
+import { PolicyWidget } from './policy-widget'
 
 interface Repository {
   id: string
@@ -274,6 +275,19 @@ export default function RepositoryDetailPage() {
             </Button>
           </div>
         </div>
+
+        {/* Policy Widget - Git Provider Adaptive */}
+        {repo && (
+          <motion.div variants={fadeIn}>
+            <PolicyWidget
+              repository={{
+                id: repo.id,
+                provider: repo.provider,
+                fullName: repo.fullName,
+              }}
+            />
+          </motion.div>
+        )}
 
         {/* Status Banner */}
         <motion.div variants={fadeIn}>

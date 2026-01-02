@@ -10,7 +10,6 @@ import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
-import { policyEngineService } from '../../../../../services/policy-engine';
 
 /**
  * GET /api/v1/evidence/:bundleId

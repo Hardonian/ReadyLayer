@@ -34,7 +34,7 @@ interface EvidenceBundle {
   reviewId: string | null
   testId: string | null
   docId: string | null
-  inputsMetadata: Record<string, any>
+  inputsMetadata: Record<string, unknown>
   rulesFired: string[]
   deterministicScore: number
   artifacts: Record<string, string> | null
@@ -201,7 +201,7 @@ export default function EvidenceDetailPage() {
               <div>
                 <h1 className="text-3xl font-bold">{resourceType} Evidence</h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <Badge variant={scoreColor as any}>
+                  <Badge variant={scoreColor === 'success' ? 'default' : scoreColor === 'destructive' ? 'destructive' : 'secondary'}>
                     Score: {evidence.deterministicScore.toFixed(1)}
                   </Badge>
                   <Badge variant="outline">

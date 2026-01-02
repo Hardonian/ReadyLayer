@@ -19,9 +19,7 @@ import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { 
   ShieldCheck, 
   Plus,
-  XCircle,
   Calendar,
-  AlertTriangle,
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'

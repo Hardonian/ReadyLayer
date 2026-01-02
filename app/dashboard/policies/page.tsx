@@ -19,13 +19,8 @@ import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { 
   Shield, 
   Plus,
-  FileText,
-  Settings,
-  History,
-  AlertTriangle,
   CheckCircle2,
   XCircle,
-  ArrowRight,
   Edit,
   Trash2,
 } from 'lucide-react'
@@ -48,7 +43,7 @@ interface PolicyRule {
   ruleId: string
   severityMapping: Record<string, 'block' | 'warn' | 'allow'>
   enabled: boolean
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 }
 
 export default function PoliciesPage() {
@@ -57,9 +52,9 @@ export default function PoliciesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedOrg, setSelectedOrg] = useState<string | null>(null)
+  const [_selectedOrg, _setSelectedOrg] = useState<string | null>(null)
 
-  const fetchPolicies = useCallback(async () => {
+  const fetchPolicies = useCallback(async (_orgId?: string | null) => {
     try {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -89,7 +84,7 @@ export default function PoliciesPage() {
       setError(err instanceof Error ? err.message : 'Failed to load policies')
       setLoading(false)
     }
-  }, [selectedOrg])
+  }, [])
 
   useEffect(() => {
     fetchPolicies()

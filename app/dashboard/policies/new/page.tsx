@@ -53,7 +53,7 @@ export default function NewPolicyPage() {
       }
 
       // Parse source to extract rules if needed
-      let parsedSource: any
+      let parsedSource: Record<string, unknown>
       try {
         parsedSource = JSON.parse(source)
       } catch {

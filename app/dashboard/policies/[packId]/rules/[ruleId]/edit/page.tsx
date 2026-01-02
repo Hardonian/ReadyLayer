@@ -28,7 +28,7 @@ interface PolicyRule {
   ruleId: string
   severityMapping: Record<string, 'block' | 'warn' | 'allow'>
   enabled: boolean
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 }
 
 export default function EditRulePage() {

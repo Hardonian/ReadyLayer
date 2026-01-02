@@ -19,7 +19,6 @@ import {
   Shield, 
   ArrowLeft,
   Save,
-  Code,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'

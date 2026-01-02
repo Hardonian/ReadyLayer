@@ -9,6 +9,9 @@ import { reviewGuardService } from '../services/review-guard';
 import { testEngineService } from '../services/test-engine';
 import { docSyncService } from '../services/doc-sync';
 import { githubAPIClient } from '../integrations/github/api-client';
+import { formatPolicyComment, generateStatusCheckDescription } from '../lib/git-provider-ui/comment-formatter';
+import { detectGitProvider } from '../lib/git-provider-ui';
+import { prisma } from '../lib/prisma';
 import { prisma } from '../lib/prisma';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
@@ -165,9 +168,44 @@ async function processPREvent(
       files,
     });
 
-    // Post review comments
+    // Post review comments with provider-aware formatting
     if (reviewResult.issues.length > 0) {
-      const commentBody = formatReviewComment(reviewResult);
+      // Try to get policy evaluation result from review
+      const review = await prisma.review.findUnique({
+        where: { id: reviewResult.id },
+        include: {
+          repository: true,
+        },
+      });
+
+      const provider = detectGitProvider({
+        provider: repository.provider,
+        url: repository.url || undefined,
+      });
+
+      // Format comment using provider-aware formatter
+      const commentBody = formatPolicyComment(
+        {
+          blocked: reviewResult.isBlocked,
+          score: (review as any)?.policyScore || 100,
+          rulesFired: (review as any)?.rulesFired || [],
+          nonWaivedFindings: reviewResult.issues.map((issue) => ({
+            ruleId: issue.ruleId,
+            severity: issue.severity,
+            message: issue.message,
+            file: issue.file,
+            line: issue.line || 0,
+          })),
+        },
+        {
+          provider,
+          repository: {
+            provider: repository.provider,
+            url: repository.url || undefined,
+          },
+        }
+      );
+
       await githubAPIClient.postPRComment(
         repository.fullName,
         pr.number,
@@ -176,14 +214,37 @@ async function processPREvent(
       );
     }
 
-    // Update status check
+    // Update status check with provider-aware description
+    const provider = detectGitProvider({
+      provider: repository.provider,
+      url: repository.url || undefined,
+    });
+
+    const review = await prisma.review.findUnique({
+      where: { id: reviewResult.id },
+    });
+
+    const statusDescription = generateStatusCheckDescription(
+      {
+        blocked: reviewResult.isBlocked,
+        score: (review as any)?.policyScore || 100,
+        rulesFired: (review as any)?.rulesFired || [],
+        nonWaivedFindings: reviewResult.issues.map((issue) => ({
+          ruleId: issue.ruleId,
+          severity: issue.severity,
+          message: issue.message,
+          file: issue.file,
+          line: issue.line || 0,
+        })),
+      },
+      provider
+    );
+
     await githubAPIClient.updateStatusCheck(
       repository.fullName,
       pr.sha,
       reviewResult.isBlocked ? 'failure' : 'success',
-      reviewResult.isBlocked
-        ? `❌ ${reviewResult.summary.critical} critical, ${reviewResult.summary.high} high issues`
-        : `✅ Review passed`,
+      statusDescription,
       'readylayer/review',
       accessToken
     );

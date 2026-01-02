@@ -20,9 +20,6 @@ import {
   FileSearch, 
   Download,
   ExternalLink,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -238,7 +235,7 @@ export default function EvidencePage() {
                             <CardTitle className="text-lg">
                               {resourceType} Evidence
                             </CardTitle>
-                            <Badge variant={scoreColor as any}>
+                            <Badge variant={scoreColor === 'success' ? 'default' : scoreColor === 'destructive' ? 'destructive' : 'secondary'}>
                               Score: {bundle.deterministicScore.toFixed(1)}
                             </Badge>
                             <Badge variant="outline">

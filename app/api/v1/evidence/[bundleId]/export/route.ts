@@ -159,7 +159,7 @@ export async function GET(
       reviewId: bundle.reviewId || undefined,
       testId: bundle.testId || undefined,
       docId: bundle.docId || undefined,
-      inputsMetadata: bundle.inputsMetadata as any,
+      inputsMetadata: bundle.inputsMetadata as Record<string, unknown>,
       rulesFired: bundle.rulesFired as string[],
       deterministicScore: Number(bundle.deterministicScore),
       artifacts: bundle.artifacts as Record<string, string> | undefined,
@@ -172,7 +172,7 @@ export async function GET(
     const exportData = policyEngineService.exportEvidence(
       evidenceBundle,
       policy,
-      bundle.inputsMetadata as any,
+      bundle.inputsMetadata as Record<string, unknown>,
       {
         findings: [],
         evaluationResult: {

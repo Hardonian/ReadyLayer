@@ -15,7 +15,7 @@ import { logger } from '../../observability/logging';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // 128 bits
 const KEY_LENGTH = 32; // 256 bits
-const AUTH_TAG_LENGTH = 16; // 128 bits
+const _AUTH_TAG_LENGTH = 16; // 128 bits
 
 interface EncryptionPayload {
   ciphertext: string; // base64-encoded encrypted data

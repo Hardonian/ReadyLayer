@@ -25,15 +25,13 @@ import {
   ArrowLeft,
   Edit,
   Plus,
-  Settings,
-  History,
   Trash2,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'
+import { useGitProvider } from '@/lib/git-provider-ui/hooks'
 
 interface PolicyPack {
   id: string
@@ -62,7 +60,7 @@ interface PolicyRule {
   ruleId: string
   severityMapping: Record<string, 'block' | 'warn' | 'allow'>
   enabled: boolean
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 }
 
 export default function PolicyDetailPage() {
@@ -70,6 +68,7 @@ export default function PolicyDetailPage() {
   const router = useRouter()
   const params = useParams()
   const packId = params.packId as string
+  const { provider: _provider, theme: _theme } = useGitProvider()
 
   const [policy, setPolicy] = useState<PolicyPack | null>(null)
   const [loading, setLoading] = useState(true)
@@ -286,13 +285,13 @@ export default function PolicyDetailPage() {
                             <div className="text-sm font-medium">Severity Mapping</div>
                             <div className="flex flex-wrap gap-2">
                               {Object.entries(rule.severityMapping).map(([severity, action]) => (
-                                <Badge
-                                  key={severity}
-                                  variant={
-                                    action === 'block' ? 'destructive' :
-                                    action === 'warn' ? 'default' : 'secondary'
-                                  }
-                                >
+                                                <Badge
+                                    key={severity}
+                                    variant={
+                                      action === 'block' ? 'destructive' :
+                                      action === 'warn' ? 'default' : 'secondary'
+                                    }
+                                  >
                                   {severity}: {action}
                                 </Badge>
                               ))}

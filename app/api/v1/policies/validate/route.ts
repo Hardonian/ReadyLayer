@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const log = logger.child({ requestId });
 
   try {
-    const user = await requireAuth(request);
+    const _user = await requireAuth(request);
 
     const authzResponse = await createAuthzMiddleware({
       requiredScopes: ['read'],
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate policy source (try parsing as JSON or YAML)
-    let parsedSource: any;
+    let parsedSource: Record<string, unknown>;
     try {
       parsedSource = JSON.parse(validated.source);
     } catch {
