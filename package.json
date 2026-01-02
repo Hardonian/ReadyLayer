@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "clean": "rm -rf .next",
+    "prebuild": "node scripts/fix-build-cleanup.js || true; node scripts/ensure-server-pages-dir.js || true",
     "build": "next build",
+    "postbuild": "node scripts/fix-build-cleanup.js || true",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",

@@ -20,6 +20,11 @@ const nextConfig = {
     if (isServer) {
       // Preserve raw body for webhook routes
       config.externals = [...(config.externals || []), 'bufferutil', 'utf-8-validate'];
+      
+      // Ensure server/pages directory exists before build
+      const EnsureServerPagesPlugin = require('./scripts/next-build-plugin');
+      config.plugins = config.plugins || [];
+      config.plugins.push(new EnsureServerPagesPlugin());
     }
     return config;
   },
