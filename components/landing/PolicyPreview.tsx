@@ -21,7 +21,14 @@ type PolicyRule = {
   threshold?: string
 }
 
-const defaultPolicies = {
+type PolicyCategory = {
+  name: string
+  description: string
+  enabled: boolean
+  rules: PolicyRule[]
+}
+
+const defaultPolicies: Record<string, PolicyCategory> = {
   security: {
     name: 'Security Policy',
     description: 'Block PRs with high-severity security findings',
@@ -140,7 +147,7 @@ export function PolicyPreview({ className }: PolicyPreviewProps) {
                 </div>
 
                 <div className="space-y-2">
-                  {policy.rules.map((rule) => (
+                  {policy.rules.map((rule: PolicyRule) => (
                     <div
                       key={rule.id}
                       className="flex items-start gap-3 p-3 rounded-md border border-border-subtle bg-surface-raised"
