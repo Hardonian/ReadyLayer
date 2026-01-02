@@ -15,7 +15,39 @@ export interface BillingCheckOptions {
 }
 
 /**
- * Check billing limits and return error response if exceeded
+ * Check billing limits and return error response if exceeded.
+ * 
+ * **For API Route Handlers:**
+ * Use this function in API routes. Returns `NextResponse` if limit exceeded,
+ * or `null` if all checks pass.
+ * 
+ * **Checks Performed:**
+ * - Feature access (reviewGuard, testEngine, docSync)
+ * - Repository limit (max repos per tier)
+ * - LLM budget (monthly spend limit)
+ * 
+ * **Error Handling:**
+ * - Returns 403 Forbidden if feature not available
+ * - Returns 403 Forbidden if repository limit exceeded
+ * - Returns 403 Forbidden if LLM budget exceeded
+ * - Returns null if all checks pass
+ * - Logs errors but doesn't block on billing check failures (fail-open)
+ * 
+ * @param organizationId - Organization ID to check limits for
+ * @param options - Billing check options
+ * @returns NextResponse with error if limit exceeded, null if all checks pass
+ * 
+ * @example
+ * ```typescript
+ * const billingCheck = await checkBillingLimits(organizationId, {
+ *   requireFeature: 'reviewGuard',
+ *   checkLLMBudget: true
+ * });
+ * 
+ * if (billingCheck) {
+ *   return billingCheck; // Return error response
+ * }
+ * ```
  */
 export async function checkBillingLimits(
   organizationId: string,
@@ -87,8 +119,39 @@ export async function checkBillingLimits(
 }
 
 /**
- * Check billing limits and throw error if exceeded (for service use)
- * This version throws UsageLimitExceededError instead of returning NextResponse
+ * Check billing limits and throw error if exceeded (for service use).
+ * 
+ * **For Service Layer:**
+ * Use this function in services (not API routes). Throws `UsageLimitExceededError`
+ * if limit exceeded, which preserves HTTP status codes and error context.
+ * 
+ * **Checks Performed:**
+ * - Feature access (reviewGuard, testEngine, docSync)
+ * - Repository limit (max repos per tier)
+ * - LLM budget (monthly spend limit)
+ * 
+ * **Error Handling:**
+ * - Throws `UsageLimitExceededError` with HTTP status if limit exceeded
+ * - Preserves error type and status code for proper error handling
+ * - Logs errors but doesn't block on billing check failures (fail-open)
+ * 
+ * @param organizationId - Organization ID to check limits for
+ * @param options - Billing check options
+ * @throws {UsageLimitExceededError} If any limit exceeded (with HTTP status code)
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   await checkBillingLimitsOrThrow(organizationId, {
+ *     requireFeature: 'testEngine',
+ *     checkLLMBudget: true
+ *   });
+ * } catch (error) {
+ *   if (error instanceof UsageLimitExceededError) {
+ *     // Handle limit exceeded (error.httpStatus contains status code)
+ *   }
+ * }
+ * ```
  */
 export async function checkBillingLimitsOrThrow(
   organizationId: string,

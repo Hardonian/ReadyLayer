@@ -96,6 +96,39 @@ export interface EvidenceExport {
   };
 }
 
+/**
+ * Policy Engine Service
+ * 
+ * Provides Policy-as-Code evaluation with deterministic behavior.
+ * Loads policy packs (org-level or repo-level), applies waivers, and evaluates findings.
+ * 
+ * Key Features:
+ * - Deterministic evaluation (same inputs → same outputs)
+ * - Policy pack versioning with checksums
+ * - Waiver support (temporary exceptions)
+ * - Evidence bundle creation (audit trail)
+ * - Tier-aware default policies
+ * 
+ * **Deterministic Behavior:**
+ * - Same policy pack → same evaluation result
+ * - Same findings → same blocking decision (policy-driven)
+ * - Default policies are deterministic (hardcoded mappings)
+ * 
+ * @example
+ * ```typescript
+ * const policy = await policyEngineService.loadEffectivePolicy(
+ *   organizationId,
+ *   repositoryId,
+ *   commitSha,
+ *   branchName
+ * );
+ * 
+ * const result = policyEngineService.evaluate(findings, policy);
+ * if (result.blocked) {
+ *   console.log('PR blocked:', result.blockingReason);
+ * }
+ * ```
+ */
 export class PolicyEngineService {
   /**
    * Load effective policy for org/repo/branch

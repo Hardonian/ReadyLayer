@@ -65,9 +65,74 @@ export interface DriftCheckResult {
   isBlocked: boolean;
 }
 
+/**
+ * Doc Sync Service
+ * 
+ * Automatic documentation and API spec generation with drift prevention.
+ * Enforces drift prevention (cannot disable) and blocks PRs by default when drift detected.
+ * 
+ * Key Features:
+ * - Framework auto-detection (Express, Fastify, Flask, Django)
+ * - Endpoint extraction from code
+ * - OpenAPI/Markdown generation
+ * - LLM enhancement (optional, graceful degradation)
+ * - Drift detection (missing/changed endpoints)
+ * - Policy-driven blocking
+ * 
+ * **Enforcement-First Behavior:**
+ * - Drift prevention always enabled (cannot disable)
+ * - Default action is 'block' (can change to 'auto_update' or 'alert')
+ * - Doc generation failures don't block merge (fail-open)
+ * 
+ * @example
+ * ```typescript
+ * const result = await docSyncService.generateDocs({
+ *   repositoryId: 'repo_123',
+ *   ref: 'main',
+ *   format: 'openapi'
+ * });
+ * ```
+ */
 export class DocSyncService {
   /**
-   * Generate documentation
+   * Generate documentation (OpenAPI or Markdown) from code.
+   * 
+   * **Process:**
+   * 1. Validates config (drift prevention always enabled)
+   * 2. Detects API framework (Express, Fastify, etc.)
+   * 3. Extracts endpoints from code
+   * 4. Generates OpenAPI spec or Markdown docs
+   * 5. Enhances with LLM (if enabled, graceful degradation on failure)
+   * 6. Validates generated docs
+   * 7. Checks for drift (missing/changed endpoints)
+   * 8. Evaluates against policy (may block if drift detected)
+   * 9. Creates evidence bundle for audit trail
+   * 
+   * **Enforcement:**
+   * - Drift prevention always enabled (enforced)
+   * - Default action is 'block' (can be changed to 'auto_update' or 'alert')
+   * - Doc generation failures don't block merge (fail-open)
+   * 
+   * @param request - Doc generation request with repository and format
+   * @returns Doc generation result with content and drift status
+   * @throws {Error} If drift prevention is disabled (validation error)
+   * @throws {Error} If doc generation fails (non-blocking, but logged)
+   * 
+   * @example
+   * ```typescript
+   * const result = await docSyncService.generateDocs({
+   *   repositoryId: 'repo_123',
+   *   ref: 'main',
+   *   format: 'openapi',
+   *   config: {
+   *     driftPrevention: {
+   *       enabled: true,  // Always true
+   *       action: 'block', // Default: block, can be 'auto_update' or 'alert'
+   *       checkOn: 'pr'
+   *     }
+   *   }
+   * });
+   * ```
    */
   async generateDocs(request: DocGenerationRequest): Promise<DocGenerationResult> {
     const startedAt = new Date();
@@ -227,7 +292,36 @@ export class DocSyncService {
   }
 
   /**
-   * Check for drift between code and docs
+   * Check for drift between code and documentation.
+   * 
+   * Compares current code endpoints with documented endpoints to detect:
+   * - Missing endpoints (in code, not in docs)
+   * - Extra endpoints (in docs, not in code)
+   * - Changed endpoints (parameters or response changed)
+   * 
+   * **Policy-Aware:**
+   * - Missing endpoints: High severity finding
+   * - Changed endpoints: Medium severity finding
+   * - Policy evaluation determines if blocks
+   * 
+   * @param repositoryId - Repository ID
+   * @param ref - Branch or commit SHA to check
+   * @param config - Optional config (uses defaults if not provided)
+   * @returns Drift check result with missing/extra/changed endpoints and blocking status
+   * 
+   * @example
+   * ```typescript
+   * const drift = await docSyncService.checkDrift('repo_123', 'main', {
+   *   driftPrevention: {
+   *     enabled: true,
+   *     action: 'block'
+   *   }
+   * });
+   * 
+   * if (drift.isBlocked) {
+   *   console.log('Drift detected:', drift.missingEndpoints);
+   * }
+   * ```
    */
   async checkDrift(
     repositoryId: string,
