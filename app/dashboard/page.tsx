@@ -241,17 +241,21 @@ export default function DashboardPage() {
             // Set organizationId from response if available
             if (usageDataValue?.organizationId) {
               setOrganizationId(usageDataValue.organizationId)
-            } else if (repositories.length > 0) {
+            } else if (repositories.length > 0 && repositories[0]?.id) {
               // Fallback: get from first repo
               const repo = repositories[0]
-              const repoDetails = await fetch(`/api/v1/repos/${repo.id}`, {
-                headers: {
-                  'Authorization': `Bearer ${session.access_token}`,
-                },
-              }).then((r) => r.ok ? (r.json() as Promise<{ data?: { organizationId?: string } }>) : null).catch(() => null)
-              
-              if (repoDetails?.data?.organizationId) {
-                setOrganizationId(repoDetails.data.organizationId)
+              try {
+                const repoDetails = await fetch(`/api/v1/repos/${repo.id}`, {
+                  headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                  },
+                }).then((r) => r.ok ? (r.json() as Promise<{ data?: { organizationId?: string } }>) : null).catch(() => null)
+                
+                if (repoDetails?.data?.organizationId) {
+                  setOrganizationId(repoDetails.data.organizationId)
+                }
+              } catch {
+                // Silently handle repo details fetch error
               }
             }
           }
@@ -493,7 +497,7 @@ export default function DashboardPage() {
                         }
                       )
                       if (response.ok) {
-                        const data = (await response.json()) as Record<string, unknown>
+                        const data = (await response.json()) as AIOptimizationData
                         setAiOptimization(data)
                       }
                     } catch (err) {
@@ -551,6 +555,8 @@ export default function DashboardPage() {
                         {aiOptimization.suggestions.slice(0, 3).map((suggestion) => (
                           <div
                             key={suggestion.id}
+                          <div
+                            key={suggestion.id}
                             className="p-4 border border-border-subtle rounded-lg bg-background/50"
                           >
                             <div className="flex justify-between items-start mb-2">
@@ -603,7 +609,9 @@ export default function DashboardPage() {
                         Repeated Mistakes
                       </h3>
                       <div className="space-y-2">
-                        {aiOptimization.repeatedMistakes.slice(0, 5).map((mistake, idx) => (
+                        {aiOptimization.repeatedMistakes.slice(0, 5).map((mistake) => (
+                          <div
+                            key={mistake.ruleId}
                           <div
                             key={idx}
                             className="p-3 border border-border-subtle rounded-lg bg-background/50"
@@ -647,7 +655,7 @@ export default function DashboardPage() {
                           }
                         )
                         if (response.ok) {
-                          const data = (await response.json()) as Record<string, unknown>
+                          const data = (await response.json()) as AIOptimizationData
                           setAiOptimization(data)
                         }
                       } catch (err) {

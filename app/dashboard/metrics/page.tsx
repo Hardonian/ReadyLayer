@@ -114,19 +114,24 @@ export default function MetricsPage() {
         const criticalIssues = reviewsTyped.reduce((sum: number, r) => sum + (r.summary?.critical || 0), 0)
 
         // Fetch repositories
-        const reposResponse = await fetch('/api/v1/repos', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
         interface RepoItem {
           enabled: boolean
         }
-        const reposData = reposResponse.ok 
-          ? (await reposResponse.json()) as { repositories?: RepoItem[] }
-          : { repositories: [] as RepoItem[] }
-
-        const repos = reposData.repositories || []
+        let repos: RepoItem[] = []
+        try {
+          const reposResponse = await fetch('/api/v1/repos', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          })
+          if (reposResponse.ok) {
+            const reposData = (await reposResponse.json()) as { repositories?: RepoItem[] }
+            repos = reposData.repositories || []
+          }
+        } catch {
+          // Silently handle repository fetch errors
+          repos = []
+        }
         const activeRepos = repos.filter((r) => r.enabled).length
 
         setMetrics({

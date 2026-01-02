@@ -38,32 +38,42 @@ export function PRIntegration({ repository, prNumber, prSha, reviewId }: PRInteg
       try {
         // Fetch review result which includes policy evaluation
         if (reviewId) {
-          const response = await fetch(`/api/v1/reviews/${reviewId}`)
-          if (response.ok) {
-            const review = (await response.json()) as { 
-              isBlocked?: boolean
-              result?: {
-                policyScore?: number
-                rulesFired?: string[]
-                summary?: { total?: number }
+          try {
+            const response = await fetch(`/api/v1/reviews/${reviewId}`)
+            if (response.ok) {
+              const review = (await response.json()) as { 
+                isBlocked?: boolean
+                result?: {
+                  policyScore?: number
+                  rulesFired?: string[]
+                  summary?: { total?: number }
+                }
               }
+              // Extract policy result from review
+              setPolicyResult({
+                blocked: review.isBlocked || false,
+                score: review.result?.policyScore || 100,
+                rulesFired: review.result?.rulesFired || [],
+                issuesCount: review.result?.summary?.total || 0,
+              })
             }
-            // Extract policy result from review
-            setPolicyResult({
-              blocked: review.isBlocked || false,
-              score: review.result?.policyScore || 100,
-              rulesFired: review.result?.rulesFired || [],
-              issuesCount: review.result?.summary?.total || 0,
-            })
+          } catch (error) {
+            console.error('Failed to fetch review:', error)
           }
         }
 
         // Fetch evidence bundle if available
-        const evidenceResponse = await fetch(`/api/v1/evidence?reviewId=${reviewId}`)
-        if (evidenceResponse.ok) {
-          const evidenceData = (await evidenceResponse.json()) as { evidence?: Array<{ id?: string }> }
-          if (evidenceData.evidence && evidenceData.evidence.length > 0) {
-            setEvidenceBundleId(evidenceData.evidence[0].id || '')
+        if (reviewId) {
+          try {
+            const evidenceResponse = await fetch(`/api/v1/evidence?reviewId=${reviewId}`)
+            if (evidenceResponse.ok) {
+              const evidenceData = (await evidenceResponse.json()) as { evidence?: Array<{ id?: string }> }
+              if (evidenceData.evidence && evidenceData.evidence.length > 0 && evidenceData.evidence[0]?.id) {
+                setEvidenceBundleId(evidenceData.evidence[0].id)
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch evidence:', error)
           }
         }
       } catch (error) {
