@@ -1,0 +1,62 @@
+name: Migrate Installation Tokens
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "migrate" to confirm migration'
+        required: true
+        type: string
+
+jobs:
+  migrate:
+    name: Encrypt Installation Tokens
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify inputs
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "migrate" ]; then
+            echo "❌ Confirmation failed. Type 'migrate' to confirm."
+            exit 1
+          fi
+          echo "✅ Migration confirmed"
+
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "❌ DATABASE_URL secret not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.READY_LAYER_KMS_KEY }}" ] && [ -z "${{ secrets.READY_LAYER_MASTER_KEY }}" ] && [ -z "${{ secrets.READY_LAYER_KEYS }}" ]; then
+            echo "❌ No encryption key secret set. Need one of: READY_LAYER_KMS_KEY, READY_LAYER_MASTER_KEY, or READY_LAYER_KEYS"
+            exit 1
+          fi
+          echo "✅ Required secrets are configured"
+
+      - name: Run migration
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          READY_LAYER_KMS_KEY: ${{ secrets.READY_LAYER_KMS_KEY }}
+          READY_LAYER_MASTER_KEY: ${{ secrets.READY_LAYER_MASTER_KEY }}
+          READY_LAYER_KEYS: ${{ secrets.READY_LAYER_KEYS }}
+        run: |
+          echo "🚀 Starting installation token migration..."
+          npm run secrets:migrate-tokens
+
+      - name: Migration summary
+        if: always()
+        run: |
+          echo "Migration job completed. Check logs above for details."
