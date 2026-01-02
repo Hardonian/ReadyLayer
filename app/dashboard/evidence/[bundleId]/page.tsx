@@ -73,11 +73,11 @@ export default function EvidenceDetailPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = await response.json()
+        const data = (await response.json()) as EvidenceBundle
         setEvidence(data)
         setLoading(false)
       } catch (err) {
@@ -111,7 +111,7 @@ export default function EvidenceDetailPage() {
       })
 
       if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
       }
 

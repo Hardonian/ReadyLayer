@@ -68,7 +68,7 @@ export default function NewWaiverPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 

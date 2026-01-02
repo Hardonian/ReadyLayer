@@ -65,8 +65,8 @@ export class OpenAIEmbeddingsProvider implements EmbeddingsProvider {
         throw new Error(`OpenAI API error: ${response.status} ${error}`);
       }
 
-      const data = await response.json();
-      return data.data.map((item: { embedding: number[] }) => item.embedding);
+      const data = (await response.json()) as { data: Array<{ embedding: number[] }> };
+      return data.data.map((item) => item.embedding);
     } catch (error) {
       throw new Error(
         `Failed to generate embeddings: ${error instanceof Error ? error.message : 'Unknown error'}`

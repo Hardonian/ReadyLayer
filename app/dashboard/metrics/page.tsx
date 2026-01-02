@@ -68,9 +68,6 @@ export default function MetricsPage() {
           throw new Error('Failed to fetch reviews')
         }
 
-        const reviewsData = await reviewsResponse.json()
-        const reviews = reviewsData.reviews || []
-
         // Calculate metrics
         const now = new Date()
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -87,7 +84,9 @@ export default function MetricsPage() {
           }
         }
 
-        const reviewsTyped = reviews as ReviewItem[]
+        const reviewsData = (await reviewsResponse.json()) as { reviews?: ReviewItem[] }
+        const reviews = reviewsData.reviews || []
+        const reviewsTyped = reviews
 
         const reviewsThisWeek = reviewsTyped.filter((r) => 
           new Date(r.createdAt) >= weekAgo
@@ -115,17 +114,24 @@ export default function MetricsPage() {
         const criticalIssues = reviewsTyped.reduce((sum: number, r) => sum + (r.summary?.critical || 0), 0)
 
         // Fetch repositories
-        const reposResponse = await fetch('/api/v1/repos', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
-        const reposData = reposResponse.ok ? await reposResponse.json() : { repositories: [] }
         interface RepoItem {
           enabled: boolean
         }
-
-        const repos = (reposData.repositories || []) as RepoItem[]
+        let repos: RepoItem[] = []
+        try {
+          const reposResponse = await fetch('/api/v1/repos', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          })
+          if (reposResponse.ok) {
+            const reposData = (await reposResponse.json()) as { repositories?: RepoItem[] }
+            repos = reposData.repositories || []
+          }
+        } catch {
+          // Silently handle repository fetch errors
+          repos = []
+        }
         const activeRepos = repos.filter((r) => r.enabled).length
 
         setMetrics({

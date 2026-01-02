@@ -60,7 +60,7 @@ export default function NewPolicyPage() {
       // Parse source to extract rules if needed
       let parsedSource: Record<string, unknown>
       try {
-        parsedSource = JSON.parse(source)
+        parsedSource = JSON.parse(source) as Record<string, unknown>
       } catch {
         setError('Invalid JSON in policy source')
         setLoading(false)
@@ -85,11 +85,11 @@ export default function NewPolicyPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const policy = await response.json()
+      const policy = (await response.json()) as { id?: string }
 
       toast({
         title: 'Success',

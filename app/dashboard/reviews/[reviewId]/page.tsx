@@ -107,12 +107,12 @@ export default function ReviewDetailPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = await response.json()
-        setReview(data)
+        const data = (await response.json()) as { issues?: Array<{ id?: string }> }
+        setReview(data as Review)
         
         // Mock comments for now - in production, fetch from API
         setComments([

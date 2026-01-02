@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -31,7 +31,6 @@ import {
 import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
 import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
-import { ErrorBoundary } from '@/components/error-boundary'
 import { UsageLimitBanner, UsageStats } from '@/components/ui/usage-limit-banner'
 
 interface Repository {
@@ -164,11 +163,11 @@ export default function DashboardPage() {
           })
 
           if (!reposResponse.ok) {
-            const errorData = await reposResponse.json().catch(() => ({}))
+            const errorData = (await reposResponse.json().catch(() => ({}))) as Record<string, unknown>
             throw new Error(getApiErrorMessage(errorData))
           }
 
-          reposData = await reposResponse.json()
+          reposData = (await reposResponse.json()) as { repositories?: Repository[]; pagination?: { total: number } }
         } catch (error) {
           if (error instanceof Error && error.name === 'TimeoutError') {
             throw new Error('Request timed out while fetching repositories')
@@ -190,7 +189,7 @@ export default function DashboardPage() {
           })
 
           if (reviewsResponse.ok) {
-            reviewsData = await reviewsResponse.json()
+            reviewsData = (await reviewsResponse.json()) as { reviews?: Review[]; pagination?: { total: number } }
             setReviews(reviewsData.reviews || [])
           }
           // Silently handle failed review fetch - not critical for dashboard
@@ -227,23 +226,35 @@ export default function DashboardPage() {
           })
           
           if (usageResponse.ok) {
-            const usageData = await usageResponse.json()
-            setUsageStats(usageData.data)
+            const usageData = (await usageResponse.json()) as { data?: Partial<UsageStats> & { organizationId?: string } }
+            // Only set usage stats if we have valid data structure
+            const usageDataValue = usageData.data
+            if (usageDataValue && 
+                usageDataValue.llmTokens && 
+                usageDataValue.runs && 
+                usageDataValue.concurrentJobs && 
+                usageDataValue.budget) {
+              setUsageStats(usageDataValue as UsageStats)
+            }
             
             // Set organizationId from response if available
-            if (usageData.data.organizationId) {
-              setOrganizationId(usageData.data.organizationId)
-            } else if (repositories.length > 0) {
+            if (usageDataValue?.organizationId) {
+              setOrganizationId(usageDataValue.organizationId)
+            } else if (repositories.length > 0 && repositories[0]?.id) {
               // Fallback: get from first repo
               const repo = repositories[0]
-              const repoDetails = await fetch(`/api/v1/repos/${repo.id}`, {
-                headers: {
-                  'Authorization': `Bearer ${session.access_token}`,
-                },
-              }).then((r) => r.ok ? r.json() : null).catch(() => null)
-              
-              if (repoDetails?.data?.organizationId) {
-                setOrganizationId(repoDetails.data.organizationId)
+              try {
+                const repoDetails = await fetch(`/api/v1/repos/${repo.id}`, {
+                  headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                  },
+                }).then((r) => r.ok ? (r.json() as Promise<{ data?: { organizationId?: string } }>) : null).catch(() => null)
+                
+                if (repoDetails?.data?.organizationId) {
+                  setOrganizationId(repoDetails.data.organizationId)
+                }
+              } catch {
+                // Silently handle repo details fetch error
               }
             }
           }
@@ -313,8 +324,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <ErrorBoundary>
-      <Container className="py-8">
+    <Container className="py-8">
       <motion.div
         className="space-y-8"
         variants={fadeIn}
@@ -485,7 +495,7 @@ export default function DashboardPage() {
                         }
                       )
                       if (response.ok) {
-                        const data = await response.json()
+                        const data = (await response.json()) as AIOptimizationData
                         setAiOptimization(data)
                       }
                     } catch (err) {
@@ -543,6 +553,8 @@ export default function DashboardPage() {
                         {aiOptimization.suggestions.slice(0, 3).map((suggestion) => (
                           <div
                             key={suggestion.id}
+                          <div
+                            key={suggestion.id}
                             className="p-4 border border-border-subtle rounded-lg bg-background/50"
                           >
                             <div className="flex justify-between items-start mb-2">
@@ -595,7 +607,9 @@ export default function DashboardPage() {
                         Repeated Mistakes
                       </h3>
                       <div className="space-y-2">
-                        {aiOptimization.repeatedMistakes.slice(0, 5).map((mistake, idx) => (
+                        {aiOptimization.repeatedMistakes.slice(0, 5).map((mistake) => (
+                          <div
+                            key={mistake.ruleId}
                           <div
                             key={idx}
                             className="p-3 border border-border-subtle rounded-lg bg-background/50"
@@ -639,7 +653,7 @@ export default function DashboardPage() {
                           }
                         )
                         if (response.ok) {
-                          const data = await response.json()
+                          const data = (await response.json()) as AIOptimizationData
                           setAiOptimization(data)
                         }
                       } catch (err) {
@@ -797,6 +811,5 @@ export default function DashboardPage() {
         </div>
       </motion.div>
     </Container>
-    </ErrorBoundary>
   )
 }

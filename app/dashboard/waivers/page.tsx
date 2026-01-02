@@ -70,11 +70,11 @@ export default function WaiversPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const data = await response.json()
+      const data = (await response.json()) as { waivers?: unknown[] }
       setWaivers(data.waivers || [])
       setLoading(false)
     } catch (err) {
@@ -112,7 +112,7 @@ export default function WaiversPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 

@@ -13,6 +13,14 @@ interface PolicyPreviewProps {
   className?: string
 }
 
+type PolicyRule = {
+  id: string
+  rule: string
+  action: 'block' | 'warn'
+  severity?: 'critical' | 'high' | 'medium' | 'low'
+  threshold?: string
+}
+
 const defaultPolicies = {
   security: {
     name: 'Security Policy',
@@ -22,22 +30,22 @@ const defaultPolicies = {
       {
         id: 'block-critical-security',
         rule: 'Block PRs with critical security findings',
-        severity: 'critical',
-        action: 'block',
+        severity: 'critical' as const,
+        action: 'block' as const,
       },
       {
         id: 'block-high-security',
         rule: 'Block PRs with high-severity security findings',
-        severity: 'high',
-        action: 'block',
+        severity: 'high' as const,
+        action: 'block' as const,
       },
       {
         id: 'warn-medium-security',
         rule: 'Warn on medium-severity security findings',
-        severity: 'medium',
-        action: 'warn',
+        severity: 'medium' as const,
+        action: 'warn' as const,
       },
-    ],
+    ] satisfies PolicyRule[],
   },
   tests: {
     name: 'Test Coverage Policy',
@@ -47,15 +55,15 @@ const defaultPolicies = {
       {
         id: 'require-tests-ai-files',
         rule: 'Require tests for AI-modified files',
-        action: 'block',
+        action: 'block' as const,
       },
       {
         id: 'coverage-threshold',
         rule: 'Fail if coverage drops below 80%',
         threshold: '80%',
-        action: 'block',
+        action: 'block' as const,
       },
-    ],
+    ] satisfies PolicyRule[],
   },
   docs: {
     name: 'Documentation Policy',
@@ -65,14 +73,14 @@ const defaultPolicies = {
       {
         id: 'require-openapi-docs',
         rule: 'Fail if OpenAPI changes are undocumented',
-        action: 'block',
+        action: 'block' as const,
       },
       {
         id: 'require-readme-updates',
         rule: 'Warn if API changes lack README updates',
-        action: 'warn',
+        action: 'warn' as const,
       },
-    ],
+    ] satisfies PolicyRule[],
   },
 }
 

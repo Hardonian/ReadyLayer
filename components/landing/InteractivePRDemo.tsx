@@ -74,7 +74,9 @@ export function InteractivePRDemo({
 
   // State machine for demo animation
   React.useEffect(() => {
-    if (!autoPlay || state !== 'playing' || prefersReducedMotion) return
+    if (!autoPlay || state !== 'playing' || prefersReducedMotion) {
+      return
+    }
 
     try {
       const totalSteps = demoChecks.length
@@ -115,6 +117,7 @@ export function InteractivePRDemo({
     } catch {
       // If anything fails, stop the demo gracefully
       setState('completed')
+      return
     }
   }, [autoPlay, state, currentStep, prefersReducedMotion])
 
