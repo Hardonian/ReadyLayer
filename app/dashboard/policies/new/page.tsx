@@ -14,6 +14,7 @@ import {
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { 
   Shield, 
   ArrowLeft,
@@ -85,7 +86,7 @@ export default function NewPolicyPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to create policy pack')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       const policy = await response.json()

@@ -7,8 +7,9 @@ import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { logger } from '../../../../../observability/logging';
-import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, parseJsonBody } from '../../../../../lib/api-route-helpers';
 import { z } from 'zod';
+import type { PolicyDocument, PolicyRule, PolicyValidationError, PolicyValidationResult } from '../../../../../lib/types/policy';
 
 const validatePolicySchema = z.object({
   source: z.string().min(1),
@@ -33,8 +34,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
-    const body = await request.json().catch(() => ({}));
-    const validation = validatePolicySchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validation = validatePolicySchema.safeParse(bodyResult.data);
 
     if (!validation.success) {
       return errorResponse(
@@ -51,7 +56,7 @@ export async function POST(request: NextRequest) {
     try {
       // Parse policy source (would use actual parser in production)
       // For now, validate JSON/YAML structure
-      let parsed: any;
+      let parsed: unknown;
       try {
         parsed = JSON.parse(source);
       } catch {
@@ -59,29 +64,43 @@ export async function POST(request: NextRequest) {
         throw new Error('Policy must be valid JSON or YAML');
       }
 
+      // Type guard for PolicyDocument
+      function isPolicyDocument(value: unknown): value is PolicyDocument {
+        return (
+          typeof value === 'object' &&
+          value !== null &&
+          'version' in value &&
+          typeof (value as PolicyDocument).version === 'string' &&
+          'rules' in value &&
+          Array.isArray((value as PolicyDocument).rules)
+        );
+      }
+
       // Basic structure validation
-      if (!parsed.version || !parsed.rules || !Array.isArray(parsed.rules)) {
+      if (!isPolicyDocument(parsed)) {
         throw new Error('Policy must have version and rules array');
       }
 
       // Validate each rule
-      const ruleErrors: Array<{ ruleId: string; error: string }> = [];
+      const ruleErrors: PolicyValidationError[] = [];
       for (const rule of parsed.rules) {
-        if (!rule.ruleId) {
+        if (!rule || typeof rule !== 'object' || !('ruleId' in rule) || typeof rule.ruleId !== 'string') {
           ruleErrors.push({ ruleId: 'unknown', error: 'Rule missing ruleId' });
           continue;
         }
-        if (!rule.severityMapping || typeof rule.severityMapping !== 'object') {
-          ruleErrors.push({ ruleId: rule.ruleId, error: 'Rule missing severityMapping' });
+        const typedRule = rule as PolicyRule;
+        if (!typedRule.severityMapping || typeof typedRule.severityMapping !== 'object') {
+          ruleErrors.push({ ruleId: typedRule.ruleId, error: 'Rule missing severityMapping' });
         }
       }
 
       if (ruleErrors.length > 0) {
-        return successResponse({
+        const result: PolicyValidationResult = {
           valid: false,
           errors: ruleErrors,
           message: 'Policy validation failed',
-        });
+        };
+        return successResponse(result);
       }
 
       // Try to load policy (if organizationId provided)
@@ -89,31 +108,35 @@ export async function POST(request: NextRequest) {
         try {
           // This would validate against actual policy engine
           // For now, just return success
-          return successResponse({
+          const result: PolicyValidationResult = {
             valid: true,
             message: 'Policy is valid',
             warnings: [],
-          });
+          };
+          return successResponse(result);
         } catch (error) {
-          return successResponse({
+          const result: PolicyValidationResult = {
             valid: false,
             errors: [{ ruleId: 'policy', error: error instanceof Error ? error.message : 'Invalid policy' }],
             message: 'Policy validation failed',
-          });
+          };
+          return successResponse(result);
         }
       }
 
-      return successResponse({
+      const result: PolicyValidationResult = {
         valid: true,
         message: 'Policy syntax is valid',
         warnings: [],
-      });
+      };
+      return successResponse(result);
     } catch (error) {
-      return successResponse({
+      const result: PolicyValidationResult = {
         valid: false,
         errors: [{ ruleId: 'syntax', error: error instanceof Error ? error.message : 'Invalid syntax' }],
         message: 'Policy validation failed',
-      });
+      };
+      return successResponse(result);
     }
   } catch (error) {
     log.error(error, 'Policy validation failed');

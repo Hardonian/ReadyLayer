@@ -10,6 +10,7 @@ import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { selfLearningService } from '../../../../../services/self-learning';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 const feedbackSchema = z.object({
   predictionId: z.string().min(1),
@@ -37,8 +38,12 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    const body = await request.json();
-    const validationResult = feedbackSchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validationResult = feedbackSchema.safeParse(bodyResult.data);
 
     if (!validationResult.success) {
       return NextResponse.json(

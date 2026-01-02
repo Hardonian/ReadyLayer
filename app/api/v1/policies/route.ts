@@ -13,6 +13,7 @@ import { requireAuth } from '../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../lib/authz';
 import { createHash } from 'crypto';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../lib/api-route-helpers';
 
 const createPolicyPackSchema = z.object({
   organizationId: z.string(),
@@ -46,8 +47,12 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    const body = await request.json();
-    const validated = createPolicyPackSchema.parse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validated = createPolicyPackSchema.parse(bodyResult.data);
 
     // Verify user belongs to organization
     const membership = await prisma.organizationMember.findUnique({

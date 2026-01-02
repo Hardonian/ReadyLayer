@@ -14,6 +14,7 @@ import {
   Skeleton,
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { 
   Shield, 
@@ -164,7 +165,7 @@ export default function DashboardPage() {
 
           if (!reposResponse.ok) {
             const errorData = await reposResponse.json().catch(() => ({}))
-            throw new Error(errorData.error?.message || 'Failed to fetch repositories')
+            throw new Error(getApiErrorMessage(errorData))
           }
 
           reposData = await reposResponse.json()

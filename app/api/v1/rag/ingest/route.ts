@@ -11,6 +11,7 @@ import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { checkBillingLimits } from '../../../../../lib/billing-middleware';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 const ingestSchema = z.object({
   repositoryId: z.string().optional(),
@@ -49,8 +50,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json().catch(() => ({}));
-    const validation = ingestSchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validation = ingestSchema.safeParse(bodyResult.data);
 
     if (!validation.success) {
       return NextResponse.json(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, generateApiKey } from '../../../../lib/auth';
 import { logger } from '../../../../observability/logging';
 import { createAuthzMiddleware } from '../../../../lib/authz';
+import { parseJsonBody } from '../../../../lib/api-route-helpers';
 
 /**
  * POST /api/v1/api-keys
@@ -23,20 +24,12 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch (error) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_JSON',
-            message: 'Request body must be valid JSON',
-          },
-        },
-        { status: 400 }
-      );
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
     }
+    
+    const body = bodyResult.data;
     if (!body || typeof body !== 'object') {
       return NextResponse.json(
         {

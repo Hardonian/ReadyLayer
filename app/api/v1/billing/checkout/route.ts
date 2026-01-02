@@ -9,7 +9,7 @@ import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
-import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, parseJsonBody } from '../../../../../lib/api-route-helpers';
 import Stripe from 'stripe';
 import { z } from 'zod';
 
@@ -66,8 +66,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
-    const body = await request.json();
-    const validationResult = checkoutSchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validationResult = checkoutSchema.safeParse(bodyResult.data);
     if (!validationResult.success) {
       return errorResponse(
         'VALIDATION_ERROR',

@@ -9,6 +9,7 @@ import { useToast } from '@/lib/hooks/use-toast'
 import { useCache, CACHE_KEYS } from '@/lib/hooks/use-cache'
 import { MetricsCard } from '@/components/ui/metrics-card'
 import { Container } from '@/components/ui/container'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { Settings, CheckCircle2, AlertTriangle, FileCode, Clock, Shield, ToggleLeft, ToggleRight } from 'lucide-react'
 import Link from 'next/link'
@@ -185,7 +186,7 @@ export default function RepositoryDetailPage() {
         toast({
           variant: 'destructive',
           title: 'Failed to update repository',
-          description: errorData.error?.message || 'An error occurred while updating the repository.',
+          description: getApiErrorMessage(errorData),
         })
       }
     } catch (err) {

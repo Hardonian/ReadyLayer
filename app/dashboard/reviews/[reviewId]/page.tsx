@@ -15,6 +15,7 @@ import {
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { 
   Shield, 
   CheckCircle2, 
@@ -107,7 +108,7 @@ export default function ReviewDetailPage() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error?.message || 'Failed to fetch review')
+          throw new Error(getApiErrorMessage(errorData))
         }
 
         const data = await response.json()

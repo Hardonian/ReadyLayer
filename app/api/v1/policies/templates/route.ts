@@ -10,7 +10,7 @@ import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { logger } from '../../../../../observability/logging';
-import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, parseJsonBody } from '../../../../../lib/api-route-helpers';
 import { z } from 'zod';
 
 // Policy templates (pre-built)
@@ -166,8 +166,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
-    const body = await request.json().catch(() => ({}));
-    const validation = createTemplateSchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validation = createTemplateSchema.safeParse(bodyResult.data);
 
     if (!validation.success) {
       return errorResponse(

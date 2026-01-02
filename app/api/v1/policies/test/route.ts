@@ -8,7 +8,7 @@ import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { policyEngineService } from '../../../../../services/policy-engine';
 import { logger } from '../../../../../observability/logging';
-import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, parseJsonBody } from '../../../../../lib/api-route-helpers';
 import { z } from 'zod';
 import type { Issue } from '../../../../../services/static-analysis';
 
@@ -44,8 +44,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
-    const body = await request.json().catch(() => ({}));
-    const validation = testPolicySchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validation = testPolicySchema.safeParse(bodyResult.data);
 
     if (!validation.success) {
       return errorResponse(
