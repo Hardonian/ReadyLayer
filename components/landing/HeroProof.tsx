@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,6 +38,25 @@ export function HeroProof({ user }: HeroProofProps) {
 
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden">
+      {/* Logo in top-right corner */}
+      <motion.div
+        className="absolute top-6 right-6 z-20 sm:top-8 sm:right-8"
+        variants={prefersReducedMotion ? fadeIn : fadeIn}
+        initial="hidden"
+        animate="visible"
+      >
+        <Link href="/" className="block hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
+          <Image
+            src="/logo-header-new.png"
+            alt="ReadyLayer"
+            width={140}
+            height={28}
+            priority
+            className="h-7 sm:h-8 w-auto dark:invert"
+          />
+        </Link>
+      </motion.div>
+
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
