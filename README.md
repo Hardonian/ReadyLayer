@@ -1,28 +1,28 @@
-# ReadyLayer — AI Code Readiness Platform
+# ReadyLayer — Enforcement-First Code Review for AI-Generated Code
 
-**ReadyLayer ensures AI-generated code is production-ready through automated review, testing, and documentation.**
+**ReadyLayer blocks PRs with security vulnerabilities, untested code, and documentation drift — enforcement-first for AI-generated code.**
 
-ReadyLayer is a comprehensive platform that combines AI-powered code analysis with enforcement-first principles to catch security vulnerabilities, ensure test coverage, and keep documentation in sync.
+ReadyLayer combines deterministic static analysis with AI-powered code review to catch security vulnerabilities, enforce test coverage, and prevent documentation drift. Unlike warning-based tools, ReadyLayer **blocks PRs** when issues are found.
 
 ## 🚀 What ReadyLayer Does
 
 ### Review Guard
-- **AI-aware code review** that detects security vulnerabilities, quality issues, and potential bugs
-- **Enforcement-first**: Critical issues ALWAYS block PRs (cannot disable)
-- **Pattern detection**: Tracks historical violations to detect recurring issues
-- **Explicit failures**: All failures include actionable fix instructions
+- **Blocks PRs on critical security issues** (SQL injection, secrets, etc.) — cannot disable
+- **Blocks PRs on high-severity issues** (configurable by tier)
+- **Deterministic static analysis** + AI-powered review for novel patterns
+- **Explicit failures**: All blocking includes actionable fix instructions
 
 ### Test Engine
-- **Automatic test generation** for AI-touched files
-- **Coverage enforcement**: Minimum 80% coverage required (cannot go below)
-- **Framework detection**: Supports Jest, Mocha, pytest, JUnit, and more
-- **Blocking by default**: Test generation failures block PRs
+- **Enforces 80% test coverage minimum** for AI-touched files — cannot go below
+- **Blocks PRs** when coverage threshold not met
+- **Auto-generates tests** for AI-touched files (Jest, Mocha, pytest supported)
+- **Framework detection**: Auto-detects test framework from codebase
 
 ### Doc Sync
-- **Automatic API documentation** generation (OpenAPI, Markdown)
-- **Drift prevention**: Blocks PRs when code and docs are out of sync
-- **Merge-triggered updates**: Automatically updates docs on merge
-- **Multi-framework support**: Express, Fastify, Flask, Django, Spring Boot
+- **Blocks PRs** when API docs are out of sync with code — drift prevention required
+- **Generates OpenAPI/Markdown** documentation from code
+- **Framework detection**: Auto-detects API framework (Express, Fastify, Flask, Django)
+- **Merge-triggered updates**: Updates docs on merge (requires PR approval)
 
 ## 🏗️ Architecture
 
@@ -61,12 +61,20 @@ Copy `.env.example` to `.env` and fill in required values:
 cp .env.example .env
 ```
 
-Required variables:
+**Required variables:**
 - `DATABASE_URL`: PostgreSQL connection string
 - `REDIS_URL`: Redis connection string
 - `OPENAI_API_KEY` OR `ANTHROPIC_API_KEY`: At least one LLM provider
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase URL (for auth)
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon key
+
+**Optional variables (for billing):**
+- `STRIPE_SECRET_KEY`: Stripe secret key (required for paid tiers)
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret (required for subscription management)
+- `STRIPE_PRICE_ID_GROWTH`: Growth tier price ID (required for Growth tier)
+- `STRIPE_PRICE_ID_SCALE`: Scale tier price ID (required for Scale tier)
+
+**Note:** ReadyLayer works without Stripe configuration (free tier only). See `docs/STRIPE-SETUP.md` for payment setup.
 
 ### 3. Database Setup
 
@@ -184,8 +192,31 @@ ReadyLayer follows enforcement-first principles:
 2. **Enforcement > Insight**: Blocking is default, warnings are exception
 3. **Safety > Convenience**: Fail-secure defaults, explicit overrides required
 4. **Explicit > Silent**: All failures are explicit, no silent degradation
+5. **Tier-Based Enforcement**: Starter blocks critical only, Growth blocks critical+high, Scale blocks critical+high+medium
 
 See `/SYSTEM-INVARIANTS-ENHANCED.md` for complete system invariants.
+
+## 💰 Pricing
+
+ReadyLayer offers three tiers with enforced limits:
+
+| Tier | Price | LLM Budget | Runs/Day | Repos | Enforcement |
+|------|-------|------------|----------|-------|-------------|
+| **Starter** | Free | $50/month | 50 | 5 | Critical only |
+| **Growth** | $99/month | $500/month | 500 | 50 | Critical + High |
+| **Scale** | $499/month | $5000/month | 5000 | Unlimited | Critical + High + Medium |
+
+All limits are **hard-enforced**. When exceeded, PRs are blocked until limits reset or plan is upgraded.
+
+## 🗺️ Roadmap (Not Available Today)
+
+The following features are planned but not yet available:
+
+- Self-hosting option (for enterprise)
+- IDE integration (inline feedback)
+- 20+ language support (currently JS/TS/Python)
+- LLM response caching (reduces costs)
+- Advanced self-learning (pattern detection)
 
 ## 🧪 Testing
 

@@ -100,6 +100,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Track false positive (waiver = proxy for false positive)
+    try {
+      const { trackWaiverCreated } = await import('../../../../lib/telemetry/false-positives');
+      // Infer severity from ruleId (security = critical, quality = high, etc.)
+      const severity = validated.ruleId.startsWith('security.') ? 'critical' :
+                       validated.ruleId.startsWith('quality.') ? 'high' :
+                       validated.ruleId.startsWith('style.') ? 'low' : 'medium';
+      
+      await trackWaiverCreated({
+        organizationId: validated.organizationId,
+        repositoryId: validated.repositoryId || null,
+        ruleId: validated.ruleId,
+        severity,
+      });
+    } catch (error) {
+      // Don't fail waiver creation if telemetry fails
+      log.warn({ error }, 'Failed to track false positive');
+    }
+    });
+
     log.info({ waiverId: waiver.id, organizationId: validated.organizationId }, 'Waiver created');
 
     return NextResponse.json(
