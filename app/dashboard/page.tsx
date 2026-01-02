@@ -553,8 +553,6 @@ export default function DashboardPage() {
                         {aiOptimization.suggestions.slice(0, 3).map((suggestion) => (
                           <div
                             key={suggestion.id}
-                          <div
-                            key={suggestion.id}
                             className="p-4 border border-border-subtle rounded-lg bg-background/50"
                           >
                             <div className="flex justify-between items-start mb-2">
@@ -610,8 +608,6 @@ export default function DashboardPage() {
                         {aiOptimization.repeatedMistakes.slice(0, 5).map((mistake) => (
                           <div
                             key={mistake.ruleId}
-                          <div
-                            key={idx}
                             className="p-3 border border-border-subtle rounded-lg bg-background/50"
                           >
                             <div className="flex justify-between items-start">
