@@ -21,13 +21,20 @@ function getStripeClient(): Stripe {
   if (!stripe) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
-      throw new Error('STRIPE_SECRET_KEY environment variable is required');
+      throw new Error('STRIPE_SECRET_KEY environment variable is required. Please configure Stripe in your environment.');
     }
     stripe = new Stripe(secretKey, {
       apiVersion: '2024-11-20.acacia',
     });
   }
   return stripe;
+}
+
+/**
+ * Check if Stripe is configured
+ */
+function isStripeConfigured(): boolean {
+  return !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_WEBHOOK_SECRET;
 }
 
 /**
@@ -56,6 +63,20 @@ export async function POST(request: NextRequest) {
   const log = logger.child({ requestId });
 
   try {
+    // Check if Stripe is configured
+    if (!isStripeConfigured()) {
+      log.warn('Stripe webhook received but Stripe is not configured');
+      return NextResponse.json(
+        {
+          error: {
+            code: 'STRIPE_NOT_CONFIGURED',
+            message: 'Stripe is not configured. Please set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET environment variables.',
+          },
+        },
+        { status: 503 }
+      );
+    }
+
     const signature = request.headers.get('stripe-signature');
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 

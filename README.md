@@ -61,14 +61,20 @@ Copy `.env.example` to `.env` and fill in required values:
 cp .env.example .env
 ```
 
-Required variables:
+**Required variables:**
 - `DATABASE_URL`: PostgreSQL connection string
 - `REDIS_URL`: Redis connection string
 - `OPENAI_API_KEY` OR `ANTHROPIC_API_KEY`: At least one LLM provider
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase URL (for auth)
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon key
-- `STRIPE_SECRET_KEY`: Stripe secret key (for billing)
-- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret (for subscription management)
+
+**Optional variables (for billing):**
+- `STRIPE_SECRET_KEY`: Stripe secret key (required for paid tiers)
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook secret (required for subscription management)
+- `STRIPE_PRICE_ID_GROWTH`: Growth tier price ID (required for Growth tier)
+- `STRIPE_PRICE_ID_SCALE`: Scale tier price ID (required for Scale tier)
+
+**Note:** ReadyLayer works without Stripe configuration (free tier only). See `docs/STRIPE-SETUP.md` for payment setup.
 
 ### 3. Database Setup
 

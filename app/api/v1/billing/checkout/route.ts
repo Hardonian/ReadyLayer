@@ -20,13 +20,22 @@ function getStripeClient(): Stripe {
   if (!stripe) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
-      throw new Error('STRIPE_SECRET_KEY environment variable is required');
+      throw new Error('STRIPE_SECRET_KEY environment variable is required. Please configure Stripe in your environment.');
     }
     stripe = new Stripe(secretKey, {
       apiVersion: '2024-11-20.acacia',
     });
   }
   return stripe;
+}
+
+/**
+ * Check if Stripe is configured
+ */
+function isStripeConfigured(): boolean {
+  return !!process.env.STRIPE_SECRET_KEY && 
+         !!process.env.STRIPE_PRICE_ID_GROWTH && 
+         !!process.env.STRIPE_PRICE_ID_SCALE;
 }
 
 const checkoutSchema = z.object({
@@ -69,6 +78,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { organizationId, plan, successUrl, cancelUrl } = validationResult.data;
+
+    // Check if Stripe is configured
+    if (!isStripeConfigured()) {
+      return errorResponse(
+        'STRIPE_NOT_CONFIGURED',
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY, STRIPE_PRICE_ID_GROWTH, and STRIPE_PRICE_ID_SCALE environment variables.',
+        503
+      );
+    }
 
     // Verify user belongs to organization
     const membership = await prisma.organizationMember.findUnique({
