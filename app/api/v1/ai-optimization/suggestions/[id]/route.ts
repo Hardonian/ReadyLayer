@@ -9,6 +9,7 @@ import { prisma } from '../../../../../../lib/prisma';
 import { logger } from '../../../../../../observability/logging';
 import { requireAuth } from '../../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../../lib/authz';
+import { parseJsonBody } from '../../../../../../lib/api-route-helpers';
 
 /**
  * PATCH /api/v1/ai-optimization/suggestions/:id
@@ -32,7 +33,12 @@ export async function PATCH(
       return authzResponse;
     }
 
-    const body = await request.json();
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const body = bodyResult.data as { status?: string };
     const { status } = body;
 
     if (!status || !['pending', 'in_progress', 'completed', 'dismissed'].includes(status)) {

@@ -11,6 +11,7 @@ import { logger } from '../../../../observability/logging';
 import { requireAuth } from '../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../lib/authz';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../lib/api-route-helpers';
 
 const createWaiverSchema = z.object({
   organizationId: z.string(),
@@ -41,8 +42,12 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    const body = await request.json();
-    const validated = createWaiverSchema.parse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validated = createWaiverSchema.parse(bodyResult.data);
 
     // Verify user belongs to organization
     const membership = await prisma.organizationMember.findUnique({

@@ -12,6 +12,7 @@ import { logger } from '../../../../../../../observability/logging';
 import { requireAuth } from '../../../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../../../lib/authz';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../../../../lib/api-route-helpers';
 
 const updateRuleSchema = z.object({
   severityMapping: z.record(z.enum(['block', 'warn', 'allow'])).optional(),
@@ -87,8 +88,12 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
-    const validated = updateRuleSchema.parse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validated = updateRuleSchema.parse(bodyResult.data);
 
     // Update rule
     const updated = await prisma.policyRule.update({

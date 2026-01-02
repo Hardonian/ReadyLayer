@@ -20,6 +20,7 @@ import {
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { 
   Shield, 
   ArrowLeft,
@@ -102,7 +103,7 @@ export default function PolicyDetailPage() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error?.message || 'Failed to fetch policy')
+          throw new Error(getApiErrorMessage(errorData))
         }
 
         const data = await response.json()
@@ -150,7 +151,7 @@ export default function PolicyDetailPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to delete policy')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       toast({

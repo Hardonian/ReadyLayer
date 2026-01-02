@@ -5,7 +5,7 @@ import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { testEngineService } from '../../../../../services/test-engine';
-import { errorResponse, successResponse, validateBody } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, validateBody, parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 const testGenerateSchema = z.object({
   repositoryId: z.string().min(1),
@@ -35,8 +35,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
+    const parseResult = await parseJsonBody(request);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+    
     const bodyResult = await validateBody(
-      await request.json().catch(() => null),
+      parseResult.data,
       testGenerateSchema
     );
     if (!bodyResult.success) {

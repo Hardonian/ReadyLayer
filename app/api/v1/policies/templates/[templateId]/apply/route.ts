@@ -7,10 +7,12 @@ import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../../../lib/authz';
 import { prisma } from '../../../../../../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '../../../../../../../observability/logging';
-import { errorResponse, successResponse } from '../../../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, parseJsonBody } from '../../../../../../../lib/api-route-helpers';
 import { z } from 'zod';
 import { createHash } from 'crypto';
+import type { PolicyDocument, PolicyRule } from '../../../../../../../lib/types/policy';
 
 const applyTemplateSchema = z.object({
   organizationId: z.string(),
@@ -93,8 +95,12 @@ export async function POST(
     }
 
     // Parse and validate body
-    const body = await request.json().catch(() => ({}));
-    const validation = applyTemplateSchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validation = applyTemplateSchema.safeParse(bodyResult.data);
 
     if (!validation.success) {
       return errorResponse(
@@ -140,7 +146,25 @@ export async function POST(
     }
 
     // Parse template source
-    const templateData = JSON.parse(template.source);
+    const parsedTemplate: unknown = JSON.parse(template.source);
+    
+    // Type guard for PolicyDocument
+    function isPolicyDocument(value: unknown): value is PolicyDocument {
+      return (
+        typeof value === 'object' &&
+        value !== null &&
+        'version' in value &&
+        typeof (value as PolicyDocument).version === 'string' &&
+        'rules' in value &&
+        Array.isArray((value as PolicyDocument).rules)
+      );
+    }
+
+    if (!isPolicyDocument(parsedTemplate)) {
+      return errorResponse('INVALID_TEMPLATE', 'Template has invalid structure', 500);
+    }
+
+    const templateData: PolicyDocument = parsedTemplate;
     const policySource = JSON.stringify({
       ...templateData,
       version,
@@ -161,15 +185,21 @@ export async function POST(
     });
 
     // Create rules
-    const rules = templateData.rules || [];
+    const rules: PolicyRule[] = templateData.rules || [];
     for (const ruleData of rules) {
+      if (!ruleData.ruleId || typeof ruleData.ruleId !== 'string') {
+        log.warn({ ruleData }, 'Skipping rule with invalid ruleId');
+        continue;
+      }
+      
+      const typedRule = ruleData as PolicyRule;
       await prisma.policyRule.create({
         data: {
           policyPackId: policyPack.id,
-          ruleId: ruleData.ruleId,
-          severityMapping: ruleData.severityMapping,
-          enabled: ruleData.enabled !== false,
-          params: ruleData.params || {},
+          ruleId: typedRule.ruleId,
+          severityMapping: (typedRule.severityMapping || {}) as Prisma.InputJsonValue,
+          enabled: typedRule.enabled !== false,
+          params: (typedRule.params || {}) as Prisma.InputJsonValue,
         },
       });
     }

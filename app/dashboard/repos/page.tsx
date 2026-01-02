@@ -1,4 +1,5 @@
 'use client'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
@@ -66,7 +67,7 @@ export default function RepositoriesPage() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error?.message || 'Failed to fetch repositories')
+          throw new Error(getApiErrorMessage(errorData))
         }
 
         const data = await response.json()

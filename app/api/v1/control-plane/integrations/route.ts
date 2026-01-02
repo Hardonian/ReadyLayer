@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
-import { errorResponse, successResponse, validateBody } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, validateBody, parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 const integrationSchema = z.object({
   type: z.enum(['cli', 'cursor', 'vscode', 'tabnine', 'jetbrains']),
@@ -82,8 +82,13 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
+    const parseResult = await parseJsonBody(request);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+    
     const bodyResult = await validateBody(
-      await request.json().catch(() => null),
+      parseResult.data,
       integrationSchema
     );
     if (!bodyResult.success) {

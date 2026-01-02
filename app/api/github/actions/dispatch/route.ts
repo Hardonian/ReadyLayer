@@ -6,7 +6,7 @@ import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { getGitProviderAdapter } from '../../../../../integrations/git-provider-adapter';
 import { getInstallationByProviderWithDecryptedToken } from '../../../../../lib/secrets/installation-helpers';
-import { errorResponse, successResponse, validateBody } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, validateBody, parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 const dispatchSchema = z.object({
   repositoryId: z.string().min(1),
@@ -41,8 +41,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate body
+    const parseResult = await parseJsonBody(request);
+    if (!parseResult.success) {
+      return parseResult.response;
+    }
+    
     const bodyResult = await validateBody(
-      await request.json().catch(() => null),
+      parseResult.data,
       dispatchSchema
     );
     if (!bodyResult.success) {

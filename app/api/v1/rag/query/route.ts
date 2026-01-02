@@ -10,6 +10,7 @@ import { queryEvidence, isQueryEnabled } from '../../../../../lib/rag';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 const querySchema = z.object({
   repositoryId: z.string().optional(),
@@ -50,8 +51,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse and validate request body
-    const body = await request.json().catch(() => ({}));
-    const validation = querySchema.safeParse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validation = querySchema.safeParse(bodyResult.data);
 
     if (!validation.success) {
       return NextResponse.json(

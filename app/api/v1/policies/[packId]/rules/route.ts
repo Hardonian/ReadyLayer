@@ -12,6 +12,7 @@ import { logger } from '../../../../../../observability/logging';
 import { requireAuth } from '../../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../../lib/authz';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../../../lib/api-route-helpers';
 
 const createRuleSchema = z.object({
   ruleId: z.string().min(1, 'Rule ID is required'),
@@ -80,8 +81,12 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
-    const validated = createRuleSchema.parse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validated = createRuleSchema.parse(bodyResult.data);
 
     // Check if rule already exists
     const existing = await prisma.policyRule.findUnique({

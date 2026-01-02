@@ -14,6 +14,7 @@ import {
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { 
   ShieldCheck, 
   ArrowLeft,
@@ -68,7 +69,7 @@ export default function NewWaiverPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to create waiver')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       toast({

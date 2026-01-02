@@ -15,6 +15,7 @@ import {
   Badge,
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { 
   FileSearch, 
@@ -60,7 +61,7 @@ export default function EvidencePage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to fetch evidence')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       const data = await response.json()
@@ -97,7 +98,7 @@ export default function EvidencePage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to export evidence')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       const blob = await response.blob()

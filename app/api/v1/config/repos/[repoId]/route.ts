@@ -4,6 +4,7 @@ import { logger } from '../../../../../../observability/logging';
 import { createAuthzMiddleware } from '../../../../../../lib/authz';
 import { requireAuth } from '../../../../../../lib/auth';
 import { prisma } from '../../../../../../lib/prisma';
+import { parseJsonBody } from '../../../../../../lib/api-route-helpers';
 
 /**
  * GET /api/v1/config/repos/:repoId
@@ -156,21 +157,12 @@ export async function PUT(
       );
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch (error) {
-      log.error(error, 'Failed to parse request body as JSON');
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_JSON',
-            message: 'Request body must be valid JSON',
-          },
-        },
-        { status: 400 }
-      );
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
     }
+    
+    const body = bodyResult.data;
     if (!body || typeof body !== 'object') {
       return NextResponse.json(
         {

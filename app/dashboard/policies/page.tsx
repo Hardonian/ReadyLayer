@@ -16,6 +16,7 @@ import {
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { 
   Shield, 
   Plus,
@@ -81,7 +82,7 @@ export default function PoliciesPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to fetch policies')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       const data = await response.json()
@@ -123,7 +124,7 @@ export default function PoliciesPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to delete policy')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       toast({

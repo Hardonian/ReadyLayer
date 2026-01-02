@@ -19,6 +19,7 @@ import {
   TabsTrigger,
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { fadeIn } from '@/lib/design/motion'
 import { 
   FileSearch, 
@@ -73,7 +74,7 @@ export default function EvidenceDetailPage() {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.error?.message || 'Failed to fetch evidence')
+          throw new Error(getApiErrorMessage(errorData))
         }
 
         const data = await response.json()
@@ -110,8 +111,8 @@ export default function EvidenceDetailPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to export evidence')
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(getApiErrorMessage(errorData))
       }
 
       const blob = await response.blob()

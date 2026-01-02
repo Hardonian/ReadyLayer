@@ -4,6 +4,7 @@ import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
+import { parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 /**
  * GET /api/v1/repos/:repoId
@@ -125,20 +126,12 @@ export async function PATCH(
       return authzResponse;
     }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch (error) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_JSON',
-            message: 'Request body must be valid JSON',
-          },
-        },
-        { status: 400 }
-      );
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
     }
+    
+    const body = bodyResult.data;
     if (!body || typeof body !== 'object') {
       return NextResponse.json(
         {

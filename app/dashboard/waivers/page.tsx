@@ -1,4 +1,5 @@
 'use client'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 
 import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
@@ -70,7 +71,7 @@ export default function WaiversPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to fetch waivers')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       const data = await response.json()
@@ -112,7 +113,7 @@ export default function WaiversPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error?.message || 'Failed to revoke waiver')
+        throw new Error(getApiErrorMessage(errorData))
       }
 
       toast({

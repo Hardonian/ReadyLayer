@@ -14,6 +14,7 @@ import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { createHash } from 'crypto';
 import { z } from 'zod';
+import { parseJsonBody } from '../../../../../lib/api-route-helpers';
 
 const updatePolicyPackSchema = z.object({
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must be semantic (e.g., 1.0.0)').optional(),
@@ -190,8 +191,12 @@ export async function PUT(
       );
     }
 
-    const body = await request.json();
-    const validated = updatePolicyPackSchema.parse(body);
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) {
+      return bodyResult.response;
+    }
+    
+    const validated = updatePolicyPackSchema.parse(bodyResult.data);
 
     // Calculate checksum if source updated
     const source = validated.source || existing.source;
