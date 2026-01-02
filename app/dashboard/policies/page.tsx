@@ -71,7 +71,7 @@ export default function PoliciesPage() {
         return
       }
 
-      const url = `/api/v1/policies${selectedOrg ? `?organizationId=${selectedOrg}` : ''}`
+      const url = `/api/v1/policies`
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

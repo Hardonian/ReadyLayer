@@ -12,7 +12,6 @@ import { githubAPIClient } from '../integrations/github/api-client';
 import { formatPolicyComment, generateStatusCheckDescription } from '../lib/git-provider-ui/comment-formatter';
 import { detectGitProvider } from '../lib/git-provider-ui';
 import { prisma } from '../lib/prisma';
-import { prisma } from '../lib/prisma';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
 import { ingestDocument, isIngestEnabled } from '../lib/rag';
@@ -443,38 +442,6 @@ async function processCIEvent(
   // This is a placeholder - would integrate with actual CI coverage reports
 }
 
-/**
- * Format review comment
- */
-function formatReviewComment(reviewResult: any): string {
-  const { issues, summary, isBlocked } = reviewResult;
-
-  let comment = `## 🔒 ReadyLayer Review Summary\n\n`;
-  comment += `**Status:** ${isBlocked ? '❌ **BLOCKED**' : '✅ **PASSED**'}\n\n`;
-  comment += `### Issues Found: ${summary.total}\n`;
-  comment += `- 🔴 **Critical:** ${summary.critical}\n`;
-  comment += `- 🟠 **High:** ${summary.high}\n`;
-  comment += `- 🟡 **Medium:** ${summary.medium}\n`;
-  comment += `- 🟢 **Low:** ${summary.low}\n\n`;
-
-  if (issues.length > 0) {
-    comment += `### Top Issues:\n\n`;
-    issues.slice(0, 10).forEach((issue: any) => {
-      comment += `- **${issue.severity.toUpperCase()}** ${issue.ruleId}: ${issue.message}\n`;
-      comment += `  - File: \`${issue.file}:${issue.line}\`\n`;
-      if (issue.fix) {
-        comment += `  - Fix: ${issue.fix}\n`;
-      }
-      comment += `\n`;
-    });
-  }
-
-  if (isBlocked) {
-    comment += `\n**This PR cannot merge until all critical and high issues are resolved.**\n`;
-  }
-
-  return comment;
-}
 
 /**
  * Start webhook processor worker

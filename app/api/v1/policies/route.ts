@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '../../../../observability/logging';
 import { requireAuth } from '../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../lib/authz';
@@ -104,9 +105,9 @@ export async function POST(request: NextRequest) {
         rules: {
           create: validated.rules.map((rule) => ({
             ruleId: rule.ruleId,
-            severityMapping: rule.severityMapping,
+            severityMapping: rule.severityMapping as Prisma.InputJsonValue,
             enabled: rule.enabled,
-            params: rule.params || null,
+            params: rule.params ? (rule.params as Prisma.InputJsonValue) : undefined,
           })),
         },
       },

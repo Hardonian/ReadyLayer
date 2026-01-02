@@ -293,7 +293,7 @@ export function formatProviderComment(
  * Get provider-specific status check description
  */
 export function getStatusCheckDescription(
-  provider: GitProvider,
+  _provider: GitProvider,
   result: {
     blocked: boolean
     score: number

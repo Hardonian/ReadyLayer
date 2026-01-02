@@ -135,22 +135,21 @@ export class TestEngineService {
       const parseResult = await codeParserService.parse(request.filePath, request.fileContent);
 
       // Get organization ID from repository
-      const repo = await prisma.repository.findUnique({
+      const repoForOrg = await prisma.repository.findUnique({
         where: { id: request.repositoryId },
         select: { organizationId: true },
       });
       
-      if (!repo) {
+      if (!repoForOrg) {
         throw new Error(`Repository ${request.repositoryId} not found`);
       }
       
-      const organizationId = repo.organizationId;
-
       // Check billing limits before generating tests
       // Note: This is a service-level check. If called from webhook, billing is already checked.
       // But if called directly from API, we need to check here.
       // We'll check billing but not throw - let the caller handle the response.
       // For webhook calls, billing is checked upstream.
+      const organizationId = repoForOrg.organizationId;
       const billingCheck = await checkBillingLimits(organizationId, {
         requireFeature: 'testEngine',
         checkLLMBudget: true,
@@ -197,20 +196,20 @@ export class TestEngineService {
       const completedAt = new Date();
 
       // Get organization ID for policy evaluation
-      const repo = await prisma.repository.findUnique({
+      const repoForPolicy = await prisma.repository.findUnique({
         where: { id: request.repositoryId },
         select: { organizationId: true },
       });
       
-      if (!repo) {
+      if (!repoForPolicy) {
         throw new Error(`Repository ${request.repositoryId} not found`);
       }
       
-      const organizationId = repo.organizationId;
+      const organizationIdForPolicy = repoForPolicy.organizationId;
 
       // Load effective policy
       const policy = await policyEngineService.loadEffectivePolicy(
-        organizationId,
+        organizationIdForPolicy,
         request.repositoryId,
         request.prSha,
         undefined
@@ -312,18 +311,19 @@ export class TestEngineService {
     const coverage = this.parseCoverage(coverageData);
 
     // Get organization ID for policy evaluation
-    const repo = await prisma.repository.findUnique({
+    const repoForCoverage = await prisma.repository.findUnique({
       where: { id: repositoryId },
       select: { organizationId: true },
     });
     
-    if (!repo) {
+    if (!repoForCoverage) {
       throw new Error(`Repository ${repositoryId} not found`);
     }
 
     // Load effective policy
+    const organizationIdForCoverage = repoForCoverage.organizationId;
     const policy = await policyEngineService.loadEffectivePolicy(
-      repo.organizationId,
+      organizationIdForCoverage,
       repositoryId,
       prSha,
       undefined

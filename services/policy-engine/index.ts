@@ -104,8 +104,8 @@ export class PolicyEngineService {
   async loadEffectivePolicy(
     organizationId: string,
     repositoryId: string | null,
-    ref?: string,
-    branch?: string
+    _ref?: string,
+    _branch?: string
   ): Promise<EffectivePolicy> {
     // Load repo-level policy if repositoryId provided
     let repoPolicyPack: PolicyPack | null = null;
@@ -125,7 +125,7 @@ export class PolicyEngineService {
     }
 
     // Load active waivers
-    const waivers = await this.loadActiveWaivers(organizationId, repositoryId, branch);
+    const waivers = await this.loadActiveWaivers(organizationId, repositoryId, _branch);
 
     // Build rules map
     const rulesMap = new Map<string, PolicyRule>();
@@ -331,7 +331,7 @@ export class PolicyEngineService {
   private async loadActiveWaivers(
     organizationId: string,
     repositoryId: string | null,
-    branch?: string
+    _branch?: string
   ): Promise<Waiver[]> {
     const now = new Date();
     const waivers = await prisma.waiver.findMany({

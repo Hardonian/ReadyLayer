@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../../../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '../../../../../../../observability/logging';
 import { requireAuth } from '../../../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../../../lib/authz';
@@ -98,9 +99,11 @@ export async function PUT(
         },
       },
       data: {
-        ...(validated.severityMapping && { severityMapping: validated.severityMapping }),
+        ...(validated.severityMapping && { severityMapping: validated.severityMapping as Prisma.InputJsonValue }),
         ...(validated.enabled !== undefined && { enabled: validated.enabled }),
-        ...(validated.params !== undefined && { params: validated.params || null }),
+        ...(validated.params !== undefined && { 
+          params: validated.params ? (validated.params as Prisma.InputJsonValue) : undefined 
+        }),
       },
     });
 

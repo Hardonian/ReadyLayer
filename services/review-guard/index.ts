@@ -360,51 +360,6 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
     }
   }
 
-  /**
-   * Determine if PR should be blocked (legacy method, kept for backward compatibility)
-   * @deprecated Use policy engine instead
-   */
-  private shouldBlock(issues: Issue[], config: ReviewConfig): boolean {
-    // Critical issues ALWAYS block (cannot disable)
-    if (issues.some((i) => i.severity === 'critical')) {
-      return true;
-    }
-
-    // High issues block by default
-    if (config.failOnHigh && issues.some((i) => i.severity === 'high')) {
-      return true;
-    }
-
-    // Medium/Low issues only block if configured
-    if (config.failOnMedium && issues.some((i) => i.severity === 'medium')) {
-      return true;
-    }
-
-    if (config.failOnLow && issues.some((i) => i.severity === 'low')) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Get blocked reason (legacy method, kept for backward compatibility)
-   * @deprecated Use policy engine instead
-   */
-  private getBlockedReason(issues: Issue[], config: ReviewConfig): string {
-    const critical = issues.filter((i) => i.severity === 'critical');
-    const high = issues.filter((i) => i.severity === 'high');
-
-    if (critical.length > 0) {
-      return `${critical.length} critical issue(s) found. Critical issues always block PR merge.`;
-    }
-
-    if (high.length > 0 && config.failOnHigh) {
-      return `${high.length} high issue(s) found. High issues block PR merge by default.`;
-    }
-
-    return 'Issues found that require resolution before merge.';
-  }
 
   /**
    * Track violations for pattern detection

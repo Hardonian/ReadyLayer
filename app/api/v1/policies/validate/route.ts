@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const log = logger.child({ requestId });
 
   try {
-    const _user = await requireAuth(request);
+    await requireAuth(request);
 
     const authzResponse = await createAuthzMiddleware({
       requiredScopes: ['read'],
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       valid: true,
       checksum,
       version: validated.version || parsedSource.version,
-      rulesCount: validated.rules?.length || parsedSource.rules?.length || 0,
+      rulesCount: validated.rules?.length || (Array.isArray(parsedSource.rules) ? parsedSource.rules.length : 0),
     });
   } catch (error) {
     log.error(error, 'Failed to validate policy');
