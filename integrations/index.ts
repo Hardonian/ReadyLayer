@@ -11,3 +11,4 @@ export * from './gitlab/api-client';
 export * from './bitbucket/webhook';
 export * from './bitbucket/api-client';
 export * from './git-provider-adapter';
+export * from './git-provider-pr-adapter';
