@@ -1,25 +1,16 @@
 /**
- * Encrypt Existing Installation Tokens (Legacy Script)
+ * Migrate Installation Tokens to Encrypted Format
  * 
- * This script encrypts all plaintext tokens in the Installation table.
- * Uses the new crypto module with key rotation support.
- * 
- * Usage:
- *   READY_LAYER_KMS_KEY=<your-key> npm run secrets:encrypt-tokens
- *   OR
- *   READY_LAYER_MASTER_KEY=<your-key> npm run secrets:encrypt-tokens
- *   OR
- *   READY_LAYER_KEYS="v1:key1;v2:key2" npm run secrets:encrypt-tokens
- * 
- * For migration to new format, use: npm run secrets:migrate-tokens
+ * Encrypts all plaintext installation tokens using the new crypto module.
+ * Safe to run multiple times (idempotent).
  */
 
 import { prisma } from '../lib/prisma';
-import { encryptToken, isEncrypted, isKeyConfigured, redactSecret } from '../lib/secrets';
+import { encryptToken, isEncrypted, isKeyConfigured, redactSecret } from '../lib/crypto';
 import { logger } from '../observability/logging';
 
-async function encryptExistingTokens() {
-  logger.info('Starting token encryption migration');
+async function migrateInstallationTokens() {
+  logger.info('Starting installation token migration');
 
   // Check if encryption keys are configured
   if (!isKeyConfigured()) {
@@ -45,7 +36,7 @@ async function encryptExistingTokens() {
 
     let encrypted = 0;
     let skipped = 0;
-    let errors = 0;
+    let failed = 0;
 
     for (const installation of installations) {
       try {
@@ -64,6 +55,14 @@ async function encryptExistingTokens() {
           }
           skipped++;
           continue;
+        }
+
+        // Check if marked as encrypted but actually plaintext (data inconsistency)
+        if (installation.tokenEncrypted && !isEncrypted(installation.accessToken)) {
+          logger.warn(
+            { installationId: installation.id, provider: installation.provider },
+            'Installation marked as encrypted but token is plaintext - re-encrypting'
+          );
         }
 
         // Encrypt plaintext token
@@ -94,7 +93,7 @@ async function encryptExistingTokens() {
           'Token encrypted successfully'
         );
       } catch (error) {
-        errors++;
+        failed++;
         logger.error(
           {
             err: error instanceof Error ? error : new Error(String(error)),
@@ -103,8 +102,9 @@ async function encryptExistingTokens() {
             providerId: installation.providerId,
             tokenPreview: redactSecret(installation.accessToken),
           },
-          'Failed to encrypt token'
+          'Failed to encrypt installation token'
         );
+        // Continue with next installation
       }
     }
 
@@ -113,21 +113,21 @@ async function encryptExistingTokens() {
         total: installations.length,
         encrypted,
         skipped,
-        errors,
+        failed,
       },
-      'Token encryption migration completed'
+      'Migration completed'
     );
 
-    if (errors > 0) {
-      logger.warn({ errors }, 'Some tokens failed to encrypt. Review logs and retry.');
+    if (failed > 0) {
+      logger.warn({ failed }, 'Some installations failed to encrypt - review logs');
       process.exit(1);
     }
+
+    logger.info('All installation tokens migrated successfully');
   } catch (error) {
     logger.error(
-      {
-        err: error instanceof Error ? error : new Error(String(error)),
-      },
-      'Token encryption migration failed'
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Migration failed'
     );
     process.exit(1);
   } finally {
@@ -135,12 +135,16 @@ async function encryptExistingTokens() {
   }
 }
 
-// Run if executed directly
-if (require.main === module) {
-  encryptExistingTokens().catch((error) => {
-    logger.error(error, 'Unhandled error in token encryption script');
+// Run migration
+migrateInstallationTokens()
+  .then(() => {
+    logger.info('Migration script completed');
+    process.exit(0);
+  })
+  .catch((error) => {
+    logger.error(
+      { err: error instanceof Error ? error : new Error(String(error)) },
+      'Migration script failed'
+    );
     process.exit(1);
   });
-}
-
-export { encryptExistingTokens };
