@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { detectGitProvider, getGitProviderUIConfig } from '@/lib/git-provider-ui'
-import { TestTube, CheckCircle2, XCircle, Clock, AlertTriangle, ExternalLink } from 'lucide-react'
-import Link from 'next/link'
+import { TestTube, CheckCircle2, XCircle, Clock, ExternalLink } from 'lucide-react'
 
 interface TestRunStatusProps {
   repository: {
@@ -302,7 +301,4 @@ function getPipelineUrl(provider: string, repoFullName: string, runId: string): 
     return `https://bitbucket.org/${repoFullName}/addon/pipelines/home#!/results/${runId}`;
   }
   return '#';
-      </CardContent>
-    </Card>
-  )
 }

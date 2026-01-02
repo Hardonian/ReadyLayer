@@ -24,7 +24,7 @@ function getStripeClient(): Stripe {
       throw new Error('STRIPE_SECRET_KEY environment variable is required. Please configure Stripe in your environment.');
     }
     stripe = new Stripe(secretKey, {
-      apiVersion: '2024-11-20.acacia',
+      apiVersion: '2023-10-16' as Stripe.LatestApiVersion,
     });
   }
   return stripe;
@@ -190,7 +190,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
     // Determine plan from subscription metadata or price ID
     let plan: 'starter' | 'growth' | 'scale' = 'starter';
     if (subscription.items.data.length > 0) {
-      const priceId = subscription.items.data[0].price.id;
       // Map Stripe price IDs to plans (configure in Stripe dashboard)
       // For now, use metadata or price lookup
       const priceMetadata = subscription.items.data[0].price.metadata;
@@ -354,6 +353,10 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void
   const log = logger.child({ invoiceId: invoice.id });
 
   try {
+    if (!invoice.customer) {
+      log.warn({ invoiceId: invoice.id }, 'Invoice has no customer');
+      return;
+    }
     const customerId = typeof invoice.customer === 'string'
       ? invoice.customer
       : invoice.customer.id;

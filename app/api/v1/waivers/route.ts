@@ -118,7 +118,6 @@ export async function POST(request: NextRequest) {
       // Don't fail waiver creation if telemetry fails
       log.warn({ error }, 'Failed to track false positive');
     }
-    });
 
     log.info({ waiverId: waiver.id, organizationId: validated.organizationId }, 'Waiver created');
 

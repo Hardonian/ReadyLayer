@@ -1,12 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { getGitProviderAdapter } from '../../../../../integrations/git-provider-adapter';
 import { getInstallationByProviderWithDecryptedToken } from '../../../../../lib/secrets/installation-helpers';
 import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
-import { githubWebhookHandler } from '../../../../../integrations/github/webhook';
-import { gitlabWebhookHandler } from '../../../../../integrations/gitlab/webhook';
-import { bitbucketWebhookHandler } from '../../../../../integrations/bitbucket/webhook';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
@@ -328,7 +325,10 @@ export async function POST(request: NextRequest) {
         artifactsUrl = pipelineUrl || artifactsUrl;
       }
     } catch (error) {
-      log.warn(error, 'Failed to fetch pipeline artifacts');
+      log.warn(
+        { err: error instanceof Error ? error : new Error(String(error)) },
+        'Failed to fetch pipeline artifacts'
+      );
       // Continue without artifacts - not a fatal error
     }
 

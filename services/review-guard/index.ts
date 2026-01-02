@@ -68,7 +68,6 @@ export interface ReviewResult {
  * - Token usage tracking for cost control
  * 
  * @example
- * ```typescript
  * const result = await reviewGuardService.review({
  *   repositoryId: 'repo_123',
  *   prNumber: 42,
@@ -79,7 +78,6 @@ export interface ReviewResult {
  * if (result.isBlocked) {
  *   console.log('PR blocked:', result.blockedReason);
  * }
- * ```
  */
 export class ReviewGuardService {
   /**
@@ -105,7 +103,6 @@ export class ReviewGuardService {
    * @throws {Error} If file parsing fails (PR blocked)
    * 
    * @example
-   * ```typescript
    * const result = await reviewGuardService.review({
    *   repositoryId: 'repo_123',
    *   prNumber: 42,
@@ -115,12 +112,11 @@ export class ReviewGuardService {
    *     { path: 'src/auth.ts', content: '...', beforeContent: '...' }
    *   ],
    *   config: {
-   *     failOnCritical: true,  // Always true
-   *     failOnHigh: true,     // Can disable with admin approval
-   *     excludedPaths: ['**/*.test.ts']
+   *     failOnCritical: true,
+   *     failOnHigh: true,
+   *     excludedPaths: ['test.ts']
    *   }
    * });
-   * ```
    */
   async review(request: ReviewRequest): Promise<ReviewResult> {
     const startedAt = new Date();
@@ -164,21 +160,21 @@ export class ReviewGuardService {
               organizationId
             );
             allIssues.push(...aiIssues);
-      } catch (error) {
-        // Handle usage limit errors with clear messaging
-        if (error instanceof UsageLimitExceededError) {
-          // Re-throw as-is to preserve error type and HTTP status
-          throw error;
-        }
-        
-        // LLM failure MUST block PR (enforcement-first)
-        throw new Error(
-          `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
-          `This PR is BLOCKED until analysis completes. ` +
-          `Cause: LLM API unavailable. ` +
-          `Action: Retry in 60 seconds or contact support@readylayer.com`
-        );
-      }
+          } catch (error) {
+            // Handle usage limit errors with clear messaging
+            if (error instanceof UsageLimitExceededError) {
+              // Re-throw as-is to preserve error type and HTTP status
+              throw error;
+            }
+            
+            // LLM failure MUST block PR (enforcement-first)
+            throw new Error(
+              `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
+              `This PR is BLOCKED until analysis completes. ` +
+              `Cause: LLM API unavailable. ` +
+              `Action: Retry in 60 seconds or contact support@readylayer.com`
+            );
+          }
         } catch (error) {
           // Parse errors MUST block PR
           throw new Error(
@@ -495,13 +491,15 @@ export class ReviewGuardService {
       }
     }
 
+    const codeBlockStart = '```';
+    const codeBlockEnd = '```';
     const prompt = `Analyze the following code for security vulnerabilities, quality issues, and potential bugs.
 
 File: ${filePath}
 
-\`\`\`
+${codeBlockStart}
 ${content}
-\`\`\`
+${codeBlockEnd}
 ${evidenceSection}
 
 Return a JSON array of issues found, each with:

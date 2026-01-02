@@ -4,7 +4,7 @@
  * POST /api/v1/billing/checkout - Create Stripe checkout session
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { prisma } from '../../../../../lib/prisma';
@@ -23,7 +23,7 @@ function getStripeClient(): Stripe {
       throw new Error('STRIPE_SECRET_KEY environment variable is required. Please configure Stripe in your environment.');
     }
     stripe = new Stripe(secretKey, {
-      apiVersion: '2024-11-20.acacia',
+      apiVersion: '2023-10-16' as Stripe.LatestApiVersion,
     });
   }
   return stripe;

@@ -106,6 +106,9 @@ model Repository {
   waivers       Waiver[]
   policyPacks   PolicyPack[]
   predictiveAlerts PredictiveAlert[]
+  aiAnomalies   AIAnomaly[]
+  aiSuggestions AIOptimizationSuggestion[]
+  tokenUsage    TokenUsage[]
 
   @@unique([fullName, provider])
   @@index([organizationId])
@@ -627,4 +630,132 @@ model PredictiveAlert {
   @@index([trustLevel])
   @@index([resolvedAt])
   @@index([createdAt])
+}
+
+// Model Performance Tracking (individual performance records)
+model ModelPerformance {
+  id             String   @id @default(cuid())
+  organizationId String
+  modelId        String
+  provider       String
+  success        Boolean
+  responseTimeMs Int      // Response time in milliseconds
+  tokensUsed     Int
+  cost           Decimal  @db.Decimal(10, 4)
+  predictionId   String?  // Optional link to prediction
+  metadata       Json?    // Additional tracking data
+  timestamp      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([provider])
+  @@index([timestamp])
+  @@index([predictionId])
+}
+
+// Model Performance Aggregates (aggregated metrics per model)
+model ModelPerformanceAggregate {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  modelId            String
+  provider           String
+  totalRequests      Int
+  successfulRequests Int
+  failedRequests     Int
+  averageResponseTime Decimal  @db.Decimal(10, 2)
+  averageTokensUsed  Int
+  averageCost        Decimal  @db.Decimal(10, 4)
+  accuracyScore      Decimal  @db.Decimal(5, 4) // 0-1
+  confidenceScore    Decimal  @db.Decimal(5, 4) // 0-1
+  trustScore         Decimal  @db.Decimal(5, 4) // 0-1
+  lastUpdated        DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, modelId, provider])
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([provider])
+  @@index([lastUpdated])
+}
+
+// Aggregated Insights (patterns, anomalies, optimizations)
+model AggregatedInsight {
+  id             String   @id @default(cuid())
+  organizationId String
+  insightType    String   // pattern, anomaly, optimization, prediction
+  confidence     Decimal  @db.Decimal(5, 4) // 0-1
+  trustLevel     Decimal  @db.Decimal(5, 4) // 0-1
+  dataPoints     Int
+  firstSeen       DateTime
+  lastSeen        DateTime
+  trend           String   // increasing, decreasing, stable
+  metadata        Json?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([insightType])
+  @@index([confidence])
+  @@index([lastSeen])
+}
+
+// Data Retention Policy (compliance configuration)
+model DataRetentionPolicy {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  gdprEnabled    Boolean  @default(true)
+  retentionDays  Int      @default(365)
+  requireConsent Boolean  @default(true)
+  anonymizePII   Boolean  @default(true)
+  allowAggregation Boolean @default(true)
+  aggregationWindow Int   @default(30) // Days
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// User Consent (GDPR consent tracking)
+model UserConsent {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  consentType    String   // data_collection, analytics, marketing, etc.
+  granted        Boolean
+  grantedAt      DateTime @default(now())
+  revokedAt      DateTime?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId, consentType])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([consentType])
+  @@index([granted])
+}
+
+// Prediction Feedback (feedback on predictions for learning)
+model PredictionFeedback {
+  id                    String    @id @default(cuid())
+  predictionId          String
+  wasCorrect            Boolean
+  actualOutcome         Json?
+  feedbackType          String    // explicit, implicit, outcome_based
+  confidenceAtPrediction Decimal   @db.Decimal(5, 4) // 0-1
+  userId                String?
+  timestamp             DateTime  @default(now())
+
+  @@index([predictionId])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([wasCorrect])
 }

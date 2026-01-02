@@ -42,14 +42,14 @@ export interface GitLabAPIClient {
   triggerPipeline(
     repo: string,
     ref: string,
-    variables?: PipelineVariable[],
-    token: string
+    token: string,
+    variables?: PipelineVariable[]
   ): Promise<Pipeline>;
   getPipeline(repo: string, pipelineId: number, token: string): Promise<Pipeline>;
   listPipelines(
     repo: string,
-    ref?: string,
-    token: string
+    token: string,
+    ref?: string
   ): Promise<Pipeline[]>;
   getPipelineArtifacts(repo: string, pipelineId: number, jobName: string, token: string): Promise<Blob>;
 }
@@ -166,8 +166,8 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
   async triggerPipeline(
     repo: string,
     ref: string,
-    variables: PipelineVariable[] = [],
-    token: string
+    token: string,
+    variables: PipelineVariable[] = []
   ): Promise<Pipeline> {
     const url = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/pipeline`;
     return this.request(url, token, {
@@ -192,8 +192,8 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
    */
   async listPipelines(
     repo: string,
-    ref: string | undefined,
-    token: string
+    token: string,
+    ref?: string
   ): Promise<Pipeline[]> {
     let url = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/pipelines`;
     if (ref) {

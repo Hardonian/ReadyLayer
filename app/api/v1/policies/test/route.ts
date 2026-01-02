@@ -3,7 +3,7 @@
  * Test policy against sample findings
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { policyEngineService } from '../../../../../services/policy-engine';
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { policyPackId, organizationId, repositoryId, findings } = validation.data;
+    const { organizationId, repositoryId, findings } = validation.data;
 
     // Load effective policy
     const policy = await policyEngineService.loadEffectivePolicy(

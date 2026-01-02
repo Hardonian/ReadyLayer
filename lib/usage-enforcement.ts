@@ -6,7 +6,7 @@
  */
 
 import { prisma } from './prisma';
-import { billingService, BillingTier } from '../billing';
+import { billingService } from '../billing';
 import { logger } from '../observability/logging';
 
 export enum LimitType {

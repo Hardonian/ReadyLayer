@@ -115,10 +115,12 @@ class GitHubPRAdapter implements GitProviderPRAdapter {
   }
 
   async updateStatusCheck(repo: string, sha: string, status: StatusCheck, token: string): Promise<void> {
+    // Map 'cancelled' to 'error' for GitHub API compatibility
+    const githubState = status.state === 'cancelled' ? 'error' : status.state;
     await githubAPIClient.updateStatusCheck(
       repo,
       sha,
-      status.state,
+      githubState as 'success' | 'failure' | 'pending' | 'error',
       status.description,
       status.context,
       token

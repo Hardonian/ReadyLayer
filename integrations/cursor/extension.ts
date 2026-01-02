@@ -5,6 +5,34 @@
  * Provides inline code review, test generation, and policy enforcement
  */
 
+// Type declarations for Cursor IDE global API
+declare const cursor: {
+  commands: {
+    registerCommand(command: string, callback: (...args: unknown[]) => Promise<void> | void): void;
+  };
+  activeEditor?: {
+    document: {
+      uri: {
+        fsPath: string;
+      };
+    };
+  };
+  window: {
+    showInformationMessage(message: string): void;
+    showWarningMessage(message: string, ...actions: string[]): Promise<string | undefined>;
+    showErrorMessage(message: string): void;
+  };
+  workspace: {
+    fs: {
+      readFile(path: string): Promise<Uint8Array>;
+    };
+    onDidSaveTextDocument(callback: (document: { uri: { fsPath: string } }) => void | Promise<void>): void;
+  };
+  env: {
+    openExternal(url: string): void;
+  };
+};
+
 interface CursorConfig {
   readyLayer: {
     enabled: boolean;
@@ -102,7 +130,7 @@ async function reviewFile(filePath: string, config: CursorConfig) {
       cursor.window.showWarningMessage(
         `Found ${result.data.issuesCount} issue(s)`,
         'View Details'
-      ).then((action) => {
+      ).then((action: string | undefined) => {
         if (action === 'View Details') {
           showIssuesPanel(result.data.issues);
         }

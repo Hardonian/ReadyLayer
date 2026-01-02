@@ -4,7 +4,7 @@
  * GET /api/v1/billing/false-positives - Get false positive metrics
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { getFalsePositiveMetrics, getRuleFalsePositiveRate } from '../../../../../lib/telemetry/false-positives';

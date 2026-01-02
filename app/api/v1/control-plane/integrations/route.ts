@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
-import { errorResponse, successResponse, validateBody, parsePagination } from '../../../../../lib/api-route-helpers';
+import { errorResponse, successResponse, validateBody } from '../../../../../lib/api-route-helpers';
 
 const integrationSchema = z.object({
   type: z.enum(['cli', 'cursor', 'vscode', 'tabnine', 'jetbrains']),
@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
       select: { organizationId: true },
     });
-    const orgIds = memberships.map((m) => m.organizationId);
+    // User's organization IDs available for future use
+    // const orgIds = memberships.map((m) => m.organizationId);
 
     // For now, return mock integrations (would be stored in DB)
     // In production, you'd have an Integration model

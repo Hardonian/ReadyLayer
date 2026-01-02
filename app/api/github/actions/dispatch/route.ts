@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    const { repositoryId, workflowId, ref, inputs } = bodyResult.data;
+    const { repositoryId, ref, inputs } = bodyResult.data;
 
     // Get repository with tenant isolation
     const repository = await prisma.repository.findUnique({
@@ -133,8 +133,8 @@ export async function POST(request: NextRequest) {
       const pipelineRun = await adapter.triggerPipeline(
         repository.fullName,
         ref,
-        variables,
-        installationWithToken.accessToken
+        installationWithToken.accessToken,
+        variables
       );
 
       // Create TestRun record

@@ -30,8 +30,8 @@ export interface GitProviderAdapter {
   triggerPipeline(
     repo: string,
     ref: string,
-    variables?: PipelineVariable[],
-    token: string
+    token: string,
+    variables?: PipelineVariable[]
   ): Promise<PipelineRun>;
 
   /**
@@ -42,7 +42,7 @@ export interface GitProviderAdapter {
   /**
    * List pipeline/workflow runs
    */
-  listPipelineRuns(repo: string, ref?: string, token: string): Promise<PipelineRun[]>;
+  listPipelineRuns(repo: string, token: string, ref?: string): Promise<PipelineRun[]>;
 
   /**
    * Get pipeline artifacts
@@ -57,8 +57,8 @@ class GitHubAdapter implements GitProviderAdapter {
   async triggerPipeline(
     repo: string,
     ref: string,
-    variables: PipelineVariable[] = [],
-    token: string
+    token: string,
+    variables: PipelineVariable[] = []
   ): Promise<PipelineRun> {
     // GitHub uses workflow_dispatch
     // For MVP, we'll use a default workflow ID
@@ -100,7 +100,7 @@ class GitHubAdapter implements GitProviderAdapter {
     };
   }
 
-  async listPipelineRuns(repo: string, ref: string | undefined, token: string): Promise<PipelineRun[]> {
+  async listPipelineRuns(repo: string, token: string, ref?: string): Promise<PipelineRun[]> {
     const workflowId = '.github/workflows/readylayer-tests.yml';
     const runs = await githubAPIClient.listWorkflowRuns(repo, workflowId, ref, token);
     return (runs.workflow_runs || []).map(run => ({
@@ -117,7 +117,8 @@ class GitHubAdapter implements GitProviderAdapter {
       const artifacts = await githubAPIClient.listWorkflowRunArtifacts(repo, parseInt(runId, 10), token);
       if (artifacts.artifacts && artifacts.artifacts.length > 0) {
         const artifact = artifacts.artifacts[0];
-        return await githubAPIClient.downloadArtifact(repo, artifact.id, token);
+        const arrayBuffer = await githubAPIClient.downloadArtifact(repo, artifact.id, token);
+        return new Blob([arrayBuffer]);
       }
     } catch (error) {
       // Return null if artifacts not found
@@ -133,10 +134,10 @@ class GitLabAdapter implements GitProviderAdapter {
   async triggerPipeline(
     repo: string,
     ref: string,
-    variables: PipelineVariable[] = [],
-    token: string
+    token: string,
+    variables: PipelineVariable[] = []
   ): Promise<PipelineRun> {
-    const pipeline = await gitlabAPIClient.triggerPipeline(repo, ref, variables, token);
+    const pipeline = await gitlabAPIClient.triggerPipeline(repo, ref, token, variables);
     return {
       id: String(pipeline.id),
       status: pipeline.status === 'success' ? 'completed' : pipeline.status === 'failed' ? 'failed' : pipeline.status === 'running' ? 'in_progress' : 'pending',
@@ -157,8 +158,8 @@ class GitLabAdapter implements GitProviderAdapter {
     };
   }
 
-  async listPipelineRuns(repo: string, ref: string | undefined, token: string): Promise<PipelineRun[]> {
-    const pipelines = await gitlabAPIClient.listPipelines(repo, ref, token);
+  async listPipelineRuns(repo: string, token: string, ref?: string): Promise<PipelineRun[]> {
+    const pipelines = await gitlabAPIClient.listPipelines(repo, token, ref);
     return pipelines.map(pipeline => ({
       id: String(pipeline.id),
       status: pipeline.status === 'success' ? 'completed' : pipeline.status === 'failed' ? 'failed' : pipeline.status === 'running' ? 'in_progress' : 'pending',
@@ -198,11 +199,11 @@ class BitbucketAdapter implements GitProviderAdapter {
   async triggerPipeline(
     repo: string,
     ref: string,
-    variables: PipelineVariable[] = [],
-    token: string
+    token: string,
+    variables: PipelineVariable[] = []
   ): Promise<PipelineRun> {
     const { workspace, repoSlug } = this.parseRepo(repo);
-    const pipeline = await bitbucketAPIClient.triggerPipeline(workspace, repoSlug, ref, variables, token);
+    const pipeline = await bitbucketAPIClient.triggerPipeline(workspace, repoSlug, ref, token, variables);
     return {
       id: pipeline.uuid,
       status: pipeline.state.name === 'SUCCESSFUL' ? 'completed' : pipeline.state.name === 'FAILED' ? 'failed' : pipeline.state.name === 'INPROGRESS' ? 'in_progress' : 'pending',
@@ -222,9 +223,9 @@ class BitbucketAdapter implements GitProviderAdapter {
     };
   }
 
-  async listPipelineRuns(repo: string, ref: string | undefined, token: string): Promise<PipelineRun[]> {
+  async listPipelineRuns(repo: string, token: string, ref?: string): Promise<PipelineRun[]> {
     const { workspace, repoSlug } = this.parseRepo(repo);
-    const response = await bitbucketAPIClient.listPipelines(workspace, repoSlug, ref, token);
+    const response = await bitbucketAPIClient.listPipelines(workspace, repoSlug, token, ref);
     return (response.values || []).map(pipeline => ({
       id: pipeline.uuid,
       status: pipeline.state.name === 'SUCCESSFUL' ? 'completed' : pipeline.state.name === 'FAILED' ? 'failed' : pipeline.state.name === 'INPROGRESS' ? 'in_progress' : 'pending',
