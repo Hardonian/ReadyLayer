@@ -188,7 +188,11 @@ export function InteractivePRDemo({
                   onClick={(e) => {
                     e.stopPropagation()
                     // In real app, this would link to audit trail
-                    console.log('View audit trail:', check.reviewId)
+                    // TODO: Link to /dashboard/evidence/[bundleId] or review detail page
+                    if (check.reviewId && typeof window !== 'undefined') {
+                      // Navigate to audit trail when implemented
+                      window.location.href = `/dashboard/evidence?reviewId=${check.reviewId}`
+                    }
                   }}
                   aria-label="View audit trail"
                 >
