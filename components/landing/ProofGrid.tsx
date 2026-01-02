@@ -16,6 +16,10 @@ import {
   Bot,
   BarChart3,
   Eye,
+  Database,
+  Brain,
+  Code2,
+  Search,
 } from 'lucide-react'
 
 interface ProofCard {
@@ -149,6 +153,67 @@ const proofCards: ProofCard[] = [
       </div>
     ),
   },
+  {
+    id: 'evidence',
+    icon: Database,
+    title: 'Evidence bundles (audit trail)',
+    visual: (
+      <div className="mt-2 text-xs text-text-muted">
+        <div>✓ Review ID: rev-abc123</div>
+        <div>✓ Evidence bundle exported</div>
+        <div>✓ Full audit trail</div>
+      </div>
+    ),
+  },
+  {
+    id: 'policy',
+    icon: FileCode,
+    title: 'Policy as code enforcement',
+    visual: (
+      <div className="mt-2 text-xs font-mono text-text-muted">
+        <div>policy.yaml</div>
+        <div className="text-accent">rules: [security, performance]</div>
+        <div className="text-success">✓ Enforced</div>
+      </div>
+    ),
+  },
+  {
+    id: 'self-learning',
+    icon: Brain,
+    title: 'Self-learning from patterns',
+    visual: (
+      <div className="mt-2 text-xs text-text-muted">
+        <div>✓ Pattern detection</div>
+        <div>✓ Repeated mistakes flagged</div>
+        <div>✓ Optimization suggestions</div>
+      </div>
+    ),
+  },
+  {
+    id: 'ide-integration',
+    icon: Code2,
+    title: 'IDE integration (VS Code, JetBrains)',
+    visual: (
+      <div className="flex items-center gap-1 mt-2">
+        <div className="w-2 h-2 rounded-full bg-success" />
+        <span className="text-xs text-text-muted">VS Code</span>
+        <div className="w-2 h-2 rounded-full bg-success ml-2" />
+        <span className="text-xs text-text-muted">JetBrains</span>
+      </div>
+    ),
+  },
+  {
+    id: 'rag-context',
+    icon: Search,
+    title: 'RAG-powered context awareness',
+    visual: (
+      <div className="mt-2 text-xs text-text-muted">
+        <div>✓ Codebase context</div>
+        <div>✓ Pattern matching</div>
+        <div>✓ Smart suggestions</div>
+      </div>
+    ),
+  },
 ]
 
 export function ProofGrid() {
@@ -173,7 +238,7 @@ export function ProofGrid() {
           </p>
         </motion.div>
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           variants={prefersReducedMotion ? fadeIn : staggerContainer}
           initial="hidden"
           whileInView="visible"

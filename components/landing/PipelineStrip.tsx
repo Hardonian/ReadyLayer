@@ -6,7 +6,6 @@ import { Container } from '@/components/ui/container'
 import { Badge } from '@/components/ui/badge'
 import { fadeIn, slideUp } from '@/lib/design/motion'
 import { GitBranch, Shield, TestTube, FileText, CheckCircle2, ArrowRight, Bot, BarChart3, Eye } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface PipelineNode {
   id: string

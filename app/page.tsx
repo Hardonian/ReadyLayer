@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import { LoadingState } from '@/components/ui'
-import { HeroProof, PipelineStrip, ProofGrid } from '@/components/landing'
+import { HeroProof, PipelineStrip, ProofGrid, ValueDrivers } from '@/components/landing'
 import { FeatureShowcase } from '@/components/feature-showcase'
 
 export default function Home() {
@@ -60,6 +60,9 @@ export default function Home() {
 
       {/* Proof Grid */}
       <ProofGrid />
+
+      {/* Value Drivers */}
+      <ValueDrivers />
 
       {/* Feature Showcase (for authenticated users) */}
       {user && <FeatureShowcase />}

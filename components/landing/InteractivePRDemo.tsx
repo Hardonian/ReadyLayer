@@ -25,9 +25,7 @@ import {
 import type {
   PRCheck,
   CheckStatus,
-  CodeDiff,
   Finding,
-  DocChange,
 } from '@/content/demo/prDemoFixtures'
 import {
   demoChecks,
@@ -330,35 +328,34 @@ export function InteractivePRDemo({
               <span>All checks traceable</span>
             </div>
           </div>
-            <div className="flex items-center gap-2">
-              {state === 'idle' && (
-                <button
-                  onClick={handlePlay}
-                  className="text-xs px-3 py-1 rounded-md bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
-                  aria-label="Play demo"
-                >
-                  Play
-                </button>
-              )}
-              {state === 'playing' && (
-                <button
-                  onClick={handlePause}
-                  className="text-xs px-3 py-1 rounded-md bg-surface-muted hover:bg-surface-hover transition-colors"
-                  aria-label="Pause demo"
-                >
-                  Pause
-                </button>
-              )}
-              {(state === 'paused' || state === 'completed') && (
-                <button
-                  onClick={handleReset}
-                  className="text-xs px-3 py-1 rounded-md bg-surface-muted hover:bg-surface-hover transition-colors"
-                  aria-label="Reset demo"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
+          <div className="flex items-center gap-2 mt-2">
+            {state === 'idle' && (
+              <button
+                onClick={handlePlay}
+                className="text-xs px-3 py-1 rounded-md bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
+                aria-label="Play demo"
+              >
+                Play
+              </button>
+            )}
+            {state === 'playing' && (
+              <button
+                onClick={handlePause}
+                className="text-xs px-3 py-1 rounded-md bg-surface-muted hover:bg-surface-hover transition-colors"
+                aria-label="Pause demo"
+              >
+                Pause
+              </button>
+            )}
+            {(state === 'paused' || state === 'completed') && (
+              <button
+                onClick={handleReset}
+                className="text-xs px-3 py-1 rounded-md bg-surface-muted hover:bg-surface-hover transition-colors"
+                aria-label="Reset demo"
+              >
+                Reset
+              </button>
+            )}
           </div>
         </CardHeader>
 
