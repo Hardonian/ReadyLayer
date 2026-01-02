@@ -50,6 +50,15 @@ model Organization {
   costTracking  CostTracking[]
   policyPacks   PolicyPack[]
   waivers       Waiver[]
+  aiAnomalies   AIAnomaly[]
+  aiSuggestions AIOptimizationSuggestion[]
+  tokenUsage    TokenUsage[]
+  modelPerformances ModelPerformance[]
+  modelPerformanceAggregates ModelPerformanceAggregate[]
+  aggregatedInsights AggregatedInsight[]
+  dataRetentionPolicy DataRetentionPolicy?
+  userConsents UserConsent[]
+  predictiveAlerts PredictiveAlert[]
 
   @@index([slug])
 }
@@ -96,6 +105,7 @@ model Repository {
   jobs          Job[]
   waivers       Waiver[]
   policyPacks   PolicyPack[]
+  predictiveAlerts PredictiveAlert[]
 
   @@unique([fullName, provider])
   @@index([organizationId])
@@ -180,6 +190,7 @@ model Review {
 
   violations     Violation[]
   evidenceBundle EvidenceBundle?
+  tokenUsage     TokenUsage[]
 
   @@unique([repositoryId, prNumber, prSha])
   @@index([repositoryId])
@@ -491,5 +502,129 @@ model EvidenceBundle {
   @@index([testId])
   @@index([docId])
   @@index([policyChecksum])
+  @@index([createdAt])
+}
+
+// AI Anomaly Detection Models
+
+// AI Anomaly (tracked anomalies: drift, context slips, hallucinations, token waste)
+model AIAnomaly {
+  id          String   @id @default(cuid())
+  repositoryId String
+  organizationId String
+  type        String // drift, context_slip, hallucination, token_waste, repeated_mistake
+  severity    String // low, medium, high, critical
+  description String   @db.Text
+  file        String?
+  line        Int?
+  metadata    Json? // Additional anomaly data
+  detectedAt  DateTime @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  repository  Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId])
+  @@index([organizationId])
+  @@index([type])
+  @@index([severity])
+  @@index([detectedAt])
+  @@index([resolvedAt])
+}
+
+// AI Optimization Suggestion (personalized suggestions for developers)
+model AIOptimizationSuggestion {
+  id          String   @id @default(cuid())
+  repositoryId String?
+  organizationId String
+  type        String // system_prompt, fine_tuning, context_optimization, model_selection
+  difficulty  String // easy, intermediate, advanced
+  title       String
+  description String   @db.Text
+  impact      String // low, medium, high
+  effort      String // low, medium, high
+  stack       String[] // e.g., ['react', 'typescript']
+  llmAccess   String[] // e.g., ['openai', 'anthropic']
+  codeExample String?  @db.Text
+  steps       Json // Array of step strings
+  estimatedSavings Json? // { tokens, cost, time }
+  status      String   @default("pending") // pending, in_progress, completed, dismissed
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  repository  Repository?  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId])
+  @@index([organizationId])
+  @@index([type])
+  @@index([difficulty])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Token Usage Tracking (detailed token usage per review/request)
+model TokenUsage {
+  id             String   @id @default(cuid())
+  repositoryId   String?
+  organizationId String
+  reviewId       String?
+  service        String // review, test_generation, doc_sync
+  provider       String // openai, anthropic
+  model          String
+  inputTokens    Int
+  outputTokens   Int
+  totalTokens    Int
+  cost           Decimal  @db.Decimal(10, 4)
+  contextSize    Int? // Size of context sent
+  wastePercentage Decimal? @db.Decimal(5, 2) // Estimated waste percentage
+  metadata       Json? // Additional tracking data
+  createdAt      DateTime @default(now())
+
+  repository Repository? @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  review     Review?    @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@index([repositoryId])
+  @@index([organizationId])
+  @@index([reviewId])
+  @@index([service])
+  @@index([createdAt])
+}
+
+// Predictive Alerts (predictions made by the system)
+model PredictiveAlert {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  repositoryId       String?
+  alertType          String // anomaly, drift, token_waste, repeated_mistake, security, quality
+  severity           String // low, medium, high, critical
+  confidence         Decimal  @db.Decimal(5, 4) // 0-1
+  trustLevel         String // low, medium, high, very_high
+  prediction         String   @db.Text
+  rationale          String   @db.Text
+  suggestedAction    String   @db.Text
+  estimatedLikelihood Decimal @db.Decimal(5, 4) // 0-1
+  historicalAccuracy Decimal? @db.Decimal(5, 4)
+  dataPoints         Int
+  metadata           Json? // Confidence score details
+  resolvedAt         DateTime?
+  wasCorrect         Boolean? // Feedback after resolution
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  repository   Repository?  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([repositoryId])
+  @@index([alertType])
+  @@index([severity])
+  @@index([confidence])
+  @@index([trustLevel])
+  @@index([resolvedAt])
   @@index([createdAt])
 }

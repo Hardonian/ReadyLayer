@@ -6,13 +6,16 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { llmService, LLMRequest } from '../llm';
+import { llmService, LLMRequest, LLMResponse } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
 import { schemaReconciliationService } from '../schema-reconciliation';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { UsageLimitExceededError } from '../../lib/usage-enforcement';
+import { aiAnomalyDetectionService } from '../ai-anomaly-detection';
+import { selfLearningService } from '../self-learning';
+import { predictiveDetectionService } from '../predictive-detection';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -243,6 +246,46 @@ export class ReviewGuardService {
       // Track violations for pattern detection (only non-waived)
       await this.trackViolations(request.repositoryId, review.id, evaluationResult.nonWaivedFindings);
 
+      // Track token usage for anomaly detection
+      await this.trackTokenUsage(review.id, request.repositoryId, organizationId);
+
+      // Record model performance for self-learning
+      await this.recordModelPerformance(
+        organizationId,
+        request.repositoryId,
+        review.id,
+        evaluationResult,
+        completedAt.getTime() - startedAt.getTime()
+      );
+
+      // Generate predictive alerts
+      try {
+        const predictiveAlerts = await predictiveDetectionService.predictIssues({
+          repositoryId: request.repositoryId,
+          organizationId,
+          codeContext: request.diff,
+          recentActivity: [
+            {
+              type: 'review',
+              timestamp: completedAt,
+              metadata: {
+                prNumber: request.prNumber,
+                issuesFound: summary.total,
+                isBlocked,
+              },
+            },
+          ],
+        });
+
+        // Store high-confidence alerts
+        for (const alert of predictiveAlerts.filter((a) => a.confidence.finalConfidence > 0.7)) {
+          // Alerts are stored by predictive detection service
+        }
+      } catch (error) {
+        // Don't fail review if predictive detection fails
+        console.error('Predictive detection failed:', error);
+      }
+
       return {
         id: review.id,
         status: isBlocked ? 'blocked' : 'completed',
@@ -278,6 +321,18 @@ export class ReviewGuardService {
         `Review ID: ${review.id}`
       );
     }
+  }
+
+  /**
+   * Track token usage for anomaly detection
+   */
+  private async trackTokenUsage(
+    reviewId: string,
+    repositoryId: string,
+    organizationId: string
+  ): Promise<void> {
+    // Token usage is tracked per LLM call in recordTokenUsage
+    // This method can be used for aggregate tracking if needed
   }
 
   /**
@@ -351,6 +406,10 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
 
     try {
       const response = await llmService.complete(llmRequest);
+      
+      // Track token usage for anomaly detection
+      await this.recordTokenUsage(response, llmRequest.prompt, repositoryId, organizationId, 'review');
+
       const issues = JSON.parse(response.content) as Issue[];
 
       // Validate AI output
@@ -369,6 +428,83 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
         `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
         `Cannot complete AI-aware security analysis.`
       );
+    }
+  }
+
+  /**
+   * Record token usage for anomaly detection
+   */
+  private async recordTokenUsage(
+    response: LLMResponse,
+    prompt: string,
+    repositoryId: string,
+    organizationId: string,
+    service: string
+  ): Promise<void> {
+    try {
+      // Estimate input tokens (rough: ~4 chars per token)
+      const estimatedInputTokens = Math.ceil(prompt.length / 4);
+      
+      // Calculate waste percentage (simplified - would need more sophisticated analysis)
+      const totalTokens = response.tokensUsed;
+      const wastePercentage = totalTokens > 50000 ? 20 : totalTokens > 20000 ? 10 : 5;
+
+      const tokenUsage = await prisma.tokenUsage.create({
+        data: {
+          repositoryId,
+          organizationId,
+          service,
+          provider: response.model.includes('claude') ? 'anthropic' : 'openai',
+          model: response.model,
+          inputTokens: estimatedInputTokens,
+          outputTokens: response.tokensUsed - estimatedInputTokens,
+          totalTokens: response.tokensUsed,
+          cost: response.cost,
+          wastePercentage,
+        },
+      });
+
+      // Record model performance for self-learning
+      await selfLearningService.recordModelPerformance(organizationId, response.model, 
+        response.model.includes('claude') ? 'anthropic' : 'openai', {
+        success: true,
+        responseTime: 0, // Would track actual response time
+        tokensUsed: response.tokensUsed,
+        cost: Number(response.cost),
+        predictionId: tokenUsage.id,
+      });
+    } catch (error) {
+      // Don't fail review if token tracking fails
+      console.error('Failed to track token usage:', error);
+    }
+  }
+
+  /**
+   * Record model performance for self-learning
+   */
+  private async recordModelPerformance(
+    organizationId: string,
+    repositoryId: string,
+    reviewId: string,
+    evaluationResult: any,
+    durationMs: number
+  ): Promise<void> {
+    try {
+      // Get model used (would track which model was used)
+      const modelId = 'gpt-4-turbo-preview'; // Default, would be tracked
+      const provider = 'openai'; // Default, would be tracked
+
+      // Record performance
+      await selfLearningService.recordModelPerformance(organizationId, modelId, provider, {
+        success: evaluationResult.blocked !== undefined,
+        responseTime: durationMs,
+        tokensUsed: 0, // Would track actual tokens
+        cost: 0, // Would track actual cost
+        predictionId: reviewId,
+      });
+    } catch (error) {
+      // Don't fail review if performance tracking fails
+      console.error('Failed to record model performance:', error);
     }
   }
 
