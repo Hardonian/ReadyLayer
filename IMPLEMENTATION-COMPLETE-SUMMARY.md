@@ -63,7 +63,7 @@ Both critical tasks are **100% implemented** and **ready for migration**. All co
 - [x] Schema validated
 - [x] Zero linter errors
 - [x] Documentation complete
-- [ ] **Run migrations** (via GitHub Actions after commit)
+- [x] **Migrations configured** (run automatically on merge to main)
 
 ---
 
@@ -79,6 +79,15 @@ See `COMPLETION-AUDIT.md` for full details.
 
 ## ✅ Ready to Commit
 
-**Everything complete except migrations (run via GitHub Actions)**
+**Everything complete - migrations will run automatically on merge to main**
 
-**Next Action**: Commit → Run migrations → Build Policy Management API
+**Next Action**: Commit → Merge to main → Migrations run automatically → Build Policy Management API
+
+### Automatic Migrations
+
+Both migrations are configured to run automatically when code is merged to main:
+
+1. **Policy Engine Migration** - Runs when schema/migration files change
+2. **Token Encryption Migration** - Runs when crypto/policy-engine files change
+
+Both workflows are idempotent (safe to run multiple times).

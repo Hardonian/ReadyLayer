@@ -186,10 +186,10 @@ Expose policy management via REST API for programmatic and UI access.
 - [x] Schema validated
 - [x] Linting passed
 
-### Post-Commit (Via GitHub Actions)
-- [ ] Run Policy Engine migration (`00000000000004_policy_engine.sql`)
-- [ ] Run Token Encryption migration (`migrate-tokens.yml` workflow)
-- [ ] Verify migrations successful
+### Post-Commit (Automatic via GitHub Actions)
+- [x] **Policy Engine migration** - Runs automatically on merge to main (`policy-engine-migration.yml`)
+- [x] **Token Encryption migration** - Runs automatically on merge to main (`migrate-tokens.yml`)
+- [ ] Verify migrations successful (check GitHub Actions logs)
 - [ ] Test webhook processing (ensure decryption works)
 
 ### Next Sprint (Policy Management API)
@@ -228,7 +228,8 @@ Expose policy management via REST API for programmatic and UI access.
 - `/lib/crypto/index.ts` - Crypto module
 - `/supabase/migrations/00000000000004_policy_engine.sql` - DB migration
 - `/scripts/migrate-installation-tokens.ts` - Token migration script
-- `/.github/workflows/migrate-tokens.yml` - GitHub Actions workflow
+- `/.github/workflows/migrate-tokens.yml` - Token encryption workflow (auto-runs on main)
+- `/.github/workflows/policy-engine-migration.yml` - Policy engine migration workflow (auto-runs on main)
 - `/docs/ENCRYPTION-MIGRATION.md` - Migration guide
 - `/MIGRATION-QUICK-START.md` - Quick start guide
 - `/RUN-MIGRATION.md` - Run instructions
