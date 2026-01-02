@@ -85,11 +85,11 @@ export default function NewPolicyPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const policy = await response.json()
+      const policy = (await response.json()) as { id?: string }
 
       toast({
         title: 'Success',

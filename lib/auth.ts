@@ -63,10 +63,11 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthUs
       select: { organizationId: true },
     });
 
+    const userMetadata = supabaseUser.user_metadata as { name?: string } | null | undefined;
     return {
       id: supabaseUser.id,
       email: supabaseUser.email,
-      name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0],
+      name: userMetadata?.name || supabaseUser.email?.split('@')[0],
       organizationIds: memberships.map((m: { organizationId: string }) => m.organizationId),
     };
   } catch (error) {

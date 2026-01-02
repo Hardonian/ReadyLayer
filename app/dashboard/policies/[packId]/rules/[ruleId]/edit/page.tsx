@@ -69,12 +69,12 @@ export default function EditRulePage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = await response.json()
-        const foundRule = data.rules.find((r: PolicyRule) => r.ruleId === ruleId)
+        const data = (await response.json()) as { rules?: PolicyRule[] }
+        const foundRule = data.rules?.find((r) => r.ruleId === ruleId)
         
         if (!foundRule) {
           setError('Rule not found')
@@ -124,7 +124,7 @@ export default function EditRulePage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 

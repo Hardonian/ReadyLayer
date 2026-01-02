@@ -81,9 +81,9 @@ export default function RepositoryDetailPage() {
           throw new Error('Failed to fetch repository')
         }
 
-        const repoData = await repoResponse.json()
+        const repoData = (await repoResponse.json()) as { enabled?: boolean }
         setRepo(repoData)
-        setEnabled(repoData.enabled)
+        setEnabled(repoData.enabled ?? false)
 
         // Fetch reviews for this repo
         const reviewsResponse = await fetch(`/api/v1/reviews?repositoryId=${repoId}&limit=100`, {
@@ -93,7 +93,7 @@ export default function RepositoryDetailPage() {
         })
 
         if (reviewsResponse.ok) {
-          const reviewsData = await reviewsResponse.json()
+          const reviewsData = (await reviewsResponse.json()) as { reviews?: unknown[] }
           const reviews = reviewsData.reviews || []
           
           interface ReviewItem {
@@ -182,7 +182,7 @@ export default function RepositoryDetailPage() {
       } else {
         // Revert on error
         setEnabled(enabled)
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         toast({
           variant: 'destructive',
           title: 'Failed to update repository',

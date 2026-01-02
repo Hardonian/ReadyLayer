@@ -53,7 +53,7 @@ export async function parseJsonBody(
   request: NextRequest
 ): Promise<{ success: true; data: unknown } | { success: false; response: NextResponse }> {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as unknown;
     return { success: true, data: body };
   } catch (error) {
     return {

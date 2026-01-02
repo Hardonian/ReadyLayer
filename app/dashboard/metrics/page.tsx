@@ -68,9 +68,6 @@ export default function MetricsPage() {
           throw new Error('Failed to fetch reviews')
         }
 
-        const reviewsData = await reviewsResponse.json()
-        const reviews = reviewsData.reviews || []
-
         // Calculate metrics
         const now = new Date()
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -87,7 +84,9 @@ export default function MetricsPage() {
           }
         }
 
-        const reviewsTyped = reviews as ReviewItem[]
+        const reviewsData = (await reviewsResponse.json()) as { reviews?: ReviewItem[] }
+        const reviews = reviewsData.reviews || []
+        const reviewsTyped = reviews
 
         const reviewsThisWeek = reviewsTyped.filter((r) => 
           new Date(r.createdAt) >= weekAgo
@@ -120,12 +119,14 @@ export default function MetricsPage() {
             'Authorization': `Bearer ${session.access_token}`,
           },
         })
-        const reposData = reposResponse.ok ? await reposResponse.json() : { repositories: [] }
         interface RepoItem {
           enabled: boolean
         }
+        const reposData = reposResponse.ok 
+          ? (await reposResponse.json()) as { repositories?: RepoItem[] }
+          : { repositories: [] as RepoItem[] }
 
-        const repos = (reposData.repositories || []) as RepoItem[]
+        const repos = reposData.repositories || []
         const activeRepos = repos.filter((r) => r.enabled).length
 
         setMetrics({

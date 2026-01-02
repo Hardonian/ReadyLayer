@@ -87,7 +87,7 @@ export function TestRunStatus({
           throw new Error(`Failed to fetch test runs: ${response.statusText}`)
         }
 
-        const data = await response.json()
+        const data = (await response.json()) as { data?: { testRuns?: unknown[] } }
         if (data.data?.testRuns && data.data.testRuns.length > 0) {
           // Get the most recent test run
           setTestRun(data.data.testRuns[0])

@@ -102,11 +102,11 @@ export default function PolicyDetailPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = await response.json()
+        const data = (await response.json()) as { repository?: unknown }
         setPolicy(data)
         setLoading(false)
         
@@ -150,7 +150,7 @@ export default function PolicyDetailPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 

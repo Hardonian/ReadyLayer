@@ -64,13 +64,13 @@ export default function EditPolicyPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = await response.json()
+        const data = (await response.json()) as { version?: string; source?: string }
         setPolicy(data)
-        setVersion(data.version)
+        setVersion(data.version ?? '')
         setSource(data.source)
         setLoading(false)
       } catch (err) {
@@ -111,7 +111,7 @@ export default function EditPolicyPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 

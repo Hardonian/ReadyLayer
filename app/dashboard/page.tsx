@@ -164,11 +164,11 @@ export default function DashboardPage() {
           })
 
           if (!reposResponse.ok) {
-            const errorData = await reposResponse.json().catch(() => ({}))
+            const errorData = (await reposResponse.json().catch(() => ({}))) as Record<string, unknown>
             throw new Error(getApiErrorMessage(errorData))
           }
 
-          reposData = await reposResponse.json()
+          reposData = (await reposResponse.json()) as { repositories?: Repository[]; pagination?: { total: number } }
         } catch (error) {
           if (error instanceof Error && error.name === 'TimeoutError') {
             throw new Error('Request timed out while fetching repositories')
@@ -190,7 +190,7 @@ export default function DashboardPage() {
           })
 
           if (reviewsResponse.ok) {
-            reviewsData = await reviewsResponse.json()
+            reviewsData = (await reviewsResponse.json()) as { reviews?: Review[]; pagination?: { total: number } }
             setReviews(reviewsData.reviews || [])
           }
           // Silently handle failed review fetch - not critical for dashboard
@@ -227,11 +227,11 @@ export default function DashboardPage() {
           })
           
           if (usageResponse.ok) {
-            const usageData = await usageResponse.json()
+            const usageData = (await usageResponse.json()) as { data?: { organizationId?: string } }
             setUsageStats(usageData.data)
             
             // Set organizationId from response if available
-            if (usageData.data.organizationId) {
+            if (usageData.data?.organizationId) {
               setOrganizationId(usageData.data.organizationId)
             } else if (repositories.length > 0) {
               // Fallback: get from first repo
@@ -240,7 +240,7 @@ export default function DashboardPage() {
                 headers: {
                   'Authorization': `Bearer ${session.access_token}`,
                 },
-              }).then((r) => r.ok ? r.json() : null).catch(() => null)
+              }).then((r) => r.ok ? (r.json() as Promise<{ data?: { organizationId?: string } }>) : null).catch(() => null)
               
               if (repoDetails?.data?.organizationId) {
                 setOrganizationId(repoDetails.data.organizationId)
@@ -485,7 +485,7 @@ export default function DashboardPage() {
                         }
                       )
                       if (response.ok) {
-                        const data = await response.json()
+                        const data = (await response.json()) as Record<string, unknown>
                         setAiOptimization(data)
                       }
                     } catch (err) {
@@ -639,7 +639,7 @@ export default function DashboardPage() {
                           }
                         )
                         if (response.ok) {
-                          const data = await response.json()
+                          const data = (await response.json()) as Record<string, unknown>
                           setAiOptimization(data)
                         }
                       } catch (err) {

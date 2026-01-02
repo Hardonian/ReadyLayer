@@ -281,8 +281,11 @@ export function isEncrypted(value: string): boolean {
 
   // Check for JSON format (new)
   try {
-    const parsed = JSON.parse(value);
-    return parsed.ciphertext && parsed.iv && parsed.tag && parsed.keyVersion;
+    const parsed = JSON.parse(value) as Record<string, unknown>;
+    return typeof parsed.ciphertext === 'string' && 
+           typeof parsed.iv === 'string' && 
+           typeof parsed.tag === 'string' && 
+           typeof parsed.keyVersion === 'number';
   } catch {
     // Not JSON
   }

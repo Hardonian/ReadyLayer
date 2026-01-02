@@ -81,11 +81,11 @@ export default function PoliciesPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const data = await response.json()
+      const data = (await response.json()) as { policies?: unknown[] }
       setPolicies(data.policies || [])
       setLoading(false)
     } catch (err) {
@@ -123,7 +123,7 @@ export default function PoliciesPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
         throw new Error(getApiErrorMessage(errorData))
       }
 

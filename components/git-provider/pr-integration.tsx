@@ -40,7 +40,14 @@ export function PRIntegration({ repository, prNumber, prSha, reviewId }: PRInteg
         if (reviewId) {
           const response = await fetch(`/api/v1/reviews/${reviewId}`)
           if (response.ok) {
-            const review = await response.json()
+            const review = (await response.json()) as { 
+              isBlocked?: boolean
+              result?: {
+                policyScore?: number
+                rulesFired?: string[]
+                summary?: { total?: number }
+              }
+            }
             // Extract policy result from review
             setPolicyResult({
               blocked: review.isBlocked || false,
@@ -54,9 +61,9 @@ export function PRIntegration({ repository, prNumber, prSha, reviewId }: PRInteg
         // Fetch evidence bundle if available
         const evidenceResponse = await fetch(`/api/v1/evidence?reviewId=${reviewId}`)
         if (evidenceResponse.ok) {
-          const evidenceData = await evidenceResponse.json()
+          const evidenceData = (await evidenceResponse.json()) as { evidence?: Array<{ id?: string }> }
           if (evidenceData.evidence && evidenceData.evidence.length > 0) {
-            setEvidenceBundleId(evidenceData.evidence[0].id)
+            setEvidenceBundleId(evidenceData.evidence[0].id || '')
           }
         }
       } catch (error) {
