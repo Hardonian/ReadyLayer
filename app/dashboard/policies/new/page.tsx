@@ -60,7 +60,7 @@ export default function NewPolicyPage() {
       // Parse source to extract rules if needed
       let parsedSource: Record<string, unknown>
       try {
-        parsedSource = JSON.parse(source)
+        parsedSource = JSON.parse(source) as Record<string, unknown>
       } catch {
         setError('Invalid JSON in policy source')
         setLoading(false)

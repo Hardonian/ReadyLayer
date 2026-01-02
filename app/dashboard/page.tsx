@@ -227,12 +227,20 @@ export default function DashboardPage() {
           })
           
           if (usageResponse.ok) {
-            const usageData = (await usageResponse.json()) as { data?: { organizationId?: string } }
-            setUsageStats(usageData.data)
+            const usageData = (await usageResponse.json()) as { data?: Partial<UsageStats> & { organizationId?: string } }
+            // Only set usage stats if we have valid data structure
+            const usageDataValue = usageData.data
+            if (usageDataValue && 
+                usageDataValue.llmTokens && 
+                usageDataValue.runs && 
+                usageDataValue.concurrentJobs && 
+                usageDataValue.budget) {
+              setUsageStats(usageDataValue as UsageStats)
+            }
             
             // Set organizationId from response if available
-            if (usageData.data?.organizationId) {
-              setOrganizationId(usageData.data.organizationId)
+            if (usageDataValue?.organizationId) {
+              setOrganizationId(usageDataValue.organizationId)
             } else if (repositories.length > 0) {
               // Fallback: get from first repo
               const repo = repositories[0]
