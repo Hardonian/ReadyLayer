@@ -4,15 +4,15 @@ import { prisma } from '../../../../lib/prisma';
 import { logger } from '../../../../observability/logging';
 import { requireAuth } from '../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../lib/authz';
-import { githubAPIClient } from '../../../../integrations/github/api-client';
+import { getGitProviderAdapter } from '../../../../integrations/git-provider-adapter';
 import { getInstallationByProviderWithDecryptedToken } from '../../../../lib/secrets/installation-helpers';
 import { errorResponse, successResponse, validateBody } from '../../../../lib/api-route-helpers';
 
 const dispatchSchema = z.object({
   repositoryId: z.string().min(1),
-  workflowId: z.string().min(1), // GitHub workflow file path or workflow ID
+  workflowId: z.string().optional(), // GitHub workflow file path (optional for GitLab/Bitbucket)
   ref: z.string().min(1), // Branch or commit SHA
-  inputs: z.record(z.string()).optional(),
+  inputs: z.record(z.string()).optional(), // Pipeline variables
 });
 
 /**
@@ -73,38 +73,39 @@ export async function POST(request: NextRequest) {
       return errorResponse('FORBIDDEN', 'Access denied to repository', 403);
     }
 
-    // Verify repository is GitHub
-    if (repository.provider !== 'github') {
+    // Verify repository provider is supported
+    if (!['github', 'gitlab', 'bitbucket'].includes(repository.provider)) {
       return errorResponse(
         'INVALID_PROVIDER',
-        'This endpoint only supports GitHub repositories',
+        `Provider ${repository.provider} is not supported. Supported providers: github, gitlab, bitbucket`,
         400
       );
     }
 
-    // Get GitHub installation
+    // Get installation for the provider
     const installation = await prisma.installation.findFirst({
       where: {
-        provider: 'github',
+        provider: repository.provider,
         organizationId: repository.organizationId,
         isActive: true,
       },
     });
 
     if (!installation) {
+      const providerName = repository.provider === 'github' ? 'GitHub' : repository.provider === 'gitlab' ? 'GitLab' : 'Bitbucket';
       return errorResponse(
         'INSTALLATION_NOT_FOUND',
-        'GitHub installation not found. Please install the ReadyLayer GitHub App.',
+        `${providerName} installation not found. Please install the ReadyLayer ${providerName} App.`,
         404,
         {
-          fix: 'Install the ReadyLayer GitHub App from https://github.com/apps/readylayer',
+          fix: `Install the ReadyLayer ${providerName} App`,
         }
       );
     }
 
     // Get decrypted installation token
     const installationWithToken = await getInstallationByProviderWithDecryptedToken(
-      'github',
+      repository.provider,
       installation.providerId
     );
 
@@ -116,52 +117,87 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Dispatch workflow
-    // workflowId can be either a workflow file path (e.g., "test.yml") or workflow ID
-    // GitHub API accepts workflow file path relative to .github/workflows/ or full path
-    let normalizedWorkflowId = workflowId;
-    if (!workflowId.includes('/') && !workflowId.match(/^\d+$/)) {
-      // If it's just a filename, assume it's in .github/workflows/
-      normalizedWorkflowId = `.github/workflows/${workflowId}`;
-    }
+    // Get provider adapter
+    const adapter = getGitProviderAdapter(repository.provider as 'github' | 'gitlab' | 'bitbucket');
 
+    // Convert inputs to pipeline variables
+    const variables = inputs
+      ? Object.entries(inputs).map(([key, value]) => ({
+          key,
+          value: String(value),
+        }))
+      : [];
+
+    // Trigger pipeline/workflow
     try {
-      await githubAPIClient.dispatchWorkflow(
+      const pipelineRun = await adapter.triggerPipeline(
         repository.fullName,
-        normalizedWorkflowId,
         ref,
-        inputs || {},
+        variables,
         installationWithToken.accessToken
       );
+
+      // Create TestRun record
+      const testRun = await prisma.testRun.create({
+        data: {
+          repositoryId: repository.id,
+          prSha: ref,
+          workflowRunId: pipelineRun.id,
+          status: pipelineRun.status,
+          conclusion: pipelineRun.conclusion || null,
+          startedAt: new Date(),
+        },
+      });
+
+      log.info(
+        {
+          repositoryId,
+          provider: repository.provider,
+          ref,
+          testRunId: testRun.id,
+          pipelineRunId: pipelineRun.id,
+        },
+        'Pipeline triggered successfully'
+      );
+
+      return successResponse(
+        {
+          testRunId: testRun.id,
+          repositoryId: repository.id,
+          provider: repository.provider,
+          pipelineRunId: pipelineRun.id,
+          ref,
+          status: 'dispatched',
+          url: pipelineRun.url,
+        },
+        202
+      );
     } catch (error) {
-      log.error(error, 'Failed to dispatch workflow');
+      log.error(error, 'Failed to trigger pipeline');
       
-      // Handle workflow not found gracefully
+      // Handle pipeline not found gracefully
       if (error instanceof Error && (error.message.includes('404') || error.message.includes('Not Found'))) {
+        const providerName = repository.provider === 'github' ? 'GitHub' : repository.provider === 'gitlab' ? 'GitLab' : 'Bitbucket';
         return errorResponse(
-          'WORKFLOW_NOT_FOUND',
-          'Workflow not found. Ensure the workflow file exists and is configured correctly.',
+          'PIPELINE_NOT_FOUND',
+          `${providerName} pipeline/workflow not found. Ensure the pipeline is configured correctly.`,
           404,
           {
-            workflowId: normalizedWorkflowId,
-            fix: 'Create a workflow file at .github/workflows/readylayer-tests.yml or update workflowId parameter',
-            setupInstructions: [
-              '1. Create a workflow file at .github/workflows/readylayer-tests.yml',
-              '2. Add workflow_dispatch trigger',
-              '3. Ensure the workflow uploads coverage and test results as artifacts',
-            ],
+            provider: repository.provider,
+            fix: `Configure ${providerName} CI/CD pipeline for this repository`,
           }
         );
       }
 
       // Handle permission errors
       if (error instanceof Error && (error.message.includes('403') || error.message.includes('Forbidden'))) {
+        const providerName = repository.provider === 'github' ? 'GitHub' : repository.provider === 'gitlab' ? 'GitLab' : 'Bitbucket';
         return errorResponse(
-          'WORKFLOW_PERMISSION_DENIED',
-          'Insufficient permissions to dispatch workflow. Ensure the GitHub App has actions:write permission.',
+          'PIPELINE_PERMISSION_DENIED',
+          `Insufficient permissions to trigger pipeline. Ensure the ${providerName} App has required permissions.`,
           403,
           {
-            fix: 'Update GitHub App permissions to include actions:write',
+            fix: `Update ${providerName} App permissions`,
           }
         );
       }
@@ -169,36 +205,6 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    // Create TestRun record
-    const testRun = await prisma.testRun.create({
-      data: {
-        repositoryId: repository.id,
-        prSha: ref,
-        status: 'pending',
-        startedAt: new Date(),
-      },
-    });
-
-    log.info(
-      {
-        repositoryId,
-        workflowId,
-        ref,
-        testRunId: testRun.id,
-      },
-      'Workflow dispatched successfully'
-    );
-
-    return successResponse(
-      {
-        testRunId: testRun.id,
-        repositoryId: repository.id,
-        workflowId,
-        ref,
-        status: 'dispatched',
-      },
-      202
-    );
   } catch (error) {
     log.error(error, 'Failed to dispatch workflow');
     return errorResponse(

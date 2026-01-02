@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { logger } from '../../../../observability/logging';
-import { githubAPIClient } from '../../../../integrations/github/api-client';
+import { getGitProviderAdapter } from '../../../../integrations/git-provider-adapter';
 import { getInstallationByProviderWithDecryptedToken } from '../../../../lib/secrets/installation-helpers';
 import { errorResponse, successResponse } from '../../../../lib/api-route-helpers';
+import { githubWebhookHandler } from '../../../../integrations/github/webhook';
+import { gitlabWebhookHandler } from '../../../../integrations/gitlab/webhook';
+import { bitbucketWebhookHandler } from '../../../../integrations/bitbucket/webhook';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
 
 /**
  * POST /api/github/actions/webhook
- * Handle GitHub Actions workflow_run webhook events
+ * Handle CI/CD webhook events from GitHub, GitLab, and Bitbucket
  * 
- * Ingests workflow completion events and updates TestRun records
+ * Ingests pipeline/workflow completion events and updates TestRun records
  * with coverage and pass/fail results from artifacts.
  */
 export async function POST(request: NextRequest) {
@@ -20,20 +23,45 @@ export async function POST(request: NextRequest) {
   const log = logger.child({ requestId });
 
   try {
-    const signature = request.headers.get('x-hub-signature-256') || '';
-    const eventType = request.headers.get('x-github-event') || '';
-    const installationId = request.headers.get('x-github-installation-id') || '';
+    // Detect provider from headers or path
+    const path = request.nextUrl.pathname;
+    let provider: 'github' | 'gitlab' | 'bitbucket' = 'github';
+    let signature = '';
+    let eventType = '';
+    let installationId = '';
+
+    if (path.includes('/gitlab/')) {
+      provider = 'gitlab';
+      signature = request.headers.get('x-gitlab-token') || '';
+      eventType = request.headers.get('x-gitlab-event') || '';
+      installationId = request.headers.get('x-gitlab-installation-id') || '';
+    } else if (path.includes('/bitbucket/')) {
+      provider = 'bitbucket';
+      signature = request.headers.get('x-hub-signature') || '';
+      eventType = request.headers.get('x-event-key') || '';
+      installationId = request.headers.get('x-bitbucket-installation-id') || '';
+    } else {
+      // GitHub (default)
+      signature = request.headers.get('x-hub-signature-256') || '';
+      eventType = request.headers.get('x-github-event') || '';
+      installationId = request.headers.get('x-github-installation-id') || '';
+    }
 
     if (!signature || !eventType || !installationId) {
       return errorResponse(
         'VALIDATION_ERROR',
-        'Missing required headers: x-hub-signature-256, x-github-event, x-github-installation-id',
+        `Missing required headers for ${provider}`,
         400
       );
     }
 
-    // Only handle workflow_run events
-    if (eventType !== 'workflow_run') {
+    // Only handle CI completion events
+    const isCIEvent = 
+      (provider === 'github' && eventType === 'workflow_run') ||
+      (provider === 'gitlab' && eventType === 'Pipeline Hook') ||
+      (provider === 'bitbucket' && (eventType === 'build:status' || eventType === 'build:completed'));
+
+    if (!isCIEvent) {
       return successResponse({ ignored: true, reason: 'Event type not handled' }, 200);
     }
 
@@ -58,43 +86,11 @@ export async function POST(request: NextRequest) {
       return errorResponse('INVALID_EVENT', 'Webhook event must be an object', 400);
     }
 
-    const eventObj = event as {
-      action?: string;
-      workflow_run?: {
-        id: number;
-        name: string;
-        status: string;
-        conclusion: string | null;
-        head_sha: string;
-        head_branch?: string;
-        workflow_id: number;
-        html_url: string;
-        repository?: {
-          full_name: string;
-        };
-      };
-      repository?: {
-        full_name: string;
-      };
-    };
-
-    // Only process completed workflow runs
-    if (eventObj.action !== 'completed' || !eventObj.workflow_run) {
-      return successResponse({ ignored: true, reason: 'Event action not handled' }, 200);
-    }
-
-    const workflowRun = eventObj.workflow_run;
-    const repoFullName = workflowRun.repository?.full_name || eventObj.repository?.full_name;
-
-    if (!repoFullName) {
-      return errorResponse('INVALID_EVENT', 'Repository full_name not found in event', 400);
-    }
-
     // Get installation
     const installation = await prisma.installation.findUnique({
       where: {
         provider_providerId: {
-          provider: 'github',
+          provider,
           providerId: installationId,
         },
       },
@@ -108,15 +104,126 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate signature (reuse webhook handler logic)
-    const { createHmac } = await import('crypto');
-    const hmac = createHmac('sha256', installation.webhookSecret);
-    hmac.update(payload);
-    const expectedSignature = `sha256=${hmac.digest('hex')}`;
+    // Validate signature based on provider
+    if (provider === 'github') {
+      const { createHmac } = await import('crypto');
+      const hmac = createHmac('sha256', installation.webhookSecret);
+      hmac.update(payload);
+      const expectedSignature = `sha256=${hmac.digest('hex')}`;
+      if (signature !== expectedSignature) {
+        log.warn({ installationId }, 'Invalid webhook signature');
+        return errorResponse('INVALID_SIGNATURE', 'Invalid webhook signature', 401);
+      }
+    } else if (provider === 'gitlab') {
+      // GitLab uses token-based validation
+      if (signature !== installation.webhookSecret) {
+        log.warn({ installationId }, 'Invalid webhook token');
+        return errorResponse('INVALID_SIGNATURE', 'Invalid webhook token', 401);
+      }
+    } else if (provider === 'bitbucket') {
+      const { createHmac } = await import('crypto');
+      const hmac = createHmac('sha256', installation.webhookSecret);
+      hmac.update(payload);
+      const expectedSignature = hmac.digest('hex');
+      if (signature !== expectedSignature && signature !== `sha256=${expectedSignature}`) {
+        log.warn({ installationId }, 'Invalid webhook signature');
+        return errorResponse('INVALID_SIGNATURE', 'Invalid webhook signature', 401);
+      }
+    }
 
-    if (signature !== expectedSignature) {
-      log.warn({ installationId }, 'Invalid webhook signature');
-      return errorResponse('INVALID_SIGNATURE', 'Invalid webhook signature', 401);
+    // Parse event based on provider
+    let pipelineRunId: string;
+    let repoFullName: string;
+    let sha: string;
+    let status: string;
+    let conclusion: string | null = null;
+    let pipelineUrl: string | undefined;
+
+    if (provider === 'github') {
+      const eventObj = event as {
+        action?: string;
+        workflow_run?: {
+          id: number;
+          status: string;
+          conclusion: string | null;
+          head_sha: string;
+          html_url: string;
+          repository?: { full_name: string };
+        };
+        repository?: { full_name: string };
+      };
+
+      if (eventObj.action !== 'completed' || !eventObj.workflow_run) {
+        return successResponse({ ignored: true, reason: 'Event action not handled' }, 200);
+      }
+
+      const workflowRun = eventObj.workflow_run;
+      pipelineRunId = String(workflowRun.id);
+      repoFullName = workflowRun.repository?.full_name || (eventObj.repository?.full_name || '');
+      sha = workflowRun.head_sha;
+      status = workflowRun.status === 'completed' ? 'completed' : 'in_progress';
+      conclusion = workflowRun.conclusion;
+      pipelineUrl = workflowRun.html_url;
+    } else if (provider === 'gitlab') {
+      const eventObj = event as {
+        object_kind?: string;
+        object_attributes?: {
+          id: number;
+          status: string;
+          sha: string;
+          ref: string;
+        };
+        project?: {
+          path_with_namespace: string;
+        };
+      };
+
+      const pipeline = eventObj.object_attributes;
+      if (!pipeline || pipeline.status !== 'success' && pipeline.status !== 'failed' && pipeline.status !== 'canceled') {
+        return successResponse({ ignored: true, reason: 'Pipeline not completed' }, 200);
+      }
+
+      pipelineRunId = String(pipeline.id);
+      repoFullName = eventObj.project?.path_with_namespace || '';
+      sha = pipeline.sha;
+      status = pipeline.status === 'success' ? 'completed' : pipeline.status === 'failed' ? 'failed' : 'cancelled';
+      conclusion = pipeline.status === 'success' ? 'success' : pipeline.status === 'failed' ? 'failure' : 'cancelled';
+    } else {
+      // Bitbucket
+      const eventObj = event as {
+        buildStatus?: {
+          state: string;
+          key: string;
+          url: string;
+        };
+        commit?: {
+          hash: string;
+        };
+        repository?: {
+          full_name?: string;
+          workspace?: { slug: string };
+          slug?: string;
+        };
+      };
+
+      const buildStatus = eventObj.buildStatus;
+      if (!buildStatus || (buildStatus.state !== 'SUCCESSFUL' && buildStatus.state !== 'FAILED')) {
+        return successResponse({ ignored: true, reason: 'Build not completed' }, 200);
+      }
+
+      pipelineRunId = buildStatus.key;
+      repoFullName = eventObj.repository?.full_name || 
+        (eventObj.repository?.workspace?.slug && eventObj.repository?.slug 
+          ? `${eventObj.repository.workspace.slug}/${eventObj.repository.slug}` 
+          : '');
+      sha = eventObj.commit?.hash || '';
+      status = buildStatus.state === 'SUCCESSFUL' ? 'completed' : 'failed';
+      conclusion = buildStatus.state === 'SUCCESSFUL' ? 'success' : 'failure';
+      pipelineUrl = buildStatus.url;
+    }
+
+    if (!repoFullName) {
+      return errorResponse('INVALID_EVENT', 'Repository identifier not found in event', 400);
     }
 
     // Find repository
@@ -124,19 +231,19 @@ export async function POST(request: NextRequest) {
       where: {
         fullName_provider: {
           fullName: repoFullName,
-          provider: 'github',
+          provider,
         },
       },
     });
 
     if (!repository) {
-      log.warn({ repoFullName }, 'Repository not found for workflow run');
+      log.warn({ repoFullName, provider }, 'Repository not found for pipeline run');
       return successResponse({ ignored: true, reason: 'Repository not found' }, 200);
     }
 
     // Get decrypted installation token
     const installationWithToken = await getInstallationByProviderWithDecryptedToken(
-      'github',
+      provider,
       installation.providerId
     );
 
@@ -149,8 +256,8 @@ export async function POST(request: NextRequest) {
     let testRun = await prisma.testRun.findFirst({
       where: {
         repositoryId: repository.id,
-        prSha: workflowRun.head_sha,
-        workflowRunId: String(workflowRun.id),
+        prSha: sha,
+        workflowRunId: pipelineRunId,
       },
     });
 
@@ -159,7 +266,7 @@ export async function POST(request: NextRequest) {
       testRun = await prisma.testRun.findFirst({
         where: {
           repositoryId: repository.id,
-          prSha: workflowRun.head_sha,
+          prSha: sha,
           status: { in: ['pending', 'in_progress'] },
         },
         orderBy: { createdAt: 'desc' },
@@ -170,12 +277,12 @@ export async function POST(request: NextRequest) {
         testRun = await prisma.testRun.create({
           data: {
             repositoryId: repository.id,
-            prSha: workflowRun.head_sha,
-            workflowRunId: String(workflowRun.id),
-            status: workflowRun.status === 'completed' ? 'completed' : 'in_progress',
-            conclusion: workflowRun.conclusion || null,
+            prSha: sha,
+            workflowRunId: pipelineRunId,
+            status: status === 'completed' ? 'completed' : status === 'in_progress' ? 'in_progress' : 'pending',
+            conclusion: conclusion,
             startedAt: new Date(),
-            completedAt: workflowRun.status === 'completed' ? new Date() : null,
+            completedAt: status === 'completed' ? new Date() : null,
           },
         });
       } else {
@@ -183,10 +290,10 @@ export async function POST(request: NextRequest) {
         testRun = await prisma.testRun.update({
           where: { id: testRun.id },
           data: {
-            workflowRunId: String(workflowRun.id),
-            status: workflowRun.status === 'completed' ? 'completed' : 'in_progress',
-            conclusion: workflowRun.conclusion || null,
-            completedAt: workflowRun.status === 'completed' ? new Date() : null,
+            workflowRunId: pipelineRunId,
+            status: status === 'completed' ? 'completed' : status === 'in_progress' ? 'in_progress' : 'pending',
+            conclusion: conclusion,
+            completedAt: status === 'completed' ? new Date() : null,
           },
         });
       }
@@ -195,9 +302,9 @@ export async function POST(request: NextRequest) {
       testRun = await prisma.testRun.update({
         where: { id: testRun.id },
         data: {
-          status: workflowRun.status === 'completed' ? 'completed' : 'in_progress',
-          conclusion: workflowRun.conclusion || null,
-          completedAt: workflowRun.status === 'completed' ? new Date() : null,
+          status: status === 'completed' ? 'completed' : status === 'in_progress' ? 'in_progress' : 'pending',
+          conclusion: conclusion,
+          completedAt: status === 'completed' ? new Date() : null,
         },
       });
     }
@@ -205,49 +312,23 @@ export async function POST(request: NextRequest) {
     // Try to fetch artifacts and extract coverage/summary
     let coverage: Record<string, unknown> | null = null;
     let summary: Record<string, unknown> | null = null;
-    let artifactsUrl: string | null = null;
+    let artifactsUrl: string | null = pipelineUrl || null;
 
     try {
-      const artifactsResponse = await githubAPIClient.listWorkflowRunArtifacts(
+      const adapter = getGitProviderAdapter(provider);
+      const artifactsBlob = await adapter.getPipelineArtifacts(
         repoFullName,
-        workflowRun.id,
+        pipelineRunId,
         installationWithToken.accessToken
       );
 
-      if (artifactsResponse.artifacts && artifactsResponse.artifacts.length > 0) {
-        // Find coverage artifact
-        const coverageArtifact = artifactsResponse.artifacts.find(
-          (a) => a.name === 'coverage' || a.name.includes('coverage')
-        );
-        const summaryArtifact = artifactsResponse.artifacts.find(
-          (a) => a.name === 'summary' || a.name.includes('summary') || a.name.includes('test-results')
-        );
-
-        if (coverageArtifact) {
-          artifactsUrl = coverageArtifact.archive_download_url;
-          
-          // Try to download and parse coverage JSON
-          try {
-            const artifactBuffer = await githubAPIClient.downloadArtifact(
-              repoFullName,
-              coverageArtifact.id,
-              installationWithToken.accessToken
-            );
-            
-            // Note: Artifacts are ZIP files, so we'd need to extract them
-            // For MVP, we'll store the URL and let the frontend handle it
-            // In production, you'd want to extract and parse the JSON here
-          } catch (error) {
-            log.warn(error, 'Failed to download coverage artifact');
-          }
-        }
-
-        if (summaryArtifact && !artifactsUrl) {
-          artifactsUrl = summaryArtifact.archive_download_url;
-        }
+      if (artifactsBlob) {
+        // For MVP, we'll store the URL and let the frontend handle artifact parsing
+        // In production, you'd want to extract and parse the JSON here
+        artifactsUrl = pipelineUrl || artifactsUrl;
       }
     } catch (error) {
-      log.warn(error, 'Failed to fetch workflow artifacts');
+      log.warn(error, 'Failed to fetch pipeline artifacts');
       // Continue without artifacts - not a fatal error
     }
 
@@ -255,12 +336,12 @@ export async function POST(request: NextRequest) {
     testRun = await prisma.testRun.update({
       where: { id: testRun.id },
       data: {
-        status: workflowRun.status === 'completed' ? 'completed' : 'in_progress',
-        conclusion: workflowRun.conclusion || null,
+        status: status === 'completed' ? 'completed' : status === 'in_progress' ? 'in_progress' : 'pending',
+        conclusion: conclusion,
         coverage: coverage || undefined,
         summary: summary || undefined,
         artifactsUrl: artifactsUrl || undefined,
-        completedAt: workflowRun.status === 'completed' ? new Date() : null,
+        completedAt: status === 'completed' ? new Date() : null,
       },
     });
 
@@ -268,11 +349,12 @@ export async function POST(request: NextRequest) {
       {
         testRunId: testRun.id,
         repositoryId: repository.id,
-        workflowRunId: workflowRun.id,
+        pipelineRunId,
+        provider,
         status: testRun.status,
         conclusion: testRun.conclusion,
       },
-      'TestRun updated from workflow webhook'
+      'TestRun updated from pipeline webhook'
     );
 
     return successResponse(

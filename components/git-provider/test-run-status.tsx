@@ -254,13 +254,13 @@ export function TestRunStatus({
         <div className="flex gap-2 pt-2 border-t">
           {testRun.workflowRunId && repository.fullName && (
             <a
-              href={`https://github.com/${repository.fullName}/actions/runs/${testRun.workflowRunId}`}
+              href={getPipelineUrl(repository.provider || 'github', repository.fullName, testRun.workflowRunId)}
               target="_blank"
               rel="noopener noreferrer"
             >
               <Badge variant="outline" className="cursor-pointer">
                 <ExternalLink className="h-3 w-3 mr-1" />
-                View Workflow
+                View {repository.provider === 'github' ? 'Workflow' : repository.provider === 'gitlab' ? 'Pipeline' : 'Build'}
               </Badge>
             </a>
           )}
@@ -283,6 +283,25 @@ export function TestRunStatus({
             {provider === 'generic' && 'Test Execution'}
           </div>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+/**
+ * Get pipeline URL based on provider
+ */
+function getPipelineUrl(provider: string, repoFullName: string, runId: string): string {
+  if (provider === 'github') {
+    return `https://github.com/${repoFullName}/actions/runs/${runId}`;
+  } else if (provider === 'gitlab') {
+    // GitLab pipeline URL format: https://gitlab.com/{namespace}/{project}/-/pipelines/{id}
+    return `https://gitlab.com/${repoFullName}/-/pipelines/${runId}`;
+  } else if (provider === 'bitbucket') {
+    // Bitbucket pipeline URL format: https://bitbucket.org/{workspace}/{repo}/addon/pipelines/home#!/results/{uuid}
+    return `https://bitbucket.org/${repoFullName}/addon/pipelines/home#!/results/${runId}`;
+  }
+  return '#';
       </CardContent>
     </Card>
   )
