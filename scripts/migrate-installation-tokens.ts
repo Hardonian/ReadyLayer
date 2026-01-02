@@ -6,7 +6,8 @@
  */
 
 import { prisma } from '../lib/prisma';
-import { encryptToken, isEncrypted, isKeyConfigured, redactSecret } from '../lib/crypto';
+import { encryptToken, isEncrypted, redactSecret } from '../lib/secrets';
+import { isKeyConfigured } from '../lib/crypto';
 import { logger } from '../observability/logging';
 
 async function migrateInstallationTokens() {
