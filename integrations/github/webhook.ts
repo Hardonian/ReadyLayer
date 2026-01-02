@@ -228,6 +228,15 @@ export class GitHubWebhookHandler {
       },
     });
 
+    // Auto-generate default config
+    try {
+      const { configService } = await import('../../services/config');
+      await configService.autoGenerateConfig(repo.id);
+    } catch (error) {
+      // Don't fail repo creation if config generation fails
+      // Config will be auto-generated on first use
+    }
+
     return repo.id;
   }
 }

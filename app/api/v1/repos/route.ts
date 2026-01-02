@@ -202,11 +202,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!membership) {
+      const { ErrorMessages } = await import('../../../../lib/errors');
       return NextResponse.json(
         {
           error: {
             code: 'FORBIDDEN',
-            message: 'Access denied to organization',
+            message: ErrorMessages.ORGANIZATION_ACCESS_DENIED(organizationId as string).message,
+            context: ErrorMessages.ORGANIZATION_ACCESS_DENIED(organizationId as string).context,
+            fix: ErrorMessages.ORGANIZATION_ACCESS_DENIED(organizationId as string).fix,
           },
         },
         { status: 403 }
@@ -242,6 +245,36 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Auto-generate default config
+    try {
+      const { configService } = await import('../../../../services/config');
+      await configService.autoGenerateConfig(repo.id);
+      log.info({ repoId: repo.id }, 'Auto-generated default config');
+    } catch (error) {
+      // Don't fail repo creation if config generation fails
+      log.warn({ err: error }, 'Failed to auto-generate config, will be created on first use');
+    }
+
+    // Audit log
+    try {
+      const { createAuditLog, AuditActions } = await import('../../../../lib/audit');
+      await createAuditLog({
+        organizationId: organizationId as string,
+        userId: user.id,
+        action: AuditActions.REPO_CREATED,
+        resourceType: 'repository',
+        resourceId: repo.id,
+        details: {
+          name: repo.name,
+          fullName: repo.fullName,
+          provider: repo.provider,
+        },
+      });
+    } catch (error) {
+      // Don't fail on audit log errors
+      log.warn({ err: error }, 'Failed to create audit log');
+    }
 
     log.info({ repoId: repo.id, organizationId }, 'Repository created');
 

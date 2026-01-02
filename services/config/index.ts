@@ -225,6 +225,67 @@ export class ConfigService {
   }
 
   /**
+   * Generate default config YAML
+   */
+  generateDefaultConfigYaml(): string {
+    return `# ReadyLayer Configuration
+# Auto-generated with safe defaults
+# See https://docs.readylayer.com/config for details
+
+review:
+  enabled: true
+  fail_on_critical: true  # REQUIRED: Cannot disable
+  fail_on_high: true      # DEFAULT: Can disable with admin approval
+  fail_on_medium: false
+  fail_on_low: false
+
+test:
+  enabled: true
+  coverage:
+    threshold: 80  # Minimum 80%, cannot go below
+    metric: lines
+    enforce_on: pr
+    fail_on_below: true  # REQUIRED: Cannot disable
+
+docs:
+  enabled: true
+  drift_prevention:
+    enabled: true  # REQUIRED: Cannot disable
+    action: block  # DEFAULT: Block, can change to 'auto_update' or 'alert'
+    check_on: pr
+`;
+  }
+
+  /**
+   * Generate default config object
+   */
+  generateDefaultConfig(): ReadyLayerConfig {
+    return this.applyDefaults({});
+  }
+
+  /**
+   * Auto-generate and save config for repository
+   */
+  async autoGenerateConfig(repositoryId: string): Promise<void> {
+    const defaultConfig = this.generateDefaultConfig();
+    const defaultYaml = this.generateDefaultConfigYaml();
+
+    await prisma.repositoryConfig.upsert({
+      where: { repositoryId },
+      update: {
+        config: defaultConfig as any,
+        rawConfig: defaultYaml,
+        version: { increment: 1 },
+      },
+      create: {
+        repositoryId,
+        config: defaultConfig as any,
+        rawConfig: defaultYaml,
+      },
+    });
+  }
+
+  /**
    * Update repository config
    */
   async updateRepositoryConfig(
@@ -235,7 +296,8 @@ export class ConfigService {
     // Validate config
     const validation = this.validateConfig(config);
     if (!validation.valid) {
-      throw new Error(`Invalid config: ${validation.errors?.join(', ')}`);
+      const errorMessage = `Invalid configuration:\n${validation.errors?.map(e => `  - ${e}`).join('\n')}\n\nFix: Update your .readylayer.yml file to resolve these errors. See https://docs.readylayer.com/config for valid configuration options.`;
+      throw new Error(errorMessage);
     }
 
     // Apply defaults

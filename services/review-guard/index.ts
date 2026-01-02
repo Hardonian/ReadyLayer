@@ -317,6 +317,32 @@ export class ReviewGuardService {
         completedAt.getTime() - startedAt.getTime()
       );
 
+      // Audit log
+      try {
+        const { createAuditLog, AuditActions } = await import('../../lib/audit');
+        await createAuditLog({
+          organizationId,
+          userId: null, // System action
+          action: isBlocked ? AuditActions.REVIEW_BLOCKED : AuditActions.REVIEW_COMPLETED,
+          resourceType: 'review',
+          resourceId: review.id,
+          details: {
+            repositoryId: request.repositoryId,
+            prNumber: request.prNumber,
+            prSha: request.prSha,
+            issuesFound: summary.total,
+            critical: summary.critical,
+            high: summary.high,
+            medium: summary.medium,
+            low: summary.low,
+            isBlocked,
+            blockedReason,
+          },
+        });
+      } catch (error) {
+        // Don't fail review on audit log errors
+      }
+
       // Generate predictive alerts
       try {
         const predictiveAlerts = await predictiveDetectionService.predictIssues({
@@ -374,9 +400,36 @@ export class ReviewGuardService {
         },
       });
 
+      // Audit log failure
+      try {
+        const repo = await prisma.repository.findUnique({
+          where: { id: request.repositoryId },
+          select: { organizationId: true },
+        });
+        const organizationId = repo?.organizationId || '';
+        
+        const { createAuditLog, AuditActions } = await import('../../lib/audit');
+        await createAuditLog({
+          organizationId,
+          userId: null,
+          action: AuditActions.REVIEW_BLOCKED,
+          resourceType: 'review',
+          resourceId: review.id,
+          details: {
+            repositoryId: request.repositoryId,
+            prNumber: request.prNumber,
+            error: errorMessage,
+            isBlocked: true,
+          },
+        });
+      } catch {
+        // Don't fail on audit log errors
+      }
+
       throw new Error(
         `Review failed: ${errorMessage}. ` +
         `This PR is BLOCKED until review completes. ` +
+        `Fix: Resolve the error and retry. If the problem persists, contact support@readylayer.com. ` +
         `Review ID: ${review.id}`
       );
     }
