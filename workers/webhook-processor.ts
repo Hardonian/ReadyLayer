@@ -13,6 +13,8 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
 import { ingestDocument, isIngestEnabled } from '../lib/rag';
+import { getInstallationWithDecryptedToken } from '../lib/secrets/installation-helpers';
+import { checkBillingLimits } from '../lib/billing-middleware';
 
 /**
  * Process webhook event
@@ -25,17 +27,14 @@ async function processWebhookEvent(payload: any): Promise<void> {
   try {
     log.info({ type }, 'Processing webhook event');
 
-    // Get installation
-    const installation = await prisma.installation.findUnique({
-      where: { id: installationId },
-    });
+    // Get installation with decrypted token
+    const installation = await getInstallationWithDecryptedToken(installationId);
 
     if (!installation || !installation.isActive) {
       throw new Error(`Installation ${installationId} not found or inactive`);
     }
 
-    // Decrypt access token (simplified - would decrypt in production)
-    const accessToken = installation.accessToken;
+    const accessToken = installation.accessToken; // Already decrypted
 
     switch (type) {
       case 'pr.opened':
@@ -109,6 +108,34 @@ async function processPREvent(
     } catch (error) {
       log.warn({ file: file.filename, error }, 'Failed to fetch file content');
     }
+  }
+
+  // Check billing limits before processing review
+  const repo = await prisma.repository.findUnique({
+    where: { id: repository.id },
+    select: { organizationId: true },
+  });
+
+  if (!repo) {
+    throw new Error(`Repository ${repository.id} not found`);
+  }
+
+  // Check billing limits (this will throw if exceeded, which is caught below)
+  const billingCheck = await checkBillingLimits(repo.organizationId, {
+    requireFeature: 'reviewGuard',
+    checkLLMBudget: true,
+  });
+  if (billingCheck) {
+    // Billing check failed - update status check and return
+    await githubAPIClient.updateStatusCheck(
+      repository.fullName,
+      pr.sha,
+      'error',
+      '⚠️ Billing limit exceeded - please upgrade',
+      'readylayer/review',
+      accessToken
+    );
+    throw new Error(`Billing limit exceeded for organization ${repo.organizationId}`);
   }
 
   // Run Review Guard

@@ -9,6 +9,7 @@ import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { ingestDocument, isIngestEnabled } from '../../../../../lib/rag';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
+import { checkBillingLimits } from '../../../../../lib/billing-middleware';
 import { z } from 'zod';
 
 const ingestSchema = z.object({
@@ -130,6 +131,14 @@ export async function POST(request: NextRequest) {
       }
 
       organizationId = membership.organizationId;
+    }
+
+    // Check billing limits (LLM budget for embeddings)
+    const billingCheck = await checkBillingLimits(organizationId, {
+      checkLLMBudget: true,
+    });
+    if (billingCheck) {
+      return billingCheck;
     }
 
     // Ingest document

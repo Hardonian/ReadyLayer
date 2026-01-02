@@ -106,6 +106,7 @@ model Installation {
   provider       String   // github, gitlab, bitbucket
   providerId     String   // Installation ID from provider
   accessToken    String   @db.Text // Encrypted
+  tokenEncrypted Boolean  @default(false) // Track if token is encrypted (for migration)
   permissions    Json     // Granted permissions/scopes
   selectedRepos  String[] // Selected repo IDs
   webhookSecret  String?  // HMAC secret for webhook validation
@@ -119,6 +120,7 @@ model Installation {
   @@unique([provider, providerId])
   @@index([organizationId])
   @@index([repositoryId])
+  @@index([tokenEncrypted])
 }
 
 // Repository Configurations (.readylayer.yml)

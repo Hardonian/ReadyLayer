@@ -9,6 +9,7 @@ import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
+import { checkBillingLimits } from '../../lib/billing-middleware';
 
 export interface TestGenerationRequest {
   repositoryId: string;
@@ -135,7 +136,34 @@ export class TestEngineService {
         where: { id: request.repositoryId },
         select: { organizationId: true },
       });
-      const organizationId = repo?.organizationId || '';
+      
+      if (!repo) {
+        throw new Error(`Repository ${request.repositoryId} not found`);
+      }
+      
+      const organizationId = repo.organizationId;
+
+      // Check billing limits before generating tests
+      // Note: This is a service-level check. If called from webhook, billing is already checked.
+      // But if called directly from API, we need to check here.
+      // We'll check billing but not throw - let the caller handle the response.
+      // For webhook calls, billing is checked upstream.
+      const billingCheck = await checkBillingLimits(organizationId, {
+        requireFeature: 'testEngine',
+        checkLLMBudget: true,
+      });
+      if (billingCheck) {
+        // Return error result instead of throwing
+        return {
+          id: `test_${Date.now()}`,
+          status: 'blocked' as const,
+          testContent: '',
+          placement: '',
+          framework: framework || 'unknown',
+          startedAt,
+          completedAt: new Date(),
+        };
+      }
 
       // Generate tests using LLM
       const prompt = await this.buildTestPrompt(
