@@ -8,6 +8,9 @@
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
+import { policyEngineService } from '../policy-engine';
+import { createHash } from 'crypto';
+import { Issue } from '../static-analysis';
 
 export interface DocGenerationRequest {
   repositoryId: string;
@@ -107,6 +110,58 @@ export class DocSyncService {
 
       const completedAt = new Date();
 
+      // Get organization ID for policy evaluation
+      const repo = await prisma.repository.findUnique({
+        where: { id: request.repositoryId },
+        select: { organizationId: true },
+      });
+      
+      if (!repo) {
+        throw new Error(`Repository ${request.repositoryId} not found`);
+      }
+
+      // Load effective policy
+      const policy = await policyEngineService.loadEffectivePolicy(
+        repo.organizationId,
+        request.repositoryId,
+        request.ref,
+        undefined
+      );
+
+      // Check for drift (policy-aware)
+      const driftResult = await this.checkDrift(request.repositoryId, request.ref, config);
+
+      // Create findings based on drift
+      const findings: Issue[] = [];
+      if (driftResult.driftDetected) {
+        if (driftResult.missingEndpoints.length > 0) {
+          findings.push({
+            ruleId: 'doc-sync.missing-endpoints',
+            severity: 'high',
+            file: 'api',
+            line: 1,
+            message: `${driftResult.missingEndpoints.length} endpoint(s) missing from documentation`,
+            fix: 'Update documentation to include all API endpoints',
+            confidence: 1.0,
+          });
+        }
+        if (driftResult.changedEndpoints.length > 0) {
+          findings.push({
+            ruleId: 'doc-sync.changed-endpoints',
+            severity: 'medium',
+            file: 'api',
+            line: 1,
+            message: `${driftResult.changedEndpoints.length} endpoint(s) changed but docs not updated`,
+            fix: 'Update documentation to reflect API changes',
+            confidence: 1.0,
+          });
+        }
+      }
+
+      // Evaluate against policy
+      const evaluationResult = policyEngineService.evaluate(findings, policy);
+      const isBlocked = evaluationResult.blocked || driftResult.isBlocked;
+
       // Save doc result
       const doc = await prisma.doc.create({
         data: {
@@ -115,21 +170,49 @@ export class DocSyncService {
           format: request.format,
           content,
           spec: spec || undefined,
-          status: 'generated',
-          driftDetected: false,
-          publishedAt: config.updateStrategy === 'commit' ? completedAt : null,
+          status: isBlocked ? 'blocked' : 'generated',
+          driftDetected: driftResult.driftDetected,
+          driftDetails: {
+            missingEndpoints: driftResult.missingEndpoints,
+            extraEndpoints: driftResult.extraEndpoints,
+            changedEndpoints: driftResult.changedEndpoints,
+          } as any,
+          publishedAt: config.updateStrategy === 'commit' && !isBlocked ? completedAt : null,
           createdAt: startedAt,
           updatedAt: completedAt,
         },
       });
 
+      // Produce evidence bundle
+      const contentHash = createHash('sha256').update(content || '', 'utf8').digest('hex');
+      const timings = {
+        totalMs: completedAt.getTime() - startedAt.getTime(),
+      };
+      await policyEngineService.produceEvidence(
+        {
+          ref: request.ref,
+          format: request.format,
+          contentHash,
+          driftDetected: driftResult.driftDetected,
+        },
+        {
+          findings,
+          evaluationResult,
+          driftResult,
+        },
+        policy,
+        timings,
+        { docId: doc.id }
+      );
+
       return {
         id: doc.id,
-        status: 'generated',
+        status: isBlocked ? 'blocked' : 'generated',
         format: request.format,
         content,
         spec,
-        driftDetected: false,
+        driftDetected: driftResult.driftDetected,
+        driftDetails: driftResult,
         startedAt,
         completedAt,
       };
@@ -230,11 +313,60 @@ export class DocSyncService {
       extraEndpoints.length > 0 ||
       changedEndpoints.length > 0;
 
-    // Determine if should block
+    // Get organization ID for policy evaluation
+    const repo = await prisma.repository.findUnique({
+      where: { id: repositoryId },
+      select: { organizationId: true },
+    });
+    
+    if (!repo) {
+      throw new Error(`Repository ${repositoryId} not found`);
+    }
+
+    // Load effective policy
+    const policy = await policyEngineService.loadEffectivePolicy(
+      repo.organizationId,
+      repositoryId,
+      ref,
+      undefined
+    );
+
+    // Create findings based on drift
+    const findings: Issue[] = [];
+    if (driftDetected) {
+      if (missingEndpoints.length > 0) {
+        findings.push({
+          ruleId: 'doc-sync.missing-endpoints',
+          severity: 'high',
+          file: 'api',
+          line: 1,
+          message: `${missingEndpoints.length} endpoint(s) missing from documentation`,
+          fix: 'Update documentation to include all API endpoints',
+          confidence: 1.0,
+        });
+      }
+      if (changedEndpoints.length > 0) {
+        findings.push({
+          ruleId: 'doc-sync.changed-endpoints',
+          severity: 'medium',
+          file: 'api',
+          line: 1,
+          message: `${changedEndpoints.length} endpoint(s) changed but docs not updated`,
+          fix: 'Update documentation to reflect API changes',
+          confidence: 1.0,
+        });
+      }
+    }
+
+    // Evaluate against policy
+    const evaluationResult = policyEngineService.evaluate(findings, policy);
+
+    // Determine if should block (policy-aware)
     const isBlocked =
-      driftDetected &&
-      docConfig.driftPrevention.enabled &&
-      docConfig.driftPrevention.action === 'block';
+      evaluationResult.blocked ||
+      (driftDetected &&
+        docConfig.driftPrevention.enabled &&
+        docConfig.driftPrevention.action === 'block');
 
     return {
       driftDetected,

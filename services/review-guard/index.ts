@@ -10,6 +10,8 @@ import { llmService, LLMRequest } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
 import { schemaReconciliationService } from '../schema-reconciliation';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
+import { policyEngineService } from '../policy-engine';
+import { createHash } from 'crypto';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -140,22 +142,46 @@ export class ReviewGuardService {
         }
       }
 
-      // Calculate summary
+      // Get organization ID for policy evaluation
+      const repo = await prisma.repository.findUnique({
+        where: { id: request.repositoryId },
+        select: { organizationId: true },
+      });
+      const organizationId = repo?.organizationId || '';
+
+      // Load effective policy
+      const policy = await policyEngineService.loadEffectivePolicy(
+        organizationId,
+        request.repositoryId,
+        request.prSha,
+        undefined // branch not available in request
+      );
+
+      // Evaluate findings against policy
+      const evaluationResult = policyEngineService.evaluate(allIssues, policy);
+
+      // Calculate summary (use non-waived findings)
       const summary = {
-        total: allIssues.length,
-        critical: allIssues.filter((i) => i.severity === 'critical').length,
-        high: allIssues.filter((i) => i.severity === 'high').length,
-        medium: allIssues.filter((i) => i.severity === 'medium').length,
-        low: allIssues.filter((i) => i.severity === 'low').length,
+        total: evaluationResult.nonWaivedFindings.length,
+        critical: evaluationResult.nonWaivedFindings.filter((i) => i.severity === 'critical').length,
+        high: evaluationResult.nonWaivedFindings.filter((i) => i.severity === 'high').length,
+        medium: evaluationResult.nonWaivedFindings.filter((i) => i.severity === 'medium').length,
+        low: evaluationResult.nonWaivedFindings.filter((i) => i.severity === 'low').length,
       };
 
-      // Determine if PR should be blocked
-      const isBlocked = this.shouldBlock(allIssues, config);
-      const blockedReason = isBlocked
-        ? this.getBlockedReason(allIssues, config)
-        : undefined;
+      // Use policy engine decision
+      const isBlocked = evaluationResult.blocked;
+      const blockedReason = evaluationResult.blockingReason;
 
       const completedAt = new Date();
+
+      // Calculate input hashes for evidence
+      const diffContent = request.diff || filesToReview.map(f => `${f.path}\n${f.content}`).join('\n---\n');
+      const diffHash = createHash('sha256').update(diffContent, 'utf8').digest('hex');
+      const fileListHash = createHash('sha256').update(
+        filesToReview.map(f => f.path).sort().join('\n'),
+        'utf8'
+      ).digest('hex');
 
       // Save review result
       const review = await prisma.review.create({
@@ -166,11 +192,13 @@ export class ReviewGuardService {
           prTitle: request.prTitle,
           status: isBlocked ? 'blocked' : 'completed',
           result: {
-            issues: allIssues,
+            issues: evaluationResult.nonWaivedFindings,
+            waivedIssues: evaluationResult.waivedFindings,
             summary,
             blocking: isBlocked,
+            policyScore: evaluationResult.score,
           } as any, // Prisma Json type
-          issuesFound: allIssues as any, // Prisma Json type
+          issuesFound: evaluationResult.nonWaivedFindings as any, // Prisma Json type
           summary: summary as any, // Prisma Json type
           isBlocked,
           blockedReason,
@@ -179,13 +207,34 @@ export class ReviewGuardService {
         },
       });
 
-      // Track violations for pattern detection
-      await this.trackViolations(request.repositoryId, review.id, allIssues);
+      // Produce evidence bundle
+      const timings = {
+        totalMs: completedAt.getTime() - startedAt.getTime(),
+      };
+      await policyEngineService.produceEvidence(
+        {
+          diffHash,
+          fileListHash,
+          commitSha: request.prSha,
+          prNumber: request.prNumber,
+          files: filesToReview.map(f => ({ path: f.path, size: f.content.length })),
+        },
+        {
+          findings: allIssues,
+          evaluationResult,
+        },
+        policy,
+        timings,
+        { reviewId: review.id }
+      );
+
+      // Track violations for pattern detection (only non-waived)
+      await this.trackViolations(request.repositoryId, review.id, evaluationResult.nonWaivedFindings);
 
       return {
         id: review.id,
         status: isBlocked ? 'blocked' : 'completed',
-        issues: allIssues,
+        issues: evaluationResult.nonWaivedFindings,
         summary,
         isBlocked,
         blockedReason,
@@ -312,7 +361,8 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
   }
 
   /**
-   * Determine if PR should be blocked
+   * Determine if PR should be blocked (legacy method, kept for backward compatibility)
+   * @deprecated Use policy engine instead
    */
   private shouldBlock(issues: Issue[], config: ReviewConfig): boolean {
     // Critical issues ALWAYS block (cannot disable)
@@ -338,7 +388,8 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
   }
 
   /**
-   * Get blocked reason
+   * Get blocked reason (legacy method, kept for backward compatibility)
+   * @deprecated Use policy engine instead
    */
   private getBlockedReason(issues: Issue[], config: ReviewConfig): string {
     const critical = issues.filter((i) => i.severity === 'critical');

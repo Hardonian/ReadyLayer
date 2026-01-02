@@ -15,6 +15,8 @@ import { metrics } from '../observability/metrics';
 import { ingestDocument, isIngestEnabled } from '../lib/rag';
 import { getInstallationWithDecryptedToken } from '../lib/secrets/installation-helpers';
 import { checkBillingLimits } from '../lib/billing-middleware';
+import { redactSecret } from '../lib/crypto';
+import { isKeyConfigured } from '../lib/crypto';
 
 /**
  * Process webhook event
@@ -27,6 +29,12 @@ async function processWebhookEvent(payload: any): Promise<void> {
   try {
     log.info({ type }, 'Processing webhook event');
 
+    // Check if encryption keys are configured
+    if (!isKeyConfigured()) {
+      log.error('Encryption keys not configured - cannot decrypt installation tokens');
+      throw new Error('Encryption keys not configured - provider calls disabled');
+    }
+
     // Get installation with decrypted token
     const installation = await getInstallationWithDecryptedToken(installationId);
 
@@ -35,6 +43,8 @@ async function processWebhookEvent(payload: any): Promise<void> {
     }
 
     const accessToken = installation.accessToken; // Already decrypted
+    // Never log the token - use redacted version if needed
+    log.debug({ tokenPreview: redactSecret(accessToken) }, 'Using installation token');
 
     switch (type) {
       case 'pr.opened':
@@ -56,7 +66,13 @@ async function processWebhookEvent(payload: any): Promise<void> {
 
     metrics.increment('webhooks.processed', { type, status: 'success' });
   } catch (error) {
-    log.error(error, 'Webhook processing failed');
+    // Redact any secrets from error messages
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const redactedMessage = errorMessage.replace(/token[=:]\s*[\w-]+/gi, (match) => {
+      const tokenValue = match.split(/[=:]\s*/)[1];
+      return match.replace(tokenValue, redactSecret(tokenValue));
+    });
+    log.error({ err: error, message: redactedMessage }, 'Webhook processing failed');
     metrics.increment('webhooks.processed', { type, status: 'failed' });
     throw error;
   }

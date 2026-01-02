@@ -10,6 +10,9 @@ import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 import { checkBillingLimits } from '../../lib/billing-middleware';
+import { policyEngineService } from '../policy-engine';
+import { createHash } from 'crypto';
+import { Issue } from '../static-analysis';
 
 export interface TestGenerationRequest {
   repositoryId: string;
@@ -193,6 +196,48 @@ export class TestEngineService {
 
       const completedAt = new Date();
 
+      // Get organization ID for policy evaluation
+      const repo = await prisma.repository.findUnique({
+        where: { id: request.repositoryId },
+        select: { organizationId: true },
+      });
+      
+      if (!repo) {
+        throw new Error(`Repository ${request.repositoryId} not found`);
+      }
+      
+      const organizationId = repo.organizationId;
+
+      // Load effective policy
+      const policy = await policyEngineService.loadEffectivePolicy(
+        organizationId,
+        request.repositoryId,
+        request.prSha,
+        undefined
+      );
+
+      // Check if AI-touched file requires test generation (policy-based)
+      const aiTouchedFiles = await this.detectAITouchedFiles(request.repositoryId, [
+        { path: request.filePath, content: request.fileContent },
+      ]);
+
+      const findings: Issue[] = [];
+      if (aiTouchedFiles.length > 0 && aiTouchedFiles[0].confidence >= 0.5) {
+        // AI-touched file detected - evaluate risk
+        findings.push({
+          ruleId: 'test-engine.ai-touched',
+          severity: 'high',
+          file: request.filePath,
+          line: 1,
+          message: 'AI-touched file detected - test coverage required',
+          fix: 'Ensure test coverage meets threshold',
+          confidence: aiTouchedFiles[0].confidence,
+        });
+      }
+
+      // Evaluate against policy
+      const evaluationResult = policyEngineService.evaluate(findings, policy);
+
       // Save test result
       const test = await prisma.test.create({
         data: {
@@ -201,7 +246,7 @@ export class TestEngineService {
           prSha: request.prSha || null,
           filePath: request.filePath,
           framework,
-          status: 'generated',
+          status: evaluationResult.blocked ? 'blocked' : 'generated',
           testContent,
           placement,
           startedAt,
@@ -209,9 +254,32 @@ export class TestEngineService {
         },
       });
 
+      // Produce evidence bundle
+      const fileHash = createHash('sha256').update(request.fileContent, 'utf8').digest('hex');
+      const timings = {
+        totalMs: completedAt.getTime() - startedAt.getTime(),
+      };
+      await policyEngineService.produceEvidence(
+        {
+          fileHash,
+          filePath: request.filePath,
+          commitSha: request.prSha,
+          prNumber: request.prNumber,
+          aiTouched: aiTouchedFiles.length > 0,
+        },
+        {
+          findings,
+          evaluationResult,
+          testGenerated: !evaluationResult.blocked,
+        },
+        policy,
+        timings,
+        { testId: test.id }
+      );
+
       return {
         id: test.id,
-        status: 'generated',
+        status: evaluationResult.blocked ? 'blocked' : 'generated',
         testContent,
         placement,
         framework,
@@ -229,7 +297,7 @@ export class TestEngineService {
   }
 
   /**
-   * Check coverage and enforce threshold
+   * Check coverage and enforce threshold (policy-aware)
    */
   async checkCoverage(
     repositoryId: string,
@@ -243,10 +311,45 @@ export class TestEngineService {
     // Parse coverage data
     const coverage = this.parseCoverage(coverageData);
 
+    // Get organization ID for policy evaluation
+    const repo = await prisma.repository.findUnique({
+      where: { id: repositoryId },
+      select: { organizationId: true },
+    });
+    
+    if (!repo) {
+      throw new Error(`Repository ${repositoryId} not found`);
+    }
+
+    // Load effective policy
+    const policy = await policyEngineService.loadEffectivePolicy(
+      repo.organizationId,
+      repositoryId,
+      prSha,
+      undefined
+    );
+
     // Check threshold
     const metric = coverage[testConfig.metric];
     const meetsThreshold = metric.percentage >= testConfig.coverageThreshold;
-    const isBlocked = !meetsThreshold && testConfig.failOnBelow;
+
+    // Create findings based on coverage
+    const findings: Issue[] = [];
+    if (!meetsThreshold) {
+      findings.push({
+        ruleId: 'test-engine.coverage-threshold',
+        severity: 'high',
+        file: 'coverage',
+        line: 1,
+        message: `Coverage ${metric.percentage.toFixed(1)}% below threshold ${testConfig.coverageThreshold}%`,
+        fix: `Increase ${testConfig.metric} coverage to at least ${testConfig.coverageThreshold}%`,
+        confidence: 1.0,
+      });
+    }
+
+    // Evaluate against policy
+    const evaluationResult = policyEngineService.evaluate(findings, policy);
+    const isBlocked = evaluationResult.blocked || (!meetsThreshold && testConfig.failOnBelow);
 
     return {
       repositoryId,
