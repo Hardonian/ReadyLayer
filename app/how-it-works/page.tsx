@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { fadeIn, slideUp, staggerContainer, staggerItem } from '@/lib/design/motion'
+import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
 import {
   Shield,
   TestTube,
@@ -19,13 +19,10 @@ import {
   AlertTriangle,
   ArrowRight,
   Eye,
-  BarChart3,
   GitBranch,
   Settings,
   Zap,
-  Clock,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { PolicyPreview } from '@/components/landing/PolicyPreview'
 import { FailureModes } from '@/components/landing/FailureModes'
 import { RunArtifacts } from '@/components/landing/RunArtifacts'
@@ -274,7 +271,7 @@ export default function HowItWorksPage() {
                     <div className="font-semibold text-sm mb-1">What happens if coverage drops</div>
                     <ul className="text-xs text-text-muted space-y-1 list-disc list-inside">
                       <li>PR is blocked with clear error message</li>
-                      <li>Coverage delta shown: e.g., "Coverage: 75% (-5%)"</li>
+                      <li>Coverage delta shown: e.g., &quot;Coverage: 75% (-5%)&quot;</li>
                       <li>Suggestions provided for missing test cases</li>
                       <li>Test generation re-attempted if possible</li>
                     </ul>

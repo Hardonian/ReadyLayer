@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
-  Zap,
   Settings,
   Eye,
   BarChart3,

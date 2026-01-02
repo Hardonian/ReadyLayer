@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { FileText, Download, Code, BarChart3, TestTube } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
-import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
+import { fadeIn, staggerContainer } from '@/lib/design/motion'
 
 interface RunArtifactsProps {
   className?: string

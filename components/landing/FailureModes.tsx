@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, WifiOff, Clock, FileX, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { AlertTriangle, WifiOff, Clock, FileX, CheckCircle2, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'

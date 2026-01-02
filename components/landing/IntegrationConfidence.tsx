@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Eye, XCircle, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Shield, XCircle, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
@@ -161,8 +161,8 @@ export function IntegrationConfidence({ className }: IntegrationConfidenceProps)
               <div className="font-semibold mb-2">How to uninstall / revoke</div>
               <ol className="text-sm text-text-muted space-y-1 list-decimal list-inside">
                 <li>Go to your repository settings on GitHub/GitLab</li>
-                <li>Navigate to "Installed GitHub Apps" or "Integrations"</li>
-                <li>Find ReadyLayer and click "Uninstall"</li>
+                <li>Navigate to &quot;Installed GitHub Apps&quot; or &quot;Integrations&quot;</li>
+                <li>Find ReadyLayer and click &quot;Uninstall&quot;</li>
                 <li>All permissions are immediately revoked</li>
                 <li>ReadyLayer will stop processing new PRs</li>
               </ol>
