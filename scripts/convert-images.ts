@@ -40,14 +40,8 @@ async function convertImages() {
     writeFileSync(join(publicDir, 'logo-seo.png'), seoBuffer)
     console.log('✓ Copied logo-seo.png')
     
-    // Create favicon.ico (16x16, 32x32 sizes)
+    // Create favicon.ico (32x32 size)
     const faviconBuffer = readFileSync(faviconPNG)
-    
-    // Create 16x16 favicon
-    const favicon16 = await sharp(faviconBuffer)
-      .resize(16, 16, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toBuffer()
     
     // Create 32x32 favicon
     const favicon32 = await sharp(faviconBuffer)
