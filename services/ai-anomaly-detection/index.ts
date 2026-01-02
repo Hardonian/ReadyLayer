@@ -8,6 +8,8 @@
 
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
+import { selfLearningService } from '../self-learning';
+import { predictiveDetectionService } from '../predictive-detection';
 
 export interface AnomalyDetectionResult {
   anomalies: Anomaly[];
@@ -140,16 +142,47 @@ export class AIAnomalyDetectionService {
       developerProfile || this.inferDeveloperProfile(reviews, violations)
     );
 
+    // Get predictive alerts with confidence scores
+    let predictiveAlerts: any[] = [];
+    try {
+      predictiveAlerts = await predictiveDetectionService.predictIssues({
+        repositoryId: targetRepositoryId,
+        organizationId: targetOrganizationId,
+        recentActivity: reviews.map((r) => ({
+          type: 'review',
+          timestamp: r.createdAt,
+          metadata: { prNumber: r.prNumber, summary: r.summary },
+        })),
+      });
+    } catch (error) {
+      // Don't fail if predictive detection fails
+      console.error('Predictive detection failed:', error);
+    }
+
+    // Get aggregated insights from self-learning
+    let aggregatedInsights: any[] = [];
+    try {
+      aggregatedInsights = await selfLearningService.generateInsights(
+        targetOrganizationId
+      );
+    } catch (error) {
+      console.error('Failed to generate insights:', error);
+    }
+
     return {
       anomalies,
       tokenWaste,
       repeatedMistakes,
       suggestions,
+      predictiveAlerts,
+      aggregatedInsights,
       summary: {
         totalAnomalies: anomalies.length,
         totalTokenWaste: tokenWaste.totalTokensUsed,
         repeatedMistakeCount: repeatedMistakes.length,
         suggestionCount: suggestions.length,
+        predictiveAlertsCount: predictiveAlerts.length,
+        insightsCount: aggregatedInsights.length,
       },
     };
   }

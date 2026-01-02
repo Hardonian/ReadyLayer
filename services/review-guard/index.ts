@@ -14,6 +14,8 @@ import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { UsageLimitExceededError } from '../../lib/usage-enforcement';
 import { aiAnomalyDetectionService } from '../ai-anomaly-detection';
+import { selfLearningService } from '../self-learning';
+import { predictiveDetectionService } from '../predictive-detection';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -247,6 +249,43 @@ export class ReviewGuardService {
       // Track token usage for anomaly detection
       await this.trackTokenUsage(review.id, request.repositoryId, organizationId);
 
+      // Record model performance for self-learning
+      await this.recordModelPerformance(
+        organizationId,
+        request.repositoryId,
+        review.id,
+        evaluationResult,
+        completedAt.getTime() - startedAt.getTime()
+      );
+
+      // Generate predictive alerts
+      try {
+        const predictiveAlerts = await predictiveDetectionService.predictIssues({
+          repositoryId: request.repositoryId,
+          organizationId,
+          codeContext: request.diff,
+          recentActivity: [
+            {
+              type: 'review',
+              timestamp: completedAt,
+              metadata: {
+                prNumber: request.prNumber,
+                issuesFound: summary.total,
+                isBlocked,
+              },
+            },
+          ],
+        });
+
+        // Store high-confidence alerts
+        for (const alert of predictiveAlerts.filter((a) => a.confidence.finalConfidence > 0.7)) {
+          // Alerts are stored by predictive detection service
+        }
+      } catch (error) {
+        // Don't fail review if predictive detection fails
+        console.error('Predictive detection failed:', error);
+      }
+
       return {
         id: review.id,
         status: isBlocked ? 'blocked' : 'completed',
@@ -410,7 +449,7 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
       const totalTokens = response.tokensUsed;
       const wastePercentage = totalTokens > 50000 ? 20 : totalTokens > 20000 ? 10 : 5;
 
-      await prisma.tokenUsage.create({
+      const tokenUsage = await prisma.tokenUsage.create({
         data: {
           repositoryId,
           organizationId,
@@ -424,9 +463,48 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
           wastePercentage,
         },
       });
+
+      // Record model performance for self-learning
+      await selfLearningService.recordModelPerformance(organizationId, response.model, 
+        response.model.includes('claude') ? 'anthropic' : 'openai', {
+        success: true,
+        responseTime: 0, // Would track actual response time
+        tokensUsed: response.tokensUsed,
+        cost: Number(response.cost),
+        predictionId: tokenUsage.id,
+      });
     } catch (error) {
       // Don't fail review if token tracking fails
       console.error('Failed to track token usage:', error);
+    }
+  }
+
+  /**
+   * Record model performance for self-learning
+   */
+  private async recordModelPerformance(
+    organizationId: string,
+    repositoryId: string,
+    reviewId: string,
+    evaluationResult: any,
+    durationMs: number
+  ): Promise<void> {
+    try {
+      // Get model used (would track which model was used)
+      const modelId = 'gpt-4-turbo-preview'; // Default, would be tracked
+      const provider = 'openai'; // Default, would be tracked
+
+      // Record performance
+      await selfLearningService.recordModelPerformance(organizationId, modelId, provider, {
+        success: evaluationResult.blocked !== undefined,
+        responseTime: durationMs,
+        tokensUsed: 0, // Would track actual tokens
+        cost: 0, // Would track actual cost
+        predictionId: reviewId,
+      });
+    } catch (error) {
+      // Don't fail review if performance tracking fails
+      console.error('Failed to record model performance:', error);
     }
   }
 

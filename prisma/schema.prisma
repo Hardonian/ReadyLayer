@@ -53,6 +53,12 @@ model Organization {
   aiAnomalies   AIAnomaly[]
   aiSuggestions AIOptimizationSuggestion[]
   tokenUsage    TokenUsage[]
+  modelPerformances ModelPerformance[]
+  modelPerformanceAggregates ModelPerformanceAggregate[]
+  aggregatedInsights AggregatedInsight[]
+  dataRetentionPolicy DataRetentionPolicy?
+  userConsents UserConsent[]
+  predictiveAlerts PredictiveAlert[]
 
   @@index([slug])
 }
@@ -99,6 +105,7 @@ model Repository {
   jobs          Job[]
   waivers       Waiver[]
   policyPacks   PolicyPack[]
+  predictiveAlerts PredictiveAlert[]
 
   @@unique([fullName, provider])
   @@index([organizationId])
@@ -585,5 +592,39 @@ model TokenUsage {
   @@index([organizationId])
   @@index([reviewId])
   @@index([service])
+  @@index([createdAt])
+}
+
+// Predictive Alerts (predictions made by the system)
+model PredictiveAlert {
+  id                 String   @id @default(cuid())
+  organizationId     String
+  repositoryId       String?
+  alertType          String // anomaly, drift, token_waste, repeated_mistake, security, quality
+  severity           String // low, medium, high, critical
+  confidence         Decimal  @db.Decimal(5, 4) // 0-1
+  trustLevel         String // low, medium, high, very_high
+  prediction         String   @db.Text
+  rationale          String   @db.Text
+  suggestedAction    String   @db.Text
+  estimatedLikelihood Decimal @db.Decimal(5, 4) // 0-1
+  historicalAccuracy Decimal? @db.Decimal(5, 4)
+  dataPoints         Int
+  metadata           Json? // Confidence score details
+  resolvedAt         DateTime?
+  wasCorrect         Boolean? // Feedback after resolution
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  repository   Repository?  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([repositoryId])
+  @@index([alertType])
+  @@index([severity])
+  @@index([confidence])
+  @@index([trustLevel])
+  @@index([resolvedAt])
   @@index([createdAt])
 }
