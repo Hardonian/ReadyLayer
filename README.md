@@ -6,6 +6,8 @@ ReadyLayer combines deterministic static analysis with AI-powered code review to
 
 ## 🚀 What ReadyLayer Does
 
+ReadyLayer runs a unified pipeline on every PR: **Review Guard → Test Engine → Doc Sync**
+
 ### Review Guard
 - **Blocks PRs on critical security issues** (SQL injection, secrets, etc.) — cannot disable
 - **Blocks PRs on high-severity issues** (configurable by tier)
@@ -17,12 +19,19 @@ ReadyLayer combines deterministic static analysis with AI-powered code review to
 - **Blocks PRs** when coverage threshold not met
 - **Auto-generates tests** for AI-touched files (Jest, Mocha, pytest supported)
 - **Framework detection**: Auto-detects test framework from codebase
+- **AI-touched detection**: Automatically detects files modified by AI tools
 
 ### Doc Sync
 - **Blocks PRs** when API docs are out of sync with code — drift prevention required
 - **Generates OpenAPI/Markdown** documentation from code
 - **Framework detection**: Auto-detects API framework (Express, Fastify, Flask, Django)
 - **Merge-triggered updates**: Updates docs on merge (requires PR approval)
+
+### Unified Run Pipeline
+- **Complete audit trail**: Every run is tracked with correlation IDs
+- **Stage-by-stage status**: See exactly where each stage succeeded or failed
+- **Policy gates**: Automatic evaluation of all findings against your policy
+- **Sandbox mode**: Try ReadyLayer without connecting a repository
 
 ## 🏗️ Architecture
 
@@ -108,6 +117,32 @@ npm run dev
 
 The API will be available at `http://localhost:3000`
 
+### 5. Try the Sandbox Demo
+
+ReadyLayer includes a sandbox mode for testing without connecting a repository:
+
+1. Visit `http://localhost:3000/dashboard/runs/sandbox`
+2. Click "Start Sandbox Demo"
+3. View the complete pipeline execution with sample code
+
+The sandbox demo runs the full pipeline (Review Guard → Test Engine → Doc Sync) on sample files so you can see ReadyLayer in action immediately.
+
+### 6. Run Doctor Script (Pre-Deployment Checks)
+
+Before deploying, run the doctor script to verify everything is working:
+
+```bash
+npm run doctor
+```
+
+This runs:
+- Lint checks
+- Type checking
+- Prisma schema validation
+- Production build
+
+All checks must pass before deployment.
+
 ## 📚 API Documentation
 
 ### Base URL
@@ -116,6 +151,12 @@ http://localhost:3000/api/v1
 ```
 
 ### Endpoints
+
+#### Runs (Unified Pipeline)
+- `POST /runs` - Create and execute a new run
+- `GET /runs` - List runs (tenant-isolated)
+- `GET /runs/:runId` - Get run details with complete audit trail
+- `POST /runs/sandbox` - Create a sandbox demo run (no auth required)
 
 #### Reviews
 - `POST /reviews` - Create a new review
@@ -126,6 +167,9 @@ http://localhost:3000/api/v1
 - `GET /repos` - List repositories
 - `GET /repos/:repoId` - Get repository details
 - `PATCH /repos/:repoId` - Update repository config
+
+#### Test Runs
+- `GET /test-runs` - List test runs (CI/CD integration)
 
 #### Webhooks
 - `POST /webhooks/github` - GitHub webhook handler
@@ -218,18 +262,35 @@ The following features are planned but not yet available:
 - LLM response caching (reduces costs)
 - Advanced self-learning (pattern detection)
 
-## 🧪 Testing
+## 🧪 Testing & Verification
 
 ```bash
-# Type check
-npm run type-check
+# Run all checks (lint, typecheck, build)
+npm run doctor
 
-# Lint
-npm run lint
-
-# Build
-npm run build
+# Individual checks
+npm run type-check  # Type check
+npm run lint        # Lint
+npm run build       # Production build
+npm run prisma:validate  # Database schema validation
 ```
+
+### Golden Demo Path
+
+To verify ReadyLayer works end-to-end:
+
+1. **Start the server**: `npm run dev`
+2. **Sign up/Login**: Visit `http://localhost:3000/auth/signin`
+3. **Run sandbox demo**: Visit `http://localhost:3000/dashboard/runs/sandbox` and click "Start Sandbox Demo"
+4. **View results**: Navigate to the run details page to see:
+   - Review Guard findings
+   - Test Engine results
+   - Doc Sync status
+   - AI-touched file detection
+   - Policy gate evaluation
+5. **Verify no 500s**: Check browser console and server logs for errors
+
+All routes should return structured responses (no hard 500s). Failures should be graceful with helpful error messages.
 
 ## 📖 Documentation
 

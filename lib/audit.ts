@@ -9,7 +9,7 @@ import type { Prisma } from '@prisma/client';
 import { logger } from '../observability/logging';
 
 export interface AuditLogData {
-  organizationId: string;
+  organizationId: string | null;
   userId: string | null;
   action: string;
   resourceType: string;
@@ -17,6 +17,7 @@ export interface AuditLogData {
   details?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
+  runId?: string;
 }
 
 /**
@@ -28,7 +29,7 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
   try {
     await prisma.auditLog.create({
       data: {
-        organizationId: data.organizationId,
+        organizationId: data.organizationId || null,
         userId: data.userId,
         action: data.action,
         resourceType: data.resourceType,
@@ -36,6 +37,7 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
         details: (data.details || {}) as Prisma.InputJsonValue,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
+        runId: data.runId || null,
       },
     });
   } catch (error) {
@@ -93,4 +95,10 @@ export const AuditActions = {
   API_KEY_CREATED: 'api_key_created',
   API_KEY_DELETED: 'api_key_deleted',
   API_KEY_USED: 'api_key_used',
+  
+  // Run actions
+  RUN_CREATED: 'run_created',
+  RUN_COMPLETED: 'run_completed',
+  RUN_FAILED: 'run_failed',
+  RUN_CANCELLED: 'run_cancelled',
 } as const;

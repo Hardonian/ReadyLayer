@@ -109,6 +109,7 @@ model Repository {
   aiAnomalies   AIAnomaly[]
   aiSuggestions AIOptimizationSuggestion[]
   tokenUsage    TokenUsage[]
+  runs          ReadyLayerRun[]
 
   @@unique([fullName, provider])
   @@index([organizationId])
@@ -194,6 +195,7 @@ model Review {
   violations     Violation[]
   evidenceBundle EvidenceBundle?
   tokenUsage     TokenUsage[]
+  run            ReadyLayerRun?
 
   @@unique([repositoryId, prNumber, prSha])
   @@index([repositoryId])
@@ -281,10 +283,70 @@ model Doc {
   @@index([driftDetected])
 }
 
+// ReadyLayer Run (unified pipeline: Review Guard → Test Engine → Doc Sync)
+model ReadyLayerRun {
+  id            String    @id @default(cuid())
+  correlationId String    @unique // For tracing across services
+  repositoryId  String?
+  sandboxId     String?   @unique // For sandbox demo runs
+  trigger       String    // 'webhook', 'manual', 'sandbox'
+  triggerMetadata Json?   // { prNumber, prSha, userId, etc. }
+  
+  // Stage statuses
+  reviewGuardStatus String @default("pending") // pending, running, succeeded, failed, skipped
+  testEngineStatus  String @default("pending") // pending, running, succeeded, failed, skipped
+  docSyncStatus     String @default("pending") // pending, running, succeeded, failed, skipped
+  
+  // Overall status
+  status        String    @default("pending") // pending, running, completed, failed, cancelled
+  conclusion    String?   // success, failure, partial_success, cancelled
+  
+  // Stage outputs
+  reviewGuardResult Json? // Review result summary
+  testEngineResult   Json? // Test generation/coverage summary
+  docSyncResult      Json? // Doc sync summary
+  
+  // AI-touched detection
+  aiTouchedDetected Boolean @default(false)
+  aiTouchedFiles    Json?   // Array of detected files with confidence
+  
+  // Policy gates
+  gatesPassed  Boolean   @default(false)
+  gatesFailed  Json?     // Array of failed gates with reasons
+  
+  // Timing
+  startedAt     DateTime  @default(now())
+  completedAt  DateTime?
+  reviewGuardStartedAt   DateTime?
+  reviewGuardCompletedAt DateTime?
+  testEngineStartedAt    DateTime?
+  testEngineCompletedAt  DateTime?
+  docSyncStartedAt       DateTime?
+  docSyncCompletedAt    DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  repository Repository? @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
+  
+  // Relations to stage outputs
+  reviewId     String?   @unique
+  review       Review?   @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+  
+  auditLogs    AuditLog[]
+
+  @@index([correlationId])
+  @@index([repositoryId])
+  @@index([sandboxId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([trigger])
+}
+
 // Queue Jobs (Redis-backed, but also persisted for durability)
 model Job {
   id          String    @id @default(cuid())
-  type        String // review, test_generation, doc_sync, webhook
+  type        String // review, test_generation, doc_sync, webhook, run
   status      String    @default("pending") // pending, processing, completed, failed, retrying
   payload     Json // Job payload
   result      Json? // Job result
@@ -299,6 +361,7 @@ model Job {
 
   repositoryId String?
   userId       String?
+  runId        String?   // Link to ReadyLayerRun if this job is part of a run
 
   repository Repository? @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
   user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -307,6 +370,7 @@ model Job {
   @@index([status])
   @@index([scheduledAt])
   @@index([repositoryId])
+  @@index([runId])
 }
 
 // Historical Violation Tracking (for pattern detection)
@@ -408,12 +472,15 @@ model AuditLog {
 
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  run          ReadyLayerRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  runId        String?
 
   @@index([organizationId])
   @@index([userId])
   @@index([action])
   @@index([resourceType])
   @@index([createdAt])
+  @@index([runId])
 }
 
 // Policy-as-Code Models

@@ -58,6 +58,8 @@ export const CACHE_KEYS = {
   REPO: (id: string) => `repo:${id}`,
   REVIEWS: 'reviews',
   REVIEW: (id: string) => `review:${id}`,
+  RUNS: 'runs',
+  RUN: (id: string) => `run:${id}`,
   METRICS: 'metrics',
   DASHBOARD: 'dashboard',
 } as const
