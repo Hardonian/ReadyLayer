@@ -105,8 +105,8 @@ export class OutboxService {
             data: { status: 'processing' },
           });
           
-          // Extract update from payload
-          const update = intent.payload as StageStatusUpdate;
+          // Extract update from payload (safe type assertion)
+          const update = intent.payload as unknown as StageStatusUpdate;
           
           // Post to provider (only if repositoryId exists - skip sandbox)
           if (intent.repositoryId && update.repositoryId) {
@@ -160,6 +160,7 @@ export class OutboxService {
   async getIntentsForRun(runId: string): Promise<Array<{
     id: string;
     idempotencyKey: string;
+    runId: string;
     intentType: string;
     status: string;
     postedAt: Date | null;
@@ -170,6 +171,7 @@ export class OutboxService {
       select: {
         id: true,
         idempotencyKey: true,
+        runId: true,
         intentType: true,
         status: true,
         postedAt: true,

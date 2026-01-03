@@ -4,7 +4,6 @@
  * Manages organization/repo/stage budgets and enforces limits
  */
 
-import { prisma } from '../../lib/prisma';
 import { logger } from '../../observability/logging';
 import { usageAccountingService } from '../usage-accounting';
 

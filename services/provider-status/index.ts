@@ -5,7 +5,7 @@
  * during ReadyLayer run stages to provide native PR/MR presence.
  */
 
-import { getGitProviderPRAdapter, type CheckRunDetails } from '../../integrations/git-provider-pr-adapter';
+import { getGitProviderPRAdapter, type CheckRunDetails, type CheckRunAnnotation } from '../../integrations/git-provider-pr-adapter';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../observability/logging';
 import { getInstallationWithDecryptedToken } from '../../lib/secrets/installation-helpers';
@@ -52,8 +52,8 @@ export interface StageStatusUpdate {
 /**
  * Convert issues to check-run annotations (max 50 for GitHub)
  */
-function issuesToAnnotations(issues: Issue[]): CheckRunDetails['output']['annotations'] {
-  const annotations: CheckRunDetails['output']['annotations'] = [];
+function issuesToAnnotations(issues: Issue[]): CheckRunAnnotation[] {
+  const annotations: CheckRunAnnotation[] = [];
   
   for (const issue of issues.slice(0, 50)) { // GitHub limit is 50
     let annotationLevel: 'notice' | 'warning' | 'failure';

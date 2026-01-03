@@ -37,7 +37,6 @@ async function main() {
   console.log('='.repeat(60));
 
   let sandboxRunId: string | null = null;
-  let correlationId: string | null = null;
   let sandboxId: string | null = null;
 
   try {
@@ -52,7 +51,6 @@ async function main() {
       }
 
       sandboxRunId = result.id;
-      correlationId = result.correlationId;
       
       // Get sandbox ID from database
       const runRecord = await prisma.readyLayerRun.findUnique({
@@ -245,8 +243,15 @@ async function main() {
         throw new Error('Rerun created duplicate run ID');
       }
 
+      // Get sandbox ID from rerun result
+      const rerunRecord = await prisma.readyLayerRun.findUnique({
+        where: { id: rerunResult.id },
+        select: { sandboxId: true },
+      });
+      const rerunSandboxId = rerunRecord?.sandboxId || null;
+
       const finalRunCount = await prisma.readyLayerRun.count({
-        where: { sandboxId: rerunResult.sandboxId },
+        where: { sandboxId: rerunSandboxId },
       });
 
       if (finalRunCount !== initialRunCount + 1) {

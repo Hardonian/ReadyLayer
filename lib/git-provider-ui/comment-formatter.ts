@@ -25,6 +25,11 @@ export interface CommentFormatOptions {
     provider?: string
     url?: string
   }
+  pr?: {
+    number?: number
+    sha?: string
+    title?: string
+  }
   includeScore?: boolean
   includeIssues?: boolean
   maxIssues?: number

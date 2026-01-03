@@ -16,7 +16,6 @@ import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest } from '../review-guard';
 import { testEngineService, TestGenerationRequest } from '../test-engine';
 import { docSyncService } from '../doc-sync';
-import { providerStatusService } from '../provider-status';
 import { outboxService } from '../outbox';
 import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
