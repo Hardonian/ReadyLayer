@@ -16,6 +16,7 @@ const PUBLIC_ROUTES = [
   '/auth/error',
   '/api/health',
   '/api/ready',
+  '/api/v1/runs/sandbox', // Public sandbox demo endpoint
 ]
 
 /**
@@ -181,8 +182,8 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
-  // Health and ready endpoints - always public
-  if (pathname === '/api/health' || pathname === '/api/ready') {
+  // Health, ready, and sandbox endpoints - always public
+  if (pathname === '/api/health' || pathname === '/api/ready' || pathname === '/api/v1/runs/sandbox') {
     return NextResponse.next()
   }
 
