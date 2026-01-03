@@ -95,6 +95,8 @@ export async function GET(request: NextRequest) {
           reviewGuardCompletedAt: true,
           testEngineStartedAt: true,
           testEngineCompletedAt: true,
+          docSyncResult: true,
+          testEngineResult: true,
         },
       }),
       prisma.review.findMany({
