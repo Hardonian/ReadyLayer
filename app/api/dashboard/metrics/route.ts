@@ -43,7 +43,7 @@ export const GET = createRouteHandler(
           userId: user.id,
         },
       },
-    })
+    }) as { id: string; organizationId: string; userId: string; role: string } | null
 
     if (!membership) {
       return errorResponse('FORBIDDEN', 'Access denied', 403)
@@ -82,7 +82,13 @@ export const GET = createRouteHandler(
           review: true,
         },
         orderBy: { createdAt: 'desc' },
-      })
+      }) as Array<{
+        id: string
+        aiTouchedDetected: boolean
+        gatesPassed: boolean
+        createdAt: Date
+        repository: { fullName: string } | null
+      }>
 
       // Get reviews (for PR metrics)
       const reviews = await prisma.review.findMany({
@@ -97,7 +103,15 @@ export const GET = createRouteHandler(
           repository: true,
         },
         orderBy: { createdAt: 'desc' },
-      })
+      }) as Array<{
+        id: string
+        isBlocked: boolean
+        status: string
+        createdAt: Date
+        completedAt: Date | null
+        repository: { fullName: string }
+        repositoryId: string
+      }>
 
       // Get violations (for findings)
       const violations = await prisma.violation.findMany({
@@ -111,7 +125,13 @@ export const GET = createRouteHandler(
         include: {
           repository: true,
         },
-      })
+      }) as Array<{
+        id: string
+        severity: string
+        detectedAt: Date
+        repository: { fullName: string }
+        repositoryId: string
+      }>
 
       // Calculate KPIs
       const totalRuns = runs.length

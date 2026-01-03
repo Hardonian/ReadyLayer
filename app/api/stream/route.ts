@@ -231,7 +231,12 @@ export async function GET(request: NextRequest) {
               },
               take: 10,
               orderBy: { updatedAt: 'desc' },
-            })
+            }) as Array<{
+              id: string
+              status: string
+              conclusion: string | null
+              gatesPassed: boolean
+            }>
 
             if (recentRuns.length > 0) {
               connection.queue.add({
@@ -240,12 +245,7 @@ export async function GET(request: NextRequest) {
                 organizationId,
                 repositoryId,
                 data: {
-                  runs: recentRuns.map((r: {
-                    id: string
-                    status: string
-                    conclusion: string | null
-                    gatesPassed: boolean
-                  }) => ({
+                  runs: recentRuns.map((r) => ({
                     id: r.id,
                     status: r.status,
                     conclusion: r.conclusion,
@@ -268,7 +268,12 @@ export async function GET(request: NextRequest) {
               },
               take: 10,
               orderBy: { updatedAt: 'desc' },
-            })
+            }) as Array<{
+              id: string
+              prNumber: number
+              status: string
+              isBlocked: boolean
+            }>
 
             if (recentReviews.length > 0) {
               connection.queue.add({
@@ -277,12 +282,7 @@ export async function GET(request: NextRequest) {
                 organizationId,
                 repositoryId,
                 data: {
-                  prs: recentReviews.map((r: {
-                    id: string
-                    prNumber: number
-                    status: string
-                    isBlocked: boolean
-                  }) => ({
+                  prs: recentReviews.map((r) => ({
                     id: r.id,
                     prNumber: r.prNumber,
                     status: r.status,
@@ -305,7 +305,11 @@ export async function GET(request: NextRequest) {
               },
               take: 10,
               orderBy: { detectedAt: 'desc' },
-            })
+            }) as Array<{
+              id: string
+              ruleId: string
+              severity: string
+            }>
 
             if (recentViolations.length > 0) {
               connection.queue.add({
@@ -314,11 +318,7 @@ export async function GET(request: NextRequest) {
                 organizationId,
                 repositoryId,
                 data: {
-                  findings: recentViolations.map((v: {
-                    id: string
-                    ruleId: string
-                    severity: string
-                  }) => ({
+                  findings: recentViolations.map((v) => ({
                     id: v.id,
                     ruleId: v.ruleId,
                     severity: v.severity,

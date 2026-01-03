@@ -45,7 +45,7 @@ export const GET = createRouteHandler(
           userId: user.id,
         },
       },
-    })
+    }) as { id: string; organizationId: string; userId: string; role: string } | null
 
     if (!membership) {
       return errorResponse('FORBIDDEN', 'Access denied', 403)
@@ -78,7 +78,22 @@ export const GET = createRouteHandler(
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
-      })
+      }) as Array<{
+        id: string
+        correlationId: string
+        repositoryId: string | null
+        repository: { fullName: string } | null
+        trigger: string
+        status: string
+        conclusion: string | null
+        reviewGuardStatus: string
+        testEngineStatus: string
+        docSyncStatus: string
+        gatesPassed: boolean
+        aiTouchedDetected: boolean
+        startedAt: Date
+        completedAt: Date | null
+      }>
 
       const runSnapshots = runs.map((run: {
         id: string

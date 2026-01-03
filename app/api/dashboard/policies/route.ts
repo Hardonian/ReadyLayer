@@ -45,7 +45,7 @@ export const GET = createRouteHandler(
           userId: user.id,
         },
       },
-    })
+    }) as { id: string; organizationId: string; userId: string; role: string } | null
 
     if (!membership) {
       return errorResponse('FORBIDDEN', 'Access denied', 403)
@@ -77,7 +77,20 @@ export const GET = createRouteHandler(
         orderBy: { updatedAt: 'desc' },
         take: limit,
         skip: offset,
-      })
+      }) as Array<{
+        id: string
+        organizationId: string
+        repositoryId: string | null
+        version: string
+        rules: Array<{
+          id: string
+          ruleId: string
+          enabled: boolean
+          severityMapping: unknown
+        }>
+        createdAt: Date
+        updatedAt: Date
+      }>
 
       // Get total repos for coverage calculation
       const totalRepos = await prisma.repository.count({

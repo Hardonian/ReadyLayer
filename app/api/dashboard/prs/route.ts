@@ -45,7 +45,7 @@ export const GET = createRouteHandler(
           userId: user.id,
         },
       },
-    })
+    }) as { id: string; organizationId: string; userId: string; role: string } | null
 
     if (!membership) {
       return errorResponse('FORBIDDEN', 'Access denied', 403)
@@ -78,7 +78,19 @@ export const GET = createRouteHandler(
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
-      })
+      }) as Array<{
+        id: string
+        repositoryId: string
+        repository: { fullName: string }
+        prNumber: number
+        prSha: string
+        prTitle: string | null
+        isBlocked: boolean
+        blockedReason: string | null
+        status: string
+        createdAt: Date
+        updatedAt: Date
+      }>
 
       // Get runs for gate status
       const reviewIds = reviews.map((r) => r.id)
@@ -86,7 +98,13 @@ export const GET = createRouteHandler(
         where: {
           reviewId: { in: reviewIds },
         },
-      })
+      }) as Array<{
+        id: string
+        reviewId: string | null
+        gatesPassed: boolean
+        gatesFailed: unknown
+        aiTouchedDetected: boolean
+      }>
 
       const runMap = new Map(runs.map((r) => [r.reviewId, r]))
 
@@ -104,7 +122,7 @@ export const GET = createRouteHandler(
         updatedAt: Date
       }) => {
         const run = runMap.get(review.id)
-        const gatesFailed = run && typeof run === 'object' && 'gatesFailed' in run && Array.isArray(run.gatesFailed)
+        const gatesFailed = run && Array.isArray(run.gatesFailed)
           ? (run.gatesFailed as string[])
           : []
 
@@ -124,9 +142,9 @@ export const GET = createRouteHandler(
                 : ('needs_review' as const),
           isBlocked: review.isBlocked,
           blockedReason: review.blockedReason,
-          gatesPassed: run && typeof run === 'object' && 'gatesPassed' in run ? Boolean(run.gatesPassed) : false,
+          gatesPassed: run ? run.gatesPassed : false,
           gatesFailed,
-          aiTouchedDetected: run && typeof run === 'object' && 'aiTouchedDetected' in run ? Boolean(run.aiTouchedDetected) : false,
+          aiTouchedDetected: run ? run.aiTouchedDetected : false,
           createdAt: review.createdAt.toISOString(),
           updatedAt: review.updatedAt.toISOString(),
         }

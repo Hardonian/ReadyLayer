@@ -31,7 +31,7 @@ export default function LiveOpsConsolePage() {
     enabled: !!organizationId,
   })
 
-  const { data: prsData, isLoading: prsLoading } = useDashboardPRs({
+  useDashboardPRs({
     organizationId: organizationId || '',
     enabled: !!organizationId,
     limit: 20,

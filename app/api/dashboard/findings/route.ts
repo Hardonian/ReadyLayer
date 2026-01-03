@@ -45,7 +45,7 @@ export const GET = createRouteHandler(
           userId: user.id,
         },
       },
-    })
+    }) as { id: string; organizationId: string; userId: string; role: string } | null
 
     if (!membership) {
       return errorResponse('FORBIDDEN', 'Access denied', 403)
@@ -79,15 +79,30 @@ export const GET = createRouteHandler(
         orderBy: { detectedAt: 'desc' },
         take: limit,
         skip: offset,
-      })
+      }) as Array<{
+        id: string
+        repositoryId: string
+        repository: { fullName: string }
+        reviewId: string | null
+        review: { isBlocked: boolean; status: string } | null
+        ruleId: string
+        severity: string
+        file: string
+        line: number
+        message: string
+        detectedAt: Date
+      }>
 
       // Get runs for evidence references
-      const reviewIds = violations.map((v) => v.reviewId).filter(Boolean) as string[]
+      const reviewIds = violations.map((v) => v.reviewId).filter((id): id is string => Boolean(id))
       const runs = await prisma.readyLayerRun.findMany({
         where: {
           reviewId: { in: reviewIds },
         },
-      })
+      }) as Array<{
+        id: string
+        reviewId: string | null
+      }>
 
       const runMap = new Map(runs.map((r) => [r.reviewId, r]))
 
@@ -117,8 +132,8 @@ export const GET = createRouteHandler(
 
         // Evidence references (simplified - would link to evidence bundles)
         const evidenceReferences: string[] = []
-        if (run && typeof run === 'object' && 'id' in run && 'reviewId' in run && run.reviewId) {
-          evidenceReferences.push(`run:${String(run.id)}`)
+        if (run && run.reviewId) {
+          evidenceReferences.push(`run:${run.id}`)
         }
         if (violation.reviewId) {
           evidenceReferences.push(`review:${violation.reviewId}`)
@@ -129,7 +144,7 @@ export const GET = createRouteHandler(
           repositoryId: violation.repositoryId,
           repositoryName: violation.repository.fullName,
           reviewId: violation.reviewId,
-          runId: run && typeof run === 'object' && 'id' in run ? String(run.id) : null,
+          runId: run ? run.id : null,
           ruleId: violation.ruleId,
           detectorId: violation.ruleId, // Simplified - would have separate detector IDs
           severity: violation.severity as 'info' | 'warn' | 'high' | 'critical',

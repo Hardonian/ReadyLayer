@@ -4,6 +4,8 @@ import './globals.css'
 import { AppLayout } from '@/components/layout/app-layout'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { QueryProvider } from '@/components/providers/query-provider'
+import { PlatformThemeProvider } from '@/components/providers/platform-theme-provider'
+import { AISupportBot } from '@/components/ai-support/chat-bot'
 import { Toaster } from '@/components/ui/toaster'
 
 const inter = Inter({ 
@@ -98,8 +100,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <QueryProvider>
-            <AppLayout>{children}</AppLayout>
-            <Toaster />
+            <PlatformThemeProvider>
+              <AppLayout>{children}</AppLayout>
+              <AISupportBot />
+              <Toaster />
+            </PlatformThemeProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>
