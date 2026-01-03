@@ -826,3 +826,29 @@ model PredictionFeedback {
   @@index([timestamp])
   @@index([wasCorrect])
 }
+
+// Outbox Pattern for Provider Status Updates
+// Ensures idempotent delivery of status updates to git providers
+model OutboxIntent {
+  id                String   @id @default(cuid())
+  idempotencyKey    String   @unique // Composite key: runId_stage_status
+  runId             String
+  repositoryId      String?
+  sandboxId         String?  // For sandbox runs
+  intentType        String   // 'status_update' | 'check_run' | 'commit_status'
+  payload           Json     // Full payload to send to provider
+  status            String   @default("pending") // pending, processing, completed, failed
+  retryCount        Int      @default(0)
+  maxRetries        Int      @default(3)
+  error             String?  @db.Text
+  postedAt          DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([runId])
+  @@index([repositoryId])
+  @@index([sandboxId])
+  @@index([status])
+  @@index([idempotencyKey])
+  @@index([createdAt])
+}
