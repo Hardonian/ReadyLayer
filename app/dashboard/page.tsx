@@ -27,6 +27,7 @@ import {
   Sparkles,
   AlertCircle,
   Lightbulb,
+  PlayCircle,
 } from 'lucide-react'
 import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
@@ -665,6 +666,33 @@ export default function DashboardPage() {
                   </button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div variants={fadeIn}>
+          <Card className="bg-gradient-to-r from-primary/5 to-blue-500/5 border-primary/20">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  href="/dashboard/runs/sandbox"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                >
+                  <PlayCircle className="h-4 w-4" />
+                  Try Sandbox Demo
+                </Link>
+                <Link
+                  href="/dashboard/runs"
+                  className="px-4 py-2 bg-surface-muted text-foreground rounded-lg hover:bg-surface-hover transition-colors flex items-center gap-2"
+                >
+                  View All Runs
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
