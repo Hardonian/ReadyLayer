@@ -19,6 +19,7 @@ import {
   FileCode,
   Clock,
   Search,
+  Shield,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -155,10 +156,20 @@ export default function ReviewsPage() {
       >
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold" id="reviews-heading">Reviews</h1>
-          <p className="text-text-muted">
-            View all code reviews and verification results
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold" id="reviews-heading">Reviews</h1>
+              <p className="text-text-muted">
+                Deterministic code reviews with signed certificates. Every decision is defensible.
+              </p>
+            </div>
+          </div>
+          <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 mt-4">
+            <div className="text-xs font-semibold text-primary mb-1">ReadyLayer Verified™</div>
+            <div className="text-xs text-muted-foreground">
+              Every review generates a Merge Confidence Certificate. If ReadyLayer didn't review a PR, that absence is visible.
+            </div>
+          </div>
         </div>
 
         {/* Filters */}
@@ -253,9 +264,13 @@ export default function ReviewsPage() {
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-success-muted text-success rounded border border-success/20">
                                 <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-                                Approved
+                                ReadyLayer Verified
                               </span>
                             )}
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-primary/10 text-primary rounded border border-primary/20">
+                              <Shield className="h-3 w-3" aria-hidden="true" />
+                              Certificate Available
+                            </span>
                           </div>
                           {review.summary && (
                             <div className="flex items-center gap-4 text-sm text-text-muted mb-2">

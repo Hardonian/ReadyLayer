@@ -206,8 +206,14 @@ export default function RunsPage() {
           <div className="space-y-2">
             <h1 className="text-3xl font-bold">Runs</h1>
             <p className="text-muted-foreground">
-              View all ReadyLayer pipeline runs with complete audit trail
+              Deterministic pipeline execution. Every run is signed, traceable, and replayable.
             </p>
+            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 mt-2">
+              <div className="text-xs font-semibold text-primary mb-1">Deterministic Governance</div>
+              <div className="text-xs text-muted-foreground">
+                Same inputs + same policy = same outputs. Every gate execution produces immutable evidence bundles.
+              </div>
+            </div>
           </div>
 
           {/* Filters */}

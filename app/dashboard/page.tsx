@@ -28,6 +28,8 @@ import {
   AlertCircle,
   Lightbulb,
   PlayCircle,
+  BarChart3,
+  Badge,
 } from 'lucide-react'
 import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
@@ -339,7 +341,7 @@ export default function DashboardPage() {
             {persona && <PersonaBadge persona={persona} />}
           </div>
           <p className="text-muted-foreground" id="dashboard-description">
-            Verifiable assurance for AI-generated code. Every check is transparent and traceable.
+            The default authority for AI-generated code safety. Every check is deterministic, auditable, and defensible.
           </p>
         </div>
 
@@ -350,6 +352,34 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {/* Readiness Command Center Link */}
+        <motion.div variants={fadeIn}>
+          <Card className="bg-gradient-to-r from-primary/10 via-purple-500/10 to-blue-500/10 border-primary/30">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-lg bg-primary/20">
+                    <BarChart3 className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-lg">Readiness Command Center</div>
+                    <div className="text-sm text-muted-foreground">
+                      Operational intelligence for AI-safe code delivery. Track readiness scores, risk exposure, and gate performance.
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  href="/dashboard/readiness"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                >
+                  View Command Center
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Verification Status Banner */}
         <motion.div variants={fadeIn}>
           <Card className="bg-primary/5 border-primary/20">
@@ -358,12 +388,15 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3">
                   <Shield className="h-6 w-6 text-primary" />
                   <div>
-                    <div className="font-semibold">Verification Active</div>
+                    <div className="font-semibold">Deterministic Governance Active</div>
                     <div className="text-sm text-muted-foreground">
                       {verification.checksRun.toLocaleString()} checks run • {verification.issuesCaught} issues caught
                       {verification.lastVerified && (
                         <> • Last verified {new Date(verification.lastVerified).toLocaleDateString()}</>
                       )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Every decision is signed, traceable, and defensible in audits
                     </div>
                   </div>
                 </div>
@@ -438,31 +471,62 @@ export default function DashboardPage() {
           </motion.div>
         </motion.div>
 
-        {/* Verification Details */}
+        {/* Cultural Lock-In Artifacts */}
         <motion.div variants={fadeIn}>
           <Card className="bg-gradient-to-r from-primary/5 to-purple-500/5 border-primary/20">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary" />
-                <CardTitle>Verification Assurance</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-6 w-6 text-primary" />
+                  <CardTitle>Cultural Lock-In Artifacts</CardTitle>
+                </div>
+                <Badge variant="outline" className="border-primary/30 text-primary">
+                  ReadyLayer Verified™
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-background/50 p-4 rounded-lg">
-                  <div className="text-sm font-medium mb-1">AI Error Detection</div>
-                  <div className="text-2xl font-bold text-primary">{verification.aiErrorsDetected}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Context slips, drift, hallucinations caught</div>
+                <div className="bg-background/50 p-4 rounded-lg border border-primary/20">
+                  <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                    Merge Confidence Certificates
+                  </div>
+                  <div className="text-2xl font-bold text-primary">{stats.totalReviews}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Every reviewed PR gets a signed certificate. Absence = unreviewed.
+                  </div>
                 </div>
-                <div className="bg-background/50 p-4 rounded-lg">
-                  <div className="text-sm font-medium mb-1">Security Checks</div>
-                  <div className="text-2xl font-bold text-destructive">{Math.floor(verification.checksRun / 3)}</div>
-                  <div className="text-xs text-muted-foreground mt-1">Threat detection & vulnerability scans</div>
+                <div className="bg-background/50 p-4 rounded-lg border border-purple-500/20">
+                  <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <BarChart3 className="h-4 w-4 text-purple-500" />
+                    Readiness Score™
+                  </div>
+                  <div className="text-2xl font-bold text-purple-500">
+                    {stats.activeRepos > 0 ? 'Calculating...' : 'N/A'}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Per-repository readiness metric. Visible in PRs and dashboards.
+                  </div>
                 </div>
-                <div className="bg-background/50 p-4 rounded-lg">
-                  <div className="text-sm font-medium mb-1">Transparency</div>
-                  <div className="text-2xl font-bold text-success">100%</div>
-                  <div className="text-xs text-muted-foreground mt-1">Every check is traceable and verifiable</div>
+                <div className="bg-background/50 p-4 rounded-lg border border-blue-500/20">
+                  <div className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-blue-500" />
+                    AI Risk Exposure Index™
+                  </div>
+                  <div className="text-2xl font-bold text-blue-500">
+                    {stats.totalRepos > 0 ? 'Calculating...' : 'N/A'}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Organization-wide risk assessment. Track trends over time.
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <div className="text-xs font-semibold text-primary mb-1">The Inevitability Principle</div>
+                <div className="text-xs text-muted-foreground">
+                  If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms. 
+                  If ReadyLayer didn't review it, that absence is visible.
                 </div>
               </div>
             </CardContent>
