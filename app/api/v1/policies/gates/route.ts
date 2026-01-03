@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
-    const repositoryId = searchParams.get('repositoryId');
+    const _repositoryId = searchParams.get('repositoryId'); // Reserved for future use
 
     // Get user's organization memberships
     const memberships = await prisma.organizationMember.findMany({
@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
 
     // Policy gates are stored in PolicyPack rules
     // For now, return empty array (gates will be implemented via PolicyPack)
-    // Filter by organizationId if provided
-    const filteredOrgIds = organizationId && userOrgIds.includes(organizationId)
+    // Filter by organizationId if provided (reserved for future use)
+    const _filteredOrgIds = organizationId && userOrgIds.includes(organizationId)
       ? [organizationId]
       : userOrgIds;
 
