@@ -57,12 +57,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/dashboard/repos', label: 'Repositories' },
-    { href: '/dashboard/reviews', label: 'Reviews' },
+    { href: '/dashboard/live', label: 'Live Ops' },
+    { href: '/dashboard/prs', label: 'PRs' },
+    { href: '/dashboard/runs', label: 'Runs' },
+    { href: '/dashboard/findings', label: 'Findings' },
     { href: '/dashboard/policies', label: 'Policies' },
-    { href: '/dashboard/waivers', label: 'Waivers' },
-    { href: '/dashboard/evidence', label: 'Evidence' },
-    { href: '/dashboard/metrics', label: 'Metrics' },
+    { href: '/dashboard/audit', label: 'Audit' },
+    { href: '/dashboard/settings', label: 'Settings' },
   ]
 
   // Don't show nav on auth pages or landing page
