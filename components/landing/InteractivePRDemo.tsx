@@ -21,6 +21,7 @@ import {
   BarChart3,
   Eye,
   ExternalLink,
+  Award,
 } from 'lucide-react'
 import type {
   PRCheck,
@@ -349,13 +350,17 @@ export function InteractivePRDemo({
                 <Bot className="h-3 w-3" />
                 AI Detected
               </Badge>
+              <Badge variant="success" className="text-xs flex items-center gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+                <CheckCircle2 className="h-3 w-3" />
+                ReadyLayer Verified™
+              </Badge>
               <Badge variant="outline" className="text-xs">
                 Interactive Preview
               </Badge>
             </div>
             <div className="flex items-center gap-2 text-xs text-text-muted">
               <Eye className="h-3 w-3" />
-              <span>All checks traceable</span>
+              <span>Deterministic • Signed • Traceable</span>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-2">
@@ -507,6 +512,38 @@ export function InteractivePRDemo({
                 })}
               </AnimatePresence>
 
+              {/* Merge Confidence Certificate */}
+              {checkStates.get('ds-changelog') === 'success' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-4 rounded-md border-2 border-primary bg-gradient-to-r from-primary/10 to-purple-500/10"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Award className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-primary">Merge Confidence Certificate</span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">Certificate ID:</span>
+                      <span className="font-mono text-xs">cert_rev_abc123_{Date.now()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">Confidence Score:</span>
+                      <span className="font-semibold text-success">85/100</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">Readiness Level:</span>
+                      <Badge variant="success" className="text-xs">Ready</Badge>
+                    </div>
+                    <div className="pt-2 border-t border-primary/20 text-xs text-text-muted">
+                      <strong className="text-text-primary">The Inevitability Principle:</strong> If ReadyLayer didn&apos;t review it, that absence is visible. 
+                      This certificate proves deterministic review with policy version hash.
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Blocked status */}
               {checkStates.get('rg-quality') === 'failure' && (
                 <motion.div
@@ -521,6 +558,12 @@ export function InteractivePRDemo({
                   <p className="text-sm text-text-muted">
                     Critical finding must be resolved before merging.
                   </p>
+                  <div className="mt-2 p-2 bg-background/50 rounded border border-danger/20">
+                    <div className="text-xs font-semibold text-danger mb-1">No Certificate Issued</div>
+                    <div className="text-xs text-text-muted">
+                      ReadyLayer review incomplete. This PR cannot be merged without a Merge Confidence Certificate.
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </TabsContent>

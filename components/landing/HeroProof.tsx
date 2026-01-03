@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Container } from '@/components/ui/container'
 import { fadeIn, slideUp, staggerContainer, staggerItem } from '@/lib/design/motion'
-import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye } from 'lucide-react'
+import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { InteractivePRDemo } from './InteractivePRDemo'
 import { cn } from '@/lib/utils'
 
@@ -49,10 +49,10 @@ export function HeroProof({ user }: HeroProofProps) {
           <Image
             src="/logo-header-new.png"
             alt="ReadyLayer"
-            width={140}
-            height={28}
+            width={200}
+            height={40}
             priority
-            className="h-7 sm:h-8 w-auto dark:invert"
+            className="h-10 sm:h-12 w-auto dark:invert"
           />
         </Link>
       </motion.div>
@@ -87,16 +87,17 @@ export function HeroProof({ user }: HeroProofProps) {
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Detects & blocks risky AI code
+                  The default authority for
                 </span>
                 <br />
-                <span className="text-text-primary">before it reaches main</span>
+                <span className="text-text-primary">AI-generated code safety</span>
               </h1>
               <p className="text-xl text-text-muted max-w-xl mb-2">
-                Runs in your PR checks. Review Guard → Test Engine → Doc Sync. Deterministic gates with full audit trail.
+                Deterministic governance gates. Every decision is signed, traceable, and defensible in audits.
               </p>
               <p className="text-sm text-text-muted max-w-xl">
-                <strong className="text-text-primary">AI-aware detection:</strong> Identifies AI-generated code patterns, context slips, and security risks. Every check is traceable with metrics and review IDs.{' '}
+                <strong className="text-text-primary">Inevitability Mode:</strong> If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms. 
+                If ReadyLayer didn&apos;t review it, that absence is visible.{' '}
                 <Link href="/how-it-works" className="text-accent hover:underline font-medium">
                   See how it works →
                 </Link>
@@ -120,7 +121,7 @@ export function HeroProof({ user }: HeroProofProps) {
                 <div className="flex-1">
                   <div className="font-semibold mb-1">Review Guard</div>
                   <div className="text-sm text-text-muted">
-                    Security, performance, and quality scans catch AI errors before merge.
+                    Deterministic security, performance, and quality scans. Every finding is signed with policy version hash.
                   </div>
                 </div>
               </motion.div>
@@ -135,7 +136,7 @@ export function HeroProof({ user }: HeroProofProps) {
                 <div className="flex-1">
                   <div className="font-semibold mb-1">Test Engine</div>
                   <div className="text-sm text-text-muted">
-                    Auto-generates tests and enforces coverage thresholds.
+                    Deterministic test generation with coverage enforcement. Same inputs = same outputs.
                   </div>
                 </div>
               </motion.div>
@@ -150,50 +151,58 @@ export function HeroProof({ user }: HeroProofProps) {
                 <div className="flex-1">
                   <div className="font-semibold mb-1">Doc Sync</div>
                   <div className="text-sm text-text-muted">
-                    Keeps OpenAPI specs, READMEs, and changelogs in sync with code.
+                    Deterministic drift detection. Blocks PRs when docs fall out of sync.
                   </div>
                 </div>
               </motion.div>
             </motion.div>
 
-            {/* Proof Microcopy */}
+            {/* Cultural Lock-In Artifacts */}
             <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-              <div className="p-4 rounded-lg border border-border-subtle bg-surface-muted">
+              <div className="p-4 rounded-lg border border-border-subtle bg-gradient-to-r from-primary/5 to-purple-500/5">
                 <div className="flex items-center gap-2 mb-3">
-                  <BarChart3 className="h-4 w-4 text-accent" />
-                  <span className="text-sm font-semibold">Real-time Metrics & Transparency</span>
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold">Cultural Lock-In Artifacts</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                   <div className="flex items-center gap-2">
-                    <Bot className="h-3.5 w-3.5 text-info" />
-                    <span className="text-text-muted">AI detection</span>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                    <span className="text-text-muted">Merge Confidence Certificates</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-3.5 w-3.5 text-purple-500" />
+                    <span className="text-text-muted">Readiness Score™</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-blue-500" />
+                    <span className="text-text-muted">AI Risk Exposure Index™</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Eye className="h-3.5 w-3.5 text-accent" />
-                    <span className="text-text-muted">Review IDs</span>
+                    <span className="text-text-muted">Signed Review IDs</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="h-3.5 w-3.5 text-success" />
-                    <span className="text-text-muted">Coverage metrics</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-3.5 w-3.5 text-warning" />
-                    <span className="text-text-muted">Finding counts</span>
-                  </div>
+                </div>
+                <div className="text-xs text-text-muted p-2 bg-background/50 rounded border border-primary/20">
+                  <strong className="text-text-primary">The Inevitability Principle:</strong> If ReadyLayer didn&apos;t review it, that absence is visible. 
+                  Every certificate proves review. Every score creates accountability.
                 </div>
               </div>
               <div className="flex flex-wrap gap-4 text-sm text-text-muted mt-3">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                  Runs on every AI-touched diff
+                  Deterministic execution
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-info" />
-                  Deterministic gates
+                  Policy version hashing
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  Full audit trail
+                  Immutable evidence bundles
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                  Ethical AI compliance
                 </div>
               </div>
             </motion.div>

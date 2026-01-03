@@ -16,6 +16,7 @@ import { UsageLimitExceededError } from '../../lib/usage-enforcement';
 // import { aiAnomalyDetectionService } from '../ai-anomaly-detection'; // Reserved for future use
 import { selfLearningService } from '../self-learning';
 import { predictiveDetectionService } from '../predictive-detection';
+import { failureIntelligenceService } from '../failure-intelligence';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -253,6 +254,14 @@ export class ReviewGuardService {
         'utf8'
       ).digest('hex');
 
+      // Generate signed review ID (deterministic signature)
+      const reviewIdSignature = this.generateReviewIdSignature(
+        request.repositoryId,
+        request.prNumber,
+        request.prSha,
+        policy.pack.checksum
+      );
+
       // Save review result
       const review = await prisma.review.create({
         data: {
@@ -267,6 +276,9 @@ export class ReviewGuardService {
             summary,
             blocking: isBlocked,
             policyScore: evaluationResult.score,
+            reviewIdSignature, // Include signature in result
+            policyVersion: policy.pack.version,
+            policyChecksum: policy.pack.checksum,
           } as any, // Prisma Json type
           issuesFound: evaluationResult.nonWaivedFindings as any, // Prisma Json type
           summary: summary as any, // Prisma Json type
@@ -300,6 +312,24 @@ export class ReviewGuardService {
 
       // Track violations for pattern detection (only non-waived)
       await this.trackViolations(request.repositoryId, review.id, evaluationResult.nonWaivedFindings);
+
+      // Record failure patterns for intelligence (anonymized)
+      for (const finding of evaluationResult.nonWaivedFindings) {
+        try {
+          await failureIntelligenceService.recordPattern(
+            organizationId,
+            request.repositoryId,
+            finding,
+            {
+              language: this.detectLanguage(filesToReview),
+              framework: 'unknown', // Would detect framework
+            }
+          );
+        } catch (error) {
+          // Don't fail review if pattern recording fails
+          console.error('Failed to record failure pattern:', error);
+        }
+      }
 
       // Track token usage for anomaly detection
       await this.trackTokenUsage(review.id, request.repositoryId, organizationId);
@@ -625,6 +655,57 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
     }
   }
 
+
+  /**
+   * Generate deterministic review ID signature
+   * 
+   * Creates a signature that proves the review was performed with a specific
+   * policy version. Same inputs + same policy = same signature.
+   */
+  private generateReviewIdSignature(
+    repositoryId: string,
+    prNumber: number,
+    prSha: string,
+    policyChecksum: string
+  ): string {
+    const signatureInput = `${repositoryId}:${prNumber}:${prSha}:${policyChecksum}`;
+    return createHash('sha256').update(signatureInput, 'utf8').digest('hex').slice(0, 16);
+  }
+
+  /**
+   * Detect language from files
+   */
+  private detectLanguage(files: Array<{ path: string; content: string }>): string {
+    if (files.length === 0) return 'unknown';
+    
+    const extensions = files.map(f => {
+      const match = f.path.match(/\.([^.]+)$/);
+      return match ? match[1] : '';
+    });
+    
+    const languageMap: Record<string, string> = {
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'js': 'javascript',
+      'jsx': 'javascript',
+      'py': 'python',
+      'java': 'java',
+      'go': 'go',
+      'rb': 'ruby',
+    };
+    
+    const mostCommon = extensions
+      .filter(ext => ext)
+      .reduce((acc, ext) => {
+        acc[ext] = (acc[ext] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+    
+    const topExt = Object.entries(mostCommon)
+      .sort((a, b) => b[1] - a[1])[0]?.[0];
+    
+    return languageMap[topExt || ''] || 'unknown';
+  }
 
   /**
    * Track violations for pattern detection
