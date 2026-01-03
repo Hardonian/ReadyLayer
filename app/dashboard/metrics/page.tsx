@@ -1,35 +1,49 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createSupabaseClient } from '@/lib/supabase/client'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MetricsCard, ChartCard } from '@/components/ui/metrics-card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { Container } from '@/components/ui/container'
-import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { 
-  Shield, 
-  CheckCircle2, 
-  AlertTriangle, 
-  TrendingUp,
-  Clock,
-  FileCode,
-  GitBranch,
-  Zap,
-} from 'lucide-react'
-import { LoadingState, ErrorState } from '@/components/ui'
+import { fadeIn } from '@/lib/design/motion'
+import { TrendingUp, Shield, TestTube, FileText, DollarSign } from 'lucide-react'
+import { createSupabaseClient } from '@/lib/supabase/client'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 
 interface Metrics {
-  totalReviews: number
-  blockedPRs: number
-  averageReviewTime: number
-  issuesCaught: number
-  criticalIssues: number
-  repositories: number
-  activeRepos: number
-  reviewsThisWeek: number
-  reviewsLastWeek: number
-  issuesThisWeek: number
-  issuesLastWeek: number
+  providerMetrics: {
+    prCycleTime: number | null
+    reviewLatency: number | null
+    approvalsCount: number | null
+    pipelinePassRate: number | null
+  }
+  readylayerMetrics: {
+    runsPerDay: number
+    stageDurationP95: {
+      reviewGuard: number
+      testEngine: number
+    }
+    findingCounts: {
+      critical: number
+      high: number
+      medium: number
+      low: number
+    }
+    gateBlockRate: number
+    overrideRate: number
+    rerunRate: number
+    flakyTestRate: number
+  }
+  proofMetrics: {
+    blockedRiskyMerges: number
+    docsKeptInSync: number
+    testsGenerated: number
+    timeToSignal: number
+  }
+  tokenUsage: {
+    totalTokens: number
+    totalCost: number
+    byService: Record<string, number>
+  }
 }
 
 export default function MetricsPage() {
@@ -39,15 +53,6 @@ export default function MetricsPage() {
 
   useEffect(() => {
     async function fetchMetrics() {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
-      if (!url || !key) {
-        setError('Configuration not available')
-        setLoading(false)
-        return
-      }
-
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
@@ -57,97 +62,19 @@ export default function MetricsPage() {
           return
         }
 
-        // Fetch reviews for metrics calculation
-        const reviewsResponse = await fetch('/api/v1/reviews?limit=100', {
+        const response = await fetch('/api/v1/metrics', {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
           },
         })
 
-        if (!reviewsResponse.ok) {
-          throw new Error('Failed to fetch reviews')
+        if (!response.ok) {
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
+          throw new Error(getApiErrorMessage(errorData))
         }
 
-        // Calculate metrics
-        const now = new Date()
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
-
-        interface ReviewItem {
-          createdAt: string
-          isBlocked: boolean
-          summary?: {
-            critical: number
-            high: number
-            medium: number
-            low: number
-          }
-        }
-
-        const reviewsData = (await reviewsResponse.json()) as { reviews?: ReviewItem[] }
-        const reviews = reviewsData.reviews || []
-        const reviewsTyped = reviews
-
-        const reviewsThisWeek = reviewsTyped.filter((r) => 
-          new Date(r.createdAt) >= weekAgo
-        ).length
-        const reviewsLastWeek = reviewsTyped.filter((r) => {
-          const date = new Date(r.createdAt)
-          return date >= twoWeeksAgo && date < weekAgo
-        }).length
-
-        const issuesThisWeek = reviewsTyped
-          .filter((r) => new Date(r.createdAt) >= weekAgo)
-          .reduce((sum: number, r) => sum + (r.summary?.critical || 0) + (r.summary?.high || 0), 0)
-        
-        const issuesLastWeek = reviewsTyped
-          .filter((r) => {
-            const date = new Date(r.createdAt)
-            return date >= twoWeeksAgo && date < weekAgo
-          })
-          .reduce((sum: number, r) => sum + (r.summary?.critical || 0) + (r.summary?.high || 0), 0)
-
-        const blockedPRs = reviewsTyped.filter((r) => r.isBlocked).length
-        const totalIssues = reviewsTyped.reduce((sum: number, r) => 
-          sum + (r.summary?.critical || 0) + (r.summary?.high || 0) + (r.summary?.medium || 0) + (r.summary?.low || 0), 0
-        )
-        const criticalIssues = reviewsTyped.reduce((sum: number, r) => sum + (r.summary?.critical || 0), 0)
-
-        // Fetch repositories
-        interface RepoItem {
-          enabled: boolean
-        }
-        let repos: RepoItem[] = []
-        try {
-          const reposResponse = await fetch('/api/v1/repos', {
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-            },
-          })
-          if (reposResponse.ok) {
-            const reposData = (await reposResponse.json()) as { repositories?: RepoItem[] }
-            repos = reposData.repositories || []
-          }
-        } catch {
-          // Silently handle repository fetch errors
-          repos = []
-        }
-        const activeRepos = repos.filter((r) => r.enabled).length
-
-        setMetrics({
-          totalReviews: reviews.length,
-          blockedPRs,
-          averageReviewTime: 2.5, // Mock data
-          issuesCaught: totalIssues,
-          criticalIssues,
-          repositories: repos.length,
-          activeRepos,
-          reviewsThisWeek,
-          reviewsLastWeek,
-          issuesThisWeek,
-          issuesLastWeek,
-        })
-
+        const data = (await response.json()) as Metrics
+        setMetrics(data)
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load metrics')
@@ -161,7 +88,14 @@ export default function MetricsPage() {
   if (loading) {
     return (
       <Container className="py-8">
-        <LoadingState message="Loading metrics..." />
+        <div className="space-y-4">
+          <div className="h-10 w-64 bg-surface-muted rounded animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-32 bg-surface-muted rounded animate-pulse" />
+            ))}
+          </div>
+        </div>
       </Container>
     )
   }
@@ -169,216 +103,197 @@ export default function MetricsPage() {
   if (error || !metrics) {
     return (
       <Container className="py-8">
-        <ErrorState
-          message={error || 'Failed to load metrics'}
-          action={{
-            label: 'Back to Dashboard',
-            onClick: () => window.location.href = '/dashboard',
-          }}
-        />
+        <Card className="border-red-500/20">
+          <CardContent className="pt-6">
+            <div className="text-red-600">{error || 'Failed to load metrics'}</div>
+          </CardContent>
+        </Card>
       </Container>
     )
   }
 
-  const reviewsChange = metrics.reviewsLastWeek > 0
-    ? ((metrics.reviewsThisWeek - metrics.reviewsLastWeek) / metrics.reviewsLastWeek) * 100
-    : 0
-
-  const issuesChange = metrics.issuesLastWeek > 0
-    ? ((metrics.issuesThisWeek - metrics.issuesLastWeek) / metrics.issuesLastWeek) * 100
-    : 0
-
   return (
     <Container className="py-8">
       <motion.div
-        className="space-y-8"
+        className="space-y-6"
         variants={fadeIn}
         initial="hidden"
         animate="visible"
       >
-        {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Metrics & Analytics</h1>
-          <p className="text-text-muted">
-            Track your code quality, review performance, and issue detection over time.
+          <h1 className="text-3xl font-bold">Metrics</h1>
+          <p className="text-muted-foreground">
+            View ReadyLayer performance and usage metrics
           </p>
         </div>
 
-        {/* Key Metrics Grid */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.div variants={staggerItem}>
-            <MetricsCard
-              title="Total Reviews"
-              value={metrics.totalReviews.toLocaleString()}
-              change={{
-                value: Math.round(reviewsChange),
-                label: 'vs last week',
-                trend: reviewsChange >= 0 ? 'up' : 'down',
-              }}
-              icon={FileCode}
-              description="AI code reviews completed"
-            />
-          </motion.div>
+        {/* Proof Metrics */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Proof Metrics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Blocked Risky Merges
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.proofMetrics.blockedRiskyMerges}</div>
+              </CardContent>
+            </Card>
 
-          <motion.div variants={staggerItem}>
-            <MetricsCard
-              title="Issues Caught"
-              value={metrics.issuesCaught.toLocaleString()}
-              change={{
-                value: Math.round(issuesChange),
-                label: 'vs last week',
-                trend: issuesChange >= 0 ? 'up' : 'down',
-              }}
-              icon={AlertTriangle}
-              description="Potential issues detected"
-            />
-          </motion.div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Docs Kept In Sync
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.proofMetrics.docsKeptInSync}</div>
+              </CardContent>
+            </Card>
 
-          <motion.div variants={staggerItem}>
-            <MetricsCard
-              title="Blocked PRs"
-              value={metrics.blockedPRs}
-              icon={Shield}
-              description="PRs blocked before production"
-            />
-          </motion.div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <TestTube className="h-4 w-4" />
+                  Tests Generated
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.proofMetrics.testsGenerated}</div>
+              </CardContent>
+            </Card>
 
-          <motion.div variants={staggerItem}>
-            <MetricsCard
-              title="Active Repos"
-              value={metrics.activeRepos}
-              icon={GitBranch}
-              description={`of ${metrics.repositories} total repositories`}
-            />
-          </motion.div>
-        </motion.div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Review Activity Chart */}
-          <motion.div variants={fadeIn}>
-            <ChartCard title="Review Activity">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-2xl font-bold">{metrics.reviewsThisWeek}</div>
-                    <div className="text-sm text-text-muted">Reviews this week</div>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-accent" />
-                </div>
-                <div className="space-y-2">
-                  {[0, 1, 2, 3, 4, 5, 6].map((day) => {
-                    const dayReviews = Math.floor(Math.random() * 10) + 1
-                    const maxReviews = 15
-                    const percentage = (dayReviews / maxReviews) * 100
-                    return (
-                      <div key={day} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-text-muted">
-                            {new Date(Date.now() - (6 - day) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' })}
-                          </span>
-                          <span className="text-text-primary font-medium">{dayReviews}</span>
-                        </div>
-                        <div className="h-2 bg-surface-muted rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full bg-gradient-to-r from-accent to-accent-hover rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${percentage}%` }}
-                            transition={{ duration: 0.5, delay: day * 0.1 }}
-                          />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </ChartCard>
-          </motion.div>
-
-          {/* Issue Severity Breakdown */}
-          <motion.div variants={fadeIn}>
-            <ChartCard title="Issue Severity Breakdown">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-5 w-5 text-destructive" />
-                      <span className="font-semibold text-destructive">Critical</span>
-                    </div>
-                    <div className="text-3xl font-bold">{metrics.criticalIssues}</div>
-                  </div>
-                  <div className="p-4 bg-warning-muted rounded-lg border border-warning/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-5 w-5 text-warning" />
-                      <span className="font-semibold text-warning">High</span>
-                    </div>
-                    <div className="text-3xl font-bold">
-                      {metrics.issuesCaught - metrics.criticalIssues}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-muted">Critical Issues</span>
-                    <span className="font-semibold">
-                      {metrics.issuesCaught > 0 
-                        ? Math.round((metrics.criticalIssues / metrics.issuesCaught) * 100)
-                        : 0}%
-                    </span>
-                  </div>
-                  <div className="h-3 bg-surface-muted rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-destructive to-orange-600 rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ 
-                        width: `${metrics.issuesCaught > 0 
-                          ? (metrics.criticalIssues / metrics.issuesCaught) * 100 
-                          : 0}%` 
-                      }}
-                      transition={{ duration: 0.8 }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </ChartCard>
-          </motion.div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Time to Signal
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.proofMetrics.timeToSignal}ms</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Performance Metrics */}
-        <motion.div variants={fadeIn}>
-          <ChartCard title="Performance Metrics">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4">
-                <Clock className="h-8 w-8 text-accent mx-auto mb-2" />
-                <div className="text-2xl font-bold">{metrics.averageReviewTime}s</div>
-                <div className="text-sm text-text-muted">Avg Review Time</div>
-              </div>
-              <div className="text-center p-4">
-                <Zap className="h-8 w-8 text-success mx-auto mb-2" />
+        {/* ReadyLayer Metrics */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">ReadyLayer Metrics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Runs Per Day</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.readylayerMetrics.runsPerDay}</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Gate Block Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics.readylayerMetrics.gateBlockRate}%</div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Review Guard P95</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="text-2xl font-bold">
-                  {metrics.totalReviews > 0 
-                    ? Math.round((metrics.blockedPRs / metrics.totalReviews) * 100)
-                    : 0}%
+                  {Math.round(metrics.readylayerMetrics.stageDurationP95.reviewGuard / 1000)}s
                 </div>
-                <div className="text-sm text-text-muted">Block Rate</div>
-              </div>
-              <div className="text-center p-4">
-                <CheckCircle2 className="h-8 w-8 text-success mx-auto mb-2" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Test Engine P95</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="text-2xl font-bold">
-                  {metrics.totalReviews > 0
-                    ? Math.round(((metrics.totalReviews - metrics.blockedPRs) / metrics.totalReviews) * 100)
-                    : 100}%
+                  {Math.round(metrics.readylayerMetrics.stageDurationP95.testEngine / 1000)}s
                 </div>
-                <div className="text-sm text-text-muted">Approval Rate</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Finding Counts */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Finding Counts by Severity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <div className="text-sm text-muted-foreground">Critical</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {metrics.readylayerMetrics.findingCounts.critical}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">High</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {metrics.readylayerMetrics.findingCounts.high}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Medium</div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {metrics.readylayerMetrics.findingCounts.medium}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Low</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {metrics.readylayerMetrics.findingCounts.low}
+                </div>
               </div>
             </div>
-          </ChartCard>
-        </motion.div>
+          </CardContent>
+        </Card>
+
+        {/* Token Usage */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Token Usage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm text-muted-foreground">Total Tokens</div>
+                <div className="text-2xl font-bold">{metrics.tokenUsage.totalTokens.toLocaleString()}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Total Cost</div>
+                <div className="text-2xl font-bold">${metrics.tokenUsage.totalCost.toFixed(2)}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground mb-2">By Service</div>
+                <div className="space-y-2">
+                  {Object.entries(metrics.tokenUsage.byService).map(([service, tokens]) => (
+                    <div key={service} className="flex justify-between">
+                      <span className="capitalize">{service}</span>
+                      <span className="font-medium">{tokens.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
     </Container>
   )

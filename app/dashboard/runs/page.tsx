@@ -11,6 +11,7 @@ import {
   ErrorState,
   EmptyState,
   Skeleton,
+  Button,
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
@@ -25,6 +26,9 @@ import {
   Shield,
   TestTube,
   FileText,
+  Filter,
+  Search,
+  ExternalLink,
 } from 'lucide-react'
 import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
 
@@ -47,6 +51,7 @@ interface Run {
     id: string
     name: string
     fullName: string
+    provider?: string
   }
 }
 
@@ -55,6 +60,15 @@ export default function RunsPage() {
   const [runs, setRuns] = useState<Run[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [filters, setFilters] = useState({
+    repositoryId: '',
+    status: '',
+    conclusion: '',
+    trigger: '',
+    stage: '',
+    search: '',
+  })
+  const [showFilters, setShowFilters] = useState(false)
 
   const fetchRuns = useCallback(async () => {
     try {
@@ -66,7 +80,16 @@ export default function RunsPage() {
         return
       }
 
-      const response = await fetch('/api/v1/runs?limit=50', {
+      // Build query string with filters
+      const params = new URLSearchParams()
+      params.set('limit', '50')
+      if (filters.repositoryId) params.set('repositoryId', filters.repositoryId)
+      if (filters.status) params.set('status', filters.status)
+      if (filters.conclusion) params.set('conclusion', filters.conclusion)
+      if (filters.trigger) params.set('trigger', filters.trigger)
+      if (filters.stage) params.set('stage', filters.stage)
+
+      const response = await fetch(`/api/v1/runs?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
@@ -85,7 +108,7 @@ export default function RunsPage() {
       setError(err instanceof Error ? err.message : 'Failed to load runs')
       setLoading(false)
     }
-  }, [])
+  }, [filters.conclusion, filters.repositoryId, filters.stage, filters.status, filters.trigger])
 
   // Register refetch callback for cache invalidation
   useEffect(() => {
@@ -95,7 +118,7 @@ export default function RunsPage() {
 
   useEffect(() => {
     fetchRuns()
-  }, [fetchRuns])
+  }, [fetchRuns, filters])
 
   if (loading) {
     return (
@@ -179,11 +202,111 @@ export default function RunsPage() {
         animate="visible"
       >
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Runs</h1>
-          <p className="text-muted-foreground">
-            View all ReadyLayer pipeline runs with complete audit trail
-          </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold">Runs</h1>
+            <p className="text-muted-foreground">
+              View all ReadyLayer pipeline runs with complete audit trail
+            </p>
+          </div>
+
+          {/* Filters */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span className="font-medium">Filters</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowFilters(!showFilters)}
+                  >
+                    {showFilters ? 'Hide' : 'Show'} Filters
+                  </Button>
+                </div>
+
+                {showFilters && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Status</label>
+                      <select
+                        value={filters.status}
+                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg bg-surface"
+                      >
+                        <option value="">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="running">Running</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Conclusion</label>
+                      <select
+                        value={filters.conclusion}
+                        onChange={(e) => setFilters({ ...filters, conclusion: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg bg-surface"
+                      >
+                        <option value="">All</option>
+                        <option value="success">Success</option>
+                        <option value="failure">Failure</option>
+                        <option value="partial_success">Partial Success</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Trigger</label>
+                      <select
+                        value={filters.trigger}
+                        onChange={(e) => setFilters({ ...filters, trigger: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg bg-surface"
+                      >
+                        <option value="">All</option>
+                        <option value="webhook">Webhook</option>
+                        <option value="manual">Manual</option>
+                        <option value="sandbox">Sandbox</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Stage</label>
+                      <select
+                        value={filters.stage}
+                        onChange={(e) => setFilters({ ...filters, stage: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg bg-surface"
+                      >
+                        <option value="">All</option>
+                        <option value="review_guard">Review Guard</option>
+                        <option value="test_engine">Test Engine</option>
+                        <option value="doc_sync">Doc Sync</option>
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="text-sm font-medium mb-1 block">Search</label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search by correlation ID, repository..."
+                          value={filters.search}
+                          onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                          className="w-full pl-10 pr-4 py-2 border rounded-lg bg-surface"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Runs List */}
@@ -206,7 +329,27 @@ export default function RunsPage() {
             initial="hidden"
             animate="visible"
           >
-            {runs.map((run) => (
+            {(filters.search 
+              ? runs.filter(r => 
+                  r.correlationId.toLowerCase().includes(filters.search.toLowerCase()) ||
+                  r.repository?.fullName?.toLowerCase().includes(filters.search.toLowerCase())
+                )
+              : runs
+            ).map((run) => {
+              // Generate provider link if repository available
+              let providerLink: string | undefined
+              if (run.repository && run.repository.fullName) {
+                const provider = run.repository.provider || 'github'
+                if (provider === 'github') {
+                  providerLink = `https://github.com/${run.repository.fullName}`
+                } else if (provider === 'gitlab') {
+                  providerLink = `https://gitlab.com/${run.repository.fullName}`
+                } else if (provider === 'bitbucket') {
+                  providerLink = `https://bitbucket.org/${run.repository.fullName}`
+                }
+              }
+
+              return (
               <motion.div key={run.id} variants={staggerItem}>
                 <Link href={`/dashboard/runs/${run.id}`}>
                   <Card className="hover:bg-surface-hover transition-colors cursor-pointer">
@@ -215,10 +358,23 @@ export default function RunsPage() {
                         <div className="flex-1 space-y-3">
                           <div className="flex items-center gap-3">
                             {getStatusIcon(run.status, run.conclusion)}
-                            <div>
-                              <div className="font-semibold">
-                                {run.sandboxId ? 'Sandbox Demo Run' : 
-                                 run.repository?.fullName || `Run ${run.correlationId.slice(0, 8)}`}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">
+                                  {run.sandboxId ? 'Sandbox Demo Run' : 
+                                   run.repository?.fullName || `Run ${run.correlationId.slice(0, 8)}`}
+                                </span>
+                                {providerLink && (
+                                  <a
+                                    href={providerLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-primary hover:underline"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 {run.trigger} • {new Date(run.startedAt).toLocaleString()}
@@ -283,7 +439,7 @@ export default function RunsPage() {
                   </Card>
                 </Link>
               </motion.div>
-            ))}
+            )})}
           </motion.div>
         )}
       </motion.div>

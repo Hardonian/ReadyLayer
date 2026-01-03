@@ -16,6 +16,7 @@ import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest } from '../review-guard';
 import { testEngineService, TestGenerationRequest } from '../test-engine';
 import { docSyncService } from '../doc-sync';
+import { providerStatusService } from '../provider-status';
 import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
@@ -162,6 +163,22 @@ export class RunPipelineService {
           },
         });
 
+        // Post "in progress" status to provider
+        if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+          try {
+            await providerStatusService.postStatusUpdate({
+              runId: run.id,
+              repositoryId: request.repositoryId,
+              prNumber: request.triggerMetadata.prNumber,
+              prSha: request.triggerMetadata.prSha,
+              stage: 'review_guard',
+              status: 'in_progress',
+            });
+          } catch (error) {
+            log.warn({ err: error }, 'Failed to post review guard start status (non-critical)');
+          }
+        }
+
         try {
           const reviewRequest: ReviewRequest = {
             repositoryId: request.repositoryId || 'sandbox',
@@ -194,6 +211,26 @@ export class RunPipelineService {
               reviewGuardResult: reviewGuardResult as any,
             },
           });
+
+          // Post completion status to provider
+          if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+            try {
+              await providerStatusService.postStageCompleted(
+                run.id,
+                request.repositoryId,
+                request.triggerMetadata.prNumber,
+                request.triggerMetadata.prSha,
+                'review_guard',
+                reviewGuardStatus === 'succeeded' ? 'success' : 'failure',
+                {
+                  reviewGuard: reviewGuardResult,
+                },
+                reviewResult.issues
+              );
+            } catch (error) {
+              log.warn({ err: error }, 'Failed to post review guard completion status (non-critical)');
+            }
+          }
 
           metrics.increment('runs.stage.completed', { stage: 'review_guard', status: reviewGuardStatus });
         } catch (error) {
@@ -233,6 +270,22 @@ export class RunPipelineService {
             testEngineStartedAt,
           },
         });
+
+        // Post "in progress" status to provider
+        if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+          try {
+            await providerStatusService.postStatusUpdate({
+              runId: run.id,
+              repositoryId: request.repositoryId,
+              prNumber: request.triggerMetadata.prNumber,
+              prSha: request.triggerMetadata.prSha,
+              stage: 'test_engine',
+              status: 'in_progress',
+            });
+          } catch (error) {
+            log.warn({ err: error }, 'Failed to post test engine start status (non-critical)');
+          }
+        }
 
         try {
           // Detect AI-touched files
@@ -294,6 +347,25 @@ export class RunPipelineService {
             },
           });
 
+          // Post completion status to provider
+          if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+            try {
+              await providerStatusService.postStageCompleted(
+                run.id,
+                request.repositoryId,
+                request.triggerMetadata.prNumber,
+                request.triggerMetadata.prSha,
+                'test_engine',
+                testEngineStatus === 'succeeded' ? 'success' : 'failure',
+                {
+                  testEngine: testEngineResult,
+                }
+              );
+            } catch (error) {
+              log.warn({ err: error }, 'Failed to post test engine completion status (non-critical)');
+            }
+          }
+
           metrics.increment('runs.stage.completed', { stage: 'test_engine', status: testEngineStatus });
         } catch (error) {
           testEngineCompletedAt = new Date();
@@ -331,6 +403,22 @@ export class RunPipelineService {
           },
         });
 
+        // Post "in progress" status to provider
+        if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+          try {
+            await providerStatusService.postStatusUpdate({
+              runId: run.id,
+              repositoryId: request.repositoryId,
+              prNumber: request.triggerMetadata.prNumber,
+              prSha: request.triggerMetadata.prSha,
+              stage: 'doc_sync',
+              status: 'in_progress',
+            });
+          } catch (error) {
+            log.warn({ err: error }, 'Failed to post doc sync start status (non-critical)');
+          }
+        }
+
         try {
           // Check for drift (doesn't generate docs on PR, only checks)
           const driftResult = await docSyncService.checkDrift(
@@ -364,6 +452,25 @@ export class RunPipelineService {
               docSyncResult: docSyncResult as any,
             },
           });
+
+          // Post completion status to provider
+          if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+            try {
+              await providerStatusService.postStageCompleted(
+                run.id,
+                request.repositoryId,
+                request.triggerMetadata.prNumber,
+                request.triggerMetadata.prSha,
+                'doc_sync',
+                docSyncStatus === 'succeeded' ? 'success' : 'failure',
+                {
+                  docSync: docSyncResult,
+                }
+              );
+            } catch (error) {
+              log.warn({ err: error }, 'Failed to post doc sync completion status (non-critical)');
+            }
+          }
 
           metrics.increment('runs.stage.completed', { stage: 'doc_sync', status: docSyncStatus });
         } catch (error) {
@@ -433,6 +540,26 @@ export class RunPipelineService {
           completedAt,
         },
       });
+
+      // Post final completion status to provider
+      if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+        try {
+          await providerStatusService.postRunCompleted(
+            run.id,
+            request.repositoryId,
+            request.triggerMetadata.prNumber,
+            request.triggerMetadata.prSha,
+            conclusion,
+            {
+              reviewGuard: reviewGuardResult,
+              testEngine: testEngineResult,
+              docSync: docSyncResult,
+            }
+          );
+        } catch (error) {
+          log.warn({ err: error }, 'Failed to post final run completion status (non-critical)');
+        }
+      }
 
       // Audit log
       try {

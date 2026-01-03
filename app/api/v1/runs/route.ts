@@ -148,6 +148,14 @@ export const GET = createRouteHandler(
     const { searchParams } = new URL(request.url);
     const repositoryId = searchParams.get('repositoryId');
     const sandboxId = searchParams.get('sandboxId');
+    const status = searchParams.get('status');
+    const conclusion = searchParams.get('conclusion');
+    const trigger = searchParams.get('trigger');
+    const stage = searchParams.get('stage'); // review_guard, test_engine, doc_sync
+    const branch = searchParams.get('branch');
+    const author = searchParams.get('author');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
     const { limit, offset } = parsePagination(request);
 
     // Build where clause with tenant isolation
@@ -155,6 +163,14 @@ export const GET = createRouteHandler(
       repository?: { organizationId: { in: string[] } };
       repositoryId?: string;
       sandboxId?: string;
+      status?: string;
+      conclusion?: string;
+      trigger?: string;
+      reviewGuardStatus?: string;
+      testEngineStatus?: string;
+      docSyncStatus?: string;
+      createdAt?: { gte?: Date; lte?: Date };
+      triggerMetadata?: Record<string, unknown>;
     } = {};
 
     if (sandboxId) {
@@ -200,6 +216,39 @@ export const GET = createRouteHandler(
       };
     }
 
+    // Apply filters
+    if (status) {
+      where.status = status;
+    }
+    if (conclusion) {
+      where.conclusion = conclusion;
+    }
+    if (trigger) {
+      where.trigger = trigger as 'webhook' | 'manual' | 'sandbox';
+    }
+    if (stage) {
+      if (stage === 'review_guard') {
+        where.reviewGuardStatus = searchParams.get('stageStatus') || undefined;
+      } else if (stage === 'test_engine') {
+        where.testEngineStatus = searchParams.get('stageStatus') || undefined;
+      } else if (stage === 'doc_sync') {
+        where.docSyncStatus = searchParams.get('stageStatus') || undefined;
+      }
+    }
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+    if (branch || author) {
+      // Filter by triggerMetadata (would need JSON filtering)
+      // For now, we'll filter in memory after fetching
+    }
+
     const [runs, total] = await Promise.all([
       prisma.readyLayerRun.findMany({
         where,
@@ -212,6 +261,7 @@ export const GET = createRouteHandler(
               id: true,
               name: true,
               fullName: true,
+              provider: true,
             },
           },
         },
@@ -219,8 +269,23 @@ export const GET = createRouteHandler(
       prisma.readyLayerRun.count({ where }),
     ]);
 
+    // Filter by branch/author if specified (in-memory filtering for JSON fields)
+    let filteredRuns = runs;
+    if (branch || author) {
+      filteredRuns = runs.filter((r) => {
+        const metadata = r.triggerMetadata as { prSha?: string; userId?: string } | null;
+        if (branch && metadata && 'prSha' in metadata) {
+          // Would need to fetch branch from PR, skip for now
+        }
+        if (author && metadata && 'userId' in metadata && metadata.userId !== author) {
+          return false;
+        }
+        return true;
+      });
+    }
+
     return paginatedResponse(
-      runs.map((r) => ({
+      filteredRuns.map((r) => ({
         id: r.id,
         correlationId: r.correlationId,
         repositoryId: r.repositoryId,
@@ -248,9 +313,14 @@ export const GET = createRouteHandler(
         docSyncCompletedAt: r.docSyncCompletedAt,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
-        repository: r.repository,
+        repository: r.repository ? {
+          id: r.repository.id,
+          name: r.repository.name,
+          fullName: r.repository.fullName,
+          provider: r.repository.provider,
+        } : undefined,
       })),
-      total,
+      branch || author ? filteredRuns.length : total,
       limit,
       offset
     );
