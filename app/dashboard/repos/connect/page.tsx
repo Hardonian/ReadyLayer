@@ -5,11 +5,10 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
-import { ArrowLeft, Github, Gitlab, Bitbucket, CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowLeft, Github, Gitlab, Code, CheckCircle2, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useToast } from '@/lib/hooks/use-toast'
-import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 
 interface Installation {
   id: string
@@ -35,7 +34,6 @@ export default function ConnectRepositoryPage() {
   const [selectedProvider, setSelectedProvider] = useState<'github' | 'gitlab' | 'bitbucket' | null>(null)
   const [installations, setInstallations] = useState<Installation[]>([])
   const [repositories, setRepositories] = useState<Repository[]>([])
-  const [loading, setLoading] = useState(true)
   const [testingConnection, setTestingConnection] = useState<string | null>(null)
   const { toast } = useToast()
 
@@ -45,7 +43,6 @@ export default function ConnectRepositoryPage() {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
-          setLoading(false)
           return
         }
 
@@ -72,8 +69,6 @@ export default function ConnectRepositoryPage() {
         }
       } catch (error) {
         // Silently handle fetch errors - UI will show empty state
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -167,7 +162,7 @@ export default function ConnectRepositoryPage() {
       case 'gitlab':
         return Gitlab
       case 'bitbucket':
-        return Bitbucket
+        return Code
       default:
         return Github
     }

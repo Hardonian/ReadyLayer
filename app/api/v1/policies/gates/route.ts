@@ -93,10 +93,6 @@ export async function POST(request: NextRequest) {
 
     const body = bodyResult.data as {
       organizationId?: string;
-      repositoryId?: string;
-      template?: string;
-      enforcementMode?: string;
-      exceptions?: unknown;
     };
     const { organizationId } = body;
 

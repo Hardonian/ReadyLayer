@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
 import { TrendingUp, Shield, TestTube, FileText, DollarSign } from 'lucide-react'

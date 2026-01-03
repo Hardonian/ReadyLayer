@@ -108,7 +108,7 @@ export default function RunsPage() {
       setError(err instanceof Error ? err.message : 'Failed to load runs')
       setLoading(false)
     }
-  }, [])
+  }, [filters.conclusion, filters.repositoryId, filters.stage, filters.status, filters.trigger])
 
   // Register refetch callback for cache invalidation
   useEffect(() => {
