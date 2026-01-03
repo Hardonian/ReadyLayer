@@ -152,14 +152,21 @@ async function reviewFile(filePath: string, config: CursorConfig) {
       throw new Error(`Review failed: ${response.statusText}`);
     }
 
-    const result = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await response.json() as {
+      data?: {
+        issuesCount?: number;
+        issues?: unknown[];
+      };
+    };
     
-    if (result.data.issuesCount > 0) {
+    if ((result.data?.issuesCount ?? 0) > 0) {
       cursor.window.showWarningMessage(
-        `Found ${result.data.issuesCount} issue(s)`,
+        `Found ${result.data.issuesCount ?? 0} issue(s)`,
         'View Details'
       ).then((action: string | undefined) => {
-        if (action === 'View Details') {
+        if (action === 'View Details' && result.data?.issues) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           showIssuesPanel(result.data.issues);
         }
       });
@@ -198,9 +205,15 @@ async function generateTests(filePath: string, config: CursorConfig) {
       throw new Error(`Test generation failed: ${response.statusText}`);
     }
 
-    const result = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await response.json() as {
+      data?: {
+        testContent?: string;
+        placement?: string;
+      };
+    };
     
-    if (result.data.testContent) {
+    if (result.data?.testContent) {
       // Show test preview
       showTestPreview(result.data.testContent, result.data.placement);
     } else {
