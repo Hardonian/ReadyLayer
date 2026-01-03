@@ -26,8 +26,20 @@ export interface PipelineArtifact {
   file_format?: string;
 }
 
+export interface GitLabMR {
+  id: number;
+  iid: number;
+  title: string;
+  sha?: string;
+  last_commit?: {
+    id: string;
+  };
+  target_branch: string;
+  source_branch: string;
+}
+
 export interface GitLabAPIClient {
-  getMR(repo: string, mrIid: number, token: string): Promise<any>;
+  getMR(repo: string, mrIid: number, token: string): Promise<GitLabMR>;
   getMRDiff(repo: string, mrIid: number, token: string): Promise<string>;
   postMRComment(repo: string, mrIid: number, body: string, token: string): Promise<any>;
   updateCommitStatus(
@@ -64,9 +76,9 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
   /**
    * Get MR details
    */
-  async getMR(repo: string, mrIid: number, token: string): Promise<any> {
+  async getMR(repo: string, mrIid: number, token: string): Promise<GitLabMR> {
     const url = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/merge_requests/${mrIid}`;
-    return this.request(url, token);
+    return this.request<GitLabMR>(url, token);
   }
 
   /**
@@ -89,9 +101,14 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
         throw new Error(`GitLab API error: ${response.status} ${errorText}`);
       }
 
-      const diffs = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const diffs = await response.json() as Array<{
+        old_path: string;
+        new_path: string;
+        diff: string;
+      }>;
       // Convert diff objects to unified diff format
-      return diffs.map((diff: any) => {
+      return diffs.map((diff) => {
         return `diff --git a/${diff.old_path} b/${diff.new_path}\n${diff.diff}`;
       }).join('\n');
     } catch (error) {
@@ -199,7 +216,7 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
     if (ref) {
       url += `?ref=${encodeURIComponent(ref)}`;
     }
-    const response = await this.request(url, token);
+    const response = await this.request<Pipeline[]>(url, token);
     return Array.isArray(response) ? response : [];
   }
 
@@ -214,8 +231,9 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
   ): Promise<Blob> {
     // First, get the job ID
     const jobsUrl = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/pipelines/${pipelineId}/jobs`;
-    const jobs = await this.request(jobsUrl, token);
-    const job = Array.isArray(jobs) ? jobs.find((j: any) => j.name === jobName) : null;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const jobs = await this.request<Array<{ name: string; id: number }>>(jobsUrl, token);
+    const job = Array.isArray(jobs) ? jobs.find((j) => j.name === jobName) : null;
 
     if (!job) {
       throw new Error(`Job ${jobName} not found in pipeline ${pipelineId}`);
@@ -239,11 +257,11 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
   /**
    * Make API request with retries
    */
-  private async request(
+  private async request<T>(
     url: string,
     token: string,
     options: RequestInit = {}
-  ): Promise<any> {
+  ): Promise<T> {
     const maxRetries = 3;
     let lastError: Error | null = null;
 
@@ -269,8 +287,9 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const errorData = await response.json() as { message?: string };
+            errorMessage = errorData.message ?? errorMessage;
           } catch {
             // Ignore JSON parse errors
           }
@@ -278,8 +297,9 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
         }
 
         try {
-          return await response.json();
-        } catch (jsonError) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          return await response.json() as T;
+        } catch {
           throw new Error('Failed to parse GitLab API response as JSON');
         }
       } catch (error) {

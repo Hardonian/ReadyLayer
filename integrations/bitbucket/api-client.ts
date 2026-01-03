@@ -23,8 +23,63 @@ export interface Pipeline {
   completed_on?: string;
 }
 
+export interface BitbucketPR {
+  id: number;
+  title: string;
+  source?: {
+    commit?: {
+      hash?: string;
+    };
+    branch?: {
+      name?: string;
+    };
+  };
+  destination?: {
+    branch?: {
+      name?: string;
+    };
+  };
+  fromRef?: {
+    latestCommit?: string;
+    displayId?: string;
+  };
+  toRef?: {
+    displayId?: string;
+  };
+  state: string;
+  created_on: string;
+  updated_on: string;
+}
+
+export interface BitbucketPRComment {
+  id: number;
+  content: {
+    raw: string;
+  };
+  created_on: string;
+}
+
+export interface BitbucketBuildStatus {
+  state: 'SUCCESSFUL' | 'FAILED' | 'INPROGRESS' | 'STOPPED';
+  key: string;
+  name: string;
+  description: string;
+  url: string;
+}
+
+export interface BitbucketPipelineStep {
+  uuid: string;
+  state?: {
+    name: string;
+  };
+}
+
+export interface BitbucketPipelineStepsResponse {
+  values?: BitbucketPipelineStep[];
+}
+
 export interface BitbucketAPIClient {
-  getPR(workspace: string, repoSlug: string, prId: number, token: string): Promise<any>;
+  getPR(workspace: string, repoSlug: string, prId: number, token: string): Promise<BitbucketPR>;
   getPRDiff(workspace: string, repoSlug: string, prId: number, token: string): Promise<string>;
   postPRComment(
     workspace: string,
@@ -32,7 +87,7 @@ export interface BitbucketAPIClient {
     prId: number,
     body: string,
     token: string
-  ): Promise<any>;
+  ): Promise<BitbucketPRComment>;
   updateBuildStatus(
     workspace: string,
     repoSlug: string,
@@ -43,7 +98,7 @@ export interface BitbucketAPIClient {
     description: string,
     url: string,
     token: string
-  ): Promise<any>;
+  ): Promise<BitbucketBuildStatus>;
   getFileContent(
     workspace: string,
     repoSlug: string,
@@ -84,9 +139,9 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
   /**
    * Get PR details
    */
-  async getPR(workspace: string, repoSlug: string, prId: number, token: string): Promise<any> {
+  async getPR(workspace: string, repoSlug: string, prId: number, token: string): Promise<BitbucketPR> {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pullrequests/${prId}`;
-    return this.request(url, token);
+    return this.request<BitbucketPR>(url, token);
   }
 
   /**
@@ -127,9 +182,9 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     prId: number,
     body: string,
     token: string
-  ): Promise<any> {
+  ): Promise<BitbucketPRComment> {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pullrequests/${prId}/comments`;
-    return this.request(url, token, {
+    return this.request<BitbucketPRComment>(url, token, {
       method: 'POST',
       body: JSON.stringify({
         content: {
@@ -152,9 +207,9 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     description: string,
     url: string,
     token: string
-  ): Promise<any> {
+  ): Promise<BitbucketBuildStatus> {
     const statusUrl = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/commit/${sha}/statuses/build`;
-    return this.request(statusUrl, token, {
+    return this.request<BitbucketBuildStatus>(statusUrl, token, {
       method: 'POST',
       body: JSON.stringify({
         state,
@@ -202,7 +257,18 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     variables: PipelineVariable[] = []
   ): Promise<Pipeline> {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pipelines/`;
-    const payload: any = {
+    const payload: {
+      target: {
+        ref_type: string;
+        type: string;
+        ref_name: string;
+      };
+      variables?: Array<{
+        key: string;
+        value: string;
+        secured: boolean;
+      }>;
+    } = {
       target: {
         ref_type: 'branch',
         type: 'pipeline_ref_target',
@@ -218,7 +284,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
       }));
     }
 
-    return this.request(url, token, {
+    return this.request<Pipeline>(url, token, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -234,7 +300,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     token: string
   ): Promise<Pipeline> {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pipelines/${pipelineUuid}`;
-    return this.request(url, token);
+    return this.request<Pipeline>(url, token);
   }
 
   /**
@@ -250,7 +316,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     if (ref) {
       url += `?target.ref_name=${encodeURIComponent(ref)}`;
     }
-    return this.request(url, token);
+    return this.request<{ values: Pipeline[] }>(url, token);
   }
 
   /**
@@ -264,10 +330,10 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
   ): Promise<Blob> {
     // Bitbucket Pipelines artifacts are accessed via steps
     const stepsUrl = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pipelines/${pipelineUuid}/steps/`;
-    const steps = await this.request(stepsUrl, token);
+    const steps = await this.request<BitbucketPipelineStepsResponse>(stepsUrl, token);
     
     // Find the step with artifacts (usually the test step)
-    const stepWithArtifacts = steps.values?.find((step: any) => step.state?.name === 'COMPLETED');
+    const stepWithArtifacts = steps.values?.find((step) => step.state?.name === 'COMPLETED');
     
     if (!stepWithArtifacts) {
       throw new Error(`No completed steps found in pipeline ${pipelineUuid}`);
@@ -292,11 +358,11 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
   /**
    * Make API request with retries
    */
-  private async request(
+  private async request<T>(
     url: string,
     token: string,
     options: RequestInit = {}
-  ): Promise<any> {
+  ): Promise<T> {
     const maxRetries = 3;
     let lastError: Error | null = null;
 
@@ -322,8 +388,9 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-            const errorData = await response.json();
-            errorMessage = errorData.error?.message || errorMessage;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const errorData = await response.json() as { error?: { message?: string } };
+            errorMessage = errorData.error?.message ?? errorMessage;
           } catch {
             // Ignore JSON parse errors
           }
@@ -331,8 +398,9 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
         }
 
         try {
-          return await response.json();
-        } catch (jsonError) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          return await response.json() as T;
+        } catch {
           throw new Error('Failed to parse Bitbucket API response as JSON');
         }
       } catch (error) {

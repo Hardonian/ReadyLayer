@@ -59,10 +59,26 @@ export interface WorkflowArtifact {
   created_at: string;
 }
 
+export interface GitHubPR {
+  number: number;
+  title: string;
+  head: {
+    sha: string;
+    ref: string;
+  };
+  base: {
+    ref: string;
+  };
+  files?: Array<{
+    filename: string;
+    status?: string;
+  }>;
+}
+
 export interface GitHubAPIClient {
-  getPR(repo: string, prNumber: number, token: string): Promise<any>;
+  getPR(repo: string, prNumber: number, token: string): Promise<GitHubPR>;
   getPRDiff(repo: string, prNumber: number, token: string): Promise<string>;
-  postPRComment(repo: string, prNumber: number, body: string, token: string): Promise<any>;
+  postPRComment(repo: string, prNumber: number, body: string, token: string): Promise<{ id: number }>;
   updateStatusCheck(
     repo: string,
     sha: string,
@@ -70,13 +86,13 @@ export interface GitHubAPIClient {
     description: string,
     context: string,
     token: string
-  ): Promise<any>;
+  ): Promise<{ state: string }>;
   createOrUpdateCheckRun(
     repo: string,
     sha: string,
     details: CheckRunDetails,
     token: string
-  ): Promise<any>;
+  ): Promise<{ id: number; name: string }>;
   getFileContent(repo: string, path: string, ref: string, token: string): Promise<string>;
   dispatchWorkflow(
     repo: string,
@@ -102,9 +118,9 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
   /**
    * Get PR details
    */
-  async getPR(repo: string, prNumber: number, token: string): Promise<any> {
+  async getPR(repo: string, prNumber: number, token: string): Promise<GitHubPR> {
     const url = `${this.baseUrl}/repos/${repo}/pulls/${prNumber}`;
-    return this.request(url, token);
+    return this.request<GitHubPR>(url, token);
   }
 
   /**
@@ -147,9 +163,9 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
     prNumber: number,
     body: string,
     token: string
-  ): Promise<any> {
+  ): Promise<{ id: number }> {
     const url = `${this.baseUrl}/repos/${repo}/issues/${prNumber}/comments`;
-    return this.request(url, token, {
+    return this.request<{ id: number }>(url, token, {
       method: 'POST',
       body: JSON.stringify({ body }),
     });
@@ -165,9 +181,9 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
     description: string,
     context: string,
     token: string
-  ): Promise<any> {
+  ): Promise<{ state: string }> {
     const url = `${this.baseUrl}/repos/${repo}/statuses/${sha}`;
-    return this.request(url, token, {
+    return this.request<{ state: string }>(url, token, {
       method: 'POST',
       body: JSON.stringify({
         state,
@@ -183,7 +199,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
    */
   async getFileContent(repo: string, path: string, ref: string, token: string): Promise<string> {
     const url = `${this.baseUrl}/repos/${repo}/contents/${path}?ref=${ref}`;
-    const response = await this.request(url, token);
+    const response = await this.request<{ content?: string }>(url, token);
     
     // GitHub returns base64 encoded content
     if (response.content) {
@@ -204,7 +220,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
     sha: string,
     details: CheckRunDetails,
     token: string
-  ): Promise<any> {
+  ): Promise<{ id: number; name: string }> {
     // Try to find existing check-run by name
     try {
       const checkRunsUrl = `${this.baseUrl}/repos/${repo}/commits/${sha}/check-runs?check_name=${encodeURIComponent(details.name)}`;
@@ -225,15 +241,18 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
       }
 
       if (checkRunsResponse.ok) {
-        const checkRunsData = await checkRunsResponse.json();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const checkRunsData = await checkRunsResponse.json() as {
+          check_runs?: Array<{ id: number; name: string; head_sha: string }>;
+        };
         const existingCheckRun = checkRunsData.check_runs?.find(
-          (cr: any) => cr.name === details.name && cr.head_sha === sha
+          (cr) => cr.name === details.name && cr.head_sha === sha
         );
 
         if (existingCheckRun) {
           // Update existing check-run (idempotent)
           const updateUrl = `${this.baseUrl}/repos/${repo}/check-runs/${existingCheckRun.id}`;
-          return this.request(updateUrl, token, {
+          return this.request<{ id: number; name: string }>(updateUrl, token, {
             method: 'PATCH',
             body: JSON.stringify({
               name: details.name,
@@ -255,7 +274,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
 
     // Create new check-run
     const createUrl = `${this.baseUrl}/repos/${repo}/check-runs`;
-    return this.request(createUrl, token, {
+    return this.request<{ id: number; name: string }>(createUrl, token, {
       method: 'POST',
       body: JSON.stringify({
         name: details.name,
@@ -272,11 +291,11 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
   /**
    * Make API request with retries
    */
-  private async request(
+  private async request<T>(
     url: string,
     token: string,
     options: RequestInit = {}
-  ): Promise<any> {
+  ): Promise<T> {
     const maxRetries = 3;
     let lastError: Error | null = null;
 
@@ -303,8 +322,9 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            const errorData = await response.json() as { message?: string };
+            errorMessage = errorData.message ?? errorMessage;
           } catch {
             // Ignore JSON parse errors, use status text
           }
@@ -312,8 +332,9 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
         }
 
         try {
-          return await response.json();
-        } catch (jsonError) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+          return await response.json() as T;
+        } catch {
           throw new Error('Failed to parse GitHub API response as JSON');
         }
       } catch (error) {

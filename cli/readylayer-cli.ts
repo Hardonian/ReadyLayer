@@ -38,12 +38,13 @@ function loadConfig(): ReadyLayerConfig {
   const envApiUrl = process.env.READYLAYER_API_URL || 'https://api.readylayer.com';
 
   if (fs.existsSync(configPath)) {
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Partial<ReadyLayerConfig>;
     return {
-      apiKey: config.apiKey || envApiKey || '',
-      apiUrl: config.apiUrl || envApiUrl,
-      repositoryId: config.repositoryId,
-      llmProvider: config.llmProvider,
+      apiKey: (config.apiKey as string | undefined) || envApiKey || '',
+      apiUrl: (config.apiUrl as string | undefined) || envApiUrl,
+      repositoryId: config.repositoryId as string | undefined,
+      llmProvider: config.llmProvider as LLMProvider | undefined,
     };
   }
 
@@ -53,28 +54,37 @@ function loadConfig(): ReadyLayerConfig {
   };
 }
 
+interface ReviewOptions {
+  repository?: string;
+  ref?: string;
+}
+
 // Review file
-async function reviewFile(filePath: string, options: any) {
+async function reviewFile(filePath: string, options: ReviewOptions) {
   const config = loadConfig();
   
   if (!config.apiKey) {
+    // eslint-disable-next-line no-console
     console.error('Error: READYLAYER_API_KEY not set. Set it in .readylayer.json or environment.');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
+    // eslint-disable-next-line no-console
     console.error(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
 
   const fileContent = fs.readFileSync(filePath, 'utf-8');
-  const repositoryId = options.repository || config.repositoryId;
+  const repositoryId = options.repository ?? config.repositoryId;
 
   if (!repositoryId) {
+    // eslint-disable-next-line no-console
     console.error('Error: Repository ID required. Use --repository or set in .readylayer.json');
     process.exit(1);
   }
 
+  // eslint-disable-next-line no-console
   console.log(`Reviewing ${filePath}...`);
 
   try {
@@ -88,37 +98,64 @@ async function reviewFile(filePath: string, options: any) {
         repositoryId,
         filePath,
         fileContent,
-        ref: options.ref || 'HEAD',
+        ref: options.ref ?? 'HEAD',
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error(`Error: ${error.error?.message || response.statusText}`);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const error = await response.json() as { error?: { message?: string } };
+      // eslint-disable-next-line no-console
+      console.error(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
-    const result = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await response.json() as {
+      data?: {
+        status?: string;
+        issuesCount?: number;
+        issues?: Array<{
+          severity: string;
+          ruleId: string;
+          file: string;
+          line: number;
+          message: string;
+          fix?: string;
+        }>;
+        isBlocked?: boolean;
+      };
+    };
+    // eslint-disable-next-line no-console
     console.log('\nReview Results:');
-    console.log(`Status: ${result.data.status}`);
-    console.log(`Issues Found: ${result.data.issuesCount || 0}`);
+    // eslint-disable-next-line no-console
+    console.log(`Status: ${result.data?.status ?? 'unknown'}`);
+    // eslint-disable-next-line no-console
+    console.log(`Issues Found: ${result.data?.issuesCount ?? 0}`);
     
-    if (result.data.issues && result.data.issues.length > 0) {
+    if (result.data?.issues && result.data.issues.length > 0) {
+      // eslint-disable-next-line no-console
       console.log('\nIssues:');
-      result.data.issues.forEach((issue: any, index: number) => {
+      result.data.issues.forEach((issue, index) => {
+        // eslint-disable-next-line no-console
         console.log(`\n${index + 1}. ${issue.severity.toUpperCase()}: ${issue.ruleId}`);
+        // eslint-disable-next-line no-console
         console.log(`   File: ${issue.file}:${issue.line}`);
+        // eslint-disable-next-line no-console
         console.log(`   Message: ${issue.message}`);
         if (issue.fix) {
+          // eslint-disable-next-line no-console
           console.log(`   Fix: ${issue.fix}`);
         }
       });
     }
 
-    if (result.data.isBlocked) {
+    if (result.data?.isBlocked) {
+      // eslint-disable-next-line no-console
       console.log('\n⚠️  PR would be blocked due to policy violations');
       process.exit(1);
     } else {
+      // eslint-disable-next-line no-console
       console.log('\n✅ Review passed');
     }
   } catch (error) {
@@ -127,28 +164,38 @@ async function reviewFile(filePath: string, options: any) {
   }
 }
 
+interface TestOptions {
+  repository?: string;
+  framework?: string;
+  output?: string;
+}
+
 // Generate tests
-async function generateTests(filePath: string, options: any) {
+async function generateTests(filePath: string, options: TestOptions) {
   const config = loadConfig();
   
   if (!config.apiKey) {
+    // eslint-disable-next-line no-console
     console.error('Error: READYLAYER_API_KEY not set');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
+    // eslint-disable-next-line no-console
     console.error(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
 
   const fileContent = fs.readFileSync(filePath, 'utf-8');
-  const repositoryId = options.repository || config.repositoryId;
+  const repositoryId = options.repository ?? config.repositoryId;
 
   if (!repositoryId) {
+    // eslint-disable-next-line no-console
     console.error('Error: Repository ID required');
     process.exit(1);
   }
 
+  // eslint-disable-next-line no-console
   console.log(`Generating tests for ${filePath}...`);
 
   try {
@@ -162,25 +209,38 @@ async function generateTests(filePath: string, options: any) {
         repositoryId,
         filePath,
         fileContent,
-        framework: options.framework || 'auto',
+        framework: options.framework ?? 'auto',
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error(`Error: ${error.error?.message || response.statusText}`);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const error = await response.json() as { error?: { message?: string } };
+      // eslint-disable-next-line no-console
+      console.error(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
-    const result = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await response.json() as {
+      data?: {
+        testContent?: string;
+        placement?: string;
+        framework?: string;
+      };
+    };
     
-    if (result.data.testContent) {
-      const outputPath = options.output || result.data.placement || `${filePath}.test.ts`;
+    if (result.data?.testContent) {
+      const outputPath = options.output ?? result.data.placement ?? `${filePath}.test.ts`;
       fs.writeFileSync(outputPath, result.data.testContent);
+      // eslint-disable-next-line no-console
       console.log(`\n✅ Tests generated: ${outputPath}`);
-      console.log(`Framework: ${result.data.framework}`);
-      console.log(`Placement: ${result.data.placement}`);
+      // eslint-disable-next-line no-console
+      console.log(`Framework: ${result.data.framework ?? 'unknown'}`);
+      // eslint-disable-next-line no-console
+      console.log(`Placement: ${result.data.placement ?? 'unknown'}`);
     } else {
+      // eslint-disable-next-line no-console
       console.log('\n⚠️  No tests generated');
     }
   } catch (error) {
@@ -194,6 +254,7 @@ function initConfig() {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   
   if (fs.existsSync(configPath)) {
+    // eslint-disable-next-line no-console
     console.log('.readylayer.json already exists');
     return;
   }
@@ -254,6 +315,7 @@ function initConfig() {
 function finishConfig(config: ReadyLayerConfig, rl: readline.Interface) {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  // eslint-disable-next-line no-console
   console.log(`\n✅ Configuration saved to ${configPath}`);
   rl.close();
 }
@@ -289,6 +351,7 @@ program
   .description('Show current configuration')
   .action(() => {
     const config = loadConfig();
+    // eslint-disable-next-line no-console
     console.log(JSON.stringify(config, null, 2));
   });
 
@@ -299,6 +362,7 @@ program
   .command('install')
   .description('Install Cursor integration')
   .action(() => {
+    // eslint-disable-next-line no-console
     console.log('Installing Cursor integration...');
     // Create Cursor config file
     const cursorConfig = {
@@ -310,6 +374,7 @@ program
     const cursorConfigPath = path.join(process.cwd(), '.cursor', 'readylayer.json');
     fs.mkdirSync(path.dirname(cursorConfigPath), { recursive: true });
     fs.writeFileSync(cursorConfigPath, JSON.stringify(cursorConfig, null, 2));
+    // eslint-disable-next-line no-console
     console.log('✅ Cursor integration installed');
   });
 
@@ -320,6 +385,7 @@ program
   .command('install')
   .description('Install Tabnine agent integration')
   .action(() => {
+    // eslint-disable-next-line no-console
     console.log('Installing Tabnine agent integration...');
     // Create Tabnine config
     const tabnineConfig = {
@@ -332,6 +398,7 @@ program
     const tabnineConfigPath = path.join(process.cwd(), '.tabnine', 'readylayer.json');
     fs.mkdirSync(path.dirname(tabnineConfigPath), { recursive: true });
     fs.writeFileSync(tabnineConfigPath, JSON.stringify(tabnineConfig, null, 2));
+    // eslint-disable-next-line no-console
     console.log('✅ Tabnine agent integration installed');
   });
 

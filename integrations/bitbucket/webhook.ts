@@ -3,18 +3,65 @@
  * 
  * Handles Bitbucket webhooks with HMAC validation
  * Normalizes events to internal format
+ * 
+ * Note: Webhook payloads from external APIs are inherently dynamic
+ * and cannot be fully typed. We use interfaces for known structures
+ * but some properties may be undefined or have unexpected types.
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { createHmac } from 'crypto';
 import { prisma } from '../../lib/prisma';
 import { queueService } from '../../queue';
 
+export interface BitbucketPullRequest {
+  id?: number;
+  number?: number;
+  title?: string;
+  fromRef?: {
+    latestCommit?: string;
+    displayId?: string;
+  };
+  toRef?: {
+    displayId?: string;
+  };
+  source?: {
+    commit?: {
+      hash?: string;
+    };
+    branch?: {
+      name?: string;
+    };
+  };
+  destination?: {
+    branch?: {
+      name?: string;
+    };
+  };
+  mergeCommit?: {
+    hash?: string;
+  };
+}
+
+export interface BitbucketRepository {
+  workspace?: {
+    slug?: string;
+  };
+  owner?: {
+    username?: string;
+  };
+  slug?: string;
+}
+
 export interface BitbucketWebhookEvent {
   eventKey: string;
-  pullRequest?: any;
-  repository?: any;
-  buildStatus?: any;
-  commit?: any;
+  pullRequest?: BitbucketPullRequest;
+  repository?: BitbucketRepository;
+  buildStatus?: unknown;
+  commit?: unknown;
 }
 
 export interface NormalizedEvent {
@@ -94,18 +141,18 @@ export class BitbucketWebhookHandler {
    */
   private async normalizeEvent(
     event: BitbucketWebhookEvent,
-    installation: any
+    installation: { id: string; organizationId?: string | null; repositoryId?: string | null }
   ): Promise<NormalizedEvent> {
-    const repository = event.repository || {};
-    const workspace = repository.workspace?.slug || repository.owner?.username || '';
-    const repoSlug = repository.slug || '';
+    const repository = event.repository ?? {};
+    const workspace = repository.workspace?.slug ?? repository.owner?.username ?? '';
+    const repoSlug = repository.slug ?? '';
     const fullName = workspace && repoSlug ? `${workspace}/${repoSlug}` : '';
 
     // Find or create repository
-    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId);
+    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId ?? installation.repositoryId ?? null);
 
     if (event.eventKey === 'pr:opened' || event.eventKey === 'pullrequest:created') {
-      const pr = event.pullRequest || {};
+      const pr = event.pullRequest ?? {};
       return {
         type: 'pr.opened',
         repository: {
@@ -114,18 +161,18 @@ export class BitbucketWebhookHandler {
           provider: 'bitbucket',
         },
         pr: {
-          number: pr.id || pr.number,
-          sha: pr.fromRef?.latestCommit || pr.source?.commit?.hash || '',
-          title: pr.title || '',
-          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
-          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
+          number: pr.id ?? pr.number ?? 0,
+          sha: pr.fromRef?.latestCommit ?? pr.source?.commit?.hash ?? '',
+          title: pr.title ?? '',
+          baseBranch: pr.toRef?.displayId ?? pr.destination?.branch?.name ?? '',
+          headBranch: pr.fromRef?.displayId ?? pr.source?.branch?.name ?? '',
         },
         installationId: installation.id,
       };
     }
 
     if (event.eventKey === 'pr:updated' || event.eventKey === 'pullrequest:updated') {
-      const pr = event.pullRequest || {};
+      const pr = event.pullRequest ?? {};
       return {
         type: 'pr.updated',
         repository: {
@@ -134,18 +181,18 @@ export class BitbucketWebhookHandler {
           provider: 'bitbucket',
         },
         pr: {
-          number: pr.id || pr.number,
-          sha: pr.fromRef?.latestCommit || pr.source?.commit?.hash || '',
-          title: pr.title || '',
-          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
-          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
+          number: pr.id ?? pr.number ?? 0,
+          sha: pr.fromRef?.latestCommit ?? pr.source?.commit?.hash ?? '',
+          title: pr.title ?? '',
+          baseBranch: pr.toRef?.displayId ?? pr.destination?.branch?.name ?? '',
+          headBranch: pr.fromRef?.displayId ?? pr.source?.branch?.name ?? '',
         },
         installationId: installation.id,
       };
     }
 
     if (event.eventKey === 'pr:merged' || event.eventKey === 'pullrequest:fulfilled') {
-      const pr = event.pullRequest || {};
+      const pr = event.pullRequest ?? {};
       return {
         type: 'merge.completed',
         repository: {
@@ -154,18 +201,18 @@ export class BitbucketWebhookHandler {
           provider: 'bitbucket',
         },
         pr: {
-          number: pr.id || pr.number,
-          sha: pr.mergeCommit?.hash || pr.fromRef?.latestCommit || '',
-          title: pr.title || '',
-          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
-          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
+          number: pr.id ?? pr.number ?? 0,
+          sha: pr.mergeCommit?.hash ?? pr.fromRef?.latestCommit ?? '',
+          title: pr.title ?? '',
+          baseBranch: pr.toRef?.displayId ?? pr.destination?.branch?.name ?? '',
+          headBranch: pr.fromRef?.displayId ?? pr.source?.branch?.name ?? '',
         },
         installationId: installation.id,
       };
     }
 
     if (event.eventKey === 'pr:declined' || event.eventKey === 'pr:deleted') {
-      const pr = event.pullRequest || {};
+      const pr = event.pullRequest ?? {};
       return {
         type: 'pr.closed',
         repository: {
@@ -174,11 +221,11 @@ export class BitbucketWebhookHandler {
           provider: 'bitbucket',
         },
         pr: {
-          number: pr.id || pr.number,
-          sha: pr.fromRef?.latestCommit || pr.source?.commit?.hash || '',
-          title: pr.title || '',
-          baseBranch: pr.toRef?.displayId || pr.destination?.branch?.name || '',
-          headBranch: pr.fromRef?.displayId || pr.source?.branch?.name || '',
+          number: pr.id ?? pr.number ?? 0,
+          sha: pr.fromRef?.latestCommit ?? pr.source?.commit?.hash ?? '',
+          title: pr.title ?? '',
+          baseBranch: pr.toRef?.displayId ?? pr.destination?.branch?.name ?? '',
+          headBranch: pr.fromRef?.displayId ?? pr.source?.branch?.name ?? '',
         },
         installationId: installation.id,
       };

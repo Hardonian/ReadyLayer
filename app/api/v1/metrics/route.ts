@@ -95,6 +95,8 @@ export async function GET(request: NextRequest) {
           reviewGuardCompletedAt: true,
           testEngineStartedAt: true,
           testEngineCompletedAt: true,
+          docSyncResult: true,
+          testEngineResult: true,
         },
       }),
       prisma.review.findMany({
@@ -157,9 +159,22 @@ export async function GET(request: NextRequest) {
 
     reviews.forEach(review => {
       const issues = Array.isArray(review.issuesFound) ? review.issuesFound : [];
-      issues.forEach((issue: { severity?: 'critical' | 'high' | 'medium' | 'low' }) => {
-        if (issue.severity && issue.severity in findingCounts) {
-          findingCounts[issue.severity] = (findingCounts[issue.severity] || 0) + 1;
+      issues.forEach((issue) => {
+        // Type guard: ensure issue is an object with optional severity property
+        if (
+          issue !== null &&
+          typeof issue === 'object' &&
+          !Array.isArray(issue) &&
+          'severity' in issue
+        ) {
+          const severity = (issue as { severity?: unknown }).severity;
+          if (
+            typeof severity === 'string' &&
+            severity in findingCounts
+          ) {
+            findingCounts[severity as keyof typeof findingCounts] =
+              (findingCounts[severity as keyof typeof findingCounts] || 0) + 1;
+          }
         }
       });
     });

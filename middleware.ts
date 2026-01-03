@@ -188,7 +188,7 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
   }
 
   // Create Supabase client (may fail if env vars missing)
-  const { client: supabase, error: supabaseError } = createEdgeSupabaseClient(request)
+  const { client: supabase } = createEdgeSupabaseClient(request)
 
   // For public routes, allow through even if Supabase fails
   // (This shouldn't happen due to early return above, but defensive)
@@ -212,7 +212,6 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
       try {
         edgeLogger.warn('Supabase unavailable for API route', {
           path: pathname,
-          error: supabaseError,
         })
       } catch {
         // Logging failed, continue
@@ -294,7 +293,6 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
     try {
       edgeLogger.warn('Supabase unavailable for page route', {
         path: pathname,
-        error: supabaseError,
       })
     } catch {
       // Logging failed, continue

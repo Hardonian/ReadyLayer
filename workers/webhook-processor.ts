@@ -6,7 +6,7 @@
 
 import { queueService } from '../queue';
 import { runPipelineService, RunRequest } from '../services/run-pipeline';
-import { getGitProviderPRAdapter, type CheckRunAnnotation, type CheckRunDetails } from '../integrations/git-provider-pr-adapter';
+import { getGitProviderPRAdapter } from '../integrations/git-provider-pr-adapter';
 import { formatPolicyComment } from '../lib/git-provider-ui/comment-formatter';
 import { detectGitProvider } from '../lib/git-provider-ui';
 import { prisma } from '../lib/prisma';
@@ -17,46 +17,9 @@ import { getInstallationWithDecryptedToken } from '../lib/secrets/installation-h
 import { checkBillingLimits } from '../lib/billing-middleware';
 import { redactSecret } from '../lib/crypto';
 import { isKeyConfigured } from '../lib/crypto';
-import type { Issue } from '../services/static-analysis';
+import { testEngineService } from '../services/test-engine';
+import { docSyncService } from '../services/doc-sync';
 
-/**
- * Convert issues to check-run annotations
- */
-function issuesToAnnotations(issues: Issue[]): CheckRunAnnotation[] {
-  const annotations: CheckRunAnnotation[] = [];
-  
-  for (const issue of issues) {
-    // Map severity to annotation_level
-    let annotationLevel: 'notice' | 'warning' | 'failure';
-    switch (issue.severity) {
-      case 'critical':
-      case 'high':
-        annotationLevel = 'failure';
-        break;
-      case 'medium':
-        annotationLevel = 'warning';
-        break;
-      case 'low':
-      default:
-        annotationLevel = 'notice';
-        break;
-    }
-
-    annotations.push({
-      path: issue.file,
-      start_line: issue.line,
-      end_line: issue.line,
-      start_column: issue.column,
-      end_column: issue.column,
-      annotation_level: annotationLevel,
-      message: issue.message,
-      title: `${issue.ruleId}: ${issue.severity}`,
-      raw_details: issue.fix ? `Suggested fix: ${issue.fix}` : undefined,
-    });
-  }
-
-  return annotations;
-}
 
 /**
  * Generate suggested fix as unified diff (minimal, safe fixes only)
@@ -306,11 +269,6 @@ async function processPREvent(
               repository: {
                 provider: repository.provider,
                 url: repository.url || undefined,
-              },
-              pr: {
-                number: pr.number,
-                sha: pr.sha,
-                title: pr.title,
               },
             }
           );
