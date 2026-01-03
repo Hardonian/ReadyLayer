@@ -5,13 +5,14 @@
  */
 
 import { prisma } from '../lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { createClient } from 'redis';
 import { logger } from '../observability/logging';
 import { usageEnforcementService } from '../lib/usage-enforcement';
 
 export interface JobPayload {
   type: string;
-  data: any;
+  data: unknown;
   idempotencyKey?: string;
   maxRetries?: number;
   organizationId?: string; // For usage enforcement
@@ -21,7 +22,7 @@ export interface JobPayload {
 export interface JobResult {
   id: string;
   status: 'completed' | 'failed';
-  result?: any;
+  result?: unknown;
   error?: string;
 }
 
@@ -84,7 +85,8 @@ export class QueueService {
     }
 
     // Get repositoryId from payload.data if available (for job record)
-    const repositoryId = payload.data?.repositoryId || payload.data?.repoId || null;
+    const data = payload.data as { repositoryId?: string; repoId?: string } | undefined;
+    const repositoryId = data?.repositoryId ?? data?.repoId ?? null;
 
     // Create job in database (for durability)
     await prisma.job.create({
@@ -92,7 +94,7 @@ export class QueueService {
         id: jobId,
         type: payload.type,
         status: 'pending',
-        payload: payload.data,
+        payload: payload.data as unknown as Prisma.InputJsonValue,
         maxRetries: payload.maxRetries || 3,
         scheduledAt: new Date(),
         repositoryId,

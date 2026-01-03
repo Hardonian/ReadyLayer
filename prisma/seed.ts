@@ -7,6 +7,7 @@ async function main() {
   // Note: This replaces the old gamification seed data
   // Add seed data for ReadyLayer models here if needed
   
+  // eslint-disable-next-line no-console
   console.log('ReadyLayer seed completed')
 }
 

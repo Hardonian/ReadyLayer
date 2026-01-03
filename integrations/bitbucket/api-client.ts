@@ -26,18 +26,25 @@ export interface Pipeline {
 export interface BitbucketPR {
   id: number;
   title: string;
-  source: {
-    commit: {
-      hash: string;
+  source?: {
+    commit?: {
+      hash?: string;
     };
-    branch: {
-      name: string;
+    branch?: {
+      name?: string;
     };
   };
-  destination: {
-    branch: {
-      name: string;
+  destination?: {
+    branch?: {
+      name?: string;
     };
+  };
+  fromRef?: {
+    latestCommit?: string;
+    displayId?: string;
+  };
+  toRef?: {
+    displayId?: string;
   };
   state: string;
   created_on: string;

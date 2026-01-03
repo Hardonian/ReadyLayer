@@ -11,7 +11,7 @@ export interface LogContext {
   userId?: string;
   organizationId?: string;
   repositoryId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 class Logger {

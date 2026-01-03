@@ -162,12 +162,11 @@ async function reviewFile(filePath: string, config: CursorConfig) {
     
     if ((result.data?.issuesCount ?? 0) > 0) {
       cursor.window.showWarningMessage(
-        `Found ${result.data.issuesCount ?? 0} issue(s)`,
+        `Found ${result.data?.issuesCount ?? 0} issue(s)`,
         'View Details'
       ).then((action: string | undefined) => {
         if (action === 'View Details' && result.data?.issues) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          showIssuesPanel(result.data.issues);
+          showIssuesPanel(result.data.issues as Issue[]);
         }
       });
     } else {
@@ -215,7 +214,7 @@ async function generateTests(filePath: string, config: CursorConfig) {
     
     if (result.data?.testContent) {
       // Show test preview
-      showTestPreview(result.data.testContent, result.data.placement);
+      showTestPreview(result.data.testContent, result.data.placement ?? '');
     } else {
       cursor.window.showWarningMessage('No tests generated');
     }
@@ -250,9 +249,9 @@ function setupInlineDiagnostics(config: CursorConfig) {
       const diagnostics = issues.map((issue) => ({
         range: new cursor.Range(
           issue.line - 1,
-          issue.column || 0,
+          issue.column ?? 0,
           issue.line - 1,
-          (issue.column || 0) + 1
+          (issue.column ?? 0) + 1
         ),
         message: issue.message,
         severity: issue.severity === 'critical' || issue.severity === 'high' 
@@ -279,7 +278,17 @@ function getRepositoryId(): string {
 /**
  * Get file issues for diagnostics
  */
-async function getFileIssues(filePath: string, config: CursorConfig): Promise<any[] | null> {
+interface Issue {
+  ruleId: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  message: string;
+  file: string;
+  line: number;
+  column?: number;
+  fix?: string;
+}
+
+async function getFileIssues(filePath: string, config: CursorConfig): Promise<Issue[] | null> {
   try {
     const fileContent = await cursor.workspace.fs.readFile(filePath);
     const content = new TextDecoder().decode(fileContent);
@@ -301,8 +310,13 @@ async function getFileIssues(filePath: string, config: CursorConfig): Promise<an
       return null;
     }
 
-    const result = await response.json();
-    return result.data.issues || [];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await response.json() as {
+      data?: {
+        issues?: Issue[];
+      };
+    };
+    return result.data?.issues ?? null;
   } catch {
     return null;
   }
@@ -311,7 +325,7 @@ async function getFileIssues(filePath: string, config: CursorConfig): Promise<an
 /**
  * Show issues panel
  */
-function showIssuesPanel(issues: Array<{ severity: string; ruleId: string; file: string; line: number; message: string; fix?: string }>) {
+function showIssuesPanel(issues: Issue[]) {
   // Create output panel with issues
   const outputChannel = cursor.window.createOutputChannel('ReadyLayer Issues');
   outputChannel.clear();

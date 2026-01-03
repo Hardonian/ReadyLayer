@@ -134,10 +134,21 @@ async function reviewCode(code: string, config: TabnineConfig): Promise<{
       return { isBlocked: false, issues: [] };
     }
 
-    const result = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await response.json() as {
+      data?: {
+        isBlocked?: boolean;
+        issues?: unknown[];
+      };
+    };
     return {
-      isBlocked: result.data.isBlocked || false,
-      issues: result.data.issues || [],
+      isBlocked: result.data?.isBlocked ?? false,
+      issues: (result.data?.issues ?? []) as Array<{
+        severity: string;
+        message: string;
+        line: number;
+        ruleId: string;
+      }>,
     };
   } catch {
     return { isBlocked: false, issues: [] };

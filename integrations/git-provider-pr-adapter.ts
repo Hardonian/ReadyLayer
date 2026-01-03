@@ -102,7 +102,7 @@ class GitHubPRAdapter implements GitProviderPRAdapter {
       sha: pr.head.sha,
       baseBranch: pr.base.ref,
       headBranch: pr.head.ref,
-      files: pr.files?.map((f: any) => ({ filename: f.filename, status: f.status })),
+      files: pr.files?.map((f) => ({ filename: f.filename, status: f.status })),
     };
   }
 
@@ -143,9 +143,9 @@ class GitLabPRAdapter implements GitProviderPRAdapter {
   async getPR(repo: string, prNumber: number, token: string): Promise<PRDetails> {
     const mr = await gitlabAPIClient.getMR(repo, prNumber, token);
     return {
-      number: mr.iid || mr.id,
+      number: mr.iid ?? mr.id,
       title: mr.title,
-      sha: mr.sha || mr.last_commit?.id || '',
+      sha: mr.sha ?? mr.last_commit?.id ?? '',
       baseBranch: mr.target_branch,
       headBranch: mr.source_branch,
     };
@@ -206,11 +206,11 @@ class BitbucketPRAdapter implements GitProviderPRAdapter {
     const { workspace, repoSlug } = this.parseRepo(repo);
     const pr = await bitbucketAPIClient.getPR(workspace, repoSlug, prNumber, token);
     return {
-      number: pr.id || prNumber,
+      number: pr.id ?? prNumber,
       title: pr.title,
-      sha: pr.source?.commit?.hash || pr.fromRef?.latestCommit || '',
-      baseBranch: pr.destination?.branch?.name || pr.toRef?.displayId || '',
-      headBranch: pr.source?.branch?.name || pr.fromRef?.displayId || '',
+      sha: pr.source?.commit?.hash ?? pr.fromRef?.latestCommit ?? '',
+      baseBranch: pr.destination?.branch?.name ?? pr.toRef?.displayId ?? '',
+      headBranch: pr.source?.branch?.name ?? pr.fromRef?.displayId ?? '',
     };
   }
 
