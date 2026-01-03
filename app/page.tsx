@@ -5,6 +5,7 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import { LoadingState } from '@/components/ui'
 import { HeroProof, PipelineStrip, ProofGrid, ValueDrivers } from '@/components/landing'
+import { CulturalArtifacts } from '@/components/landing/CulturalArtifacts'
 import { FeatureShowcase } from '@/components/feature-showcase'
 
 export default function Home() {
@@ -63,6 +64,9 @@ export default function Home() {
 
       {/* Value Drivers */}
       <ValueDrivers />
+
+      {/* Cultural Lock-In Artifacts */}
+      <CulturalArtifacts />
 
       {/* Feature Showcase (for authenticated users) */}
       {user && <FeatureShowcase />}

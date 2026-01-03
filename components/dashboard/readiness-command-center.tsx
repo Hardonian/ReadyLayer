@@ -49,8 +49,8 @@ export function ReadinessCommandCenter({
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch metrics');
 
-        const data = await response.json();
-        setMetrics(data.metrics);
+      const data = await response.json() as { metrics?: ReadinessMetrics };
+      setMetrics(data.metrics || null);
       } catch (error) {
         console.error('Failed to fetch metrics:', error);
       } finally {

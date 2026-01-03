@@ -167,7 +167,7 @@ export default function ReviewsPage() {
           <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 mt-4">
             <div className="text-xs font-semibold text-primary mb-1">ReadyLayer Verified™</div>
             <div className="text-xs text-muted-foreground">
-              Every review generates a Merge Confidence Certificate. If ReadyLayer didn't review a PR, that absence is visible.
+              Every review generates a Merge Confidence Certificate. If ReadyLayer didn&apos;t review a PR, that absence is visible.
             </div>
           </div>
         </div>

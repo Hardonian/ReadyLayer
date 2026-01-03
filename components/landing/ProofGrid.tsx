@@ -110,11 +110,12 @@ const proofCards: ProofCard[] = [
   {
     id: 'deterministic',
     icon: CheckCircle2,
-    title: 'Deterministic gates + audit trail',
+    title: 'Deterministic gates + signed certificates',
     visual: (
       <div className="mt-2 text-xs text-text-muted">
-        <div>✓ Review ID: abc123</div>
-        <div>✓ Timestamp: 2024-01-15 10:23</div>
+        <div>✓ Signed Review ID</div>
+        <div>✓ Policy version hash</div>
+        <div>✓ Merge Confidence Certificate</div>
       </div>
     ),
   },
@@ -156,12 +157,13 @@ const proofCards: ProofCard[] = [
   {
     id: 'evidence',
     icon: Database,
-    title: 'Evidence bundles (audit trail)',
+    title: 'Immutable evidence bundles',
     visual: (
       <div className="mt-2 text-xs text-text-muted">
-        <div>✓ Review ID: rev-abc123</div>
-        <div>✓ Evidence bundle exported</div>
-        <div>✓ Full audit trail</div>
+        <div>✓ Signed Review ID</div>
+        <div>✓ Policy checksum</div>
+        <div>✓ Immutable artifacts</div>
+        <div>✓ Defensible in courtrooms</div>
       </div>
     ),
   },
@@ -232,9 +234,9 @@ export function ProofGrid() {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold mb-2">AI Detection, Metrics & Transparency</h2>
+          <h2 className="text-3xl font-bold mb-2">Deterministic Governance & Cultural Lock-In</h2>
           <p className="text-lg text-text-muted max-w-2xl mx-auto">
-            Every check is AI-aware, metrics-driven, and fully traceable. See exactly what was detected, when, and why.
+            Every check is deterministic, signed, and defensible. Merge Confidence Certificates, Readiness Scores, and AI Risk Exposure Index make ReadyLayer&apos;s absence visible.
           </p>
         </motion.div>
         <motion.div

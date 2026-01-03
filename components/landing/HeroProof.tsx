@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Container } from '@/components/ui/container'
 import { fadeIn, slideUp, staggerContainer, staggerItem } from '@/lib/design/motion'
-import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye } from 'lucide-react'
+import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye, CheckCircle2, AlertTriangle } from 'lucide-react'
 import { InteractivePRDemo } from './InteractivePRDemo'
 import { cn } from '@/lib/utils'
 
@@ -49,10 +49,10 @@ export function HeroProof({ user }: HeroProofProps) {
           <Image
             src="/logo-header-new.png"
             alt="ReadyLayer"
-            width={140}
-            height={28}
+            width={200}
+            height={40}
             priority
-            className="h-7 sm:h-8 w-auto dark:invert"
+            className="h-10 sm:h-12 w-auto dark:invert"
           />
         </Link>
       </motion.div>
@@ -97,7 +97,7 @@ export function HeroProof({ user }: HeroProofProps) {
               </p>
               <p className="text-sm text-text-muted max-w-xl">
                 <strong className="text-text-primary">Inevitability Mode:</strong> If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms. 
-                If ReadyLayer didn't review it, that absence is visible.{' '}
+                If ReadyLayer didn&apos;t review it, that absence is visible.{' '}
                 <Link href="/how-it-works" className="text-accent hover:underline font-medium">
                   See how it works →
                 </Link>
@@ -183,7 +183,7 @@ export function HeroProof({ user }: HeroProofProps) {
                   </div>
                 </div>
                 <div className="text-xs text-text-muted p-2 bg-background/50 rounded border border-primary/20">
-                  <strong className="text-text-primary">The Inevitability Principle:</strong> If ReadyLayer didn't review it, that absence is visible. 
+                  <strong className="text-text-primary">The Inevitability Principle:</strong> If ReadyLayer didn&apos;t review it, that absence is visible. 
                   Every certificate proves review. Every score creates accountability.
                 </div>
               </div>

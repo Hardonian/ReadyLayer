@@ -29,8 +29,8 @@ import {
   Lightbulb,
   PlayCircle,
   BarChart3,
-  Badge,
 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
 import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
@@ -526,7 +526,7 @@ export default function DashboardPage() {
                 <div className="text-xs font-semibold text-primary mb-1">The Inevitability Principle</div>
                 <div className="text-xs text-muted-foreground">
                   If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms. 
-                  If ReadyLayer didn't review it, that absence is visible.
+                  If ReadyLayer didn&apos;t review it, that absence is visible.
                 </div>
               </div>
             </CardContent>
