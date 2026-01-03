@@ -1,30 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
-import { logger } from '../../../../observability/logging';
-import { requireAuth } from '../../../../lib/auth';
-import { createAuthzMiddleware } from '../../../../lib/authz';
 import { checkBillingLimits } from '../../../../lib/billing-middleware';
-import { parseJsonBody } from '../../../../lib/api-route-helpers';
+import {
+  createRouteHandler,
+  parseJsonBody,
+  errorResponse,
+  successResponse,
+  paginatedResponse,
+  parsePagination,
+  RouteContext,
+} from '../../../../lib/api-route-helpers';
+import { z } from 'zod';
+
+const createRepoSchema = z.object({
+  organizationId: z.string().min(1),
+  name: z.string().min(1),
+  fullName: z.string().min(1),
+  provider: z.string().min(1),
+  providerId: z.string().optional(),
+  url: z.string().url().optional(),
+  defaultBranch: z.string().optional(),
+});
 
 /**
  * GET /api/v1/repos
  * List repositories (tenant-isolated)
  */
-export async function GET(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
-
-  try {
-    // Require authentication
-    const user = await requireAuth(request);
-
-    // Check authorization
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['read'],
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
-    }
+export const GET = createRouteHandler(
+  async (context: RouteContext) => {
+    const { request, user } = context;
+    const { searchParams } = new URL(request.url);
+    const organizationId = searchParams.get('organizationId');
+    const { limit, offset } = parsePagination(request);
 
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
@@ -39,28 +46,12 @@ export async function GET(request: NextRequest) {
     const userOrgIds = memberships.map((m: { organizationId: string }) => m.organizationId);
 
     if (userOrgIds.length === 0) {
-      return NextResponse.json({
-        repositories: [],
-        pagination: {
-          total: 0,
-          limit,
-          offset,
-          hasMore: false,
-        },
-      });
+      return paginatedResponse([], 0, limit, offset);
     }
 
     // If organizationId specified, verify user belongs to it
     if (organizationId && !userOrgIds.includes(organizationId)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: 'Access denied to organization',
-          },
-        },
-        { status: 403 }
-      );
+      return errorResponse('FORBIDDEN', 'Access denied to organization', 403);
     }
 
     // Build where clause with tenant isolation
@@ -108,109 +99,51 @@ export async function GET(request: NextRequest) {
         hasMore: offset + limit < total,
       },
     });
-  } catch (error) {
-    log.error(error, 'Failed to list repositories');
-    return NextResponse.json(
-      {
-        error: {
-          code: 'LIST_REPOS_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { authz: { requiredScopes: ['read'] } }
+);
 
 /**
  * POST /api/v1/repos
  * Create a new repository (tenant-isolated, billing-enforced)
  */
-export async function POST(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
-
-  try {
-    // Require authentication
-    const user = await requireAuth(request);
-
-    // Check authorization
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['write'],
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
-    }
+export const POST = createRouteHandler(
+  async (context: RouteContext) => {
+    const { request, user, log } = context;
 
     const bodyResult = await parseJsonBody(request);
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
-    const body = bodyResult.data;
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_BODY',
-            message: 'Request body must be an object',
-          },
-        },
-        { status: 400 }
-      );
-    }
-    const bodyObj = body as Record<string, unknown>;
-    const organizationId = bodyObj.organizationId;
-    const name = bodyObj.name;
-    const fullName = bodyObj.fullName;
-    const provider = bodyObj.provider;
-    const providerId = bodyObj.providerId;
-    const url = bodyObj.url;
-    const defaultBranch = bodyObj.defaultBranch;
 
-    // Validate input
-    if (!organizationId || typeof organizationId !== 'string' ||
-        !name || typeof name !== 'string' ||
-        !fullName || typeof fullName !== 'string' ||
-        !provider || typeof provider !== 'string') {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Missing required fields: organizationId (string), name (string), fullName (string), provider (string)',
-          },
-        },
-        { status: 400 }
+    const validationResult = createRepoSchema.safeParse(bodyResult.data);
+    if (!validationResult.success) {
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'Invalid request body',
+        400,
+        { errors: validationResult.error.errors }
       );
     }
+
+    const { organizationId, name, fullName, provider, providerId, url, defaultBranch } = validationResult.data;
 
     // Verify user belongs to organization (tenant isolation)
     const membership = await prisma.organizationMember.findUnique({
       where: {
         organizationId_userId: {
-          organizationId: organizationId as string,
+          organizationId,
           userId: user.id,
         },
       },
     });
 
     if (!membership) {
-      const { ErrorMessages } = await import('../../../../lib/errors');
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: ErrorMessages.ORGANIZATION_ACCESS_DENIED(organizationId as string).message,
-            context: ErrorMessages.ORGANIZATION_ACCESS_DENIED(organizationId as string).context,
-            fix: ErrorMessages.ORGANIZATION_ACCESS_DENIED(organizationId as string).fix,
-          },
-        },
-        { status: 403 }
-      );
+      return errorResponse('FORBIDDEN', `Access denied to organization ${organizationId}`, 403);
     }
 
     // Check billing limits (repository limit)
-    const billingCheck = await checkBillingLimits(organizationId as string, {
+    const billingCheck = await checkBillingLimits(organizationId, {
       checkRepoLimit: true,
     });
     if (billingCheck) {
@@ -220,13 +153,13 @@ export async function POST(request: NextRequest) {
     // Create repository
     const repo = await prisma.repository.create({
       data: {
-        organizationId: organizationId as string,
-        name: name as string,
-        fullName: fullName as string,
-        provider: provider as string,
-        providerId: providerId as string | undefined,
-        url: url as string | undefined,
-        defaultBranch: (defaultBranch as string | undefined) || 'main',
+        organizationId,
+        name,
+        fullName,
+        provider,
+        providerId,
+        url,
+        defaultBranch: defaultBranch || 'main',
       },
       include: {
         organization: {
@@ -253,7 +186,7 @@ export async function POST(request: NextRequest) {
     try {
       const { createAuditLog, AuditActions } = await import('../../../../lib/audit');
       await createAuditLog({
-        organizationId: organizationId as string,
+        organizationId,
         userId: user.id,
         action: AuditActions.REPO_CREATED,
         resourceType: 'repository',
@@ -271,44 +204,17 @@ export async function POST(request: NextRequest) {
 
     log.info({ repoId: repo.id, organizationId }, 'Repository created');
 
-    return NextResponse.json(
-      {
-        id: repo.id,
-        name: repo.name,
-        fullName: repo.fullName,
-        provider: repo.provider,
-        url: repo.url,
-        enabled: repo.enabled,
-        organization: repo.organization,
-        createdAt: repo.createdAt,
-        updatedAt: repo.updatedAt,
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    log.error(error, 'Failed to create repository');
-    
-    // Handle unique constraint violation
-    if (error instanceof Error && error.message.includes('Unique constraint')) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'DUPLICATE_REPOSITORY',
-            message: 'Repository already exists',
-          },
-        },
-        { status: 409 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error: {
-          code: 'CREATE_REPO_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
+    return successResponse({
+      id: repo.id,
+      name: repo.name,
+      fullName: repo.fullName,
+      provider: repo.provider,
+      url: repo.url,
+      enabled: repo.enabled,
+      organization: repo.organization,
+      createdAt: repo.createdAt,
+      updatedAt: repo.updatedAt,
+    }, 201);
+  },
+  { authz: { requiredScopes: ['write'] } }
+);

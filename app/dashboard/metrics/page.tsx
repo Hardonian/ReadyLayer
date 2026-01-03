@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, ErrorState, EmptyState, Skeleton } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
 import { TrendingUp, Shield, TestTube, FileText, DollarSign } from 'lucide-react'
@@ -89,10 +89,18 @@ export default function MetricsPage() {
     return (
       <Container className="py-8">
         <div className="space-y-4">
-          <div className="h-10 w-64 bg-surface-muted rounded animate-pulse" />
+          <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-32 bg-surface-muted rounded animate-pulse" />
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -100,14 +108,32 @@ export default function MetricsPage() {
     )
   }
 
-  if (error || !metrics) {
+  if (error) {
     return (
       <Container className="py-8">
-        <Card className="border-red-500/20">
-          <CardContent className="pt-6">
-            <div className="text-red-600">{error || 'Failed to load metrics'}</div>
-          </CardContent>
-        </Card>
+        <ErrorState
+          message={error}
+          action={{
+            label: 'Try Again',
+            onClick: () => {
+              setLoading(true)
+              setError(null)
+              fetchMetrics()
+            },
+          }}
+        />
+      </Container>
+    )
+  }
+
+  if (!metrics) {
+    return (
+      <Container className="py-8">
+        <EmptyState
+          icon={TrendingUp}
+          title="No metrics available"
+          description="Metrics will appear here once you start using ReadyLayer."
+        />
       </Container>
     )
   }

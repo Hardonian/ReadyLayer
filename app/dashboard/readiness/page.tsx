@@ -8,9 +8,11 @@
 
 import { ReadinessCommandCenter } from '@/components/dashboard/readiness-command-center';
 import { Container } from '@/components/ui/container';
+import { ErrorState, EmptyState, Skeleton } from '@/components/ui';
 import { useEffect, useState } from 'react';
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { Database } from 'lucide-react';
 
 export default function ReadinessPage() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -66,7 +68,10 @@ export default function ReadinessPage() {
   if (loading) {
     return (
       <Container className="py-8">
-        <div className="text-center">Loading...</div>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-96 w-full" />
+        </div>
       </Container>
     );
   }
@@ -74,14 +79,15 @@ export default function ReadinessPage() {
   if (!organizationId) {
     return (
       <Container className="py-8">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">
-            Connect a repository to view readiness metrics
-          </p>
-          <a href="/dashboard/repos/connect" className="text-primary hover:underline">
-            Connect Repository →
-          </a>
-        </div>
+        <EmptyState
+          icon={Database}
+          title="No repositories connected"
+          description="Connect a repository to view readiness metrics and command center."
+          action={{
+            label: 'Connect Repository',
+            onClick: () => router.push('/dashboard/repos/connect'),
+          }}
+        />
       </Container>
     );
   }
