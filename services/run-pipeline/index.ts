@@ -17,6 +17,7 @@ import { reviewGuardService, ReviewRequest } from '../review-guard';
 import { testEngineService, TestGenerationRequest } from '../test-engine';
 import { docSyncService } from '../doc-sync';
 import { providerStatusService } from '../provider-status';
+import { outboxService } from '../outbox';
 import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
@@ -163,19 +164,24 @@ export class RunPipelineService {
           },
         });
 
-        // Post "in progress" status to provider
+        // Create outbox intent for "in progress" status (idempotent)
         if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
           try {
-            await providerStatusService.postStatusUpdate({
+            await outboxService.createIntent({
               runId: run.id,
               repositoryId: request.repositoryId,
-              prNumber: request.triggerMetadata.prNumber,
-              prSha: request.triggerMetadata.prSha,
-              stage: 'review_guard',
-              status: 'in_progress',
+              sandboxId: request.sandboxId,
+              update: {
+                runId: run.id,
+                repositoryId: request.repositoryId,
+                prNumber: request.triggerMetadata.prNumber,
+                prSha: request.triggerMetadata.prSha,
+                stage: 'review_guard',
+                status: 'in_progress',
+              },
             });
           } catch (error) {
-            log.warn({ err: error }, 'Failed to post review guard start status (non-critical)');
+            log.warn({ err: error }, 'Failed to create outbox intent for review guard start (non-critical)');
           }
         }
 
@@ -212,23 +218,29 @@ export class RunPipelineService {
             },
           });
 
-          // Post completion status to provider
+          // Create outbox intent for completion status (idempotent)
           if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
             try {
-              await providerStatusService.postStageCompleted(
-                run.id,
-                request.repositoryId,
-                request.triggerMetadata.prNumber,
-                request.triggerMetadata.prSha,
-                'review_guard',
-                reviewGuardStatus === 'succeeded' ? 'success' : 'failure',
-                {
-                  reviewGuard: reviewGuardResult,
+              await outboxService.createIntent({
+                runId: run.id,
+                repositoryId: request.repositoryId,
+                sandboxId: request.sandboxId,
+                update: {
+                  runId: run.id,
+                  repositoryId: request.repositoryId,
+                  prNumber: request.triggerMetadata.prNumber,
+                  prSha: request.triggerMetadata.prSha,
+                  stage: 'review_guard',
+                  status: 'completed',
+                  conclusion: reviewGuardStatus === 'succeeded' ? 'success' : 'failure',
+                  details: {
+                    reviewGuard: reviewGuardResult,
+                  },
+                  issues: reviewResult.issues,
                 },
-                reviewResult.issues
-              );
+              });
             } catch (error) {
-              log.warn({ err: error }, 'Failed to post review guard completion status (non-critical)');
+              log.warn({ err: error }, 'Failed to create outbox intent for review guard completion (non-critical)');
             }
           }
 
@@ -271,19 +283,24 @@ export class RunPipelineService {
           },
         });
 
-        // Post "in progress" status to provider
+        // Create outbox intent for "in progress" status (idempotent)
         if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
           try {
-            await providerStatusService.postStatusUpdate({
+            await outboxService.createIntent({
               runId: run.id,
               repositoryId: request.repositoryId,
-              prNumber: request.triggerMetadata.prNumber,
-              prSha: request.triggerMetadata.prSha,
-              stage: 'test_engine',
-              status: 'in_progress',
+              sandboxId: request.sandboxId,
+              update: {
+                runId: run.id,
+                repositoryId: request.repositoryId,
+                prNumber: request.triggerMetadata.prNumber,
+                prSha: request.triggerMetadata.prSha,
+                stage: 'test_engine',
+                status: 'in_progress',
+              },
             });
           } catch (error) {
-            log.warn({ err: error }, 'Failed to post test engine start status (non-critical)');
+            log.warn({ err: error }, 'Failed to create outbox intent for test engine start (non-critical)');
           }
         }
 
@@ -347,22 +364,28 @@ export class RunPipelineService {
             },
           });
 
-          // Post completion status to provider
+          // Create outbox intent for completion status (idempotent)
           if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
             try {
-              await providerStatusService.postStageCompleted(
-                run.id,
-                request.repositoryId,
-                request.triggerMetadata.prNumber,
-                request.triggerMetadata.prSha,
-                'test_engine',
-                testEngineStatus === 'succeeded' ? 'success' : 'failure',
-                {
-                  testEngine: testEngineResult,
-                }
-              );
+              await outboxService.createIntent({
+                runId: run.id,
+                repositoryId: request.repositoryId,
+                sandboxId: request.sandboxId,
+                update: {
+                  runId: run.id,
+                  repositoryId: request.repositoryId,
+                  prNumber: request.triggerMetadata.prNumber,
+                  prSha: request.triggerMetadata.prSha,
+                  stage: 'test_engine',
+                  status: 'completed',
+                  conclusion: testEngineStatus === 'succeeded' ? 'success' : 'failure',
+                  details: {
+                    testEngine: testEngineResult,
+                  },
+                },
+              });
             } catch (error) {
-              log.warn({ err: error }, 'Failed to post test engine completion status (non-critical)');
+              log.warn({ err: error }, 'Failed to create outbox intent for test engine completion (non-critical)');
             }
           }
 
@@ -403,19 +426,24 @@ export class RunPipelineService {
           },
         });
 
-        // Post "in progress" status to provider
+        // Create outbox intent for "in progress" status (idempotent)
         if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
           try {
-            await providerStatusService.postStatusUpdate({
+            await outboxService.createIntent({
               runId: run.id,
               repositoryId: request.repositoryId,
-              prNumber: request.triggerMetadata.prNumber,
-              prSha: request.triggerMetadata.prSha,
-              stage: 'doc_sync',
-              status: 'in_progress',
+              sandboxId: request.sandboxId,
+              update: {
+                runId: run.id,
+                repositoryId: request.repositoryId,
+                prNumber: request.triggerMetadata.prNumber,
+                prSha: request.triggerMetadata.prSha,
+                stage: 'doc_sync',
+                status: 'in_progress',
+              },
             });
           } catch (error) {
-            log.warn({ err: error }, 'Failed to post doc sync start status (non-critical)');
+            log.warn({ err: error }, 'Failed to create outbox intent for doc sync start (non-critical)');
           }
         }
 
@@ -453,22 +481,28 @@ export class RunPipelineService {
             },
           });
 
-          // Post completion status to provider
+          // Create outbox intent for completion status (idempotent)
           if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
             try {
-              await providerStatusService.postStageCompleted(
-                run.id,
-                request.repositoryId,
-                request.triggerMetadata.prNumber,
-                request.triggerMetadata.prSha,
-                'doc_sync',
-                docSyncStatus === 'succeeded' ? 'success' : 'failure',
-                {
-                  docSync: docSyncResult,
-                }
-              );
+              await outboxService.createIntent({
+                runId: run.id,
+                repositoryId: request.repositoryId,
+                sandboxId: request.sandboxId,
+                update: {
+                  runId: run.id,
+                  repositoryId: request.repositoryId,
+                  prNumber: request.triggerMetadata.prNumber,
+                  prSha: request.triggerMetadata.prSha,
+                  stage: 'doc_sync',
+                  status: 'completed',
+                  conclusion: docSyncStatus === 'succeeded' ? 'success' : 'failure',
+                  details: {
+                    docSync: docSyncResult,
+                  },
+                },
+              });
             } catch (error) {
-              log.warn({ err: error }, 'Failed to post doc sync completion status (non-critical)');
+              log.warn({ err: error }, 'Failed to create outbox intent for doc sync completion (non-critical)');
             }
           }
 
@@ -541,23 +575,30 @@ export class RunPipelineService {
         },
       });
 
-      // Post final completion status to provider
+      // Create outbox intent for final completion status (idempotent)
       if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
         try {
-          await providerStatusService.postRunCompleted(
-            run.id,
-            request.repositoryId,
-            request.triggerMetadata.prNumber,
-            request.triggerMetadata.prSha,
-            conclusion,
-            {
-              reviewGuard: reviewGuardResult,
-              testEngine: testEngineResult,
-              docSync: docSyncResult,
-            }
-          );
+          await outboxService.createIntent({
+            runId: run.id,
+            repositoryId: request.repositoryId,
+            sandboxId: request.sandboxId,
+            update: {
+              runId: run.id,
+              repositoryId: request.repositoryId,
+              prNumber: request.triggerMetadata.prNumber,
+              prSha: request.triggerMetadata.prSha,
+              stage: 'complete',
+              status: 'completed',
+              conclusion: conclusion === 'partial_success' ? 'neutral' : conclusion,
+              details: {
+                reviewGuard: reviewGuardResult,
+                testEngine: testEngineResult,
+                docSync: docSyncResult,
+              },
+            },
+          });
         } catch (error) {
-          log.warn({ err: error }, 'Failed to post final run completion status (non-critical)');
+          log.warn({ err: error }, 'Failed to create outbox intent for final run completion (non-critical)');
         }
       }
 
@@ -650,37 +691,26 @@ export class RunPipelineService {
   /**
    * Create a sandbox run (demo mode)
    * 
-   * Uses sample files for demonstration purposes
+   * Uses deterministic sample files for demonstration purposes.
+   * These files always produce consistent findings and results.
    */
   async createSandboxRun(): Promise<RunResult> {
-    const sandboxId = `sandbox_${Date.now()}_${randomUUID().slice(0, 8)}`;
+    // Use deterministic sandbox ID for idempotency testing
+    // In production, this would be unique per user session
+    const sandboxId = `sandbox_demo_${Date.now()}`;
     
-    // Sample files for sandbox demo
-    const sampleFiles = [
-      {
-        path: 'src/auth.ts',
-        content: `export async function login(username: string, password: string) {
-  const query = \`SELECT * FROM users WHERE username = '\${username}' AND password = '\${password}'\`;
-  return await db.query(query);
-}`,
-        beforeContent: null,
-      },
-      {
-        path: 'src/api.ts',
-        content: `export function getUser(id: string) {
-  return fetch(\`/api/users/\${id}\`);
-}`,
-        beforeContent: null,
-      },
-    ];
+    // Import deterministic fixtures
+    const { sandboxFiles, sandboxPRMetadata } = await import('../../content/demo/sandboxFixtures');
 
     return this.executeRun({
       sandboxId,
       trigger: 'sandbox',
       triggerMetadata: {
-        prSha: 'sandbox_demo',
-        prTitle: 'Sandbox Demo Run',
-        files: sampleFiles,
+        prNumber: sandboxPRMetadata.prNumber,
+        prSha: sandboxPRMetadata.prSha,
+        prTitle: sandboxPRMetadata.prTitle,
+        diff: sandboxPRMetadata.diff,
+        files: sandboxFiles,
       },
     });
   }

@@ -57,6 +57,9 @@ async function main() {
   // Check 4: Build (production)
   checks.push(runCheck('Production Build', 'npm run build'));
 
+  // Check 5: Golden Path Test
+  checks.push(runCheck('Golden Path Test', 'npm run test:golden-path'));
+
   // Summary
   console.log('\n' + '='.repeat(60));
   console.log('📊 Check Summary');
