@@ -23,8 +23,43 @@ import {
   TestTube,
   FileText,
   ArrowLeft,
+  ExternalLink,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  FileCode,
+  History,
 } from 'lucide-react'
 import Link from 'next/link'
+
+interface Finding {
+  ruleId: string
+  severity: 'critical' | 'high' | 'medium' | 'low'
+  file: string
+  line: number
+  message: string
+  fix?: string
+}
+
+interface Artifact {
+  type: 'test' | 'doc' | 'report'
+  name: string
+  url?: string
+  size?: number
+}
+
+interface AuditLogEntry {
+  id: string
+  action: string
+  resourceType: string
+  details?: any
+  createdAt: string
+  user?: {
+    id: string
+    name: string | null
+    email: string | null
+  }
+}
 
 interface RunDetails {
   id: string
@@ -80,7 +115,12 @@ interface RunDetails {
     id: string
     name: string
     fullName: string
+    provider?: string
   }
+  findings?: Finding[]
+  artifacts?: Artifact[]
+  auditLog?: AuditLogEntry[]
+  providerLink?: string
 }
 
 export default function RunDetailsPage() {
@@ -417,6 +457,169 @@ export default function RunDetailsPage() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Findings */}
+        {run.findings && run.findings.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Findings ({run.findings.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {run.findings.map((finding, idx) => {
+                  const severityColors = {
+                    critical: 'text-red-600 bg-red-50 border-red-200',
+                    high: 'text-orange-600 bg-orange-50 border-orange-200',
+                    medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+                    low: 'text-blue-600 bg-blue-50 border-blue-200',
+                  };
+                  const severityIcons = {
+                    critical: AlertCircle,
+                    high: AlertTriangle,
+                    medium: Info,
+                    low: Info,
+                  };
+                  const Icon = severityIcons[finding.severity] || Info;
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-4 border rounded-lg ${severityColors[finding.severity] || 'bg-surface-muted'}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Icon className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold capitalize">{finding.severity}</span>
+                            <span className="text-sm text-muted-foreground">•</span>
+                            <span className="text-sm font-mono">{finding.ruleId}</span>
+                          </div>
+                          <div className="text-sm mb-2">{finding.message}</div>
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {finding.file}:{finding.line}
+                          </div>
+                          {finding.fix && (
+                            <div className="mt-2 p-2 bg-surface-muted rounded text-xs font-mono">
+                              <div className="text-muted-foreground mb-1">Suggested fix:</div>
+                              <div>{finding.fix}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Artifacts */}
+        {run.artifacts && run.artifacts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Artifacts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {run.artifacts.map((artifact, idx) => {
+                  const artifactIcons = {
+                    test: TestTube,
+                    doc: FileText,
+                    report: FileCode,
+                  };
+                  const Icon = artifactIcons[artifact.type] || FileCode;
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-surface-muted rounded-lg"
+                    >
+                      <Icon className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="font-medium">{artifact.name}</div>
+                        <div className="text-sm text-muted-foreground capitalize">
+                          {artifact.type} {artifact.size ? `• ${artifact.size} bytes` : ''}
+                        </div>
+                      </div>
+                      {artifact.url && (
+                        <a
+                          href={artifact.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline flex items-center gap-1"
+                        >
+                          <span className="text-sm">Download</span>
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Audit Log */}
+        {run.auditLog && run.auditLog.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Audit Log</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {run.auditLog.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-start gap-3 p-3 bg-surface-muted rounded-lg"
+                  >
+                    <History className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium capitalize">{entry.action}</span>
+                        <span className="text-sm text-muted-foreground">•</span>
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {entry.resourceType}
+                        </span>
+                      </div>
+                      {entry.user && (
+                        <div className="text-sm text-muted-foreground mb-1">
+                          by {entry.user.name || entry.user.email || 'System'}
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(entry.createdAt).toLocaleString()}
+                      </div>
+                      {entry.details && (
+                        <div className="mt-2 text-xs font-mono bg-surface p-2 rounded">
+                          {JSON.stringify(entry.details, null, 2)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Provider Link */}
+        {run.providerLink && (
+          <Card>
+            <CardContent className="pt-6">
+              <a
+                href={run.providerLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-primary hover:underline"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>View in {run.repository?.provider || 'provider'}</span>
+              </a>
             </CardContent>
           </Card>
         )}

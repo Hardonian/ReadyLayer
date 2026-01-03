@@ -5,9 +5,7 @@
  */
 
 import { queueService } from '../queue';
-import { reviewGuardService } from '../services/review-guard';
-import { testEngineService } from '../services/test-engine';
-import { docSyncService } from '../services/doc-sync';
+import { runPipelineService, RunRequest } from '../services/run-pipeline';
 import { getGitProviderPRAdapter, type CheckRunAnnotation, type CheckRunDetails } from '../integrations/git-provider-pr-adapter';
 import { formatPolicyComment } from '../lib/git-provider-ui/comment-formatter';
 import { detectGitProvider } from '../lib/git-provider-ui';
@@ -263,108 +261,75 @@ async function processPREvent(
     throw new Error(`Billing limit exceeded for organization ${repo.organizationId}`);
   }
 
-  // Run Review Guard
+  // Execute ReadyLayer Run (Review Guard → Test Engine → Doc Sync)
+  // This will automatically post status updates to the provider during each stage
   try {
-    const reviewResult = await reviewGuardService.review({
+    const runRequest: RunRequest = {
       repositoryId: repository.id,
-      prNumber: pr.number,
-      prSha: pr.sha,
-      prTitle: pr.title,
-      diff,
-      files,
-    });
+      trigger: 'webhook',
+      triggerMetadata: {
+        prNumber: pr.number,
+        prSha: pr.sha,
+        prTitle: pr.title,
+        diff,
+        files,
+      },
+    };
 
-    // Get review details for check run
-    const review = await prisma.review.findUnique({
-      where: { id: reviewResult.id },
-    });
+    const runResult = await runPipelineService.executeRun(runRequest);
 
-    // Convert issues to annotations (GitHub-specific, but we'll use them for other providers too)
-    const annotations = issuesToAnnotations(reviewResult.issues);
-    
-    // Limit annotations to 50 (GitHub API limit, but we'll apply to all providers)
-    const limitedAnnotations = annotations.slice(0, 50);
+    log.info({ runId: runResult.id, conclusion: runResult.conclusion }, 'ReadyLayer Run completed');
 
-    // Generate summary text
-    const summary = reviewResult.isBlocked
-      ? `Policy check failed: ${reviewResult.issues.length} issue(s) found. Score: ${((review as any)?.policyScore || 100).toFixed(1)}/100`
-      : `Policy check passed. Score: ${((review as any)?.policyScore || 100).toFixed(1)}/100`;
-
-    // Create or update check run with annotations
-    try {
-      const checkRunDetails: CheckRunDetails = {
-        name: 'ReadyLayer Report',
-        head_sha: pr.sha,
-        status: 'completed',
-        conclusion: reviewResult.isBlocked ? 'failure' : 'success',
-        output: {
-          title: reviewResult.isBlocked 
-            ? (reviewResult.blockedReason?.includes('Usage limit exceeded') 
-                ? 'Usage Limit Exceeded' 
-                : 'Policy check failed')
-            : 'Policy check passed',
-          summary: reviewResult.blockedReason?.includes('Usage limit exceeded')
-            ? `?? **Usage limit exceeded**\n\n${reviewResult.blockedReason}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
-            : summary,
-          annotations: limitedAnnotations.length > 0 ? limitedAnnotations : undefined,
-        },
-        details_url: process.env.NEXT_PUBLIC_APP_URL
-          ? `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reviews/${reviewResult.id}`
-          : undefined,
-      };
-
-      await prAdapter.createOrUpdateCheckRun(
-        repository.fullName,
-        pr.sha,
-        checkRunDetails,
-        accessToken
-      );
-    } catch (error) {
-      log.error({ error }, 'Failed to create/update check run');
-      // Degrade gracefully - log error but don't crash worker
-      // Store review result even if check run fails
-    }
-
-    // Post PR comment only when blocked OR when user explicitly asks
-    // For non-blocking issues, rely on check run UI
-    if (reviewResult.isBlocked && reviewResult.issues.length > 0) {
+    // Post PR comment only when blocked (status updates are handled by provider-status service)
+    if (!runResult.gatesPassed && runResult.reviewGuardResult?.isBlocked) {
       try {
-        const commentBody = formatPolicyComment(
-          {
-            blocked: reviewResult.isBlocked,
-            score: (review as any)?.policyScore || 100,
-            rulesFired: (review as any)?.rulesFired || [],
-            nonWaivedFindings: reviewResult.issues.map((issue) => ({
-              ruleId: issue.ruleId,
-              severity: issue.severity,
-              message: issue.message,
-              file: issue.file,
-              line: issue.line || 0,
-            })),
-          },
-          {
-            provider,
-            repository: {
-              provider: repository.provider,
-              url: repository.url || undefined,
-            },
-          }
-        );
+        const review = await prisma.review.findUnique({
+          where: { id: runResult.reviewGuardResult.reviewId },
+        });
 
-        await prAdapter.postPRComment(
-          repository.fullName,
-          pr.number,
-          { body: commentBody },
-          accessToken
-        );
+        if (review) {
+          const commentBody = formatPolicyComment(
+            {
+              blocked: runResult.reviewGuardResult.isBlocked,
+              score: (review as any)?.policyScore || 100,
+              rulesFired: (review as any)?.rulesFired || [],
+              nonWaivedFindings: (review.issuesFound as any[] || []).map((issue: any) => ({
+                ruleId: issue.ruleId,
+                severity: issue.severity,
+                message: issue.message,
+                file: issue.file,
+                line: issue.line || 0,
+              })),
+            },
+            {
+              provider,
+              repository: {
+                provider: repository.provider,
+                url: repository.url || undefined,
+              },
+              pr: {
+                number: pr.number,
+                sha: pr.sha,
+                title: pr.title,
+              },
+            }
+          );
+
+          await prAdapter.postPRComment(
+            repository.fullName,
+            pr.number,
+            { body: commentBody },
+            accessToken
+          );
+        }
       } catch (error) {
         log.error({ error }, 'Failed to post PR comment');
-        // Degrade gracefully - check run already shows the issues
+        // Degrade gracefully - status updates already posted
       }
     }
 
     // Ingest review result into evidence index (idempotent, safe)
-    if (isIngestEnabled()) {
+    if (isIngestEnabled() && runResult.reviewGuardResult?.reviewId) {
       try {
         const repo = await prisma.repository.findUnique({
           where: { id: repository.id },
@@ -379,14 +344,15 @@ async function processPREvent(
             sourceRef: `pr-${pr.number}`,
             title: `Review for PR #${pr.number}: ${pr.title}`,
             content: JSON.stringify({
-              summary: reviewResult.summary,
-              issues: reviewResult.issues.slice(0, 50), // Limit to top 50 issues
-              isBlocked: reviewResult.isBlocked,
+              summary: runResult.reviewGuardResult.summary,
+              issuesFound: runResult.reviewGuardResult.issuesFound,
+              isBlocked: runResult.reviewGuardResult.isBlocked,
             }),
             metadata: {
               prNumber: pr.number,
               prSha: pr.sha,
-              reviewId: reviewResult.id,
+              reviewId: runResult.reviewGuardResult.reviewId,
+              runId: runResult.id,
             },
           }, requestId);
         }
@@ -396,42 +362,35 @@ async function processPREvent(
       }
     }
   } catch (error) {
-    log.error(error, 'Review Guard failed');
+    log.error(error, 'ReadyLayer Run failed');
     
     // Check if this is a usage limit error
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const isUsageLimitError = errorMessage.includes('Usage limit exceeded') || 
-                              errorMessage.includes('usage limit');
+                              errorMessage.includes('usage limit') ||
+                              errorMessage.includes('Billing limit exceeded');
     
     // Create check run with error status
     try {
-      const detectedProvider = detectGitProvider({
-        provider: repository.provider,
-        url: repository.url || undefined,
-      });
-      // Cast 'generic' to adapter type (adapter doesn't support generic)
-      const provider = (detectedProvider === 'generic' ? 'github' : detectedProvider) as 'github' | 'gitlab' | 'bitbucket';
-      const prAdapter = getGitProviderPRAdapter(provider);
-      
       await prAdapter.createOrUpdateCheckRun(
         repository.fullName,
         pr.sha,
         {
-          name: 'ReadyLayer Report',
+          name: 'ReadyLayer',
           head_sha: pr.sha,
           status: 'completed',
-          conclusion: 'failure',
+          conclusion: isUsageLimitError ? 'action_required' : 'failure',
           output: {
-            title: isUsageLimitError ? 'Usage Limit Exceeded' : 'Review failed',
+            title: isUsageLimitError ? 'Usage Limit Exceeded' : 'Run failed',
             summary: isUsageLimitError
-              ? `?? **Usage limit exceeded**\n\n${errorMessage}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
-              : '?? Review failed - please check logs or contact support',
+              ? `⚠️ **Usage limit exceeded**\n\n${errorMessage}\n\n**Next steps:**\n- Upgrade your plan at /dashboard/billing\n- Wait for limits to reset (daily/monthly)\n- Contact support@readylayer.com for help`
+              : '⚠️ ReadyLayer Run failed - please check logs or contact support',
           },
         },
         accessToken
       );
     } catch (checkRunError) {
-      log.error({ error: checkRunError }, 'Failed to create check run for review error');
+      log.error({ error: checkRunError }, 'Failed to create check run for run error');
       // Degrade gracefully - log error but don't crash worker
     }
   }
