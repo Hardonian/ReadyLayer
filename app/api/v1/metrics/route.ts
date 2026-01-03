@@ -53,11 +53,14 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const orgFilter = organizationId ? organizationId : { in: userOrgIds };
-    const dateFilter: any = {};
+    const dateFilter: { gte?: Date; lte?: Date } = {};
     if (startDate) dateFilter.gte = new Date(startDate);
     if (endDate) dateFilter.lte = new Date(endDate);
 
-    const repoFilter: any = {
+    const repoFilter: {
+      organizationId: string | { in: string[] };
+      id?: string;
+    } = {
       organizationId: orgFilter,
     };
     if (repositoryId) {
@@ -65,7 +68,10 @@ export async function GET(request: NextRequest) {
     }
 
     // ReadyLayer-native metrics
-    const runsWhere: any = {
+    const runsWhere: {
+      repository: typeof repoFilter;
+      createdAt?: typeof dateFilter;
+    } = {
       repository: repoFilter,
     };
     if (startDate || endDate) {
@@ -151,10 +157,9 @@ export async function GET(request: NextRequest) {
 
     reviews.forEach(review => {
       const issues = Array.isArray(review.issuesFound) ? review.issuesFound : [];
-      issues.forEach((issue: any) => {
-        if (issue.severity) {
-          findingCounts[issue.severity as keyof typeof findingCounts] = 
-            (findingCounts[issue.severity as keyof typeof findingCounts] || 0) + 1;
+      issues.forEach((issue: { severity?: 'critical' | 'high' | 'medium' | 'low' }) => {
+        if (issue.severity && issue.severity in findingCounts) {
+          findingCounts[issue.severity] = (findingCounts[issue.severity] || 0) + 1;
         }
       });
     });

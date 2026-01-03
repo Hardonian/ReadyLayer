@@ -52,7 +52,7 @@ interface AuditLogEntry {
   id: string
   action: string
   resourceType: string
-  details?: any
+  details?: Record<string, unknown>
   createdAt: string
   user?: {
     id: string

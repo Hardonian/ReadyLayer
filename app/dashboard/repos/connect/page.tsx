@@ -14,7 +14,7 @@ interface Installation {
   id: string
   provider: string
   providerId: string
-  permissions: any
+  permissions: Record<string, unknown>
   isActive: boolean
   installedAt: string
   organizationId: string
@@ -53,7 +53,7 @@ export default function ConnectRepositoryPage() {
           },
         })
         if (installationsResponse.ok) {
-          const installationsData = await installationsResponse.json()
+          const installationsData = (await installationsResponse.json()) as { installations?: Installation[] }
           setInstallations(installationsData.installations || [])
         }
 
@@ -64,7 +64,7 @@ export default function ConnectRepositoryPage() {
           },
         })
         if (reposResponse.ok) {
-          const reposData = await reposResponse.json()
+          const reposData = (await reposResponse.json()) as { repositories?: Repository[] }
           setRepositories(reposData.repositories || [])
         }
       } catch (error) {
@@ -129,7 +129,11 @@ export default function ConnectRepositoryPage() {
         },
       })
 
-      const data = await response.json()
+      const data = (await response.json()) as { 
+        success?: boolean; 
+        message?: string; 
+        error?: { message?: string } 
+      }
 
       if (data.success) {
         toast({

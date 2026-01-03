@@ -170,7 +170,7 @@ export const GET = createRouteHandler(
       testEngineStatus?: string;
       docSyncStatus?: string;
       createdAt?: { gte?: Date; lte?: Date };
-      triggerMetadata?: any;
+      triggerMetadata?: Record<string, unknown>;
     } = {};
 
     if (sandboxId) {
@@ -273,11 +273,11 @@ export const GET = createRouteHandler(
     let filteredRuns = runs;
     if (branch || author) {
       filteredRuns = runs.filter((r) => {
-        const metadata = r.triggerMetadata as any;
-        if (branch && metadata?.prSha) {
+        const metadata = r.triggerMetadata as { prSha?: string; userId?: string } | null;
+        if (branch && metadata && 'prSha' in metadata) {
           // Would need to fetch branch from PR, skip for now
         }
-        if (author && metadata?.userId !== author) {
+        if (author && metadata && 'userId' in metadata && metadata.userId !== author) {
           return false;
         }
         return true;

@@ -69,11 +69,11 @@ export default function MetricsPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
+          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = await response.json()
+        const data = (await response.json()) as Metrics
         setMetrics(data)
         setLoading(false)
       } catch (err) {

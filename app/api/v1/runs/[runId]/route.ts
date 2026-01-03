@@ -103,9 +103,11 @@ export const GET = createRouteHandler(
     if (run.review?.issuesFound) {
       // Parse issues from review.issuesFound (JSON array)
       try {
-        findings = Array.isArray(run.review.issuesFound) 
-          ? run.review.issuesFound 
-          : JSON.parse(run.review.issuesFound as any);
+        if (Array.isArray(run.review.issuesFound)) {
+          findings = run.review.issuesFound as typeof findings;
+        } else if (typeof run.review.issuesFound === 'string') {
+          findings = JSON.parse(run.review.issuesFound) as typeof findings;
+        }
       } catch {
         // If parsing fails, use empty array
         findings = [];
@@ -121,7 +123,8 @@ export const GET = createRouteHandler(
     }> = [];
 
     // Add test artifacts if test engine generated tests
-    if (run.testEngineResult && (run.testEngineResult as any).testsGenerated > 0) {
+    const testResult = run.testEngineResult as { testsGenerated?: number } | null;
+    if (testResult && typeof testResult === 'object' && 'testsGenerated' in testResult && Number(testResult.testsGenerated) > 0) {
       artifacts.push({
         type: 'test',
         name: 'Generated Tests',
@@ -130,7 +133,8 @@ export const GET = createRouteHandler(
     }
 
     // Add doc artifacts if doc sync generated docs
-    if (run.docSyncResult && (run.docSyncResult as any).docId) {
+    const docResult = run.docSyncResult as { docId?: string } | null;
+    if (docResult && typeof docResult === 'object' && 'docId' in docResult && docResult.docId) {
       artifacts.push({
         type: 'doc',
         name: 'Documentation',
