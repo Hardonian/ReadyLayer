@@ -80,11 +80,15 @@ export function clearAllRateLimits(): void {
 }
 
 // Cleanup old entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetAt) {
-      rateLimitStore.delete(key);
+// Note: In edge runtime, setInterval may not be available
+// For production, use Redis-based rate limiting
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitStore.entries()) {
+      if (now > entry.resetAt) {
+        rateLimitStore.delete(key);
+      }
     }
-  }
-}, 60000); // Cleanup every minute
+  }, 60000); // Cleanup every minute
+}

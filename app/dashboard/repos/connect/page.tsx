@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
-import { ArrowLeft, Github, Gitlab, Bitbucket, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Github, Gitlab, Bitbucket, CheckCircle2, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -71,7 +71,7 @@ export default function ConnectRepositoryPage() {
           setRepositories(reposData.repositories || [])
         }
       } catch (error) {
-        console.error('Failed to fetch data:', error)
+        // Silently handle fetch errors - UI will show empty state
       } finally {
         setLoading(false)
       }

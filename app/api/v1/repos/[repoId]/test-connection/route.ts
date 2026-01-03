@@ -5,6 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+// Use Node.js runtime for Prisma and API client access
+export const runtime = 'nodejs';
 import { prisma } from '../../../../../../lib/prisma';
 import { logger } from '../../../../../../observability/logging';
 import { requireAuth } from '../../../../../../lib/auth';

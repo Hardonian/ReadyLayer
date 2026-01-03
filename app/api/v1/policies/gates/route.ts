@@ -6,6 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+
+// Use Node.js runtime for Prisma access
+export const runtime = 'nodejs';
 import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
@@ -44,16 +47,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ gates: [] });
     }
 
-    // Build where clause
-    const where: any = {
-      organizationId: organizationId ? organizationId : { in: userOrgIds },
-    };
-    if (repositoryId) {
-      where.repositoryId = repositoryId;
-    }
-
     // Policy gates are stored in PolicyPack rules
     // For now, return empty array (gates will be implemented via PolicyPack)
+    // Filter by organizationId if provided
+    const filteredOrgIds = organizationId && userOrgIds.includes(organizationId)
+      ? [organizationId]
+      : userOrgIds;
+
     return NextResponse.json({ gates: [] });
   } catch (error) {
     log.error(error, 'Failed to list policy gates');
@@ -91,8 +91,26 @@ export async function POST(request: NextRequest) {
       return bodyResult.response;
     }
 
-    const body = bodyResult.data as any;
-    const { organizationId, repositoryId, template, enforcementMode, exceptions } = body;
+    const body = bodyResult.data as {
+      organizationId?: string;
+      repositoryId?: string;
+      template?: string;
+      enforcementMode?: string;
+      exceptions?: unknown;
+    };
+    const { organizationId } = body;
+
+    if (!organizationId || typeof organizationId !== 'string') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'organizationId is required',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     // Verify user belongs to organization
     const membership = await prisma.organizationMember.findUnique({

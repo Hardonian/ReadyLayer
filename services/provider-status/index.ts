@@ -149,14 +149,25 @@ export class ProviderStatusService {
         return;
       }
 
-      // Get installation with decrypted token
-      const installation = await getInstallationWithDecryptedToken(
-        repository.organizationId,
-        repository.provider
-      );
+      // Get installation for this organization and provider
+      const installationRecord = await prisma.installation.findFirst({
+        where: {
+          organizationId: repository.organizationId,
+          provider: repository.provider,
+          isActive: true,
+        },
+      });
+
+      if (!installationRecord) {
+        log.warn('Installation not found');
+        return;
+      }
+
+      // Decrypt token
+      const installation = await getInstallationWithDecryptedToken(installationRecord.id);
 
       if (!installation || !installation.accessToken) {
-        log.warn('Installation or token not found');
+        log.warn('Failed to decrypt installation token');
         return;
       }
 

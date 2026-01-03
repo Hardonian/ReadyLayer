@@ -67,10 +67,8 @@ export class BudgetService {
       }
 
       // Check repo-level cap (if configured)
-      if (repositoryId) {
-        const repoUsage = await usageAccountingService.getOrganizationUsage(organizationId);
-        // Would check repo-specific cap here
-      }
+      // Note: Repo-specific caps would be stored in RepositoryConfig or Subscription
+      // For now, repo-level caps are not implemented
 
       // Check stage-level cap (if configured)
       const stageUsage = orgUsage.byService[service] || 0;

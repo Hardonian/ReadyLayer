@@ -49,7 +49,6 @@ export default function PolicyGatesPage() {
   const [gates, setGates] = useState<PolicyGate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showCreateModal, setShowCreateModal] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -128,7 +127,13 @@ export default function PolicyGatesPage() {
               Configure enforcement rules to block or warn on policy violations
             </p>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button onClick={() => {
+            toast({
+              variant: 'default',
+              title: 'Policy Gates',
+              description: 'Policy gates are configured via Policy Packs. Use the Policy Packs page to set up enforcement rules.',
+            })
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Create Gate
           </Button>

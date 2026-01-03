@@ -64,13 +64,20 @@ export class UsageAccountingService {
    * Get usage for a run
    */
   async getRunUsage(runId: string): Promise<TokenUsageRecord[]> {
+    // Get review ID from run first
+    const run = await prisma.readyLayerRun.findUnique({
+      where: { id: runId },
+      select: { reviewId: true },
+    });
+
+    if (!run || !run.reviewId) {
+      return [];
+    }
+
+    // Get token usage for the review
     const usageRecords = await prisma.tokenUsage.findMany({
       where: {
-        review: {
-          run: {
-            id: runId,
-          },
-        },
+        reviewId: run.reviewId,
       },
     });
 

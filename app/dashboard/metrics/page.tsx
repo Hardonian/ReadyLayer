@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
-import { BarChart3, TrendingUp, Shield, TestTube, FileText, DollarSign } from 'lucide-react'
+import { TrendingUp, Shield, TestTube, FileText, DollarSign } from 'lucide-react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 
