@@ -5,10 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
-import { logger } from '../../../observability/logging';
-import { requireAuth } from '../../../lib/auth';
-import { createAuthzMiddleware } from '../../../lib/authz';
+import { prisma } from '../../../../lib/prisma';
+import { logger } from '../../../../observability/logging';
+import { requireAuth } from '../../../../lib/auth';
+import { createAuthzMiddleware } from '../../../../lib/authz';
 
 /**
  * GET /api/v1/installations

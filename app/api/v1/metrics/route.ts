@@ -5,10 +5,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../lib/prisma';
-import { logger } from '../../../observability/logging';
-import { requireAuth } from '../../../lib/auth';
-import { createAuthzMiddleware } from '../../../lib/authz';
+import { prisma } from '../../../../lib/prisma';
+import { logger } from '../../../../observability/logging';
+import { requireAuth } from '../../../../lib/auth';
+import { createAuthzMiddleware } from '../../../../lib/authz';
 
 /**
  * GET /api/v1/metrics
@@ -116,7 +116,12 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Calculate ReadyLayer metrics
-    const runsPerDay = runs.length / Math.max(1, (endDate ? new Date(endDate).getTime() - (startDate ? new Date(startDate).getTime() : Date.now() - 30 * 24 * 60 * 60 * 1000)) : 30 * 24 * 60 * 60 * 1000) / (1000 * 60 * 60 * 24));
+    const now = Date.now();
+    const defaultStartDate = now - 30 * 24 * 60 * 60 * 1000; // 30 days ago
+    const startTime = startDate ? new Date(startDate).getTime() : defaultStartDate;
+    const endTime = endDate ? new Date(endDate).getTime() : now;
+    const daysDiff = Math.max(1, (endTime - startTime) / (1000 * 60 * 60 * 24));
+    const runsPerDay = runs.length / daysDiff;
     
     const stageDurations = runs
       .filter(r => r.reviewGuardStartedAt && r.reviewGuardCompletedAt)
@@ -163,14 +168,15 @@ export async function GET(request: NextRequest) {
 
     // Proof metrics
     const blockedRiskyMerges = reviews.filter(r => r.isBlocked).length;
-    const docsInSync = runs.filter(r => 
-      r.docSyncStatus === 'succeeded' && 
-      r.docSyncResult && 
-      !(r.docSyncResult as any).driftDetected
-    ).length;
-    const testsGenerated = runs.reduce((sum, r) => 
-      sum + ((r.testEngineResult as any)?.testsGenerated || 0), 0
-    );
+    const docsInSync = runs.filter(r => {
+      if (r.docSyncStatus !== 'succeeded' || !r.docSyncResult) return false;
+      const result = r.docSyncResult as { driftDetected?: boolean };
+      return !result.driftDetected;
+    }).length;
+    const testsGenerated = runs.reduce((sum, r) => {
+      const result = r.testEngineResult as { testsGenerated?: number } | null;
+      return sum + (result?.testsGenerated || 0);
+    }, 0);
 
     return NextResponse.json({
       providerMetrics: {

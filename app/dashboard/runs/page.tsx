@@ -11,6 +11,7 @@ import {
   ErrorState,
   EmptyState,
   Skeleton,
+  Button,
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
@@ -29,7 +30,6 @@ import {
   Search,
   ExternalLink,
 } from 'lucide-react'
-import { Button } from '@/components/ui'
 import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
 
 interface Run {
@@ -51,6 +51,7 @@ interface Run {
     id: string
     name: string
     fullName: string
+    provider?: string
   }
 }
 
@@ -337,13 +338,13 @@ export default function RunsPage() {
             ).map((run) => {
               // Generate provider link if repository available
               let providerLink: string | undefined
-              if (run.repository) {
-                const [owner, repo] = run.repository.fullName.split('/')
-                if (run.repository.provider === 'github') {
+              if (run.repository && run.repository.fullName) {
+                const provider = run.repository.provider || 'github'
+                if (provider === 'github') {
                   providerLink = `https://github.com/${run.repository.fullName}`
-                } else if (run.repository.provider === 'gitlab') {
+                } else if (provider === 'gitlab') {
                   providerLink = `https://gitlab.com/${run.repository.fullName}`
-                } else if (run.repository.provider === 'bitbucket') {
+                } else if (provider === 'bitbucket') {
                   providerLink = `https://bitbucket.org/${run.repository.fullName}`
                 }
               }
