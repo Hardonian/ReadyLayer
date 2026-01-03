@@ -8,12 +8,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { Prisma } from '@prisma/client';
-import { logger } from '../../../../observability/logging';
-import { requireAuth } from '../../../../lib/auth';
-import { createAuthzMiddleware } from '../../../../lib/authz';
 import { createHash } from 'crypto';
 import { z } from 'zod';
-import { parseJsonBody } from '../../../../lib/api-route-helpers';
+import {
+  createRouteHandler,
+  parseJsonBody,
+  errorResponse,
+  successResponse,
+  paginatedResponse,
+  parsePagination,
+  RouteContext,
+} from '../../../../lib/api-route-helpers';
 
 const createPolicyPackSchema = z.object({
   organizationId: z.string(),
@@ -32,27 +37,26 @@ const createPolicyPackSchema = z.object({
  * POST /api/v1/policies
  * Create a new policy pack
  */
-export async function POST(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
-
-  try {
-    const user = await requireAuth(request);
-
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['write'],
-      requireOrganization: true,
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
-    }
+export const POST = createRouteHandler(
+  async (context: RouteContext) => {
+    const { request, user, log } = context;
 
     const bodyResult = await parseJsonBody(request);
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
-    const validated = createPolicyPackSchema.parse(bodyResult.data);
+
+    const validationResult = createPolicyPackSchema.safeParse(bodyResult.data);
+    if (!validationResult.success) {
+      return errorResponse(
+        'VALIDATION_ERROR',
+        'Invalid request body',
+        400,
+        { errors: validationResult.error.errors }
+      );
+    }
+
+    const validated = validationResult.data;
 
     // Verify user belongs to organization
     const membership = await prisma.organizationMember.findUnique({
@@ -123,82 +127,32 @@ export async function POST(request: NextRequest) {
 
     log.info({ policyPackId: policyPack.id, organizationId: validated.organizationId }, 'Policy pack created');
 
-    return NextResponse.json(
-      {
-        id: policyPack.id,
-        organizationId: policyPack.organizationId,
-        repositoryId: policyPack.repositoryId,
-        version: policyPack.version,
-        checksum: policyPack.checksum,
-        rules: policyPack.rules,
-        createdAt: policyPack.createdAt,
-        updatedAt: policyPack.updatedAt,
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid request body',
-            details: error.errors,
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    log.error(error, 'Failed to create policy pack');
-
-    if (error instanceof Error && error.message.includes('Unique constraint')) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'DUPLICATE_POLICY',
-            message: 'Policy pack with this version already exists',
-          },
-        },
-        { status: 409 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        error: {
-          code: 'CREATE_POLICY_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
+    return successResponse({
+      id: policyPack.id,
+      organizationId: policyPack.organizationId,
+      repositoryId: policyPack.repositoryId,
+      version: policyPack.version,
+      checksum: policyPack.checksum,
+      rules: policyPack.rules,
+      createdAt: policyPack.createdAt,
+      updatedAt: policyPack.updatedAt,
+    }, 201);
+  },
+  { authz: { requiredScopes: ['write'], requireOrganization: true } }
+);
 
 /**
  * GET /api/v1/policies
  * List policy packs (tenant-isolated)
  */
-export async function GET(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
-
-  try {
-    const user = await requireAuth(request);
-
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['read'],
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
-    }
+export const GET = createRouteHandler(
+  async (context: RouteContext) => {
+    const { request, user } = context;
 
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
     const repositoryId = searchParams.get('repositoryId');
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
-    const offset = parseInt(searchParams.get('offset') || '0', 10);
+    const { limit, offset } = parsePagination(request);
 
     // Get user's organization memberships for tenant isolation
     const memberships = await prisma.organizationMember.findMany({
@@ -221,15 +175,7 @@ export async function GET(request: NextRequest) {
 
     // If organizationId specified, verify user belongs to it
     if (organizationId && !userOrgIds.includes(organizationId)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: 'Access denied to organization',
-          },
-        },
-        { status: 403 }
-      );
+      return errorResponse('FORBIDDEN', 'Access denied to organization', 403);
     }
 
     // Build where clause with tenant isolation
@@ -275,16 +221,6 @@ export async function GET(request: NextRequest) {
         hasMore: offset + limit < total,
       },
     });
-  } catch (error) {
-    log.error(error, 'Failed to list policy packs');
-    return NextResponse.json(
-      {
-        error: {
-          code: 'LIST_POLICIES_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { authz: { requiredScopes: ['read'] } }
+);
