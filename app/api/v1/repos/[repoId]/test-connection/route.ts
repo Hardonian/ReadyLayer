@@ -5,11 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../lib/prisma';
-import { logger } from '../../../../../observability/logging';
-import { requireAuth } from '../../../../../lib/auth';
-import { createAuthzMiddleware } from '../../../../../lib/authz';
-import { getGitProviderPRAdapter } from '../../../../../integrations/git-provider-pr-adapter';
+import { prisma } from '../../../../../../lib/prisma';
+import { logger } from '../../../../../../observability/logging';
+import { requireAuth } from '../../../../../../lib/auth';
+import { createAuthzMiddleware } from '../../../../../../lib/authz';
+import { getGitProviderPRAdapter } from '../../../../../../integrations/git-provider-pr-adapter';
 
 /**
  * POST /api/v1/repos/:repoId/test-connection
@@ -105,7 +105,7 @@ export async function POST(
     }
 
     // Decrypt token
-    const { getInstallationWithDecryptedToken } = await import('../../../../../lib/secrets/installation-helpers');
+    const { getInstallationWithDecryptedToken } = await import('../../../../../../lib/secrets/installation-helpers');
     const installationWithToken = await getInstallationWithDecryptedToken(installation.id);
 
     if (!installationWithToken || !installationWithToken.accessToken) {
@@ -117,20 +117,6 @@ export async function POST(
           details: {
             provider: repo.provider,
             installationId: installation.id,
-          },
-        },
-      });
-    }
-
-    if (!installation || !installation.accessToken) {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: 'NO_INSTALLATION',
-          message: 'No installation found for this provider',
-          details: {
-            provider: repo.provider,
-            organizationId: repo.organizationId,
           },
         },
       });
