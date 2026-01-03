@@ -16,7 +16,6 @@ import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest } from '../review-guard';
 import { testEngineService, TestGenerationRequest } from '../test-engine';
 import { docSyncService } from '../doc-sync';
-import { providerStatusService } from '../provider-status';
 import { outboxService } from '../outbox';
 import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
@@ -45,6 +44,7 @@ export interface RunRequest {
 export interface RunResult {
   id: string;
   correlationId: string;
+  sandboxId?: string | null;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   conclusion?: 'success' | 'failure' | 'partial_success' | 'cancelled';
   
@@ -632,6 +632,7 @@ export class RunPipelineService {
       return {
         id: run.id,
         correlationId,
+        sandboxId: run.sandboxId,
         status: 'completed',
         conclusion,
         reviewGuardStatus,

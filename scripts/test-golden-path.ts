@@ -37,7 +37,6 @@ async function main() {
   console.log('='.repeat(60));
 
   let sandboxRunId: string | null = null;
-  let correlationId: string | null = null;
   let sandboxId: string | null = null;
 
   try {
@@ -52,7 +51,6 @@ async function main() {
       }
 
       sandboxRunId = result.id;
-      correlationId = result.correlationId;
       
       // Get sandbox ID from database
       const runRecord = await prisma.readyLayerRun.findUnique({
