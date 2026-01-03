@@ -5,7 +5,6 @@
  * GET /api/v1/runs - List runs (tenant-isolated)
  */
 
-import { NextRequest } from 'next/server';
 import { runPipelineService, RunRequest } from '../../../../services/run-pipeline';
 import { prisma } from '../../../../lib/prisma';
 import { checkBillingLimits } from '../../../../lib/billing-middleware';
@@ -100,7 +99,7 @@ export const POST = createRouteHandler(
 
       // Check billing limits
       const billingCheck = await checkBillingLimits(repo.organizationId, {
-        requireFeature: 'runPipeline',
+        requireFeature: 'reviewGuard', // Runs use review guard feature
         checkLLMBudget: true,
       });
       if (billingCheck) {

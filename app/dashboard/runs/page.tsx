@@ -7,8 +7,7 @@ import { motion } from 'framer-motion'
 import { 
   Card, 
   CardContent, 
-  CardHeader, 
-  CardTitle,
+  CardHeader,
   ErrorState,
   EmptyState,
   Skeleton,

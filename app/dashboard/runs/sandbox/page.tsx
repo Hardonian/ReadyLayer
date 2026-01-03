@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
@@ -43,17 +43,21 @@ export default function SandboxRunPage() {
       })
 
       if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
+        const errorData = (await response.json().catch(() => ({}))) as { error?: { message?: string } }
         throw new Error(errorData.error?.message || 'Failed to trigger sandbox run')
       }
 
       const data = (await response.json()) as { data?: SandboxRunResult }
-      setRun(data.data || null)
+      if (!data.data) {
+        throw new Error('No run data returned')
+      }
+      const runData = data.data
+      setRun(runData)
       
       // Redirect to run details after a short delay
-      if (data.data?.id) {
+      if (runData.id) {
         setTimeout(() => {
-          router.push(`/dashboard/runs/${data.data.id}`)
+          router.push(`/dashboard/runs/${runData.id}`)
         }, 2000)
       }
     } catch (err) {

@@ -13,14 +13,13 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { reviewGuardService, ReviewRequest, ReviewResult } from '../review-guard';
-import { testEngineService, TestGenerationRequest, TestGenerationResult } from '../test-engine';
-import { docSyncService, DocGenerationRequest, DocGenerationResult, DriftCheckResult } from '../doc-sync';
-import { createHash, randomUUID } from 'crypto';
+import { reviewGuardService, ReviewRequest } from '../review-guard';
+import { testEngineService, TestGenerationRequest } from '../test-engine';
+import { docSyncService } from '../doc-sync';
+import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
 import { createAuditLog, AuditActions } from '../../lib/audit';
-import { Issue } from '../static-analysis';
 
 export interface RunRequest {
   repositoryId?: string;

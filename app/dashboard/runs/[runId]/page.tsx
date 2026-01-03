@@ -17,15 +17,14 @@ import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { fadeIn } from '@/lib/design/motion'
 import { 
   CheckCircle2, 
-  AlertTriangle, 
   Clock,
   XCircle,
   Shield,
   TestTube,
   FileText,
   ArrowLeft,
-  GitBranch,
 } from 'lucide-react'
+import Link from 'next/link'
 
 interface RunDetails {
   id: string

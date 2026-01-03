@@ -27,7 +27,6 @@ model User {
   jobs          Job[]
   auditLogs     AuditLog[]
   subscriptions Subscription[]
-  runs          ReadyLayerRun[]
 
   @@index([email])
 }

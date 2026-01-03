@@ -4,7 +4,6 @@
  * GET /api/v1/runs/:runId - Get run details
  */
 
-import { NextRequest } from 'next/server';
 import { prisma } from '../../../../../lib/prisma';
 import {
   createRouteHandler,
