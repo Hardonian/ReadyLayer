@@ -5,7 +5,7 @@
  * GET    /api/v1/policies - List policy packs
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { createHash } from 'crypto';
@@ -15,7 +15,6 @@ import {
   parseJsonBody,
   errorResponse,
   successResponse,
-  paginatedResponse,
   parsePagination,
   RouteContext,
 } from '../../../../lib/api-route-helpers';

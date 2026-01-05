@@ -1,12 +1,14 @@
 /**
  * Audit Logging Utilities
  * 
- * Centralized audit logging for all major actions
+ * Centralized audit logging for all major actions.
+ * Implements tamper-evident hash chaining.
  */
 
 import { prisma } from './prisma';
 import type { Prisma } from '@prisma/client';
 import { logger } from '../observability/logging';
+import { createHash } from 'crypto';
 
 export interface AuditLogData {
   organizationId: string | null;
@@ -21,12 +23,56 @@ export interface AuditLogData {
 }
 
 /**
+ * Calculate SHA-256 hash for audit entry
+ */
+function calculateAuditHash(
+  previousHash: string | null,
+  data: AuditLogData,
+  timestamp: string
+): string {
+  const payload = JSON.stringify({
+    previousHash,
+    organizationId: data.organizationId,
+    userId: data.userId,
+    action: data.action,
+    resourceType: data.resourceType,
+    resourceId: data.resourceId,
+    details: data.details,
+    runId: data.runId,
+    timestamp,
+  });
+
+  return createHash('sha256').update(payload).digest('hex');
+}
+
+/**
  * Create audit log entry
  * 
  * Never throws - logs errors but doesn't fail the operation
  */
 export async function createAuditLog(data: AuditLogData): Promise<void> {
   try {
+    const timestamp = new Date().toISOString();
+
+    // 1. Get the latest audit log for this organization (or global if null)
+    // We use a transaction to ensure we get the true latest if possible,
+    // though for performance we rely on "eventual consistency" of the chain in high throughput.
+    // In strict mode, this should be a serializable transaction.
+    const lastLog = await prisma.auditLog.findFirst({
+      where: {
+        organizationId: data.organizationId || null,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        hash: true,
+      },
+    });
+
+    const previousHash = lastLog?.hash || null;
+    const hash = calculateAuditHash(previousHash, data, timestamp);
+
     await prisma.auditLog.create({
       data: {
         organizationId: data.organizationId || null,
@@ -38,6 +84,14 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
         runId: data.runId || null,
+        
+        // Tamper-evident fields
+        previousHash,
+        hash,
+        actorIp: data.ipAddress, // Redundant but explicit for audit
+        metadata: {
+          timestamp, // Store the exact timestamp used for hashing
+        },
       },
     });
   } catch (error) {

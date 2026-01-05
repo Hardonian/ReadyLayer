@@ -140,10 +140,10 @@ export const GET = createRouteHandler(
       const aiRiskDetections = runs.filter((r: { aiTouchedDetected: boolean }) => r.aiTouchedDetected).length
 
       // Calculate mean time to unblock (simplified - would need more data in real implementation)
-      const unblockedReviews = reviews.filter((r: { isBlocked: boolean; completedAt: Date | null }) => r.isBlocked && r.completedAt)
+      const unblockedReviews = reviews.filter((r: { isBlocked: boolean; completedAt: Date | null }) => r.isBlocked && r.completedAt) as Array<{ completedAt: Date; createdAt: Date }>
       const meanTimeToUnblock =
         unblockedReviews.length > 0
-          ? unblockedReviews.reduce((acc: number, r: { completedAt: Date; createdAt: Date }) => {
+          ? unblockedReviews.reduce((acc: number, r) => {
               const blockedTime = r.completedAt.getTime() - r.createdAt.getTime()
               return acc + blockedTime
             }, 0) /

@@ -53,17 +53,17 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
   }, [organizationId])
 
   useEffect(() => {
-    if (theme) {
-      const style = document.createElement('style')
-      style.id = 'platform-theme'
-      style.textContent = `:root { ${applyPlatformTheme(theme)} }`
-      document.head.appendChild(style)
+    if (!theme) return
 
-      return () => {
-        const existing = document.getElementById('platform-theme')
-        if (existing) {
-          existing.remove()
-        }
+    const style = document.createElement('style')
+    style.id = 'platform-theme'
+    style.textContent = `:root { ${applyPlatformTheme(theme)} }`
+    document.head.appendChild(style)
+
+    return () => {
+      const existing = document.getElementById('platform-theme')
+      if (existing) {
+        existing.remove()
       }
     }
   }, [theme])

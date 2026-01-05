@@ -26,7 +26,7 @@ export function useDashboardFindings({
   enabled = true,
 }: UseDashboardFindingsOptions) {
   return useRealtimeQuery<FindingSnapshot>({
-    queryKey: ['dashboard', 'findings', organizationId, repositoryId, timeRange, limit, offset],
+    queryKey: ['dashboard', 'findings', organizationId, repositoryId || '', timeRange, limit.toString(), offset.toString()],
     queryFn: async () => {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()

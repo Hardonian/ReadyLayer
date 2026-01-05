@@ -130,20 +130,26 @@ export function PolicyStatusWidget({
         {/* Actions */}
         <div className="flex gap-2 pt-2 border-t">
           {reviewId && (
-            <Link href={`/dashboard/reviews/${reviewId}`}>
-              <Button variant="outline" size="sm" className="flex-1">
+            <Link href={`/dashboard/reviews/${reviewId}`} className="flex-1">
+              <Button variant="outline" size="sm" className="w-full">
                 <ExternalLink className="h-3 w-3 mr-1" />
                 View Review
               </Button>
             </Link>
           )}
           {evidenceBundleId && (
-            <Link href={`/dashboard/evidence/${evidenceBundleId}`}>
-              <Button variant="outline" size="sm" className="flex-1">
-                <Download className="h-3 w-3 mr-1" />
-                View Evidence
-              </Button>
-            </Link>
+             <div className="flex gap-1 flex-1">
+                <Link href={`/dashboard/evidence/${evidenceBundleId}`} className="flex-1">
+                  <Button variant="outline" size="sm" className="w-full">
+                    View Proof
+                  </Button>
+                </Link>
+                <a href={`/api/v1/evidence/${evidenceBundleId}/export`} download target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" title="Download Signed Proof" className="px-2">
+                    <Download className="h-3 w-3" />
+                  </Button>
+                </a>
+             </div>
           )}
         </div>
 

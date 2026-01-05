@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { checkBillingLimits } from '../../../../lib/billing-middleware';
 import {
@@ -32,11 +32,6 @@ export const GET = createRouteHandler(
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
     const { limit, offset } = parsePagination(request);
-
-    const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get('organizationId');
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
-    const offset = parseInt(searchParams.get('offset') || '0', 10);
 
     // Get user's organization memberships for tenant isolation
     const memberships = await prisma.organizationMember.findMany({
