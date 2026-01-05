@@ -1,6 +1,5 @@
 import { prisma } from '../lib/prisma';
 import { createAuditLog, AuditActions } from '../lib/audit';
-import { createHash } from 'crypto';
 
 async function main() {
   console.log('🔒 Verifying Audit Chain Integrity...');

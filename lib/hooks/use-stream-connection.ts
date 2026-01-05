@@ -102,11 +102,11 @@ export function useStreamConnection({
         }
       }
 
-      eventSource.addEventListener('metrics_delta', handleDeltaEvent('metrics_delta'))
-      eventSource.addEventListener('prs_delta', handleDeltaEvent('prs_delta'))
-      eventSource.addEventListener('runs_delta', handleDeltaEvent('runs_delta'))
-      eventSource.addEventListener('findings_delta', handleDeltaEvent('findings_delta'))
-      eventSource.addEventListener('policies_delta', handleDeltaEvent('policies_delta'))
+      eventSource.addEventListener('metrics_delta', handleDeltaEvent())
+      eventSource.addEventListener('prs_delta', handleDeltaEvent())
+      eventSource.addEventListener('runs_delta', handleDeltaEvent())
+      eventSource.addEventListener('findings_delta', handleDeltaEvent())
+      eventSource.addEventListener('policies_delta', handleDeltaEvent())
 
       eventSource.addEventListener('error', (e) => {
         console.error('SSE connection error:', e)

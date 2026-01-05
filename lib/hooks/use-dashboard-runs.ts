@@ -26,7 +26,7 @@ export function useDashboardRuns({
   enabled = true,
 }: UseDashboardRunsOptions) {
   return useRealtimeQuery<RunSnapshot>({
-    queryKey: ['dashboard', 'runs', organizationId, repositoryId, timeRange, limit, offset],
+    queryKey: ['dashboard', 'runs', organizationId, repositoryId || '', timeRange, limit.toString(), offset.toString()],
     queryFn: async () => {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
