@@ -27,15 +27,26 @@ export interface LimitCheckResult {
 }
 
 export class UsageLimitExceededError extends Error {
+  public limitType: LimitType;
+  public current: number;
+  public limit: number;
+  public httpStatus: number;
+  public currentUsage: number;
+
   constructor(
-    public limitType: LimitType,
-    public current: number,
-    public limit: number,
-    public message: string,
-    public httpStatus: number = 429
+    limitType: LimitType,
+    current: number,
+    limit: number,
+    message: string,
+    httpStatus: number = 429
   ) {
     super(message);
     this.name = 'UsageLimitExceededError';
+    this.limitType = limitType;
+    this.current = current;
+    this.currentUsage = current; // Alias for compatibility
+    this.limit = limit;
+    this.httpStatus = httpStatus;
   }
 }
 
