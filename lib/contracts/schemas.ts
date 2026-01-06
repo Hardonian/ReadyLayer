@@ -18,6 +18,7 @@ export const createRunRequestSchema = z.object({
     prNumber: z.number().optional(),
     prSha: z.string().optional(),
     prTitle: z.string().optional(),
+    prBody: z.string().optional(),
     diff: z.string().optional(),
     files: z.array(z.object({
       path: z.string(),

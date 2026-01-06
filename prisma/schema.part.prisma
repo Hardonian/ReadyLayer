@@ -1,0 +1,35 @@
+// Audit Hardening Update
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  userId         String?
+  action         String // create, update, delete, override, block
+  resourceType   String // review, config, installation, etc.
+  resourceId     String?
+  details        Json? // Action details
+  ipAddress      String?
+  userAgent      String?
+  
+  // Hardening fields
+  previousHash   String?
+  hash           String?
+  signature      String?
+  metadata       Json?
+  actorIp        String?
+
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  run          ReadyLayerRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  runId        String?
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+  @@index([runId])
+  @@index([hash])
+  @@index([previousHash])
+}

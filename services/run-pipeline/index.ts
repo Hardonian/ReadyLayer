@@ -30,6 +30,7 @@ export interface RunRequest {
     prNumber?: number;
     prSha?: string;
     prTitle?: string;
+    prBody?: string;
     userId?: string;
     diff?: string;
     files?: Array<{ path: string; content: string; beforeContent?: string | null }>;
@@ -312,7 +313,8 @@ export class RunPipelineService {
               path: f.path,
               content: f.content,
               commitMessage: request.triggerMetadata?.prTitle,
-            }))
+            })),
+            request.triggerMetadata?.prBody
           );
 
           // Update AI-touched detection

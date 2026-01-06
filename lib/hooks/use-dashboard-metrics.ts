@@ -22,7 +22,7 @@ export function useDashboardMetrics({
   enabled = true,
 }: UseDashboardMetricsOptions) {
   return useRealtimeQuery<MetricsSnapshot>({
-    queryKey: ['dashboard', 'metrics', organizationId, repositoryId, timeRange],
+    queryKey: ['dashboard', 'metrics', organizationId, repositoryId || '', timeRange],
     queryFn: async () => {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()

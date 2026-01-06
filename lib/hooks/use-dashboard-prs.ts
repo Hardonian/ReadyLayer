@@ -26,7 +26,7 @@ export function useDashboardPRs({
   enabled = true,
 }: UseDashboardPRsOptions) {
   return useRealtimeQuery<PRSnapshot>({
-    queryKey: ['dashboard', 'prs', organizationId, repositoryId, timeRange, limit, offset],
+    queryKey: ['dashboard', 'prs', organizationId, repositoryId || '', timeRange, limit.toString(), offset.toString()],
     queryFn: async () => {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()

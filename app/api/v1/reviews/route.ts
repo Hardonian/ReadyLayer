@@ -8,7 +8,7 @@
 import { reviewGuardService, ReviewConfig } from '../../../../services/review-guard';
 import { metrics } from '../../../../observability/metrics';
 import { prisma } from '../../../../lib/prisma';
-import { checkBillingLimits } from '../../../../lib/billing-middleware';
+import { UsageLimitExceededError } from '../../../../lib/usage-enforcement';
 import {
   createRouteHandler,
   parseJsonBody,
@@ -121,29 +121,45 @@ export const POST = createRouteHandler(
     }
 
     // Check billing limits
-    const billingCheck = await checkBillingLimits(repo.organizationId, {
-      requireFeature: 'reviewGuard',
-      checkLLMBudget: true,
-    });
-    if (billingCheck) {
-      // Audit log billing limit exceeded
-      try {
-        const { createAuditLog, AuditActions } = await import('../../../../lib/audit');
-        await createAuditLog({
-          organizationId: repo.organizationId,
-          userId: user.id,
-          action: AuditActions.BILLING_LIMIT_EXCEEDED,
-          resourceType: 'review',
-          details: {
-            repositoryId,
-            prNumber,
-            limitType: 'llm_budget',
-          },
-        });
-      } catch {
-        // Don't fail on audit log errors
+    try {
+      const { checkBillingLimitsOrThrow } = await import('../../../../lib/billing-middleware');
+      await checkBillingLimitsOrThrow(repo.organizationId, {
+        requireFeature: 'reviewGuard',
+        checkLLMBudget: true,
+      });
+    } catch (error) {
+      if (error instanceof UsageLimitExceededError) {
+        // Audit log billing limit exceeded
+        try {
+          const { createAuditLog, AuditActions } = await import('../../../../lib/audit');
+          await createAuditLog({
+            organizationId: repo.organizationId,
+            userId: user.id,
+            action: AuditActions.BILLING_LIMIT_EXCEEDED,
+            resourceType: 'review',
+            details: {
+              repositoryId,
+              prNumber,
+              limitType: 'llm_budget',
+            },
+          });
+        } catch {
+          // Don't fail on audit log errors
+        }
+        
+        // Return 402 Payment Required for budget exceeded, 403 for feature access
+        return errorResponse(
+          'BILLING_LIMIT_EXCEEDED',
+          error.message,
+          error.httpStatus || 403,
+          {
+            limitType: error.limitType,
+            currentUsage: error.currentUsage,
+            limit: error.limit,
+          }
+        );
       }
-      return billingCheck;
+      throw error;
     }
 
     log.info({ repositoryId, prNumber, userId: user.id }, 'Starting review - billing check passed');

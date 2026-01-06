@@ -8,7 +8,7 @@
 
 import { ReadinessCommandCenter } from '@/components/dashboard/readiness-command-center';
 import { Container } from '@/components/ui/container';
-import { ErrorState, EmptyState, Skeleton } from '@/components/ui';
+import { EmptyState, Skeleton } from '@/components/ui';
 import { useEffect, useState } from 'react';
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';

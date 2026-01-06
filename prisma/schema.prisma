@@ -468,6 +468,14 @@ model AuditLog {
   details        Json? // Action details
   ipAddress      String?
   userAgent      String?
+  
+  // Hardening fields
+  previousHash   String?
+  hash           String?
+  signature      String?
+  metadata       Json?
+  actorIp        String?
+
   createdAt      DateTime @default(now())
 
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
@@ -481,6 +489,8 @@ model AuditLog {
   @@index([resourceType])
   @@index([createdAt])
   @@index([runId])
+  @@index([hash])
+  @@index([previousHash])
 }
 
 // Policy-as-Code Models

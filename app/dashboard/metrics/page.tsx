@@ -51,37 +51,37 @@ export default function MetricsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchMetrics() {
-      try {
-        const supabase = createSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          setError('Not authenticated')
-          setLoading(false)
-          return
-        }
-
-        const response = await fetch('/api/v1/metrics', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
-
-        if (!response.ok) {
-          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
-          throw new Error(getApiErrorMessage(errorData))
-        }
-
-        const data = (await response.json()) as Metrics
-        setMetrics(data)
+  const fetchMetrics = async () => {
+    try {
+      const supabase = createSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setError('Not authenticated')
         setLoading(false)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load metrics')
-        setLoading(false)
+        return
       }
-    }
 
+      const response = await fetch('/api/v1/metrics', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
+        throw new Error(getApiErrorMessage(errorData))
+      }
+
+      const data = (await response.json()) as Metrics
+      setMetrics(data)
+      setLoading(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load metrics')
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchMetrics()
   }, [])
 
