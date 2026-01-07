@@ -3,13 +3,24 @@
 -- ============================================
 -- 
 -- Purpose:
--- 1. Create missing tables defined in Prisma but missing in previous migrations (AI, Analytics, GDPR).
--- 2. Enable RLS on all tables where it was previously omitted (TestRun, ReadyLayerRun, OutboxIntent).
--- 3. Define standard tenant-isolation policies for all new/unprotected tables.
--- 4. Idempotent execution (IF NOT EXISTS / DROP IF EXISTS).
+-- 1. Create missing tables defined in Prisma but missing in previous migrations.
+-- 2. Enable RLS on all tables where it was previously omitted.
+-- 3. Define standard tenant-isolation policies.
+-- 4. HARDEN SECURITY DEFINER functions (Fix search_path).
+-- 5. Idempotent execution.
 -- 
 -- Generated: 2026-01-07
 -- ============================================
+
+-- ============================================
+-- 0. HARDENING: Fix Mutable Search Path
+-- ============================================
+-- Security Definer functions must have fixed search_path to prevent hijacking
+
+ALTER FUNCTION public.current_user_id() SET search_path = public;
+ALTER FUNCTION public.is_org_member(text) SET search_path = public;
+ALTER FUNCTION public.has_org_role(text, text) SET search_path = public;
+ALTER FUNCTION public.handle_new_user() SET search_path = public;
 
 -- ============================================
 -- 1. Create Missing Tables (AI, Analytics, GDPR)
@@ -199,6 +210,144 @@ CREATE TABLE IF NOT EXISTS "PredictionFeedback" (
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- TestRun
+CREATE TABLE IF NOT EXISTS "TestRun" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "repositoryId" TEXT NOT NULL,
+  "prNumber" INTEGER,
+  "prSha" TEXT NOT NULL,
+  "workflowRunId" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'pending',
+  "conclusion" TEXT,
+  "coverage" JSONB,
+  "summary" JSONB,
+  "artifactsUrl" TEXT,
+  "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "completedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "TestRun_repositoryId_fkey" FOREIGN KEY ("repositoryId") REFERENCES "Repository"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "TestRun_repositoryId_prSha_workflowRunId_key" UNIQUE ("repositoryId", "prSha", "workflowRunId")
+);
+
+-- ReadyLayerRun
+CREATE TABLE IF NOT EXISTS "ReadyLayerRun" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "correlationId" TEXT NOT NULL UNIQUE,
+  "repositoryId" TEXT,
+  "sandboxId" TEXT UNIQUE,
+  "trigger" TEXT NOT NULL,
+  "triggerMetadata" JSONB,
+  "reviewGuardStatus" TEXT NOT NULL DEFAULT 'pending',
+  "testEngineStatus" TEXT NOT NULL DEFAULT 'pending',
+  "docSyncStatus" TEXT NOT NULL DEFAULT 'pending',
+  "status" TEXT NOT NULL DEFAULT 'pending',
+  "conclusion" TEXT,
+  "reviewGuardResult" JSONB,
+  "testEngineResult" JSONB,
+  "docSyncResult" JSONB,
+  "aiTouchedDetected" BOOLEAN NOT NULL DEFAULT false,
+  "aiTouchedFiles" JSONB,
+  "gatesPassed" BOOLEAN NOT NULL DEFAULT false,
+  "gatesFailed" JSONB,
+  "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "completedAt" TIMESTAMP(3),
+  "reviewGuardStartedAt" TIMESTAMP(3),
+  "reviewGuardCompletedAt" TIMESTAMP(3),
+  "testEngineStartedAt" TIMESTAMP(3),
+  "testEngineCompletedAt" TIMESTAMP(3),
+  "docSyncStartedAt" TIMESTAMP(3),
+  "docSyncCompletedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "reviewId" TEXT UNIQUE,
+  CONSTRAINT "ReadyLayerRun_repositoryId_fkey" FOREIGN KEY ("repositoryId") REFERENCES "Repository"("id") ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT "ReadyLayerRun_reviewId_fkey" FOREIGN KEY ("reviewId") REFERENCES "Review"("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- OutboxIntent
+CREATE TABLE IF NOT EXISTS "OutboxIntent" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "idempotencyKey" TEXT NOT NULL UNIQUE,
+  "runId" TEXT NOT NULL,
+  "repositoryId" TEXT,
+  "sandboxId" TEXT,
+  "intentType" TEXT NOT NULL,
+  "payload" JSONB NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'pending',
+  "retryCount" INTEGER NOT NULL DEFAULT 0,
+  "maxRetries" INTEGER NOT NULL DEFAULT 3,
+  "error" TEXT,
+  "postedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- EvidenceBundle
+CREATE TABLE IF NOT EXISTS "EvidenceBundle" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "reviewId" TEXT UNIQUE,
+  "testId" TEXT UNIQUE,
+  "docId" TEXT UNIQUE,
+  "inputsMetadata" JSONB NOT NULL,
+  "rulesFired" JSONB NOT NULL,
+  "deterministicScore" DECIMAL(10, 4) NOT NULL,
+  "artifacts" JSONB,
+  "policyChecksum" TEXT NOT NULL,
+  "toolVersions" JSONB,
+  "timings" JSONB,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "EvidenceBundle_reviewId_fkey" FOREIGN KEY ("reviewId") REFERENCES "Review"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "EvidenceBundle_testId_fkey" FOREIGN KEY ("testId") REFERENCES "Test"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "EvidenceBundle_docId_fkey" FOREIGN KEY ("docId") REFERENCES "Doc"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- PolicyPack
+CREATE TABLE IF NOT EXISTS "PolicyPack" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "organizationId" TEXT NOT NULL,
+  "repositoryId" TEXT,
+  "version" TEXT NOT NULL,
+  "source" TEXT NOT NULL,
+  "checksum" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PolicyPack_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PolicyPack_repositoryId_fkey" FOREIGN KEY ("repositoryId") REFERENCES "Repository"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PolicyPack_organizationId_repositoryId_version_key" UNIQUE ("organizationId", "repositoryId", "version")
+);
+
+-- PolicyRule
+CREATE TABLE IF NOT EXISTS "PolicyRule" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "policyPackId" TEXT NOT NULL,
+  "ruleId" TEXT NOT NULL,
+  "severityMapping" JSONB NOT NULL,
+  "enabled" BOOLEAN NOT NULL DEFAULT true,
+  "params" JSONB,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "PolicyRule_policyPackId_fkey" FOREIGN KEY ("policyPackId") REFERENCES "PolicyPack"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "PolicyRule_policyPackId_ruleId_key" UNIQUE ("policyPackId", "ruleId")
+);
+
+-- Waiver
+CREATE TABLE IF NOT EXISTS "Waiver" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "organizationId" TEXT NOT NULL,
+  "repositoryId" TEXT,
+  "ruleId" TEXT NOT NULL,
+  "scope" TEXT NOT NULL,
+  "scopeValue" TEXT,
+  "reason" TEXT NOT NULL,
+  "expiresAt" TIMESTAMP(3),
+  "createdBy" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "Waiver_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "Waiver_repositoryId_fkey" FOREIGN KEY ("repositoryId") REFERENCES "Repository"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 -- ============================================
 -- 2. Create Indexes (Idempotent)
 -- ============================================
@@ -263,6 +412,43 @@ CREATE INDEX IF NOT EXISTS "PredictionFeedback_userId_idx" ON "PredictionFeedbac
 CREATE INDEX IF NOT EXISTS "PredictionFeedback_timestamp_idx" ON "PredictionFeedback"("timestamp");
 CREATE INDEX IF NOT EXISTS "PredictionFeedback_wasCorrect_idx" ON "PredictionFeedback"("wasCorrect");
 
+-- TestRun
+CREATE INDEX IF NOT EXISTS "TestRun_repositoryId_idx" ON "TestRun"("repositoryId");
+CREATE INDEX IF NOT EXISTS "TestRun_prNumber_idx" ON "TestRun"("prNumber");
+CREATE INDEX IF NOT EXISTS "TestRun_prSha_idx" ON "TestRun"("prSha");
+CREATE INDEX IF NOT EXISTS "TestRun_workflowRunId_idx" ON "TestRun"("workflowRunId");
+CREATE INDEX IF NOT EXISTS "TestRun_status_idx" ON "TestRun"("status");
+
+-- ReadyLayerRun
+CREATE INDEX IF NOT EXISTS "ReadyLayerRun_correlationId_idx" ON "ReadyLayerRun"("correlationId");
+CREATE INDEX IF NOT EXISTS "ReadyLayerRun_repositoryId_idx" ON "ReadyLayerRun"("repositoryId");
+CREATE INDEX IF NOT EXISTS "ReadyLayerRun_sandboxId_idx" ON "ReadyLayerRun"("sandboxId");
+CREATE INDEX IF NOT EXISTS "ReadyLayerRun_status_idx" ON "ReadyLayerRun"("status");
+CREATE INDEX IF NOT EXISTS "ReadyLayerRun_trigger_idx" ON "ReadyLayerRun"("trigger");
+
+-- OutboxIntent
+CREATE INDEX IF NOT EXISTS "OutboxIntent_runId_idx" ON "OutboxIntent"("runId");
+CREATE INDEX IF NOT EXISTS "OutboxIntent_repositoryId_idx" ON "OutboxIntent"("repositoryId");
+CREATE INDEX IF NOT EXISTS "OutboxIntent_status_idx" ON "OutboxIntent"("status");
+CREATE INDEX IF NOT EXISTS "OutboxIntent_idempotencyKey_idx" ON "OutboxIntent"("idempotencyKey");
+
+-- PolicyPack
+CREATE INDEX IF NOT EXISTS "PolicyPack_organizationId_idx" ON "PolicyPack"("organizationId");
+CREATE INDEX IF NOT EXISTS "PolicyPack_repositoryId_idx" ON "PolicyPack"("repositoryId");
+CREATE INDEX IF NOT EXISTS "PolicyPack_checksum_idx" ON "PolicyPack"("checksum");
+
+-- Waiver
+CREATE INDEX IF NOT EXISTS "Waiver_organizationId_idx" ON "Waiver"("organizationId");
+CREATE INDEX IF NOT EXISTS "Waiver_repositoryId_idx" ON "Waiver"("repositoryId");
+CREATE INDEX IF NOT EXISTS "Waiver_ruleId_idx" ON "Waiver"("ruleId");
+CREATE INDEX IF NOT EXISTS "Waiver_expiresAt_idx" ON "Waiver"("expiresAt");
+
+-- EvidenceBundle
+CREATE INDEX IF NOT EXISTS "EvidenceBundle_reviewId_idx" ON "EvidenceBundle"("reviewId");
+CREATE INDEX IF NOT EXISTS "EvidenceBundle_testId_idx" ON "EvidenceBundle"("testId");
+CREATE INDEX IF NOT EXISTS "EvidenceBundle_docId_idx" ON "EvidenceBundle"("docId");
+CREATE INDEX IF NOT EXISTS "EvidenceBundle_policyChecksum_idx" ON "EvidenceBundle"("policyChecksum");
+
 -- ============================================
 -- 3. Enable RLS and Create Policies
 -- ============================================
@@ -271,6 +457,7 @@ CREATE INDEX IF NOT EXISTS "PredictionFeedback_wasCorrect_idx" ON "PredictionFee
 CREATE OR REPLACE FUNCTION public.create_org_scoped_policy(table_name text)
 RETURNS void
 LANGUAGE plpgsql
+SET search_path = public
 AS $$
 BEGIN
     -- Enable RLS
@@ -288,7 +475,7 @@ BEGIN
 END;
 $$;
 
--- Apply generic org-scoped policies to new tables
+-- Apply generic org-scoped policies
 SELECT public.create_org_scoped_policy('AIAnomaly');
 SELECT public.create_org_scoped_policy('AIOptimizationSuggestion');
 SELECT public.create_org_scoped_policy('TokenUsage');
@@ -298,8 +485,10 @@ SELECT public.create_org_scoped_policy('ModelPerformanceAggregate');
 SELECT public.create_org_scoped_policy('AggregatedInsight');
 SELECT public.create_org_scoped_policy('DataRetentionPolicy');
 SELECT public.create_org_scoped_policy('UserConsent');
+SELECT public.create_org_scoped_policy('PolicyPack');
+SELECT public.create_org_scoped_policy('Waiver');
 
--- Specific Policies for existing tables that missed RLS
+-- Specific Policies
 
 -- TestRun
 ALTER TABLE "TestRun" ENABLE ROW LEVEL SECURITY;
@@ -324,25 +513,56 @@ CREATE POLICY "readylayer_run_repo_access" ON "ReadyLayerRun"
             AND public.is_org_member("Repository"."organizationId")
         ))
         OR
-        ("sandboxId" IS NOT NULL) -- Allow sandbox runs to be viewed (often public demo)
+        ("sandboxId" IS NOT NULL)
     );
 
 -- OutboxIntent
 ALTER TABLE "OutboxIntent" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "outbox_intent_system_only" ON "OutboxIntent";
 CREATE POLICY "outbox_intent_system_only" ON "OutboxIntent"
-    FOR SELECT USING (false); -- Only accessible by service role (workers)
+    FOR SELECT USING (false); -- Service role only
 
--- PredictionFeedback (Public/User scoped)
+-- PredictionFeedback
 ALTER TABLE "PredictionFeedback" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "feedback_submit" ON "PredictionFeedback";
 CREATE POLICY "feedback_submit" ON "PredictionFeedback"
-    FOR INSERT WITH CHECK (true); -- Allow feedback submission
+    FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "feedback_view_own" ON "PredictionFeedback";
 CREATE POLICY "feedback_view_own" ON "PredictionFeedback"
     FOR SELECT USING ("userId" = public.current_user_id());
 
--- Drop helper function
+-- EvidenceBundle
+ALTER TABLE "EvidenceBundle" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "evidence_bundle_access" ON "EvidenceBundle";
+CREATE POLICY "evidence_bundle_access" ON "EvidenceBundle"
+    FOR SELECT USING (
+        ("reviewId" IS NOT NULL AND EXISTS (
+            SELECT 1 FROM "Review" R JOIN "Repository" Rep ON R."repositoryId" = Rep.id
+            WHERE R.id = "EvidenceBundle"."reviewId" AND public.is_org_member(Rep."organizationId")
+        )) OR
+        ("testId" IS NOT NULL AND EXISTS (
+            SELECT 1 FROM "Test" T JOIN "Repository" Rep ON T."repositoryId" = Rep.id
+            WHERE T.id = "EvidenceBundle"."testId" AND public.is_org_member(Rep."organizationId")
+        )) OR
+        ("docId" IS NOT NULL AND EXISTS (
+            SELECT 1 FROM "Doc" D JOIN "Repository" Rep ON D."repositoryId" = Rep.id
+            WHERE D.id = "EvidenceBundle"."docId" AND public.is_org_member(Rep."organizationId")
+        ))
+    );
+
+-- PolicyRule
+ALTER TABLE "PolicyRule" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "policy_rule_access" ON "PolicyRule";
+CREATE POLICY "policy_rule_access" ON "PolicyRule"
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM "PolicyPack" P
+            WHERE P.id = "PolicyRule"."policyPackId"
+            AND public.is_org_member(P."organizationId")
+        )
+    );
+
+-- Drop helper
 DROP FUNCTION public.create_org_scoped_policy;
 
 -- ============================================
@@ -351,13 +571,13 @@ DROP FUNCTION public.create_org_scoped_policy;
 
 DO $$
 BEGIN
-    -- Apply update_updated_at_column trigger to all new tables having updatedAt
     DECLARE
         t text;
     BEGIN
         FOREACH t IN ARRAY ARRAY[
             'AIAnomaly', 'AIOptimizationSuggestion', 'TokenUsage', 'PredictiveAlert', 
-            'DataRetentionPolicy', 'UserConsent'
+            'DataRetentionPolicy', 'UserConsent', 'TestRun', 'ReadyLayerRun', 
+            'OutboxIntent', 'PolicyPack', 'PolicyRule', 'Waiver'
         ] LOOP
             IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_' || lower(t) || '_updated_at') THEN
                 EXECUTE format('
