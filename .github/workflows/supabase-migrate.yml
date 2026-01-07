@@ -1,0 +1,56 @@
+name: Supabase Migration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase Project
+        run: supabase link --project-ref $SUPABASE_PROJECT_REF
+
+      - name: Push Migrations
+        run: supabase db push
+
+      - name: Verify RLS Compliance
+        env:
+          PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          # Wait for migrations to settle
+          sleep 5
+          
+          # Run verification query
+          # Note: We use the connection string format for psql if DATABASE_URL is set, 
+          # otherwise construct it. Assuming DB password is provided.
+          
+          DB_HOST="db.$SUPABASE_PROJECT_REF.supabase.co"
+          DB_USER="postgres"
+          DB_NAME="postgres"
+          
+          PGPASSWORD=$SUPABASE_DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "
+            SELECT 'Checking RLS Status...';
+            SELECT n.nspname, c.relname as table_name, c.relrowsecurity as rls_enabled
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' 
+            AND c.relkind = 'r' 
+            AND c.relrowsecurity = false
+            AND c.relname NOT LIKE '_prisma%';
+          "
