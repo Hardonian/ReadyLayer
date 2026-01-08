@@ -5,7 +5,8 @@ import {
   errorResponse,
   successResponse,
 } from '@/lib/api-route-helpers'
-import { getRuntimeUiConfigForOrganization, getRuntimeUiPublicSnapshot, RuntimeUiConfigPatchSchema, updateRuntimeUiConfigForOrganization } from '@/lib/runtime-ui-config'
+import { getRuntimeUiPublicSnapshot, RuntimeUiConfigPatchSchema } from '@/lib/runtime-ui-config'
+import { getRuntimeUiConfigForOrganization, updateRuntimeUiConfigForOrganization } from '@/lib/runtime-ui-config.server'
 
 /**
  * Runtime UI configuration API

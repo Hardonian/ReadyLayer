@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useOrganizationId } from '@/lib/hooks'
 import { useRuntimeUiConfig } from '@/components/providers/runtime-ui-config-provider'
+import { getRuntimeCopy } from '@/lib/runtime-ui-config'
 
 type DemoState = 'normal' | 'loading' | 'empty' | 'error'
 type BannerVariant = 'info' | 'success' | 'warning' | 'danger'
@@ -120,7 +121,11 @@ export default function ReviewClient() {
         <div className="space-y-1">
           <h1 className="text-3xl font-bold">Internal review / polish mode</h1>
           <p className="text-text-muted">
-            Private review surface for preview deployments. Not indexed. Owner-only.
+            {getRuntimeCopy(
+              runtime.config.copy,
+              'internal.review.subtitle',
+              'Private review surface for preview deployments. Not indexed. Owner-only.'
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
