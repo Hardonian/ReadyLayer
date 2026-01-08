@@ -27,7 +27,12 @@ export function createAuthzMiddleware(options: AuthzOptions = {}) {
       // Check scopes if required
       if (options.requiredScopes && options.requiredScopes.length > 0) {
         // Get scopes from API key if present
-        const apiKey = request.headers.get('authorization')?.substring(7);
+        const authHeader = request.headers.get('authorization');
+        const bearerToken =
+          authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
+        // Only treat rl_* tokens as API keys; other Bearer tokens (e.g., Supabase JWT)
+        // should not trigger API key scope logic.
+        const apiKey = bearerToken && bearerToken.startsWith('rl_') ? bearerToken : null;
         let userScopes: string[] = [];
 
         if (apiKey) {

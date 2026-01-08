@@ -115,6 +115,9 @@ export class HealthChecker {
    * Check database health
    */
   private async checkDatabase(): Promise<'healthy' | 'unhealthy'> {
+    if (!process.env.DATABASE_URL) {
+      return 'unhealthy';
+    }
     try {
       await prisma.$queryRaw`SELECT 1`;
       return 'healthy';
@@ -127,6 +130,9 @@ export class HealthChecker {
    * Check database readiness
    */
   private async checkDatabaseReady(): Promise<'ready' | 'not_ready'> {
+    if (!process.env.DATABASE_URL) {
+      return 'not_ready';
+    }
     try {
       // Check if we can perform a simple query
       await prisma.$queryRaw`SELECT 1`;
@@ -174,6 +180,9 @@ export class HealthChecker {
     status: 'healthy' | 'unhealthy' | 'degraded';
     details?: HealthStatus['details'];
   }> {
+    if (!process.env.DATABASE_URL) {
+      return { status: 'degraded' };
+    }
     try {
       const requiredTables = [
         'User', 'Organization', 'OrganizationMember', 'Repository',

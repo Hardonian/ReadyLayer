@@ -11,6 +11,7 @@ import {
   successResponse,
   RouteContext,
 } from '../../../../lib/api-route-helpers';
+import type { Prisma } from '@prisma/client';
 
 export const GET = createRouteHandler(
   async (context: RouteContext) => {
@@ -42,7 +43,7 @@ export const GET = createRouteHandler(
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const where: any = {
+      const where: Prisma.ReadyLayerRunWhereInput = {
         repository: {
           organizationId,
         },
@@ -75,9 +76,12 @@ export const GET = createRouteHandler(
       const coverageDelta = 0; // Placeholder
 
       // Doc drift incidents
-      const docDriftIncidents = runs.filter(
-        (r) => (r.docSyncResult as any)?.driftDetected
-      ).length;
+      const docDriftIncidents = runs.filter((r) => {
+        const v = r.docSyncResult as unknown
+        if (!v || typeof v !== 'object') return false
+        const driftDetected = (v as { driftDetected?: unknown }).driftDetected
+        return driftDetected === true
+      }).length;
 
       // Mean time to safe merge (would calculate from timestamps)
       const meanTimeToSafeMerge = 45; // Placeholder (minutes)

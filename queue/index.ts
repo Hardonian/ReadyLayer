@@ -31,19 +31,25 @@ export class QueueService {
   private isConnected = false;
 
   constructor() {
-    this.initializeRedis();
+    // IMPORTANT: no side effects at import/construct time.
+    // Connection is established lazily on first use to avoid build-time/SSR failures.
   }
 
   /**
    * Initialize Redis connection
    */
   private async initializeRedis(): Promise<void> {
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      // Redis not configured; use database fallback.
+      this.isConnected = false;
+      return;
+    }
 
     try {
       this.redis = createClient({ url: redisUrl });
       this.redis.on('error', (err) => {
-        logger.error('Redis error', err);
+        logger.error({ err }, 'Redis error');
         this.isConnected = false;
       });
 
@@ -56,10 +62,20 @@ export class QueueService {
     }
   }
 
+  private async ensureRedisInitialized(): Promise<void> {
+    if (this.isConnected) return;
+    // If redis is configured but we haven't connected yet, attempt a single connect.
+    // If it fails, we stay in DB fallback mode.
+    if (process.env.REDIS_URL && !this.redis) {
+      await this.initializeRedis();
+    }
+  }
+
   /**
    * Enqueue a job
    */
   async enqueue(queueName: string, payload: JobPayload): Promise<string> {
+    await this.ensureRedisInitialized();
     const jobId = payload.idempotencyKey || this.generateJobId();
 
     // Check idempotency
@@ -119,6 +135,7 @@ export class QueueService {
    * Process jobs from queue
    */
   async processQueue(queueName: string, handler: (payload: any) => Promise<any>): Promise<void> {
+    await this.ensureRedisInitialized();
     if (!this.isConnected || !this.redis) {
       // Fallback: process from database
       await this.processFromDatabase(queueName, handler);

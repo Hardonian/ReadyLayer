@@ -139,7 +139,13 @@ export function extractApiKey(request: NextRequest): string | null {
   if (!authHeader?.startsWith('Bearer ')) {
     return null;
   }
-  return authHeader.substring(7);
+  const token = authHeader.substring(7).trim();
+  // API keys are explicitly prefixed to avoid confusing them with Supabase JWTs.
+  // This prevents accidental scope denial when clients send `Bearer <access_token>`.
+  if (!token.startsWith('rl_')) {
+    return null;
+  }
+  return token;
 }
 
 /**

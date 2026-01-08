@@ -10,6 +10,31 @@ import { prisma } from '../../../../../../lib/prisma';
 import { logger } from '../../../../../../observability/logging';
 import { requireAuth } from '../../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../../lib/authz';
+import { z } from 'zod';
+
+type ReviewIssue = Record<string, unknown> & {
+  id?: string;
+  file?: string;
+  ruleId?: string;
+  rule_id?: string;
+};
+
+const IssueSchema = z.object({
+  id: z.string().optional(),
+  ruleId: z.string().min(1),
+  severity: z.enum(['critical', 'high', 'medium', 'low']),
+  file: z.string().min(1),
+  line: z.number().int().min(1),
+  message: z.string().min(1),
+  confidence: z.number().min(0).max(1),
+  column: z.number().int().min(0).optional(),
+  fix: z.string().optional(),
+});
+
+function coerceIssues(value: unknown): ReviewIssue[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is ReviewIssue => typeof v === 'object' && v !== null);
+}
 
 export async function GET(
   request: NextRequest,
@@ -66,9 +91,9 @@ export async function GET(
     }
 
     // Get finding if specified
-    const issues = (review.issuesFound as any[]) || [];
+    const issues = coerceIssues(review.issuesFound as unknown);
     const finding = findingId
-      ? issues.find((i: any) => i.id === findingId)
+      ? issues.find((i) => i.id === findingId)
       : issues[0];
 
     if (!finding) {
@@ -78,9 +103,34 @@ export async function GET(
       );
     }
 
-    const explanation = await ethicalAIGatesService.explainDecision(finding, {
-      filePath: finding.file,
-      ruleId: finding.ruleId,
+    // Back-compat: some records may use rule_id instead of ruleId
+    const normalizedCandidate: Record<string, unknown> = {
+      ...finding,
+      ruleId:
+        typeof finding.ruleId === 'string' && finding.ruleId.length > 0
+          ? finding.ruleId
+          : typeof finding.rule_id === 'string' && finding.rule_id.length > 0
+            ? finding.rule_id
+            : undefined,
+    };
+
+    const parsedIssue = IssueSchema.safeParse(normalizedCandidate);
+    if (!parsedIssue.success) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_FINDING',
+            message: 'Finding is missing required fields',
+          },
+        },
+        { status: 422 }
+      );
+    }
+
+    const issue = parsedIssue.data;
+    const explanation = await ethicalAIGatesService.explainDecision(issue, {
+      filePath: issue.file,
+      ruleId: issue.ruleId,
       policyVersion: '1.0.0', // Would get from evidence bundle
     });
 

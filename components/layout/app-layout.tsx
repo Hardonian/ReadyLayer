@@ -14,6 +14,7 @@ import { fadeIn } from '@/lib/design/motion'
 import { Github, LogOut } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from './mobile-nav'
+import { RuntimeTopNotice } from '@/components/layout/runtime-top-notice'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -73,6 +74,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <RuntimeTopNotice />
       {showNav && (
         <motion.nav
           className="border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60"
