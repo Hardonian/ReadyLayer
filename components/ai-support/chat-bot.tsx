@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useRuntimeUiConfig } from '@/components/providers/runtime-ui-config-provider'
 
 interface Message {
   id: string
@@ -15,6 +16,9 @@ interface Message {
 }
 
 export function AISupportBot() {
+  const runtime = useRuntimeUiConfig()
+  const aiBotEnabled = runtime.config.features.aiSupportBotEnabled
+
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -90,6 +94,10 @@ export function AISupportBot() {
     }
 
     return 'I can help you with connecting repositories, configuring policies, understanding reviews, using the dashboard, and more. What would you like to know?'
+  }
+
+  if (!aiBotEnabled) {
+    return null
   }
 
   return (

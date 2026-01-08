@@ -64,7 +64,12 @@ export function extractApiKeyFromHeader(request: NextRequest): string | null {
     if (!authHeader?.startsWith('Bearer ')) {
       return null;
     }
-    return authHeader.substring(7);
+    const token = authHeader.substring(7).trim();
+    // Only treat explicitly-prefixed keys as API keys; ignore Supabase JWT Bearer tokens.
+    if (!token.startsWith('rl_')) {
+      return null;
+    }
+    return token;
   } catch {
     return null;
   }

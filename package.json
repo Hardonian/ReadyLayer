@@ -34,6 +34,9 @@
     "test:golden-path": "tsx scripts/test-golden-path.ts",
     "doctor": "tsx scripts/doctor.ts"
   },
+  "overrides": {
+    "glob": "^10.5.0"
+  },
   "dependencies": {
     "@babel/parser": "^7.23.7",
     "@babel/types": "^7.23.6",

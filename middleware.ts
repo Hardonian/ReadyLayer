@@ -177,6 +177,17 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next()
   }
 
+  // Internal review route: disabled in production by default (return 404 to reduce discoverability).
+  if (pathname.startsWith('/_internal/review')) {
+    const enabled =
+      process.env.VERCEL_ENV === 'preview' ||
+      process.env.NODE_ENV !== 'production' ||
+      process.env.INTERNAL_REVIEW_ENABLED === 'true'
+    if (!enabled) {
+      return new NextResponse('Not Found', { status: 404 })
+    }
+  }
+
   // Public routes - always allow through
   if (isPublicRoute(pathname)) {
     return NextResponse.next()
