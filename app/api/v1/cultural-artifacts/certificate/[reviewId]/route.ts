@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { culturalArtifactsService } from '../../../../../../services/cultural-artifacts';
+import { prisma } from '../../../../../../lib/prisma';
 import { logger } from '../../../../../../observability/logging';
 import { requireAuth } from '../../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../../lib/authz';
@@ -18,7 +19,7 @@ export async function GET(
   const log = logger.child({ requestId, reviewId: params.reviewId });
 
   try {
-    await requireAuth(request);
+    const user = await requireAuth(request);
 
     const authzResponse = await createAuthzMiddleware({
       requiredScopes: ['read'],
@@ -28,6 +29,42 @@ export async function GET(
     }
 
     const reviewId = params.reviewId;
+
+    // Tenant isolation: ensure the caller belongs to the review's organization
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      select: {
+        id: true,
+        repository: {
+          select: { organizationId: true },
+        },
+      },
+    });
+
+    if (!review) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Review not found' } },
+        { status: 404 }
+      );
+    }
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: review.repository.organizationId,
+          userId: user.id,
+        },
+      },
+      select: { id: true },
+    });
+
+    // Return 404 to avoid leaking existence of other-tenant review IDs.
+    if (!membership) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Review not found' } },
+        { status: 404 }
+      );
+    }
 
     try {
       const certificate = await culturalArtifactsService.generateMergeConfidenceCertificate(reviewId);

@@ -13,6 +13,7 @@ import {
   RouteContext,
 } from '../../../../../lib/api-route-helpers';
 import { z } from 'zod';
+import { prisma } from '../../../../../lib/prisma';
 
 const overrideSchema = z.object({
   reviewId: z.string(),
@@ -43,6 +44,34 @@ export const POST = createRouteHandler(
     const { reviewId, findingId, reason, justification } = validationResult.data;
 
     try {
+      // Tenant isolation + privilege check:
+      // Only org admins/owners can override decisions for reviews in their org.
+      const review = await prisma.review.findUnique({
+        where: { id: reviewId },
+        select: {
+          id: true,
+          repository: { select: { organizationId: true } },
+        },
+      });
+
+      if (!review) {
+        return errorResponse('NOT_FOUND', 'Review not found', 404);
+      }
+
+      const membership = await prisma.organizationMember.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: review.repository.organizationId,
+            userId: user.id,
+          },
+        },
+        select: { role: true },
+      });
+
+      if (!membership || (membership.role !== 'owner' && membership.role !== 'admin')) {
+        return errorResponse('FORBIDDEN', 'Access denied', 403);
+      }
+
       await ethicalAIGatesService.recordOverride({
         reviewId,
         findingId,

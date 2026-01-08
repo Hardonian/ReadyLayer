@@ -1,20 +1,51 @@
+/**
+ * Evidence Bundle Export API
+ *
+ * GET /api/v1/evidence/:bundleId/export
+ *
+ * SECURITY:
+ * - Requires authentication + read scope
+ * - Enforces tenant isolation by verifying org membership from the linked repository
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
+import { requireAuth } from '@/lib/auth';
+import { createAuthzMiddleware } from '@/lib/authz';
 
 export async function GET(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: { bundleId: string } }
 ) {
   try {
+    const user = await requireAuth(request);
+
+    const authzResponse = await createAuthzMiddleware({
+      requiredScopes: ['read'],
+    })(request);
+    if (authzResponse) return authzResponse;
+
     const { bundleId } = params;
 
     const bundle = await prisma.evidenceBundle.findUnique({
       where: { id: bundleId },
       include: {
-        review: true,
-        test: true,
-        doc: true,
+        review: {
+          include: {
+            repository: { select: { organizationId: true } },
+          },
+        },
+        test: {
+          include: {
+            repository: { select: { organizationId: true } },
+          },
+        },
+        doc: {
+          include: {
+            repository: { select: { organizationId: true } },
+          },
+        },
       },
     });
 
@@ -22,11 +53,42 @@ export async function GET(
       return NextResponse.json({ error: 'Evidence bundle not found' }, { status: 404 });
     }
 
+    const organizationId =
+      bundle.review?.repository?.organizationId ||
+      bundle.test?.repository?.organizationId ||
+      bundle.doc?.repository?.organizationId ||
+      null;
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: { code: 'NOT_FOUND', message: 'Could not determine organization for evidence bundle' } },
+        { status: 404 }
+      );
+    }
+
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: user.id,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: { code: 'FORBIDDEN', message: 'Access denied to evidence bundle' } },
+        { status: 403 }
+      );
+    }
+
     // Fetch related audit logs
     // Note: We use the creation time window to find relevant logs if runId is not present,
     // but ideally we should link by runId.
     const auditLogs = await prisma.auditLog.findMany({
       where: {
+        organizationId,
         OR: [
           { resourceId: bundle.reviewId || undefined },
           { resourceId: bundle.testId || undefined },

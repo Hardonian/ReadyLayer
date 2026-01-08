@@ -133,6 +133,21 @@ export class EthicalAIGatesService {
       throw new Error(`Review ${request.reviewId} not found`);
     }
 
+    // Defense-in-depth: ensure the actor is an admin/owner in the review's org.
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: review.repository.organizationId,
+          userId: request.userId,
+        },
+      },
+      select: { role: true },
+    });
+
+    if (!membership || (membership.role !== 'owner' && membership.role !== 'admin')) {
+      throw new Error('FORBIDDEN');
+    }
+
     await prisma.auditLog.create({
       data: {
         organizationId: review.repository.organizationId,
@@ -146,7 +161,7 @@ export class EthicalAIGatesService {
           justification: request.justification,
           overrideType: 'ai_decision',
         } as any,
-        runId: request.reviewId, // Link to review
+        runId: null, // Not a run ID; keep audit link via resourceId
       },
     });
 

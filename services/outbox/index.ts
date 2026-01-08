@@ -25,15 +25,17 @@ export class OutboxService {
   /**
    * Create an outbox intent for a status update
    * 
-   * Idempotency key format: `${runId}_${stage}_${status}_${timestamp}`
-   * This ensures the same update isn't posted twice even if retried.
+   * SECURITY/RELIABILITY:
+   * - Idempotency keys must be stable across retries.
+   * - Do NOT include timestamps or random values.
    */
   async createIntent(payload: OutboxIntentPayload): Promise<string> {
     const { runId, update } = payload;
     
-    // Generate idempotency key
-    const timestamp = Date.now();
-    const idempotencyKey = `${runId}_${update.stage}_${update.status}_${timestamp}`;
+    // Stable idempotency key (one intent per run+stage+status(+conclusion))
+    const idempotencyKey =
+      `${runId}_${update.stage}_${update.status}` +
+      (update.conclusion ? `_${update.conclusion}` : '');
     
     const log = logger.child({ runId, idempotencyKey, stage: update.stage });
     
@@ -49,17 +51,37 @@ export class OutboxService {
       }
       
       // Create intent
-      const intent = await prisma.outboxIntent.create({
-        data: {
-          idempotencyKey,
-          runId,
-          repositoryId: payload.repositoryId || null,
-          sandboxId: payload.sandboxId || null,
-          intentType: 'status_update',
-          payload: update as any,
-          status: 'pending',
-        },
-      });
+      let intent:
+        | { id: string }
+        | null = null;
+
+      try {
+        intent = await prisma.outboxIntent.create({
+          data: {
+            idempotencyKey,
+            runId,
+            repositoryId: payload.repositoryId || null,
+            sandboxId: payload.sandboxId || null,
+            intentType: 'status_update',
+            payload: update as any,
+            status: 'pending',
+          },
+          select: { id: true },
+        });
+      } catch (e) {
+        // Race-safe idempotency: if another request created the same key, return it.
+        if (e && typeof e === 'object' && 'code' in e && (e as { code?: string }).code === 'P2002') {
+          const raced = await prisma.outboxIntent.findUnique({
+            where: { idempotencyKey },
+            select: { id: true },
+          });
+          if (raced) {
+            log.info({ intentId: raced.id }, 'Intent already created by another request');
+            return raced.id;
+          }
+        }
+        throw e;
+      }
       
       log.info({ intentId: intent.id }, 'Outbox intent created');
       return intent.id;

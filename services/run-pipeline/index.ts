@@ -21,6 +21,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
 import { createAuditLog, AuditActions } from '../../lib/audit';
+import type { Prisma } from '@prisma/client';
 
 export interface RunRequest {
   repositoryId?: string;
@@ -127,6 +128,13 @@ export class RunPipelineService {
     const log = logger.child({ correlationId, trigger: request.trigger });
     
     const startedAt = new Date();
+
+    // Never persist PR bodies (they can contain sensitive data). Use only in-memory.
+    const prBody = request.triggerMetadata?.prBody;
+    const triggerMetadataForStorage: Record<string, unknown> = {
+      ...(request.triggerMetadata || {}),
+    };
+    delete (triggerMetadataForStorage as { prBody?: unknown }).prBody;
     
     // Create run record
     const run = await prisma.readyLayerRun.create({
@@ -135,7 +143,7 @@ export class RunPipelineService {
         repositoryId: request.repositoryId || null,
         sandboxId: request.sandboxId || null,
         trigger: request.trigger,
-        triggerMetadata: request.triggerMetadata || {},
+        triggerMetadata: triggerMetadataForStorage as unknown as Prisma.InputJsonValue,
         status: 'running',
         reviewGuardStatus: request.config?.skipReviewGuard ? 'skipped' : 'pending',
         testEngineStatus: request.config?.skipTestEngine ? 'skipped' : 'pending',
@@ -314,7 +322,7 @@ export class RunPipelineService {
               content: f.content,
               commitMessage: request.triggerMetadata?.prTitle,
             })),
-            request.triggerMetadata?.prBody
+            prBody
           );
 
           // Update AI-touched detection

@@ -86,6 +86,8 @@ interface ConnectionState {
 
 const connections = new Map<string, ConnectionState>()
 
+const MAX_CONNECTIONS_PER_USER_ORG = 3
+
 // Cleanup stale connections
 setInterval(() => {
   const now = Date.now()
@@ -152,6 +154,21 @@ export async function GET(request: NextRequest) {
           },
         }),
         { status: 403, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Basic abuse control: limit concurrent SSE connections per user+org.
+    const connectionPrefix = `${user.id}:${organizationId}:`
+    const existingForUserOrg = Array.from(connections.keys()).filter((id) => id.startsWith(connectionPrefix))
+    if (existingForUserOrg.length >= MAX_CONNECTIONS_PER_USER_ORG) {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 'TOO_MANY_CONNECTIONS',
+            message: 'Too many active stream connections for this organization',
+          },
+        }),
+        { status: 429, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
