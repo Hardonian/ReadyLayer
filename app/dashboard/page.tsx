@@ -498,12 +498,12 @@ export default function DashboardPage() {
                     Every reviewed PR gets a signed certificate. Absence = unreviewed.
                   </div>
                 </div>
-                <div className="bg-background/50 p-4 rounded-lg border border-purple-500/20">
+                <div className="bg-background/50 p-4 rounded-lg border border-accent/20">
                   <div className="text-sm font-medium mb-1 flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-purple-500" />
+                    <BarChart3 className="h-4 w-4 text-accent" />
                     Readiness Score™
                   </div>
-                  <div className="text-2xl font-bold text-purple-500">
+                  <div className="text-2xl font-bold text-accent">
                     {stats.activeRepos > 0 ? 'Calculating...' : 'N/A'}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
