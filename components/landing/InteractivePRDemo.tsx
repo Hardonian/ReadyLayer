@@ -375,13 +375,13 @@ export function InteractivePRDemo({
               </Button>
             )}
             {state === 'playing' && (
-              <button
+              <Button
                 onClick={handlePause}
-                className="text-xs px-3 py-1 rounded-md bg-surface-muted hover:bg-surface-hover transition-colors"
-                aria-label="Pause demo"
+                size="sm"
+                variant="secondary"
               >
                 Pause
-              </button>
+              </Button>
             )}
             {(state === 'paused' || state === 'completed') && (
               <button
