@@ -403,7 +403,7 @@ export default function RunDetailsPage() {
               {run.docSyncResult && (
                 <div className="ml-9 pl-4 border-l-2 border-border-subtle space-y-2">
                   <div className={`text-sm font-medium ${
-                    run.docSyncResult.driftDetected ? 'text-red-600' : 'text-green-600'
+                    run.docSyncResult.driftDetected ? 'text-danger' : 'text-success'
                   }`}>
                     {run.docSyncResult.driftDetected ? 'Drift detected' : 'No drift detected'}
                   </div>
