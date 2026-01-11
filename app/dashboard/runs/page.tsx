@@ -183,15 +183,22 @@ export default function RunsPage() {
     return <Clock className="h-5 w-5 text-text-muted" />
   }
 
-  const getStatusColor = (status: Run['status'], conclusion?: Run['conclusion']) => {
-    if (status === 'running') return 'bg-blue-500/10 text-blue-600'
-    if (status === 'completed') {
-      if (conclusion === 'success') return 'bg-green-500/10 text-green-600'
-      if (conclusion === 'failure') return 'bg-red-500/10 text-red-600'
-      return 'bg-yellow-500/10 text-yellow-600'
+  const getStatusColorClasses = (status: Run['status'], conclusion?: Run['conclusion']) => {
+    const statusMap: Record<string, 'running' | 'success' | 'failed' | 'pending' | 'warning'> = {
+      'running': 'running',
+      'completed-success': 'success',
+      'completed-failure': 'failed',
+      'completed-partial': 'warning',
+      'failed': 'failed',
+      'pending': 'pending',
+      'cancelled': 'warning',
     }
-    if (status === 'failed') return 'bg-red-500/10 text-red-600'
-    return 'bg-gray-500/10 text-gray-600'
+
+    const key = status === 'completed' ? `completed-${conclusion || 'partial'}` : status
+    const mappedStatus = statusMap[key] || 'pending'
+    const colors = getRunStatusColor(mappedStatus)
+
+    return `${colors.bg} ${colors.text}`
   }
 
   return (
