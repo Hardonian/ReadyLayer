@@ -211,10 +211,10 @@ export default function FindingsPage() {
                         variant="outline"
                         className={
                           finding.status === 'resolved'
-                            ? 'bg-green-500/10 text-green-600'
+                            ? 'bg-success-muted text-success'
                             : finding.status === 'blocked'
-                              ? 'bg-red-500/10 text-red-600'
-                              : 'bg-yellow-500/10 text-yellow-600'
+                              ? 'bg-danger-muted text-danger'
+                              : 'bg-warning-muted text-warning'
                         }
                       >
                         {finding.status}
