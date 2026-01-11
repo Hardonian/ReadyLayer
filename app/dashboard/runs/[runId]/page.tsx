@@ -257,7 +257,7 @@ export default function RunDetailsPage() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">Gates</div>
-                <div className={`text-lg font-semibold ${run.gatesPassed ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`text-lg font-semibold ${run.gatesPassed ? 'text-success' : 'text-danger'}`}>
                   {run.gatesPassed ? 'Passed' : 'Failed'}
                 </div>
               </div>
