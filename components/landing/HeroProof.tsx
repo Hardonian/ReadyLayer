@@ -85,14 +85,14 @@ export function HeroProof({ user }: HeroProofProps) {
                   Full Transparency
                 </Badge>
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight mb-4 leading-tight">
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                   The default authority for
                 </span>
                 <br />
                 <span className="text-text-primary">AI-generated code safety</span>
               </h1>
-              <p className="text-xl text-text-muted max-w-xl mb-2">
+              <p className="text-base sm:text-lg lg:text-xl text-text-muted max-w-xl mb-2">
                 Deterministic governance gates. Every decision is signed, traceable, and defensible in audits.
               </p>
               <p className="text-sm text-text-muted max-w-xl">
