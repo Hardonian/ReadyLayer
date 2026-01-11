@@ -212,6 +212,7 @@ function getProviderTheme(provider: GitProvider): GitProviderTheme {
 
 /**
  * Get provider-specific status check badge style
+ * Uses semantic tokens for dark mode compatibility
  */
 export function getStatusCheckBadgeStyle(
   provider: GitProvider,
@@ -223,28 +224,28 @@ export function getStatusCheckBadgeStyle(
 } {
   const styles = {
     github: {
-      success: { className: 'bg-green-50 text-green-800 border-green-200', icon: '✓', color: '#1a7f37' },
-      failure: { className: 'bg-red-50 text-red-800 border-red-200', icon: '✗', color: '#cf222e' },
-      pending: { className: 'bg-yellow-50 text-yellow-800 border-yellow-200', icon: '○', color: '#9a6700' },
-      error: { className: 'bg-red-50 text-red-800 border-red-200', icon: '⚠', color: '#cf222e' },
+      success: { className: 'bg-success-muted text-success border-success/20', icon: '✓', color: '#1a7f37' },
+      failure: { className: 'bg-danger-muted text-danger border-danger/20', icon: '✗', color: '#cf222e' },
+      pending: { className: 'bg-warning-muted text-warning border-warning/20', icon: '○', color: '#9a6700' },
+      error: { className: 'bg-danger-muted text-danger border-danger/20', icon: '⚠', color: '#cf222e' },
     },
     gitlab: {
-      success: { className: 'bg-green-50 text-green-800 border-green-200', icon: '✓', color: '#108548' },
-      failure: { className: 'bg-red-50 text-red-800 border-red-200', icon: '✗', color: '#d01a1a' },
-      pending: { className: 'bg-yellow-50 text-yellow-800 border-yellow-200', icon: '○', color: '#c17a11' },
-      error: { className: 'bg-red-50 text-red-800 border-red-200', icon: '⚠', color: '#d01a1a' },
+      success: { className: 'bg-success-muted text-success border-success/20', icon: '✓', color: '#108548' },
+      failure: { className: 'bg-danger-muted text-danger border-danger/20', icon: '✗', color: '#d01a1a' },
+      pending: { className: 'bg-warning-muted text-warning border-warning/20', icon: '○', color: '#c17a11' },
+      error: { className: 'bg-danger-muted text-danger border-danger/20', icon: '⚠', color: '#d01a1a' },
     },
     bitbucket: {
-      success: { className: 'bg-green-50 text-green-800 border-green-200', icon: '✓', color: '#00875a' },
-      failure: { className: 'bg-red-50 text-red-800 border-red-200', icon: '✗', color: '#de350b' },
-      pending: { className: 'bg-yellow-50 text-yellow-800 border-yellow-200', icon: '○', color: '#ffab00' },
-      error: { className: 'bg-red-50 text-red-800 border-red-200', icon: '⚠', color: '#de350b' },
+      success: { className: 'bg-success-muted text-success border-success/20', icon: '✓', color: '#00875a' },
+      failure: { className: 'bg-danger-muted text-danger border-danger/20', icon: '✗', color: '#de350b' },
+      pending: { className: 'bg-warning-muted text-warning border-warning/20', icon: '○', color: '#ffab00' },
+      error: { className: 'bg-danger-muted text-danger border-danger/20', icon: '⚠', color: '#de350b' },
     },
     generic: {
-      success: { className: 'bg-green-50 text-green-800 border-green-200', icon: '✓', color: '#10b981' },
-      failure: { className: 'bg-red-50 text-red-800 border-red-200', icon: '✗', color: '#ef4444' },
-      pending: { className: 'bg-yellow-50 text-yellow-800 border-yellow-200', icon: '○', color: '#f59e0b' },
-      error: { className: 'bg-red-50 text-red-800 border-red-200', icon: '⚠', color: '#ef4444' },
+      success: { className: 'bg-success-muted text-success border-success/20', icon: '✓', color: '#10b981' },
+      failure: { className: 'bg-danger-muted text-danger border-danger/20', icon: '✗', color: '#ef4444' },
+      pending: { className: 'bg-warning-muted text-warning border-warning/20', icon: '○', color: '#f59e0b' },
+      error: { className: 'bg-danger-muted text-danger border-danger/20', icon: '⚠', color: '#ef4444' },
     },
   }
 
