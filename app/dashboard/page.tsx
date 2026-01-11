@@ -584,7 +584,7 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="bg-background/50 p-4 rounded-lg">
                       <div className="text-sm font-medium mb-1">Anomalies Detected</div>
-                      <div className="text-2xl font-bold text-purple-500">{aiOptimization.summary.totalAnomalies}</div>
+                      <div className="text-2xl font-bold text-accent">{aiOptimization.summary.totalAnomalies}</div>
                       <div className="text-xs text-muted-foreground mt-1">Drift, context slips, hallucinations</div>
                     </div>
                     <div className="bg-background/50 p-4 rounded-lg">
