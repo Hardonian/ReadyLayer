@@ -136,9 +136,9 @@ export function AISupportBot() {
                 </div>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   onClick={() => setIsOpen(false)}
-                  className="h-8 w-8 p-0"
+                  aria-label="Close chat"
                 >
                   <X className="h-4 w-4" />
                 </Button>
