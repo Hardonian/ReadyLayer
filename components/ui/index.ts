@@ -5,6 +5,7 @@
  */
 
 export { Button, buttonVariants } from './button'
+export { IconButton } from './icon-button'
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card'
 export { LoadingSpinner, LoadingState, Skeleton, SkeletonText, CardSkeleton } from './loading'
 export { EmptyState } from './empty-state'
