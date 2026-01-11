@@ -218,13 +218,7 @@ export default function LiveOpsConsolePage() {
                             <div className="font-medium text-sm">{finding.ruleId}</div>
                             <Badge
                               variant="outline"
-                              className={
-                                finding.severity === 'critical'
-                                  ? 'bg-red-500/10 text-red-600'
-                                  : finding.severity === 'high'
-                                    ? 'bg-orange-500/10 text-orange-600'
-                                    : 'bg-yellow-500/10 text-yellow-600'
-                              }
+                              className={getSeverityColor(finding.severity as any).badge}
                             >
                               {finding.severity}
                             </Badge>
