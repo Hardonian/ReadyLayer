@@ -60,7 +60,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn('text-2xl font-semibold leading-none tracking-tight', className)}
+    className={cn('text-xl font-semibold leading-snug tracking-tight', className)}
     {...props}
   />
 ))
@@ -72,18 +72,29 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('text-sm text-text-muted', className)}
+    className={cn('text-sm text-text-muted leading-relaxed', className)}
     {...props}
   />
 ))
 CardDescription.displayName = 'CardDescription'
 
+export interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  padding?: 'default' | 'compact' | 'none'
+}
+
 const CardContent = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('p-6 pt-0', className)} {...props} />
-))
+  CardContentProps
+>(({ className, padding = 'default', ...props }, ref) => {
+  const paddingClasses = {
+    default: 'p-6 pt-4',
+    compact: 'p-4 pt-2',
+    none: 'p-0',
+  }
+  return (
+    <div ref={ref} className={cn(paddingClasses[padding], className)} {...props} />
+  )
+})
 CardContent.displayName = 'CardContent'
 
 const CardFooter = React.forwardRef<
