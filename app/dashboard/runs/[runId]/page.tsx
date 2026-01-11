@@ -15,6 +15,7 @@ import {
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { fadeIn } from '@/lib/design/motion'
+import { getSeverityColor, type SeverityLevel } from '@/lib/utils/color-mapping'
 import { 
   CheckCircle2, 
   Clock,
