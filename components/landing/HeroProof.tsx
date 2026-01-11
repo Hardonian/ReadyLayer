@@ -170,11 +170,11 @@ export function HeroProof({ user }: HeroProofProps) {
                     <span className="text-text-muted">Merge Confidence Certificates</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="h-3.5 w-3.5 text-purple-500" />
+                    <BarChart3 className="h-3.5 w-3.5 text-accent" />
                     <span className="text-text-muted">Readiness Score™</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-3.5 w-3.5 text-blue-500" />
+                    <AlertTriangle className="h-3.5 w-3.5 text-info" />
                     <span className="text-text-muted">AI Risk Exposure Index™</span>
                   </div>
                   <div className="flex items-center gap-2">
