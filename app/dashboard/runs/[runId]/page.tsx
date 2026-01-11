@@ -371,7 +371,7 @@ export default function RunDetailsPage() {
                     </div>
                   )}
                   <div className={`text-sm font-medium ${
-                    run.testEngineResult.meetsThreshold ? 'text-green-600' : 'text-red-600'
+                    run.testEngineResult.meetsThreshold ? 'text-success' : 'text-danger'
                   }`}>
                     {run.testEngineResult.meetsThreshold ? 'Meets threshold' : 'Below threshold'}
                   </div>
