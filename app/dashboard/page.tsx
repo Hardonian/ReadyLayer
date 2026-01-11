@@ -589,7 +589,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="bg-background/50 p-4 rounded-lg">
                       <div className="text-sm font-medium mb-1">Token Waste</div>
-                      <div className="text-2xl font-bold text-orange-500">
+                      <div className="text-2xl font-bold text-warning">
                         {aiOptimization.tokenWaste?.wastePercentage.toFixed(1) || 0}%
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
