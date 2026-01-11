@@ -510,12 +510,12 @@ export default function DashboardPage() {
                     Per-repository readiness metric. Visible in PRs and dashboards.
                   </div>
                 </div>
-                <div className="bg-background/50 p-4 rounded-lg border border-blue-500/20">
+                <div className="bg-background/50 p-4 rounded-lg border border-info/20">
                   <div className="text-sm font-medium mb-1 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-blue-500" />
+                    <AlertTriangle className="h-4 w-4 text-info" />
                     AI Risk Exposure Index™
                   </div>
-                  <div className="text-2xl font-bold text-blue-500">
+                  <div className="text-2xl font-bold text-info">
                     {stats.totalRepos > 0 ? 'Calculating...' : 'N/A'}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
