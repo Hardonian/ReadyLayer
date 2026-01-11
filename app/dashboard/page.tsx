@@ -677,7 +677,7 @@ export default function DashboardPage() {
                                 <div className="font-medium text-sm">{mistake.ruleId}</div>
                                 <div className="text-xs text-muted-foreground mt-1">{mistake.suggestion}</div>
                               </div>
-                              <span className="text-xs font-semibold text-red-500">
+                              <span className="text-xs font-semibold text-danger">
                                 {mistake.count}x
                               </span>
                             </div>
