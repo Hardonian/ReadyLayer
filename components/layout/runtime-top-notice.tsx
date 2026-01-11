@@ -54,8 +54,7 @@ export function RuntimeTopNotice() {
           <Button
             type="button"
             variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
+            size="icon"
             onClick={() => {
               setDismissed(true)
               try {
@@ -73,4 +72,3 @@ export function RuntimeTopNotice() {
     </div>
   )
 }
-
