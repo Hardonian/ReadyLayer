@@ -484,7 +484,7 @@ export default function RunDetailsPage() {
                   return (
                     <div
                       key={idx}
-                      className={`p-4 border rounded-lg ${severityColors[finding.severity] || 'bg-surface-muted'}`}
+                      className={`p-4 border rounded-lg ${severityColor.bg} ${severityColor.text} ${severityColor.border}`}
                     >
                       <div className="flex items-start gap-3">
                         <Icon className="h-5 w-5 mt-0.5 flex-shrink-0" />
