@@ -400,10 +400,10 @@ export default function RunsPage() {
                           <div className="flex items-center gap-4 text-sm">
                             <div className="flex items-center gap-1">
                               <Shield className={`h-4 w-4 ${
-                                run.reviewGuardStatus === 'succeeded' ? 'text-green-500' :
-                                run.reviewGuardStatus === 'failed' ? 'text-red-500' :
-                                run.reviewGuardStatus === 'running' ? 'text-blue-500 animate-pulse' :
-                                'text-gray-400'
+                                run.reviewGuardStatus === 'succeeded' ? 'text-success' :
+                                run.reviewGuardStatus === 'failed' ? 'text-danger' :
+                                run.reviewGuardStatus === 'running' ? 'text-info animate-pulse' :
+                                'text-text-muted'
                               }`} />
                               <span className="text-muted-foreground">Review Guard</span>
                             </div>
