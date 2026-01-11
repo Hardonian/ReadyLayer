@@ -612,7 +612,7 @@ export default function DashboardPage() {
                   {aiOptimization.suggestions.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <Lightbulb className="h-5 w-5 text-yellow-500" />
+                        <Lightbulb className="h-5 w-5 text-warning" />
                         Top Optimization Suggestions
                       </h3>
                       <div className="space-y-3">
