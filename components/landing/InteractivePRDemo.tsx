@@ -351,7 +351,7 @@ export function InteractivePRDemo({
                 <Bot className="h-3 w-3" />
                 AI Detected
               </Badge>
-              <Badge variant="success" className="text-xs flex items-center gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+              <Badge className="text-xs flex items-center gap-1 bg-success-muted text-success border-success/20">
                 <CheckCircle2 className="h-3 w-3" />
                 ReadyLayer Verified™
               </Badge>
