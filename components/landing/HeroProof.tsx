@@ -66,7 +66,7 @@ export function HeroProof({ user }: HeroProofProps) {
       </div>
 
       <Container size="lg" className="relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left Side - Value Prop */}
           <motion.div
             className="space-y-8"
