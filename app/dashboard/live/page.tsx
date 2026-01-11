@@ -125,10 +125,10 @@ export default function LiveOpsConsolePage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Critical Findings</CardTitle>
-                <Shield className="h-4 w-4 text-red-500" />
+                <Shield className="h-4 w-4 text-danger" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-500">{metrics.kpis.criticalFindings}</div>
+                <div className="text-3xl font-bold text-danger">{metrics.kpis.criticalFindings}</div>
                 <p className="text-xs text-muted-foreground mt-1">Security & quality issues</p>
               </CardContent>
             </Card>
@@ -136,10 +136,10 @@ export default function LiveOpsConsolePage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">AI Risk Detections</CardTitle>
-                <GitBranch className="h-4 w-4 text-purple-500" />
+                <GitBranch className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-500">{metrics.kpis.aiRiskDetections}</div>
+                <div className="text-3xl font-bold text-accent">{metrics.kpis.aiRiskDetections}</div>
                 <p className="text-xs text-muted-foreground mt-1">AI-touched code detected</p>
               </CardContent>
             </Card>
