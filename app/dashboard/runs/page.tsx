@@ -16,6 +16,7 @@ import {
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
+import { getStatusColor as getRunStatusColor } from '@/lib/utils/color-mapping'
 import { 
   CheckCircle2, 
   AlertTriangle, 
