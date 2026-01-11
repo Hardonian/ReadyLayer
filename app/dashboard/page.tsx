@@ -16,6 +16,7 @@ import {
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
+import { getDifficultyColor, getImpactColor } from '@/lib/utils/color-mapping'
 import { 
   Shield, 
   CheckCircle2, 
