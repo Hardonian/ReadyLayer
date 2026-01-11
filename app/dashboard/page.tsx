@@ -536,11 +536,11 @@ export default function DashboardPage() {
 
         {/* AI Optimization Insights */}
         <motion.div variants={fadeIn}>
-          <Card className="bg-gradient-to-r from-purple-500/5 to-blue-500/5 border-purple-500/20">
+          <Card className="bg-gradient-to-r from-accent/5 to-info/5 border-accent/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-6 w-6 text-purple-500" />
+                  <Sparkles className="h-6 w-6 text-accent" />
                   <CardTitle>AI Optimization Insights</CardTitle>
                 </div>
                 <button
