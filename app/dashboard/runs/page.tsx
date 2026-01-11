@@ -426,7 +426,7 @@ export default function RunsPage() {
                               <span className="text-muted-foreground">Doc Sync</span>
                             </div>
                             {run.aiTouchedDetected && (
-                              <span className="text-xs px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded">
+                              <span className="text-xs px-2 py-0.5 bg-accent-muted text-accent rounded">
                                 AI-touched detected
                               </span>
                             )}
