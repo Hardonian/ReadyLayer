@@ -418,10 +418,10 @@ export default function RunsPage() {
                             </div>
                             <div className="flex items-center gap-1">
                               <FileText className={`h-4 w-4 ${
-                                run.docSyncStatus === 'succeeded' ? 'text-green-500' :
-                                run.docSyncStatus === 'failed' ? 'text-red-500' :
-                                run.docSyncStatus === 'running' ? 'text-blue-500 animate-pulse' :
-                                'text-gray-400'
+                                run.docSyncStatus === 'succeeded' ? 'text-success' :
+                                run.docSyncStatus === 'failed' ? 'text-danger' :
+                                run.docSyncStatus === 'running' ? 'text-info animate-pulse' :
+                                'text-text-muted'
                               }`} />
                               <span className="text-muted-foreground">Doc Sync</span>
                             </div>
