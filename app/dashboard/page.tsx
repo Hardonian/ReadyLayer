@@ -598,7 +598,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="bg-background/50 p-4 rounded-lg">
                       <div className="text-sm font-medium mb-1">Repeated Mistakes</div>
-                      <div className="text-2xl font-bold text-red-500">{aiOptimization.summary.repeatedMistakeCount}</div>
+                      <div className="text-2xl font-bold text-danger">{aiOptimization.summary.repeatedMistakeCount}</div>
                       <div className="text-xs text-muted-foreground mt-1">Patterns to address</div>
                     </div>
                     <div className="bg-background/50 p-4 rounded-lg">
