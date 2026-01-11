@@ -603,7 +603,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="bg-background/50 p-4 rounded-lg">
                       <div className="text-sm font-medium mb-1">Optimization Suggestions</div>
-                      <div className="text-2xl font-bold text-green-500">{aiOptimization.summary.suggestionCount}</div>
+                      <div className="text-2xl font-bold text-success">{aiOptimization.summary.suggestionCount}</div>
                       <div className="text-xs text-muted-foreground mt-1">Personalized recommendations</div>
                     </div>
                   </div>
