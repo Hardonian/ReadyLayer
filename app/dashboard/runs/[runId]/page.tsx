@@ -471,12 +471,7 @@ export default function RunDetailsPage() {
             <CardContent>
               <div className="space-y-3">
                 {run.findings.map((finding, idx) => {
-                  const severityColors = {
-                    critical: 'text-red-600 bg-red-50 border-red-200',
-                    high: 'text-orange-600 bg-orange-50 border-orange-200',
-                    medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-                    low: 'text-blue-600 bg-blue-50 border-blue-200',
-                  };
+                  const severityColor = getSeverityColor(finding.severity as SeverityLevel)
                   const severityIcons = {
                     critical: AlertCircle,
                     high: AlertTriangle,
@@ -484,6 +479,7 @@ export default function RunDetailsPage() {
                     low: Info,
                   };
                   const Icon = severityIcons[finding.severity] || Info;
+                  const severityClasses = `${severityColor.text} ${severityColor.bg} border-${severityColor.border.split('-')[1]}/20`;
                   
                   return (
                     <div
