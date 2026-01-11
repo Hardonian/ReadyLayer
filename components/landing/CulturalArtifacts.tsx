@@ -149,15 +149,15 @@ export function CulturalArtifacts() {
 
           {/* AI Risk Exposure Index */}
           <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-            <Card className="h-full border-blue-500/30 bg-gradient-to-br from-blue-500/5 to-transparent">
+            <Card className="h-full border-info/30 bg-gradient-to-br from-info/5 to-transparent">
               <CardHeader>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-blue-500/20">
-                    <AlertTriangle className="h-6 w-6 text-blue-500" />
+                  <div className="p-2 rounded-lg bg-info-muted">
+                    <AlertTriangle className="h-6 w-6 text-info" />
                   </div>
                   <CardTitle className="text-xl">AI Risk Exposure Index™</CardTitle>
                 </div>
-                <Badge variant="outline" className="w-fit border-blue-500/30 text-blue-600">
+                <Badge variant="outline" className="w-fit border-info/30 text-info">
                   Per Organization
                 </Badge>
               </CardHeader>
