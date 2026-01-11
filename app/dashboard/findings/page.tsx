@@ -76,16 +76,17 @@ export default function FindingsPage() {
   }
 
   const getSeverityBadgeColor = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-500/10 text-red-600 border-red-500/20'
-      case 'high':
-        return 'bg-orange-500/10 text-orange-600 border-orange-500/20'
-      case 'warn':
-        return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
-      default:
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+    const severityMap: Record<string, 'critical' | 'high' | 'warn' | 'info'> = {
+      'critical': 'critical',
+      'high': 'high',
+      'warn': 'warn',
+      'info': 'info',
+      'medium': 'warn',
+      'low': 'info',
     }
+    const sev = (severityMap[severity] || 'info') as any
+    const colors = getSeverityColor(sev)
+    return `${colors.bg} ${colors.text} border border-current/20`
   }
 
   return (
