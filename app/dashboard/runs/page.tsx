@@ -166,21 +166,21 @@ export default function RunsPage() {
 
   const getStatusIcon = (status: Run['status'], conclusion?: Run['conclusion']) => {
     if (status === 'running') {
-      return <Clock className="h-5 w-5 text-blue-500 animate-spin" />
+      return <Clock className="h-5 w-5 text-info animate-spin" />
     }
     if (status === 'completed') {
       if (conclusion === 'success') {
-        return <CheckCircle2 className="h-5 w-5 text-green-500" />
+        return <CheckCircle2 className="h-5 w-5 text-success" />
       }
       if (conclusion === 'failure') {
-        return <XCircle className="h-5 w-5 text-red-500" />
+        return <XCircle className="h-5 w-5 text-danger" />
       }
-      return <AlertTriangle className="h-5 w-5 text-yellow-500" />
+      return <AlertTriangle className="h-5 w-5 text-warning" />
     }
     if (status === 'failed') {
-      return <XCircle className="h-5 w-5 text-red-500" />
+      return <XCircle className="h-5 w-5 text-danger" />
     }
-    return <Clock className="h-5 w-5 text-gray-500" />
+    return <Clock className="h-5 w-5 text-text-muted" />
   }
 
   const getStatusColor = (status: Run['status'], conclusion?: Run['conclusion']) => {
