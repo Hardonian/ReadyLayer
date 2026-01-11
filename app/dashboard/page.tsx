@@ -633,10 +633,8 @@ export default function DashboardPage() {
                                   {suggestion.difficulty}
                                 </span>
                                 <span className={`text-xs px-2 py-1 rounded ${
-                                  suggestion.impact === 'high' ? 'bg-purple-500/20 text-purple-600' :
-                                  suggestion.impact === 'medium' ? 'bg-blue-500/20 text-blue-600' :
-                                  'bg-gray-500/20 text-gray-600'
-                                }`}>
+                                  getImpactColor(suggestion.impact as any).bg
+                                } ${getImpactColor(suggestion.impact as any).text}`}>
                                   {suggestion.impact} impact
                                 </span>
                               </div>
