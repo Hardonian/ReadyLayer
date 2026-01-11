@@ -118,7 +118,7 @@ export function CulturalArtifacts() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="text-center">
-                    <div className="text-5xl font-bold text-purple-500 mb-2">87</div>
+                    <div className="text-5xl font-bold text-accent mb-2">87</div>
                     <div className="text-sm text-text-muted">out of 100</div>
                     <Badge variant="success" className="mt-2">
                       <TrendingUp className="h-3 w-3 mr-1" />
