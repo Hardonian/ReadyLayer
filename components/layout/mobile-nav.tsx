@@ -8,14 +8,18 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { NavLink } from './nav-link'
+import type { NavItem } from '@/lib/navigation'
 
 interface MobileNavProps {
-  navItems: Array<{ href: string; label: string }>
+  navItems: NavItem[]
 }
 
 export function MobileNav({ navItems }: MobileNavProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const pathname = usePathname()
+  const menuRef = React.useRef<HTMLDivElement>(null)
+  const toggleButtonRef = React.useRef<HTMLButtonElement>(null)
 
   const toggleMenu = React.useCallback(() => {
     setIsOpen((prev) => !prev)
@@ -33,19 +37,81 @@ export function MobileNav({ navItems }: MobileNavProps) {
   // Prevent body scroll when menu is open
   React.useEffect(() => {
     if (isOpen) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
       document.body.style.overflow = 'hidden'
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`
+      }
     } else {
       document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
     }
+
     return () => {
       document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
     }
+  }, [isOpen])
+
+  // Handle ESC key to close menu
+  React.useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        closeMenu()
+        // Return focus to toggle button
+        toggleButtonRef.current?.focus()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen, closeMenu])
+
+  // Focus trap: trap focus within menu when open
+  React.useEffect(() => {
+    if (!isOpen || !menuRef.current) return
+
+    const focusableElements = menuRef.current.querySelectorAll<HTMLElement>(
+      'a, button, [tabindex]:not([tabindex="-1"])'
+    )
+
+    if (focusableElements.length === 0) return
+
+    const firstElement = focusableElements[0]
+    const lastElement = focusableElements[focusableElements.length - 1]
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+
+      if (e.shiftKey) {
+        // Shift + Tab
+        if (document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement.focus()
+        }
+      } else {
+        // Tab
+        if (document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement.focus()
+        }
+      }
+    }
+
+    menuRef.current.addEventListener('keydown', handleKeyDown)
+    // Auto-focus the first link when menu opens
+    firstElement.focus()
+
+    return () => menuRef.current?.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
   return (
     <div className="md:hidden">
       {/* Menu Toggle Button */}
       <Button
+        ref={toggleButtonRef}
         variant="ghost"
         size="icon"
         onClick={toggleMenu}
@@ -61,7 +127,7 @@ export function MobileNav({ navItems }: MobileNavProps) {
       </Button>
 
       {/* Mobile Menu Overlay */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isOpen && (
           <>
             {/* Backdrop */}
@@ -77,6 +143,7 @@ export function MobileNav({ navItems }: MobileNavProps) {
 
             {/* Menu Panel */}
             <motion.nav
+              ref={menuRef}
               id="mobile-nav-menu"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
@@ -88,7 +155,12 @@ export function MobileNav({ navItems }: MobileNavProps) {
             >
               {/* Menu Header */}
               <div className="flex items-center justify-between p-4 border-b border-border-subtle">
-                <Link href="/dashboard" className="flex items-center" aria-label="ReadyLayer Home">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center"
+                  aria-label="ReadyLayer Home"
+                  onClick={closeMenu}
+                >
                   <picture>
                     <source srcSet="/logo-header.webp" type="image/webp" />
                     <Image
@@ -113,27 +185,17 @@ export function MobileNav({ navItems }: MobileNavProps) {
 
               {/* Menu Items */}
               <div className="flex-1 overflow-y-auto py-4">
-                <ul className="space-y-1 px-2">
-                  {navItems.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          onClick={closeMenu}
-                          className={cn(
-                            'block px-4 py-3 rounded-lg text-sm font-medium transition-colors',
-                            isActive
-                              ? 'bg-accent text-accent-foreground'
-                              : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'
-                          )}
-                          aria-current={isActive ? 'page' : undefined}
-                        >
-                          {item.label}
-                        </Link>
-                      </li>
-                    )
-                  })}
+                <ul className="space-y-1 px-2 list-none">
+                  {navItems.map((item) => (
+                    <li key={item.href}>
+                      <NavLink
+                        href={item.href}
+                        label={item.label}
+                        onClick={closeMenu}
+                        variant="mobile"
+                      />
+                    </li>
+                  ))}
                 </ul>
               </div>
             </motion.nav>
