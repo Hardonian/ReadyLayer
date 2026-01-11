@@ -366,13 +366,13 @@ export function InteractivePRDemo({
           </div>
           <div className="flex items-center gap-2 mt-2">
             {state === 'idle' && (
-              <button
+              <Button
                 onClick={handlePlay}
-                className="text-xs px-3 py-1 rounded-md bg-accent text-accent-foreground hover:bg-accent-hover transition-colors"
-                aria-label="Play demo"
+                size="sm"
+                variant="default"
               >
                 Play
-              </button>
+              </Button>
             )}
             {state === 'playing' && (
               <button
