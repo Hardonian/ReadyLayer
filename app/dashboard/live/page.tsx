@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle, ErrorState, Skeleton } from '
 import { ConnectionStatusBadge } from '@/components/dashboard/connection-status'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
-import { 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle2, 
+import { getSeverityColor } from '@/lib/utils/color-mapping'
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
   Clock,
   Shield,
   GitBranch,
