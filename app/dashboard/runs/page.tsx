@@ -409,10 +409,10 @@ export default function RunsPage() {
                             </div>
                             <div className="flex items-center gap-1">
                               <TestTube className={`h-4 w-4 ${
-                                run.testEngineStatus === 'succeeded' ? 'text-green-500' :
-                                run.testEngineStatus === 'failed' ? 'text-red-500' :
-                                run.testEngineStatus === 'running' ? 'text-blue-500 animate-pulse' :
-                                'text-gray-400'
+                                run.testEngineStatus === 'succeeded' ? 'text-success' :
+                                run.testEngineStatus === 'failed' ? 'text-danger' :
+                                run.testEngineStatus === 'running' ? 'text-info animate-pulse' :
+                                'text-text-muted'
                               }`} />
                               <span className="text-muted-foreground">Test Engine</span>
                             </div>
