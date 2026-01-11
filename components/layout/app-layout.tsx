@@ -14,12 +14,15 @@ import { fadeIn } from '@/lib/design/motion'
 import { Github, LogOut } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from './mobile-nav'
+import { NavLink } from './nav-link'
 import { RuntimeTopNotice } from '@/components/layout/runtime-top-notice'
+import { NAV_ITEMS } from '@/lib/navigation'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [user, setUser] = React.useState<User | null>(null)
   const [loading, setLoading] = React.useState(true)
+  const [scrolled, setScrolled] = React.useState(false)
 
   React.useEffect(() => {
     const supabase = createSupabaseClient()
@@ -44,6 +47,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Track scroll position for nav shadow
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 0)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const handleSignOut = async () => {
     try {
       const supabase = createSupabaseClient()
@@ -56,19 +69,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/dashboard/live', label: 'Live Ops' },
-    { href: '/dashboard/prs', label: 'PRs' },
-    { href: '/dashboard/runs', label: 'Runs' },
-    { href: '/dashboard/findings', label: 'Findings' },
-    { href: '/dashboard/policies', label: 'Policies' },
-    { href: '/dashboard/audit', label: 'Audit' },
-    { href: '/dashboard/billing', label: 'Billing' },
-    { href: '/dashboard/settings', label: 'Settings' },
-    { href: '/help', label: 'Help' },
-  ]
-
   // Don't show nav on auth pages or landing page
   const showNav = !pathname?.startsWith('/auth') && pathname !== '/'
 
@@ -77,7 +77,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <RuntimeTopNotice />
       {showNav && (
         <motion.nav
-          className="border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60"
+          className={cn(
+            'sticky top-0 z-40 border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60 transition-shadow duration-300',
+            scrolled && 'shadow-surface-raised'
+          )}
           variants={fadeIn}
           initial="hidden"
           animate="visible"
@@ -85,9 +88,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           aria-label="Main navigation"
         >
           <Container>
-            <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center gap-8 flex-1">
-                <Link href="/dashboard" className="flex items-center" aria-label="ReadyLayer Home">
+            <div className="flex h-16 items-center justify-between gap-4">
+              {/* Logo and Desktop Nav */}
+              <div className="flex items-center gap-8 flex-1 min-w-0">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center flex-shrink-0"
+                  aria-label="ReadyLayer Home"
+                >
                   <picture>
                     <source srcSet="/logo-header.webp" type="image/webp" />
                     <Image
@@ -100,32 +108,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     />
                   </picture>
                 </Link>
-                <ul className="hidden md:flex items-center gap-6 list-none">
-                  {navItems.map((item) => (
+
+                {/* Desktop Navigation */}
+                <ul className="hidden md:flex items-center gap-1 list-none">
+                  {NAV_ITEMS.map((item) => (
                     <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          'text-sm font-medium transition-colors hover:text-text-primary',
-                          pathname === item.href
-                            ? 'text-text-primary'
-                            : 'text-text-muted'
-                        )}
-                        aria-current={pathname === item.href ? 'page' : undefined}
-                      >
-                        {item.label}
-                      </Link>
+                      <NavLink href={item.href} label={item.label} variant="desktop" />
                     </li>
                   ))}
                 </ul>
-                <MobileNav navItems={navItems} />
+
+                {/* Mobile Menu Toggle */}
+                <MobileNav navItems={NAV_ITEMS} />
               </div>
+
+              {/* Right Actions */}
               {!loading && (
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <ThemeToggle />
                   {user ? (
                     <>
-                      <span className="text-sm text-muted-foreground hidden sm:inline">
+                      <span className="text-sm text-text-muted hidden sm:inline truncate max-w-xs">
                         {user.user_metadata?.full_name || user.email}
                       </span>
                       <Button
@@ -133,12 +136,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         size="sm"
                         onClick={handleSignOut}
                         aria-label="Sign out"
+                        className="flex-shrink-0"
                       >
                         <LogOut className="h-4 w-4" />
                       </Button>
                     </>
                   ) : (
-                    <Button asChild variant="default" size="sm">
+                    <Button asChild variant="default" size="sm" className="flex-shrink-0">
                       <Link href="/auth/signin">
                         <Github className="h-4 w-4 mr-2" />
                         Sign in
