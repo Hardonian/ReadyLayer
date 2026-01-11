@@ -216,12 +216,14 @@ export default function LiveOpsConsolePage() {
                         >
                           <div className="flex items-start justify-between mb-1">
                             <div className="font-medium text-sm">{finding.ruleId}</div>
-                            <Badge
-                              variant="outline"
-                              className={getSeverityColor(finding.severity as any).badge}
-                            >
-                              {finding.severity}
-                            </Badge>
+                            {(() => {
+                              const colors = getSeverityColor(finding.severity as SeverityLevel)
+                              return (
+                                <Badge className={`${colors.bg} ${colors.text}`}>
+                                  {finding.severity}
+                                </Badge>
+                              )
+                            })()}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {finding.repositoryName} • {finding.file}:{finding.line}
