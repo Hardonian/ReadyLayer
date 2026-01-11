@@ -17,27 +17,27 @@ export function ConnectionStatusBadge({ status, lastEventTime }: ConnectionStatu
         return {
           icon: Wifi,
           label: 'Connected',
-          className: 'bg-green-500/10 text-green-600 border-green-500/20',
+          className: 'bg-success-muted text-success border-success/20',
         }
       case 'connecting':
       case 'reconnecting':
         return {
           icon: Loader2,
           label: status === 'connecting' ? 'Connecting...' : 'Reconnecting...',
-          className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+          className: 'bg-warning-muted text-warning border-warning/20',
           spinning: true,
         }
       case 'error':
         return {
           icon: WifiOff,
           label: 'Connection Error',
-          className: 'bg-red-500/10 text-red-600 border-red-500/20',
+          className: 'bg-danger-muted text-danger border-danger/20',
         }
       default:
         return {
           icon: WifiOff,
           label: 'Disconnected',
-          className: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+          className: 'bg-surface-muted text-text-muted border-border/20',
         }
     }
   }
