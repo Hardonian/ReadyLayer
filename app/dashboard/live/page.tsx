@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, ErrorState, Skeleton } from '
 import { ConnectionStatusBadge } from '@/components/dashboard/connection-status'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
-import { getSeverityColor } from '@/lib/utils/color-mapping'
+import { getSeverityColor, type SeverityLevel } from '@/lib/utils/color-mapping'
 import {
   Activity,
   AlertTriangle,
