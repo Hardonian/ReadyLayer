@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
 import { AlertTriangle, Shield, CheckCircle2, XCircle, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { getSeverityColor } from '@/lib/utils/color-mapping'
 import Link from 'next/link'
 
 export default function FindingsPage() {
