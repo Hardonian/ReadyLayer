@@ -42,16 +42,27 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 )
 Card.displayName = 'Card'
 
+export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  padding?: 'default' | 'compact' | 'none'
+}
+
 const CardHeader = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn('flex flex-col space-y-1.5 p-6', className)}
-    {...props}
-  />
-))
+  CardHeaderProps
+>(({ className, padding = 'default', ...props }, ref) => {
+  const paddingClasses = {
+    default: 'p-6',
+    compact: 'p-4',
+    none: 'p-0',
+  }
+  return (
+    <div
+      ref={ref}
+      className={cn('flex flex-col space-y-1.5', paddingClasses[padding], className)}
+      {...props}
+    />
+  )
+})
 CardHeader.displayName = 'CardHeader'
 
 const CardTitle = React.forwardRef<
