@@ -445,14 +445,14 @@ export default function RunDetailsPage() {
 
         {/* Policy Gates */}
         {run.gatesFailed && run.gatesFailed.length > 0 && (
-          <Card className="border-red-500/20">
+          <Card className="border-danger/20">
             <CardHeader>
-              <CardTitle className="text-red-600">Policy Gates Failed</CardTitle>
+              <CardTitle className="text-danger">Policy Gates Failed</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {run.gatesFailed.map((gate, idx) => (
-                  <div key={idx} className="p-3 bg-red-500/10 border border-red-500/20 rounded">
+                  <div key={idx} className="p-3 bg-danger-muted border border-danger/20 rounded">
                     <div className="font-medium">{gate.gate}</div>
                     <div className="text-sm text-muted-foreground">{gate.reason}</div>
                   </div>
