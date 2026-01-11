@@ -12,6 +12,7 @@ import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion';
+import { getImpactColor } from '@/lib/utils/color-mapping';
 import {
   Award,
   TrendingUp,
