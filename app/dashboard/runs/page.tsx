@@ -438,11 +438,11 @@ export default function RunsPage() {
                             {run.status}
                           </span>
                           {run.gatesPassed ? (
-                            <span className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-600">
+                            <span className="text-xs px-2 py-1 rounded bg-success-muted text-success">
                               Gates passed
                             </span>
                           ) : (
-                            <span className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-600">
+                            <span className="text-xs px-2 py-1 rounded bg-danger-muted text-danger">
                               Gates failed
                             </span>
                           )}
