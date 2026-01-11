@@ -321,7 +321,7 @@ export default function RunDetailsPage() {
                     </div>
                   )}
                   {run.reviewGuardResult.isBlocked && (
-                    <div className="text-sm text-red-600 font-medium">
+                    <div className="text-sm text-danger font-medium">
                       PR blocked due to policy violations
                     </div>
                   )}
