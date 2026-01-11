@@ -384,13 +384,13 @@ export function InteractivePRDemo({
               </Button>
             )}
             {(state === 'paused' || state === 'completed') && (
-              <button
+              <Button
                 onClick={handleReset}
-                className="text-xs px-3 py-1 rounded-md bg-surface-muted hover:bg-surface-hover transition-colors"
-                aria-label="Reset demo"
+                size="sm"
+                variant="secondary"
               >
                 Reset
-              </button>
+              </Button>
             )}
           </div>
         </CardHeader>
