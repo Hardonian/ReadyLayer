@@ -197,15 +197,15 @@ export default function RunDetailsPage() {
   const getStageStatus = (status: string) => {
     switch (status) {
       case 'succeeded':
-        return { icon: CheckCircle2, color: 'text-green-500', label: 'Succeeded' }
+        return { icon: CheckCircle2, color: 'text-success', label: 'Succeeded' }
       case 'failed':
-        return { icon: XCircle, color: 'text-red-500', label: 'Failed' }
+        return { icon: XCircle, color: 'text-danger', label: 'Failed' }
       case 'running':
-        return { icon: Clock, color: 'text-blue-500', label: 'Running' }
+        return { icon: Clock, color: 'text-info', label: 'Running' }
       case 'skipped':
-        return { icon: Clock, color: 'text-gray-400', label: 'Skipped' }
+        return { icon: Clock, color: 'text-text-muted', label: 'Skipped' }
       default:
-        return { icon: Clock, color: 'text-gray-400', label: 'Pending' }
+        return { icon: Clock, color: 'text-text-muted', label: 'Pending' }
     }
   }
 
