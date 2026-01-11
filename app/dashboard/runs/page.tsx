@@ -434,7 +434,7 @@ export default function RunsPage() {
                         </div>
 
                         <div className="flex flex-col items-end gap-2">
-                          <span className={`text-xs px-2 py-1 rounded ${getStatusColor(run.status, run.conclusion)}`}>
+                          <span className={`text-xs px-2 py-1 rounded ${getStatusColorClasses(run.status, run.conclusion)}`}>
                             {run.status}
                           </span>
                           {run.gatesPassed ? (
