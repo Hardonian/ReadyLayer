@@ -167,11 +167,11 @@ export default function LiveOpsConsolePage() {
                     >
                       <div className="flex items-center gap-3">
                         {run.status === 'running' ? (
-                          <Clock className="h-4 w-4 text-blue-500 animate-spin" />
+                          <Clock className="h-4 w-4 text-info animate-spin" />
                         ) : run.status === 'completed' && run.conclusion === 'success' ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <CheckCircle2 className="h-4 w-4 text-success" />
                         ) : (
-                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                          <AlertTriangle className="h-4 w-4 text-danger" />
                         )}
                         <div>
                           <div className="font-medium text-sm">
