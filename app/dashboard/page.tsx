@@ -628,10 +628,8 @@ export default function DashboardPage() {
                               </div>
                               <div className="flex flex-col items-end gap-1">
                                 <span className={`text-xs px-2 py-1 rounded ${
-                                  suggestion.difficulty === 'easy' ? 'bg-green-500/20 text-green-600' :
-                                  suggestion.difficulty === 'intermediate' ? 'bg-yellow-500/20 text-yellow-600' :
-                                  'bg-red-500/20 text-red-600'
-                                }`}>
+                                  getDifficultyColor(suggestion.difficulty as any).bg
+                                } ${getDifficultyColor(suggestion.difficulty as any).text}`}>
                                   {suggestion.difficulty}
                                 </span>
                                 <span className={`text-xs px-2 py-1 rounded ${
