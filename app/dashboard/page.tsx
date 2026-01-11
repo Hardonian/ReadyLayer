@@ -663,7 +663,7 @@ export default function DashboardPage() {
                   {aiOptimization.repeatedMistakes.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5 text-red-500" />
+                        <AlertCircle className="h-5 w-5 text-danger" />
                         Repeated Mistakes
                       </h3>
                       <div className="space-y-2">
