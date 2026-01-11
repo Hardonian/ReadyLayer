@@ -103,15 +103,15 @@ export function CulturalArtifacts() {
 
           {/* Readiness Score */}
           <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-            <Card className="h-full border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-transparent">
+            <Card className="h-full border-accent/30 bg-gradient-to-br from-accent/5 to-transparent">
               <CardHeader>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-purple-500/20">
-                    <BarChart3 className="h-6 w-6 text-purple-500" />
+                  <div className="p-2 rounded-lg bg-accent-muted">
+                    <BarChart3 className="h-6 w-6 text-accent" />
                   </div>
                   <CardTitle className="text-xl">Readiness Score™</CardTitle>
                 </div>
-                <Badge variant="outline" className="w-fit border-purple-500/30 text-purple-600">
+                <Badge variant="outline" className="w-fit border-accent/30 text-accent">
                   Per Repository
                 </Badge>
               </CardHeader>
