@@ -51,15 +51,27 @@ export default function FindingsPage() {
   }
 
   const getSeverityIcon = (severity: string) => {
+    const severityMap: Record<string, 'critical' | 'high' | 'warn' | 'info'> = {
+      'critical': 'critical',
+      'high': 'high',
+      'warn': 'warn',
+      'info': 'info',
+      'medium': 'warn',
+      'low': 'info',
+    }
+    const sev = (severityMap[severity] || 'info') as any
+    const colors = getSeverityColor(sev)
+    const iconClass = colors.icon
+
     switch (severity) {
       case 'critical':
-        return <XCircle className="h-4 w-4 text-red-500" />
+        return <XCircle className={`h-4 w-4 ${iconClass}`} />
       case 'high':
-        return <AlertTriangle className="h-4 w-4 text-orange-500" />
+        return <AlertTriangle className={`h-4 w-4 ${iconClass}`} />
       case 'warn':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+        return <AlertTriangle className={`h-4 w-4 ${iconClass}`} />
       default:
-        return <Info className="h-4 w-4 text-blue-500" />
+        return <Info className={`h-4 w-4 ${iconClass}`} />
     }
   }
 
