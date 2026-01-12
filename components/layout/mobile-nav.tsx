@@ -5,7 +5,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { NavLink } from './nav-link'
@@ -71,9 +70,10 @@ export function MobileNav({ navItems }: MobileNavProps) {
 
   // Focus trap: trap focus within menu when open
   React.useEffect(() => {
-    if (!isOpen || !menuRef.current) return
+    const menuNode = menuRef.current
+    if (!isOpen || !menuNode) return
 
-    const focusableElements = menuRef.current.querySelectorAll<HTMLElement>(
+    const focusableElements = menuNode.querySelectorAll<HTMLElement>(
       'a, button, [tabindex]:not([tabindex="-1"])'
     )
 
@@ -100,11 +100,11 @@ export function MobileNav({ navItems }: MobileNavProps) {
       }
     }
 
-    menuRef.current.addEventListener('keydown', handleKeyDown)
+    menuNode.addEventListener('keydown', handleKeyDown)
     // Auto-focus the first link when menu opens
     firstElement.focus()
 
-    return () => menuRef.current?.removeEventListener('keydown', handleKeyDown)
+    return () => menuNode.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
 
   return (

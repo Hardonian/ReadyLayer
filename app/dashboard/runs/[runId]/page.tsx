@@ -479,7 +479,6 @@ export default function RunDetailsPage() {
                     low: Info,
                   };
                   const Icon = severityIcons[finding.severity] || Info;
-                  const severityClasses = `${severityColor.text} ${severityColor.bg} border-${severityColor.border.split('-')[1]}/20`;
                   
                   return (
                     <div

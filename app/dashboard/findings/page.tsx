@@ -10,7 +10,7 @@ import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
 import { AlertTriangle, Shield, CheckCircle2, XCircle, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { getSeverityColor } from '@/lib/utils/color-mapping'
+import { getSeverityColor, type SeverityLevel } from '@/lib/utils/color-mapping'
 import Link from 'next/link'
 
 export default function FindingsPage() {
@@ -50,17 +50,26 @@ export default function FindingsPage() {
     )
   }
 
-  const getSeverityIcon = (severity: string) => {
-    const severityMap: Record<string, 'critical' | 'high' | 'warn' | 'info'> = {
-      'critical': 'critical',
-      'high': 'high',
-      'warn': 'warn',
-      'info': 'info',
-      'medium': 'warn',
-      'low': 'info',
+  const normalizeSeverity = (severity: string): SeverityLevel => {
+    switch (severity) {
+      case 'critical':
+        return 'critical'
+      case 'high':
+        return 'high'
+      case 'warn':
+        return 'warn'
+      case 'medium':
+        return 'medium'
+      case 'low':
+        return 'low'
+      case 'info':
+      default:
+        return 'info'
     }
-    const sev = (severityMap[severity] || 'info') as any
-    const colors = getSeverityColor(sev)
+  }
+
+  const getSeverityIcon = (severity: string) => {
+    const colors = getSeverityColor(normalizeSeverity(severity))
     const iconClass = colors.icon
 
     switch (severity) {
@@ -76,16 +85,7 @@ export default function FindingsPage() {
   }
 
   const getSeverityBadgeColor = (severity: string) => {
-    const severityMap: Record<string, 'critical' | 'high' | 'warn' | 'info'> = {
-      'critical': 'critical',
-      'high': 'high',
-      'warn': 'warn',
-      'info': 'info',
-      'medium': 'warn',
-      'low': 'info',
-    }
-    const sev = (severityMap[severity] || 'info') as any
-    const colors = getSeverityColor(sev)
+    const colors = getSeverityColor(normalizeSeverity(severity))
     return `${colors.bg} ${colors.text} border border-current/20`
   }
 

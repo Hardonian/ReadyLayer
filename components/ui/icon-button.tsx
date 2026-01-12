@@ -19,7 +19,7 @@ import { Button, type ButtonProps } from './button'
 export const IconButton = React.forwardRef<
   HTMLButtonElement,
   Omit<ButtonProps, 'size'> & { size?: 'sm' | 'default' | 'lg' }
->(({ className, size = 'default', children, ...props }, ref) => (
+>(({ className, size: _size = 'default', children, ...props }, ref) => (
   <Button
     ref={ref}
     size="icon"
