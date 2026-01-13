@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ReadyLayer — Enforcement-first code review for AI-assisted teams</title>
+    <meta
+      name="description"
+      content="ReadyLayer blocks risky pull requests with deterministic security checks, test coverage enforcement, and doc sync."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="hero-content">
+        <span class="eyebrow">Open-core enforcement platform</span>
+        <h1>Enforcement-first code review for AI-assisted teams.</h1>
+        <p>
+          ReadyLayer blocks risky pull requests before they ship by enforcing security checks,
+          test coverage, and documentation accuracy.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#try">Try free locally</a>
+          <a class="button" href="#demo">Run the sandbox demo</a>
+        </div>
+        <p class="caption">Free tier is deterministic and runs without AI keys.</p>
+      </div>
+      <div class="hero-media">
+        <img
+          src="assets/readylayer-home.svg"
+          alt="ReadyLayer home and pipeline overview"
+        />
+      </div>
+    </header>
+
+    <main>
+      <section class="section" id="proof">
+        <h2>Real product screenshots</h2>
+        <div class="grid">
+          <figure>
+            <img
+              src="assets/readylayer-home.svg"
+              alt="ReadyLayer landing and pipeline overview"
+            />
+            <figcaption>Pipeline overview with enforcement stages.</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="assets/readylayer-run.svg"
+              alt="ReadyLayer run detail view"
+            />
+            <figcaption>Run details with policy gates and audit trail.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="how">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li>
+            <strong>Review Guard:</strong> deterministic security checks with blocking policies.
+          </li>
+          <li>
+            <strong>Test Engine:</strong> coverage enforcement for AI-touched files.
+          </li>
+          <li>
+            <strong>Doc Sync:</strong> prevents documentation drift on API changes.
+          </li>
+        </ol>
+      </section>
+
+      <section class="section" id="tiers">
+        <h2>Free vs paid</h2>
+        <div class="tiers">
+          <div class="card">
+            <h3>Free (deterministic)</h3>
+            <ul>
+              <li>Security and policy enforcement</li>
+              <li>Coverage enforcement</li>
+              <li>Documentation drift blocking</li>
+              <li>Sandbox demo with seeded data</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Paid (AI-assisted)</h3>
+            <ul>
+              <li>AI review suggestions</li>
+              <li>AI-generated tests and docs</li>
+              <li>Prioritized remediation guidance</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="try">
+        <h2>Try it locally</h2>
+        <div class="code-block">
+          <code>npm install</code>
+          <code>cp .env.example .env</code>
+          <code>npm run db:reconcile</code>
+          <code>npm run dev</code>
+        </div>
+        <p id="demo">
+          Launch the sandbox demo at <code>/dashboard/runs/sandbox</code> once the app is running.
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>ReadyLayer • Open-core enforcement platform</p>
+      <a href="https://github.com/readylayer/readylayer#readme">Read the README</a>
+    </footer>
+  </body>
+</html>

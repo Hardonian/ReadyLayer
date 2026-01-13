@@ -10,7 +10,7 @@ import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
 import { AlertTriangle, Shield, CheckCircle2, XCircle, Info } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { getSeverityColor } from '@/lib/utils/color-mapping'
+import { getSeverityColor, type SeverityLevel } from '@/lib/utils/color-mapping'
 import Link from 'next/link'
 
 export default function FindingsPage() {
@@ -50,16 +50,20 @@ export default function FindingsPage() {
     )
   }
 
-  const getSeverityIcon = (severity: string) => {
-    const severityMap: Record<string, 'critical' | 'high' | 'warn' | 'info'> = {
-      'critical': 'critical',
-      'high': 'high',
-      'warn': 'warn',
-      'info': 'info',
-      'medium': 'warn',
-      'low': 'info',
+  const normalizeSeverity = (severity: string): SeverityLevel => {
+    const severityMap: Record<string, SeverityLevel> = {
+      critical: 'critical',
+      high: 'high',
+      warn: 'warn',
+      info: 'info',
+      medium: 'warn',
+      low: 'info',
     }
-    const sev = (severityMap[severity] || 'info') as any
+    return severityMap[severity] || 'info'
+  }
+
+  const getSeverityIcon = (severity: string) => {
+    const sev = normalizeSeverity(severity)
     const colors = getSeverityColor(sev)
     const iconClass = colors.icon
 
@@ -76,15 +80,7 @@ export default function FindingsPage() {
   }
 
   const getSeverityBadgeColor = (severity: string) => {
-    const severityMap: Record<string, 'critical' | 'high' | 'warn' | 'info'> = {
-      'critical': 'critical',
-      'high': 'high',
-      'warn': 'warn',
-      'info': 'info',
-      'medium': 'warn',
-      'low': 'info',
-    }
-    const sev = (severityMap[severity] || 'info') as any
+    const sev = normalizeSeverity(severity)
     const colors = getSeverityColor(sev)
     return `${colors.bg} ${colors.text} border border-current/20`
   }
