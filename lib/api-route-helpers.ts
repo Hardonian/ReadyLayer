@@ -170,10 +170,17 @@ export async function createRouteContext(
       },
     };
   } catch (error) {
-    if (error instanceof Error && error.message === 'UNAUTHORIZED') {
+    // Handle typed auth errors
+    if (error instanceof UnauthorizedError) {
       return {
         success: false,
-        response: errorResponse(ErrorCodes.UNAUTHORIZED, 'Authentication required', 401),
+        response: errorResponse(error.error.code, error.error.message, 401, error.error.context),
+      };
+    }
+    if (error instanceof ForbiddenError) {
+      return {
+        success: false,
+        response: errorResponse(error.error.code, error.error.message, 403, error.error.context),
       };
     }
     log.error(error, 'Failed to create route context');
