@@ -16,6 +16,20 @@ export { Badge, badgeVariants } from './badge'
 export { MetricsCard, ChartCard } from './metrics-card'
 export { Toaster } from './toaster'
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
+export {
+  Dialog,
+  Modal,
+  DialogTrigger,
+  DialogPortal,
+  DialogClose,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalDescription,
+  ModalFooter,
+  ModalCloseButton,
+} from './modal'
 export { Input } from './input'
 export { Textarea } from './textarea'
 export { useToast, toast } from '@/lib/hooks/use-toast'
