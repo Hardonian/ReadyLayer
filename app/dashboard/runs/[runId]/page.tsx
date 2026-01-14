@@ -237,6 +237,29 @@ export default function RunDetailsPage() {
           </div>
         </div>
 
+        {/* Blocked PR Alert - Show if PR was blocked */}
+        {run.conclusion === 'failure' && run.reviewGuardResult?.isBlocked && (
+          <motion.div variants={fadeIn}>
+            <BlockedPRAlert
+              prNumber={run.prNumber || 0}
+              prTitle={run.prTitle}
+              repositoryName={run.repository?.name}
+              issues={run.reviewGuardResult?.issues?.map((issue: Finding) => ({
+                severity: issue.severity,
+                ruleId: issue.ruleId,
+                message: issue.message,
+                file: issue.file,
+                line: issue.line,
+                fix: issue.fix,
+              })) || []}
+              onViewDetails={() => {
+                // Scroll to findings section
+                document.getElementById('findings-section')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            />
+          </motion.div>
+        )}
+
         {/* Run Overview */}
         <Card>
           <CardHeader>
