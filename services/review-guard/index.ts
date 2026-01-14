@@ -279,6 +279,11 @@ export class ReviewGuardService {
         policy.pack.checksum
       );
 
+      // Determine review status based on enrichment jobs
+      const hasEnrichmentJobs = enrichmentJobIds.length > 0;
+      const reviewStatus = hasEnrichmentJobs ? 'pending-enrichment' : 'completed';
+      const reviewCompletedAt = hasEnrichmentJobs ? undefined : completedAt;
+
       // Save review result
       const review = await prisma.review.create({
         data: {
@@ -286,7 +291,7 @@ export class ReviewGuardService {
           prNumber: request.prNumber,
           prSha: request.prSha,
           prTitle: request.prTitle,
-          status: isBlocked ? 'blocked' : 'completed',
+          status: isBlocked ? 'blocked' : reviewStatus,
           result: {
             issues: evaluationResult.nonWaivedFindings,
             waivedIssues: evaluationResult.waivedFindings,
@@ -302,9 +307,22 @@ export class ReviewGuardService {
           isBlocked,
           blockedReason,
           startedAt,
-          completedAt,
+          completedAt: reviewCompletedAt,
+          metadata: {
+            enrichmentJobIds,
+            enrichmentStatus: hasEnrichmentJobs ? 'pending' : 'completed',
+            totalFiles: filesToReview.length,
+          } as any,
         },
       });
+
+      // Update enrichment jobs with review ID
+      if (enrichmentJobIds.length > 0) {
+        logger.info(
+          { reviewId: review.id, jobCount: enrichmentJobIds.length },
+          'Review created with async enrichment jobs'
+        );
+      }
 
       // Produce evidence bundle
       const timings = {
