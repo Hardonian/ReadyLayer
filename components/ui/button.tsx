@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
-import { motion } from 'framer-motion'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 import { scalePress } from '@/lib/design/motion'
@@ -34,7 +34,10 @@ const buttonVariants = cva(
 )
 
 export interface ButtonProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 'onDrag' | 'onDragStart' | 'onDragEnd'>,
+  extends Omit<
+    HTMLMotionProps<'button'>,
+    'onAnimationStart' | 'onDrag' | 'onDragStart' | 'onDragEnd' | 'ref'
+  >,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
 }
@@ -59,8 +62,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         initial="rest"
         whileHover="rest"
         whileTap="pressed"
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {...(props as any)}
+        {...props}
       />
     )
   }
