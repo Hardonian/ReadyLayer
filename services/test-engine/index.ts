@@ -13,6 +13,8 @@ import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../li
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
+import { enqueueTestExecutionJob, processTestExecutionJob } from '../../workers/test-executor-worker';
+import { logger } from '../../observability/logging';
 
 export interface TestGenerationRequest {
   repositoryId: string;
