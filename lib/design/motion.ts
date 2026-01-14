@@ -136,11 +136,55 @@ export const staggerItem: Variants = {
 
 /**
  * Respect reduced motion preferences
+ * Use in components that check prefers-reduced-motion media query
  */
 export const reducedMotionVariants: Variants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
     transition: { duration: 0 },
   },
+}
+
+/**
+ * Get motion configuration respecting user preferences
+ * Returns transitions and durations that respect prefers-reduced-motion
+ *
+ * USAGE:
+ * ```typescript
+ * import { getMotionConfig } from '@/lib/design/motion'
+ *
+ * export function MyComponent() {
+ *   const motion = getMotionConfig()
+ *
+ *   return (
+ *     <motion.div
+ *       initial={{ opacity: 0 }}
+ *       animate={{ opacity: 1 }}
+ *       transition={{ duration: motion.transitionDuration }}
+ *     >
+ *       Content
+ *     </motion.div>
+ *   )
+ * }
+ * ```
+ */
+export function getMotionConfig() {
+  // Check if user prefers reduced motion
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  return {
+    // Return 0 if reduced motion is preferred, otherwise standard duration
+    transitionDuration: prefersReducedMotion ? 0 : motionDurations.transition,
+    microDuration: prefersReducedMotion ? 0 : motionDurations.micro,
+    pageDuration: prefersReducedMotion ? 0 : motionDurations.page,
+
+    // Easing is still applied (doesn't hurt with 0 duration)
+    standardEasing: motionEasing.standard,
+
+    // Disabled all animations flag
+    shouldReduceMotion: prefersReducedMotion,
+  }
 }
