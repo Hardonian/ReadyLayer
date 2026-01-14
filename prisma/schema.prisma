@@ -494,6 +494,7 @@ model AuditLog {
   @@index([resourceType])
   @@index([createdAt])
   @@index([runId])
+  @@index([governanceRunId])
   @@index([hash])
   @@index([previousHash])
 }
