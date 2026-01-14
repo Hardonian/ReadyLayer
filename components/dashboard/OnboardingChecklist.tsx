@@ -45,15 +45,48 @@ export function OnboardingChecklist({
   const progress = (completedCount / localItems.length) * 100
   const isFullyComplete = completedCount === localItems.length
 
+  // Track onboarding start on first render
+  useEffect(() => {
+    trackOnboardingEvent('started', undefined, {
+      totalSteps: items.length,
+    })
+  }, [items.length])
+
+  // Track completion status changes
   useEffect(() => {
     if (isFullyComplete && onComplete) {
+      trackOnboardingEvent('completed', undefined, {
+        totalSteps: items.length,
+        completedSteps: completedCount,
+      })
       onComplete()
     }
-  }, [isFullyComplete, onComplete])
+  }, [isFullyComplete, onComplete, items.length, completedCount])
+
+  // Track step completion
+  useEffect(() => {
+    const completedItems = localItems.filter((item) => item.completed)
+    if (completedItems.length > 0) {
+      const lastCompleted = completedItems[completedItems.length - 1]
+      trackOnboardingEvent('step-completed', lastCompleted.title, {
+        stepIndex: items.findIndex((item) => item.id === lastCompleted.id) + 1,
+        totalSteps: items.length,
+        progress: Math.round(progress),
+      })
+    }
+  }, [localItems, items, progress])
 
   const handleItemClick = (itemId: string) => {
     if (onItemClick) {
       onItemClick(itemId)
+    }
+    const clickedItem = items.find((item) => item.id === itemId)
+    if (clickedItem) {
+      trackOnboardingEvent('step-completed', clickedItem.title, {
+        stepIndex: items.findIndex((item) => item.id === itemId) + 1,
+        totalSteps: items.length,
+        progress: Math.round(progress),
+      })
     }
     setExpandedItem(expandedItem === itemId ? null : itemId)
   }
