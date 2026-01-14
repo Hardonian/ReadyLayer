@@ -256,3 +256,174 @@ export function canCancelTestRun(status: TestRunStatus): boolean {
 export function canRetryTestRun(status: TestRunStatus): boolean {
   return status === 'failed' || status === 'error'
 }
+
+/**
+ * Test Execution Results
+ * Details about how a test was executed
+ */
+export const TestExecutionResultSchema = z.object({
+  runId: z.string().uuid(),
+  filePath: z.string(),
+  framework: z.enum(['jest', 'mocha', 'pytest', 'vitest', 'other']),
+  status: z.enum(['passed', 'failed', 'timeout']),
+  testsPassed: z.number().int().min(0),
+  testsFailed: z.number().int().min(0),
+  totalTests: z.number().int().min(0),
+  durationMs: z.number().int().min(0),
+  meetsThreshold: z.boolean().describe('Coverage meets minimum threshold'),
+  error: z.string().optional().describe('Error message if execution failed'),
+  completedAt: z.coerce.date(),
+})
+
+export type TestExecutionResult = z.infer<typeof TestExecutionResultSchema>
+
+/**
+ * Coverage Metrics (detailed)
+ */
+export const CoverageMetricsSchema = z.object({
+  lines: z.object({
+    total: z.number().int().min(0),
+    covered: z.number().int().min(0),
+    percentage: z.number().min(0).max(100),
+  }),
+  branches: z.object({
+    total: z.number().int().min(0),
+    covered: z.number().int().min(0),
+    percentage: z.number().min(0).max(100),
+  }),
+  functions: z.object({
+    total: z.number().int().min(0),
+    covered: z.number().int().min(0),
+    percentage: z.number().min(0).max(100),
+  }),
+  statements: z.object({
+    total: z.number().int().min(0),
+    covered: z.number().int().min(0),
+    percentage: z.number().min(0).max(100),
+  }),
+})
+
+export type CoverageMetrics = z.infer<typeof CoverageMetricsSchema>
+
+/**
+ * File-level coverage
+ */
+export const FileCoverageSchema = z.object({
+  file: z.string().describe('File path relative to repo root'),
+  metrics: CoverageMetricsSchema,
+  delta: z.object({
+    lines: z.number().int().optional(),
+    branches: z.number().int().optional(),
+    functions: z.number().int().optional(),
+    statements: z.number().int().optional(),
+  }).optional(),
+})
+
+export type FileCoverage = z.infer<typeof FileCoverageSchema>
+
+/**
+ * Test Execution Request (for workers/background jobs)
+ */
+export const TestExecutionRequestSchema = z.object({
+  runId: z.string().uuid(),
+  repositoryId: z.string(),
+  organizationId: z.string().uuid(),
+  filePath: z.string(),
+  testContent: z.string().describe('Generated or provided test code'),
+  sourceCode: z.string().describe('Source code being tested'),
+  framework: z.enum(['jest', 'mocha', 'pytest', 'vitest', 'other']),
+  coverageThreshold: z.number().int().min(0).max(100).default(80),
+  timeoutMs: z.number().int().min(100).default(30000),
+})
+
+export type TestExecutionRequest = z.infer<typeof TestExecutionRequestSchema>
+
+/**
+ * Test Execution Status (for job tracking)
+ */
+export const TestExecutionStatusSchema = z.enum([
+  'queued',        // Waiting in queue
+  'processing',    // Currently executing
+  'completed',     // Successfully finished
+  'failed',        // Failed to execute
+  'timeout',       // Execution timeout
+])
+
+export type TestExecutionStatus = z.infer<typeof TestExecutionStatusSchema>
+
+/**
+ * Test Execution Job (for job queue)
+ */
+export const TestExecutionJobSchema = z.object({
+  id: z.string().describe('Unique job ID'),
+  runId: z.string().uuid(),
+  repositoryId: z.string(),
+  organizationId: z.string().uuid(),
+  status: TestExecutionStatusSchema,
+  result: TestExecutionResultSchema.optional(),
+  createdAt: z.coerce.date(),
+  startedAt: z.coerce.date().optional(),
+  completedAt: z.coerce.date().optional(),
+  retryCount: z.number().int().min(0).default(0),
+  maxRetries: z.number().int().min(0).default(3),
+})
+
+export type TestExecutionJob = z.infer<typeof TestExecutionJobSchema>
+
+/**
+ * Batch Test Execution (multiple files)
+ */
+export const BatchTestExecutionSchema = z.object({
+  runId: z.string().uuid(),
+  repositoryId: z.string(),
+  organizationId: z.string().uuid(),
+  jobs: z.array(TestExecutionJobSchema),
+  status: z.enum(['pending', 'running', 'completed', 'partial_failure']),
+  summary: z.object({
+    totalJobs: z.number().int(),
+    completedJobs: z.number().int(),
+    failedJobs: z.number().int(),
+    successRate: z.number().min(0).max(100),
+    totalDurationMs: z.number().int(),
+  }),
+  overallCoverage: CoverageMetricsSchema.optional(),
+  completedAt: z.coerce.date().optional(),
+})
+
+export type BatchTestExecution = z.infer<typeof BatchTestExecutionSchema>
+
+/**
+ * Coverage metrics helper functions
+ */
+export function calculateOverallCoverage(fileCoverages: FileCoverage[]): CoverageMetrics {
+  if (fileCoverages.length === 0) {
+    return {
+      lines: { total: 0, covered: 0, percentage: 0 },
+      branches: { total: 0, covered: 0, percentage: 0 },
+      functions: { total: 0, covered: 0, percentage: 0 },
+      statements: { total: 0, covered: 0, percentage: 0 },
+    };
+  }
+
+  const aggregate = (key: 'lines' | 'branches' | 'functions' | 'statements') => {
+    const total = fileCoverages.reduce((sum, fc) => sum + (fc.metrics[key]?.total || 0), 0);
+    const covered = fileCoverages.reduce((sum, fc) => sum + (fc.metrics[key]?.covered || 0), 0);
+    const percentage = total > 0 ? (covered / total) * 100 : 0;
+    return { total, covered, percentage };
+  };
+
+  return {
+    lines: aggregate('lines'),
+    branches: aggregate('branches'),
+    functions: aggregate('functions'),
+    statements: aggregate('statements'),
+  };
+}
+
+export function isCoverageAboveThreshold(
+  coverage: CoverageMetrics,
+  threshold: number,
+  metric: 'lines' | 'branches' | 'functions' | 'statements' = 'lines'
+): boolean {
+  return coverage[metric]?.percentage >= threshold;
+}
