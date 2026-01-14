@@ -102,9 +102,25 @@ export function UpgradePrompt({
   const config = contextConfig[context]
   const Icon = config.icon
 
+  // Track when prompt is shown
+  useEffect(() => {
+    if (show && !isDismissed) {
+      trackUpgradePromptEvent('shown', context, {
+        compact,
+        ...data,
+      })
+    }
+  }, [show, isDismissed, context, compact, data])
+
   const handleDismiss = () => {
     setIsDismissed(true)
+    trackUpgradePromptEvent('dismissed', context, { data })
     onDismiss?.()
+  }
+
+  const handleUpgradeClick = () => {
+    trackUpgradePromptEvent('clicked-upgrade', context, { data })
+    onUpgradeClick?.()
   }
 
   const displayText = (text: string) => {
