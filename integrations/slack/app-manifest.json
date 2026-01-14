@@ -1,0 +1,82 @@
+{
+  "_metadata": {
+    "major_version": 1,
+    "minor_version": 1
+  },
+  "display_information": {
+    "name": "ReadyLayer",
+    "description": "Code review and compliance automation",
+    "background_color": "#2c3e50",
+    "long_description": "ReadyLayer brings AI-powered code review and compliance enforcement to your development workflow. Get instant feedback on security, policy violations, and code quality."
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "ReadyLayer",
+      "always_online": true
+    },
+    "slash_commands": [
+      {
+        "command": "/readylayer",
+        "url": "https://readylayer.io/api/webhooks/slack/commands",
+        "description": "Interact with ReadyLayer from Slack",
+        "should_escape": false
+      },
+      {
+        "command": "/readylayer-status",
+        "url": "https://readylayer.io/api/webhooks/slack/status",
+        "description": "Check your PR review status",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "redirect_urls": [
+      "https://readylayer.io/integrations/slack/install/callback"
+    ],
+    "scopes": {
+      "bot": [
+        "channels:read",
+        "chat:write",
+        "chat:write.public",
+        "commands",
+        "files:read",
+        "groups:read",
+        "im:read",
+        "mpim:read",
+        "reactions:read",
+        "reactions:write",
+        "team:read",
+        "users:read",
+        "workflow.steps:execute",
+        "incoming-webhook",
+        "webhooks"
+      ],
+      "user": [
+        "channels:read",
+        "users:read"
+      ]
+    }
+  },
+  "settings": {
+    "org_deploy_enabled": true,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false,
+    "event_subscriptions": {
+      "bot_events": [
+        "app_mention",
+        "message.channels",
+        "message.groups",
+        "message.im",
+        "message.mpim",
+        "slash_commands",
+        "shortcut",
+        "team_domain_change"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://readylayer.io/api/webhooks/slack/interactions"
+    },
+    "org_deploy_enabled": true
+  }
+}
