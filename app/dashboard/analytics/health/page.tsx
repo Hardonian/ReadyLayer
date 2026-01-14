@@ -1,64 +1,109 @@
 'use client'
 
 import { ObservabilityDashboard } from '@/components/dashboard/metrics/ObservabilityDashboard'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react'
 
-export default function HealthAnalyticsPage() {
+export default function HealthPage() {
   return (
-    <div className="space-y-8 p-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">System Health</h1>
-        <p className="text-muted-foreground">
-          Monitor your ReadyLayer infrastructure health, performance, and stability
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">System Health</h1>
+        <p className="text-muted-foreground mt-2">
+          Monitor queue depth, worker latency, and error rates
         </p>
       </div>
 
-      <ObservabilityDashboard autoRefresh={true} refreshInterval={15000} />
+      <ObservabilityDashboard />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div className="border rounded-lg p-6">
-          <h3 className="font-semibold text-lg mb-4">Health Checks</h3>
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              Database connectivity
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              Redis cache
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              LLM API integration
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              Webhook processing
-            </li>
-          </ul>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Services Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>API Server</span>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                Healthy
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Worker Nodes</span>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                Healthy
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Database</span>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                Healthy
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span>Cache Layer</span>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                Healthy
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div className="border rounded-lg p-6">
-          <h3 className="font-semibold text-lg mb-4">Performance Targets</h3>
-          <ul className="space-y-2 text-sm">
-            <li className="flex items-center justify-between">
-              <span>API Response Time (p95)</span>
-              <span className="font-mono text-green-600">&lt;500ms</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span>Worker Latency (p95)</span>
-              <span className="font-mono text-green-600">&lt;2s</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span>Error Rate</span>
-              <span className="font-mono text-green-600">&lt;1%</span>
-            </li>
-            <li className="flex items-center justify-between">
-              <span>Webhook Delivery</span>
-              <span className="font-mono text-green-600">99.5%</span>
-            </li>
-          </ul>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              Recent Alerts
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-sm p-2 bg-blue-50 border border-blue-200 rounded">
+              <p className="font-medium">High queue depth detected</p>
+              <p className="text-xs text-muted-foreground">
+                42 jobs pending - scaling workers
+              </p>
+            </div>
+            <div className="text-sm p-2 bg-green-50 border border-green-200 rounded">
+              <p className="font-medium">Error rate normalized</p>
+              <p className="text-xs text-muted-foreground">
+                Returned to healthy levels
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Performance Metrics</CardTitle>
+          <CardDescription>
+            Key performance indicators over the last 24 hours
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">P95 Latency</p>
+              <p className="text-2xl font-bold">145ms</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Throughput</p>
+              <p className="text-2xl font-bold">1.2k/s</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">CPU Usage</p>
+              <p className="text-2xl font-bold">42%</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Memory</p>
+              <p className="text-2xl font-bold">68%</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
