@@ -225,7 +225,15 @@ export function createRouteHandler(
     } catch (error) {
       log.error(error, 'Route handler error');
 
-      // Handle known error types
+      // Handle typed auth/permission errors first (highest priority)
+      if (error instanceof UnauthorizedError) {
+        return errorResponse(error.error.code, error.error.message, 401, error.error.context);
+      }
+      if (error instanceof ForbiddenError) {
+        return errorResponse(error.error.code, error.error.message, 403, error.error.context);
+      }
+
+      // Handle generic ApiErrorResponse (includes all typed errors)
       if (error instanceof ApiErrorResponse) {
         return errorResponse(error.error.code, error.error.message, error.statusCode, error.error.context);
       }
@@ -245,7 +253,7 @@ export function createRouteHandler(
         );
       }
 
-      // Handle Prisma errors
+      // Handle Prisma errors (common database scenarios)
       if (error && typeof error === 'object' && 'code' in error) {
         const prismaError = error as { code: string; meta?: unknown };
         if (prismaError.code === 'P2002') {
@@ -254,9 +262,16 @@ export function createRouteHandler(
         if (prismaError.code === 'P2025') {
           return errorResponse(ErrorCodes.NOT_FOUND, 'Record not found', 404);
         }
+        // Other Prisma errors are database errors
+        return errorResponse(
+          ErrorCodes.DATABASE_ERROR,
+          'Database operation failed',
+          500,
+          process.env.NODE_ENV === 'development' ? { prismaCode: prismaError.code } : undefined
+        );
       }
 
-      // Generic error
+      // Generic error fallback
       return errorResponse(
         'INTERNAL_ERROR',
         error instanceof Error ? error.message : 'An unexpected error occurred',
