@@ -36,6 +36,7 @@ import { usePersona } from '@/lib/hooks/use-persona'
 import { PersonaBadge } from '@/components/persona'
 import { useRefetch, CACHE_KEYS } from '@/lib/hooks/use-refetch'
 import { UsageLimitBanner, UsageStats } from '@/components/ui/usage-limit-banner'
+import { UpgradePrompt } from '@/components/billing/UpgradePrompt'
 
 interface Repository {
   id: string
