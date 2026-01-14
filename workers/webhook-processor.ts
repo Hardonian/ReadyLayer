@@ -152,21 +152,22 @@ async function processWebhookEvent(rawPayload: unknown): Promise<void> {
  * Process PR opened/updated event
  */
 async function processPREvent(
-  repository: any,
-  pr: any,
+  event: ReturnType<typeof isWebhookPROpened> extends true ? Parameters<typeof isWebhookPROpened>[0] : ReturnType<typeof isWebhookPRUpdated> extends true ? Parameters<typeof isWebhookPRUpdated>[0] : never,
   accessToken: string,
-  log: any,
+  log: ReturnType<typeof logger.child>,
   requestId?: string
 ): Promise<void> {
   const traceId = requestId || `webhook_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-  log.info({ prNumber: pr.number, requestId: traceId }, 'Processing PR event');
+  log.info({ prNumber: event.pr.number, requestId: traceId }, 'Processing PR event');
+
+  const { repository, pr } = event;
 
   // Get provider-specific adapter
   const detectedProvider = detectGitProvider({
     provider: repository.provider,
-    url: repository.url || undefined,
+    url: repository.url,
   });
-  // Cast 'generic' to adapter type (adapter doesn't support generic)
+  // Map detected provider to adapter type
   const provider = (detectedProvider === 'generic' ? 'github' : detectedProvider) as 'github' | 'gitlab' | 'bitbucket';
   const prAdapter = getGitProviderPRAdapter(provider);
 
@@ -192,7 +193,7 @@ async function processPREvent(
       const content = await prAdapter.getFileContent(
         repository.fullName,
         file.filename,
-        pr.sha,
+        pr.head.sha,
         accessToken
       );
       files.push({
@@ -206,8 +207,8 @@ async function processPREvent(
   }
 
   // Check billing limits before processing review
-  const repo = await prisma.repository.findUnique({
-    where: { id: repository.id },
+  const repoRecord = await prisma.repository.findUnique({
+    where: { id: String(repository.id) },
     select: { organizationId: true },
   });
 
