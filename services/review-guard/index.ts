@@ -144,41 +144,53 @@ export class ReviewGuardService {
       const diffIssues = await this.analyzeDiffForLargeRefactors(filesToReview);
       allIssues.push(...diffIssues);
 
+      // Get organization ID once (needed for enrichment queueing)
+      const initialRepo = await prisma.repository.findUnique({
+        where: { id: request.repositoryId },
+        select: { organizationId: true },
+      });
+      const initialOrgId = initialRepo?.organizationId || '';
+
+      // Track enrichment job IDs for async processing
+      const enrichmentJobIds: string[] = [];
+
       for (const file of filesToReview) {
         try {
-          // Static analysis (includes founder-specific rules)
+          // Static analysis (includes founder-specific rules) - SYNCHRONOUS, FAST
           const staticIssues = await staticAnalysisService.analyze(file.path, file.content);
           allIssues.push(...staticIssues);
 
-          // AI analysis (if LLM available)
+          // AI analysis - ASYNCHRONOUS, NON-BLOCKING
+          // Queue LLM enrichment as background job instead of blocking
           try {
-            // Get organization ID from repository
-            const repo = await prisma.repository.findUnique({
-              where: { id: request.repositoryId },
-              select: { organizationId: true },
-            });
-            const organizationId = repo?.organizationId || '';
-            
-            const aiIssues = await this.analyzeWithAI(
-              file.path,
-              file.content,
-              request.repositoryId,
-              organizationId
-            );
-            allIssues.push(...aiIssues);
+            // Check if LLM is enabled for this organization
+            if (isQueryEnabled(initialOrgId)) {
+              // Queue async LLM enrichment
+              const jobId = await enqueueLLMEnrichment(
+                '', // Will be set after review is created
+                request.repositoryId,
+                initialOrgId,
+                file.path,
+                file.content,
+                staticIssues
+              );
+              enrichmentJobIds.push(jobId);
+
+              logger.debug(
+                { repositoryId: request.repositoryId, filePath: file.path, jobId },
+                'LLM enrichment job queued'
+              );
+            }
           } catch (error) {
-            // Handle usage limit errors with clear messaging
+            // Handle usage limit errors - these should still throw
             if (error instanceof UsageLimitExceededError) {
-              // Re-throw as-is to preserve error type and HTTP status
               throw error;
             }
-            
-            // LLM failure MUST block PR (enforcement-first)
-            throw new Error(
-              `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
-              `This PR is BLOCKED until analysis completes. ` +
-              `Cause: LLM API unavailable. ` +
-              `Action: Retry in 60 seconds or contact support@readylayer.com`
+
+            // For other errors during queueing, log but don't block
+            logger.warn(
+              { repositoryId: request.repositoryId, filePath: file.path, error },
+              'Failed to queue LLM enrichment, continuing with static analysis'
             );
           }
         } catch (error) {
