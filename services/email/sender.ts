@@ -61,7 +61,7 @@ export class EmailService {
 
       switch (this.provider) {
         case 'sendgrid':
-          return await this.sendViasendGrid(message, id);
+          return await this.sendViaSendGrid(message, id);
         case 'postmark':
           return await this.sendViaPostmark(message, id);
         case 'smtp':
