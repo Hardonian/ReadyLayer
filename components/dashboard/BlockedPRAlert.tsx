@@ -236,7 +236,7 @@ export function BlockedPRAlert({
 
             {/* Actions */}
             <div className="flex gap-2 flex-wrap pt-2 border-t">
-              <Button onClick={onViewDetails} size="sm" className="gap-1">
+              <Button onClick={handleViewDetails} size="sm" className="gap-1">
                 <Eye className="h-4 w-4" />
                 View Full Report
               </Button>
