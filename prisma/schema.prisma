@@ -475,6 +475,7 @@ model AuditLog {
   signature      String?
   metadata       Json?
   actorIp        String?
+  governanceRunId String?
 
   createdAt      DateTime @default(now())
 
@@ -482,6 +483,7 @@ model AuditLog {
   user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   run          ReadyLayerRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
   runId        String?
+  governanceRun GovernanceRun? @relation("GovernanceRunAuditLogs", fields: [governanceRunId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([userId])
