@@ -152,7 +152,7 @@ async function processWebhookEvent(rawPayload: unknown): Promise<void> {
  * Process PR opened/updated event
  */
 async function processPREvent(
-  event: ReturnType<typeof isWebhookPROpened> extends true ? Parameters<typeof isWebhookPROpened>[0] : ReturnType<typeof isWebhookPRUpdated> extends true ? Parameters<typeof isWebhookPRUpdated>[0] : never,
+  event: import('../lib/contracts/webhooks').WebhookPROpened | import('../lib/contracts/webhooks').WebhookPRUpdated,
   accessToken: string,
   log: ReturnType<typeof logger.child>,
   requestId?: string
