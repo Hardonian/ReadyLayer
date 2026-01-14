@@ -359,19 +359,19 @@ export async function authenticate() {
       const realWorldCode = `
 const config = {
   stripe: {
-    publishable: 'pk_live_abc123',
-    secret: 'sk_live_abcdefghijklmnopqrstuvwx',
+    publishable: 'pk_test_STRIPE_PUBLISHABLE_TEST_KEY_123',
+    secret: 'sk_test_STRIPE_SECRET_TEST_KEY_PLACEHOLDER',
   },
   database: {
-    url: 'postgresql://admin:SuperSecret123@db.example.com:5432/production',
+    url: 'postgresql://admin:TEST_PASSWORD_PLACEHOLDER@db.example.com:5432/production',
   },
   aws: {
-    accessKeyId: 'AKIAIOSFODNN7EXAMPLE',
-    secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+    accessKeyId: 'AKIA_TEST_ACCESS_KEY_PLACEHOLDER_1234',
+    secretAccessKey: 'TEST_AWS_SECRET_KEY_PLACEHOLDER_TESTING_123',
   },
   api: {
-    openai: 'sk-proj-1234567890abcdefghijklmnopqrst',
-    github: 'ghp_1234567890abcdefghijklmnopqrstuvwxyz',
+    openai: 'sk_test_OPENAI_TEST_KEY_PLACEHOLDER_12345',
+    github: 'ghp_TEST_GITHUB_TOKEN_PLACEHOLDER_123456',
   },
 };
 
@@ -390,9 +390,9 @@ export function setupServices() {
 
       // Verify redacted code is safe
       expect(isRedactedSafe(result.redacted)).toBe(true);
-      expect(result.redacted).not.toContain('sk_live_');
-      expect(result.redacted).not.toContain('wJalrXUtnFEMI');
-      expect(result.redacted).not.toContain('SuperSecret123');
+      expect(result.redacted).not.toContain('sk_test_STRIPE');
+      expect(result.redacted).not.toContain('TEST_AWS_SECRET');
+      expect(result.redacted).not.toContain('TEST_PASSWORD');
 
       // Verify code structure is preserved
       expect(result.redacted).toContain('const config = {');
