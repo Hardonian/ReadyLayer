@@ -212,12 +212,12 @@ async function processPREvent(
     select: { organizationId: true },
   });
 
-  if (!repo) {
+  if (!repoRecord) {
     throw new Error(`Repository ${repository.id} not found`);
   }
 
   // Check billing limits (this will throw if exceeded, which is caught below)
-  const billingCheck = await checkBillingLimits(repo.organizationId, {
+  const billingCheck = await checkBillingLimits(repoRecord.organizationId, {
     requireFeature: 'reviewGuard',
     checkLLMBudget: true,
   });
@@ -226,15 +226,15 @@ async function processPREvent(
     try {
       await prAdapter.createOrUpdateCheckRun(
         repository.fullName,
-        pr.sha,
+        pr.head.sha,
         {
           name: 'ReadyLayer Report',
-          head_sha: pr.sha,
+          head_sha: pr.head.sha,
           status: 'completed',
           conclusion: 'action_required',
           output: {
             title: 'Billing limit exceeded',
-            summary: '?? Billing limit exceeded - please upgrade',
+            summary: '⚠️ Billing limit exceeded - please upgrade',
           },
         },
         accessToken
@@ -243,7 +243,7 @@ async function processPREvent(
       log.error({ error }, 'Failed to create check run for billing error');
       // Degrade gracefully - don't crash worker
     }
-    throw new Error(`Billing limit exceeded for organization ${repo.organizationId}`);
+    throw new Error(`Billing limit exceeded for organization ${repoRecord.organizationId}`);
   }
 
   // Execute ReadyLayer Run (Review Guard → Test Engine → Doc Sync)
