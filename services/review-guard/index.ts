@@ -17,6 +17,8 @@ import { UsageLimitExceededError } from '../../lib/usage-enforcement';
 import { selfLearningService } from '../self-learning';
 import { predictiveDetectionService } from '../predictive-detection';
 import { failureIntelligenceService } from '../failure-intelligence';
+import { enqueueLLMEnrichment } from './async-processor';
+import { logger } from '../../observability/logging';
 
 export interface ReviewRequest {
   repositoryId: string;
