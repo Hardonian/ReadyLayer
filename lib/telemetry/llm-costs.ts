@@ -1,394 +1,394 @@
 /**
- * LLM Cost Tracking Service
+ * LLM Costs Tracking
  * 
- * Tracks all LLM API calls and embeddings costs by organization.
- * Used for billing, budget enforcement, and cost analytics.
+ * Tracks all LLM API calls, tokens used, and costs by organization.
+ * Supports multiple LLM providers (OpenAI, Claude, etc.)
  */
 
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/observability/logging';
-import { metrics } from '@/observability/metrics';
+import { logger } from '../observability/logging';
+import { metrics } from '../observability/metrics';
 
-export interface LLMCostEntry {
-  organizationId: string;
-  modelName: string;
+export type LLMProvider = 'openai' | 'anthropic' | 'cohere' | 'huggingface';
+
+export interface LLMCallMetrics {
+  provider: LLMProvider;
+  model: string;
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
   costUSD: number;
+  requestDurationMs: number;
   timestamp: Date;
-  requestId?: string;
-  metadata?: Record<string, any>;
+  success: boolean;
+  cacheHit?: boolean;
+  embeddingTokens?: number;
+}
+
+export interface LLMCostsData {
+  organizationId: string;
+  totalCalls: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalEmbeddingTokens: number;
+  totalCostUSD: number;
+  costsByProvider: Record<LLMProvider, number>;
+  costsByModel: Record<string, number>;
+  cacheHitRate: number;
+  averageRequestDuration: number;
+  lastUpdated: Date;
+}
+
+interface LLMCostEntry {
+  organizationId: string;
+  calls: LLMCallMetrics[];
+  lastUpdated: Date;
 }
 
 /**
- * Pricing tiers for different models (in USD per 1K tokens)
+ * In-memory cost tracking (should be persisted to database)
  */
-const MODEL_PRICING = {
-  'gpt-4-turbo': {
-    input: 0.01,     // $0.01 per 1K input tokens
-    output: 0.03,    // $0.03 per 1K output tokens
+const costTracker = new Map<string, LLMCostEntry>();
+
+/**
+ * Pricing for different LLM models (in USD per 1K tokens)
+ */
+const LLM_PRICING: Record<LLMProvider, Record<string, { input: number; output: number }>> = {
+  openai: {
+    'gpt-4': { input: 0.03, output: 0.06 },
+    'gpt-4-turbo': { input: 0.01, output: 0.03 },
+    'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
+    'text-embedding-ada-002': { input: 0.0001, output: 0 },
+    'text-embedding-3-small': { input: 0.00002, output: 0 },
+    'text-embedding-3-large': { input: 0.00013, output: 0 },
   },
-  'gpt-4': {
-    input: 0.03,
-    output: 0.06,
+  anthropic: {
+    'claude-3-opus': { input: 0.015, output: 0.075 },
+    'claude-3-sonnet': { input: 0.003, output: 0.015 },
+    'claude-3-haiku': { input: 0.00025, output: 0.00125 },
+    'claude-2': { input: 0.008, output: 0.024 },
   },
-  'gpt-3.5-turbo': {
-    input: 0.0005,
-    output: 0.0015,
+  cohere: {
+    'command': { input: 0.000125, output: 0.000375 },
+    'command-light': { input: 0.00003, output: 0.0001 },
+    'command-nightly': { input: 0.0003, output: 0.0015 },
   },
-  'claude-3-opus': {
-    input: 0.015,
-    output: 0.075,
-  },
-  'claude-3-sonnet': {
-    input: 0.003,
-    output: 0.015,
-  },
-  'claude-3-haiku': {
-    input: 0.00025,
-    output: 0.00125,
-  },
-  'embedding-3-small': {
-    input: 0.00002,   // Embeddings are cheaper
-    output: 0.00002,
+  huggingface: {
+    'default': { input: 0, output: 0 }, // HuggingFace pricing varies
   },
 };
 
 /**
- * Calculate cost for LLM API call
+ * Track an LLM API call
  */
-export function calculateLLMCost(
-  modelName: string,
-  inputTokens: number,
-  outputTokens: number
-): number {
-  const pricing = MODEL_PRICING[modelName as keyof typeof MODEL_PRICING];
-
-  if (!pricing) {
-    logger.warn({ modelName }, 'Unknown model for cost calculation');
-    return 0;
-  }
-
-  const inputCost = (inputTokens / 1000) * pricing.input;
-  const outputCost = (outputTokens / 1000) * pricing.output;
-
-  return inputCost + outputCost;
-}
-
-/**
- * Track LLM API call cost
- */
-export async function trackLLMCost(entry: LLMCostEntry): Promise<void> {
+export function trackLLMCall(
+  organizationId: string,
+  metrics_: LLMCallMetrics
+): void {
   try {
-    // Validate cost calculation
-    if (entry.costUSD < 0) {
-      logger.warn({ entry }, 'Negative cost detected, skipping');
-      return;
+    // Get or create entry for organization
+    if (!costTracker.has(organizationId)) {
+      costTracker.set(organizationId, {
+        organizationId,
+        calls: [],
+        lastUpdated: new Date(),
+      });
     }
 
-    // Record in database for audit trail
-    await prisma.llmCostLog.create({
-      data: {
-        organizationId: entry.organizationId,
-        modelName: entry.modelName,
-        inputTokens: entry.inputTokens,
-        outputTokens: entry.outputTokens,
-        totalTokens: entry.totalTokens,
-        costUSD: entry.costUSD,
-        requestId: entry.requestId,
-        metadata: entry.metadata,
-        timestamp: entry.timestamp,
-      },
-    });
-
-    // Update organization's monthly spend
-    await updateOrganizationMonthlySpend(entry.organizationId, entry.costUSD);
-
-    // Record metrics
-    metrics.recordHistogram('llm_cost_usd', entry.costUSD, {
-      model: entry.modelName,
-    });
-
-    metrics.recordHistogram('llm_tokens', entry.totalTokens, {
-      model: entry.modelName,
-    });
+    const entry = costTracker.get(organizationId)!;
+    entry.calls.push(metrics_);
+    entry.lastUpdated = new Date();
 
     logger.debug(
       {
-        organizationId: entry.organizationId,
-        model: entry.modelName,
-        cost: entry.costUSD,
-        tokens: entry.totalTokens,
+        organizationId,
+        provider: metrics_.provider,
+        model: metrics_.model,
+        inputTokens: metrics_.inputTokens,
+        outputTokens: metrics_.outputTokens,
+        costUSD: metrics_.costUSD,
       },
-      'LLM cost tracked'
+      'LLM call tracked'
     );
+
+    // Record metrics
+    metrics.increment('llm_call', {
+      provider: metrics_.provider,
+      model: metrics_.model,
+      success: metrics_.success ? 'true' : 'false',
+    });
+
+    metrics.increment('llm_input_tokens', {
+      amount: metrics_.inputTokens.toString(),
+    });
+
+    metrics.increment('llm_output_tokens', {
+      amount: metrics_.outputTokens.toString(),
+    });
+
+    metrics.timing('llm_request_duration_ms', metrics_.requestDurationMs, {
+      provider: metrics_.provider,
+    });
+
+    // Track costs if successful
+    if (metrics_.success) {
+      metrics.increment('llm_cost_usd', {
+        amount: metrics_.costUSD.toFixed(4),
+      });
+    }
+
+    // Track cache hits
+    if (metrics_.cacheHit) {
+      metrics.increment('llm_cache_hit');
+    }
   } catch (error) {
     logger.error(
       {
+        organizationId,
         error: error instanceof Error ? error.message : 'Unknown error',
-        entry,
       },
-      'Error tracking LLM cost'
+      'Error tracking LLM call'
     );
-
-    metrics.increment('llm_cost_tracking_error');
   }
 }
 
 /**
- * Track batch LLM costs
+ * Calculate cost for an LLM call
  */
-export async function trackBatchLLMCosts(entries: LLMCostEntry[]): Promise<void> {
-  for (const entry of entries) {
-    await trackLLMCost(entry);
+export function calculateLLMCost(
+  provider: LLMProvider,
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+  embeddingTokens?: number
+): number {
+  try {
+    const pricing = LLM_PRICING[provider]?.[model];
+
+    if (!pricing) {
+      logger.warn(
+        {
+          provider,
+          model,
+        },
+        'Unknown LLM model pricing'
+      );
+      return 0;
+    }
+
+    const inputCost = (inputTokens / 1000) * pricing.input;
+    const outputCost = (outputTokens / 1000) * pricing.output;
+    let embeddingCost = 0;
+
+    if (embeddingTokens && provider === 'openai') {
+      const embeddingPricing = LLM_PRICING.openai[model];
+      if (embeddingPricing) {
+        embeddingCost = (embeddingTokens / 1000) * embeddingPricing.input;
+      }
+    }
+
+    const totalCost = inputCost + outputCost + embeddingCost;
+
+    return Math.round(totalCost * 10000) / 10000; // Round to 4 decimal places
+  } catch (error) {
+    logger.error(
+      {
+        provider,
+        model,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Error calculating LLM cost'
+    );
+    return 0;
   }
 }
 
 /**
- * Update organization's monthly spend
+ * Get cost data for organization
  */
-async function updateOrganizationMonthlySpend(
-  organizationId: string,
-  costUSD: number
-): Promise<void> {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+export function getOrganizationCosts(organizationId: string): LLMCostsData {
+  const entry = costTracker.get(organizationId);
 
-  // Get or create monthly spend record
-  const existing = await prisma.organizationMonthlySpend.findUnique({
-    where: {
-      organizationId_month: {
-        organizationId,
-        month: monthStart,
-      },
-    },
-  });
-
-  if (existing) {
-    await prisma.organizationMonthlySpend.update({
-      where: {
-        id: existing.id,
-      },
-      data: {
-        totalSpendUSD: existing.totalSpendUSD + costUSD,
-        updatedAt: new Date(),
-      },
-    });
-  } else {
-    await prisma.organizationMonthlySpend.create({
-      data: {
-        organizationId,
-        month: monthStart,
-        totalSpendUSD: costUSD,
-      },
-    });
-  }
-}
-
-/**
- * Get organization's current month spend
- */
-export async function getOrganizationMonthlySpend(
-  organizationId: string
-): Promise<number> {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  const spend = await prisma.organizationMonthlySpend.findUnique({
-    where: {
-      organizationId_month: {
-        organizationId,
-        month: monthStart,
-      },
-    },
-  });
-
-  return spend?.totalSpendUSD || 0;
-}
-
-/**
- * Get organization's spending over time
- */
-export async function getOrganizationSpendingHistory(
-  organizationId: string,
-  months: number = 12
-): Promise<Array<{ month: Date; spent: number }>> {
-  const result = await prisma.organizationMonthlySpend.findMany({
-    where: { organizationId },
-    orderBy: { month: 'desc' },
-    take: months,
-  });
-
-  return result
-    .map((row) => ({
-      month: row.month,
-      spent: row.totalSpendUSD,
-    }))
-    .reverse();
-}
-
-/**
- * Get cost breakdown by model
- */
-export async function getCostBreakdownByModel(
-  organizationId: string,
-  startDate: Date,
-  endDate: Date
-): Promise<Record<string, number>> {
-  const logs = await prisma.llmCostLog.findMany({
-    where: {
-      organizationId,
-      timestamp: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
-  });
-
-  const breakdown: Record<string, number> = {};
-
-  for (const log of logs) {
-    breakdown[log.modelName] = (breakdown[log.modelName] || 0) + log.costUSD;
-  }
-
-  return breakdown;
-}
-
-/**
- * Get cost trends over time
- */
-export async function getCostTrends(
-  organizationId: string,
-  days: number = 30
-): Promise<Array<{ date: Date; cost: number }>> {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-
-  const logs = await prisma.llmCostLog.findMany({
-    where: {
-      organizationId,
-      timestamp: {
-        gte: startDate,
-      },
-    },
-    orderBy: { timestamp: 'asc' },
-  });
-
-  // Group by day
-  const costByDay: Record<string, number> = {};
-
-  for (const log of logs) {
-    const dateKey = log.timestamp.toISOString().split('T')[0];
-    costByDay[dateKey] = (costByDay[dateKey] || 0) + log.costUSD;
-  }
-
-  return Object.entries(costByDay)
-    .map(([dateStr, cost]) => ({
-      date: new Date(dateStr),
-      cost,
-    }))
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
-}
-
-/**
- * Check if organization is within budget
- */
-export async function isWithinBudget(
-  organizationId: string,
-  monthlyBudgetUSD: number
-): Promise<boolean> {
-  const spent = await getOrganizationMonthlySpend(organizationId);
-  return spent <= monthlyBudgetUSD;
-}
-
-/**
- * Get remaining budget
- */
-export async function getRemainingBudget(
-  organizationId: string,
-  monthlyBudgetUSD: number
-): Promise<number> {
-  const spent = await getOrganizationMonthlySpend(organizationId);
-  return Math.max(0, monthlyBudgetUSD - spent);
-}
-
-/**
- * Get budget utilization percentage
- */
-export async function getBudgetUtilization(
-  organizationId: string,
-  monthlyBudgetUSD: number
-): Promise<number> {
-  const spent = await getOrganizationMonthlySpend(organizationId);
-  return (spent / monthlyBudgetUSD) * 100;
-}
-
-/**
- * Alert on budget threshold
- */
-export async function checkBudgetAlerts(
-  organizationId: string,
-  monthlyBudgetUSD: number,
-  thresholds: { warning: number; critical: number } = { warning: 75, critical: 90 }
-): Promise<'ok' | 'warning' | 'critical'> {
-  const utilization = await getBudgetUtilization(organizationId, monthlyBudgetUSD);
-
-  if (utilization >= thresholds.critical) {
-    return 'critical';
-  } else if (utilization >= thresholds.warning) {
-    return 'warning';
-  }
-
-  return 'ok';
-}
-
-/**
- * Get cost statistics
- */
-export async function getCostStatistics(
-  organizationId: string,
-  startDate: Date,
-  endDate: Date
-): Promise<{
-  totalCost: number;
-  averageCost: number;
-  minCost: number;
-  maxCost: number;
-  totalTokens: number;
-  avgCostPerToken: number;
-}> {
-  const logs = await prisma.llmCostLog.findMany({
-    where: {
-      organizationId,
-      timestamp: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
-  });
-
-  if (logs.length === 0) {
+  if (!entry || entry.calls.length === 0) {
     return {
-      totalCost: 0,
-      averageCost: 0,
-      minCost: 0,
-      maxCost: 0,
-      totalTokens: 0,
-      avgCostPerToken: 0,
+      organizationId,
+      totalCalls: 0,
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      totalEmbeddingTokens: 0,
+      totalCostUSD: 0,
+      costsByProvider: {},
+      costsByModel: {},
+      cacheHitRate: 0,
+      averageRequestDuration: 0,
+      lastUpdated: new Date(),
     };
   }
 
-  const costs = logs.map((log) => log.costUSD);
-  const totalCost = costs.reduce((sum, cost) => sum + cost, 0);
-  const totalTokens = logs.reduce((sum, log) => sum + log.totalTokens, 0);
+  const calls = entry.calls;
+  const totalCalls = calls.length;
+  const successfulCalls = calls.filter(c => c.success);
+  const cachedCalls = calls.filter(c => c.cacheHit);
+
+  const totalInputTokens = calls.reduce((sum, c) => sum + c.inputTokens, 0);
+  const totalOutputTokens = calls.reduce((sum, c) => sum + c.outputTokens, 0);
+  const totalEmbeddingTokens = calls.reduce((sum, c) => sum + (c.embeddingTokens || 0), 0);
+  const totalCostUSD = calls.reduce((sum, c) => sum + c.costUSD, 0);
+
+  const costsByProvider = {} as Record<LLMProvider, number>;
+  const costsByModel = {} as Record<string, number>;
+
+  // Calculate costs by provider and model
+  for (const call of calls) {
+    costsByProvider[call.provider] = (costsByProvider[call.provider] || 0) + call.costUSD;
+    costsByModel[call.model] = (costsByModel[call.model] || 0) + call.costUSD;
+  }
+
+  const cacheHitRate = totalCalls > 0 
+    ? Math.round((cachedCalls.length / totalCalls) * 100) / 100
+    : 0;
+
+  const averageRequestDuration =
+    successfulCalls.length > 0
+      ? Math.round(
+          successfulCalls.reduce((sum, c) => sum + c.requestDurationMs, 0) /
+          successfulCalls.length
+        )
+      : 0;
 
   return {
-    totalCost,
-    averageCost: totalCost / logs.length,
-    minCost: Math.min(...costs),
-    maxCost: Math.max(...costs),
-    totalTokens,
-    avgCostPerToken: totalCost / (totalTokens || 1),
+    organizationId,
+    totalCalls,
+    totalInputTokens,
+    totalOutputTokens,
+    totalEmbeddingTokens,
+    totalCostUSD: Math.round(totalCostUSD * 10000) / 10000,
+    costsByProvider,
+    costsByModel,
+    cacheHitRate,
+    averageRequestDuration,
+    lastUpdated: entry.lastUpdated,
   };
+}
+
+/**
+ * Get costs for multiple organizations
+ */
+export function getAllOrganizationsCosts(): LLMCostsData[] {
+  return Array.from(costTracker.values()).map(entry =>
+    getOrganizationCosts(entry.organizationId)
+  );
+}
+
+/**
+ * Get cost trends over time period
+ */
+export function getCostTrends(
+  organizationId: string,
+  startDate: Date,
+  endDate: Date
+): Record<string, number> {
+  const entry = costTracker.get(organizationId);
+
+  if (!entry) {
+    return {};
+  }
+
+  const trends: Record<string, number> = {};
+
+  for (const call of entry.calls) {
+    if (call.timestamp >= startDate && call.timestamp <= endDate) {
+      const dateKey = call.timestamp.toISOString().split('T')[0];
+      trends[dateKey] = (trends[dateKey] || 0) + call.costUSD;
+    }
+  }
+
+  return trends;
+}
+
+/**
+ * Clear costs for testing
+ */
+export function clearCosts(organizationId?: string): void {
+  if (organizationId) {
+    costTracker.delete(organizationId);
+  } else {
+    costTracker.clear();
+  }
+}
+
+/**
+ * Get raw call metrics for debugging
+ */
+export function getRawCallMetrics(organizationId: string): LLMCallMetrics[] {
+  const entry = costTracker.get(organizationId);
+  return entry ? [...entry.calls] : [];
+}
+
+/**
+ * Export costs data for analytics
+ */
+export async function exportCostsData(
+  organizationId: string,
+  format: 'csv' | 'json' = 'json'
+): Promise<string> {
+  const costs = getOrganizationCosts(organizationId);
+
+  if (format === 'csv') {
+    const headers = [
+      'Total Calls',
+      'Input Tokens',
+      'Output Tokens',
+      'Total Cost USD',
+      'Cache Hit Rate',
+      'Avg Duration MS',
+    ];
+    const values = [
+      costs.totalCalls,
+      costs.totalInputTokens,
+      costs.totalOutputTokens,
+      costs.totalCostUSD,
+      costs.cacheHitRate,
+      costs.averageRequestDuration,
+    ];
+    return `${headers.join(',')}\n${values.join(',')}`;
+  }
+
+  return JSON.stringify(costs, null, 2);
+}
+
+/**
+ * Get model usage statistics
+ */
+export function getModelUsageStats(organizationId: string): Record<string, any> {
+  const entry = costTracker.get(organizationId);
+
+  if (!entry) {
+    return {};
+  }
+
+  const stats: Record<string, any> = {};
+
+  for (const call of entry.calls) {
+    if (!stats[call.model]) {
+      stats[call.model] = {
+        calls: 0,
+        totalTokens: 0,
+        totalCost: 0,
+        successRate: 0,
+      };
+    }
+
+    stats[call.model].calls++;
+    stats[call.model].totalTokens += call.totalTokens;
+    stats[call.model].totalCost += call.costUSD;
+  }
+
+  // Calculate success rates
+  for (const model in stats) {
+    const modelCalls = entry.calls.filter(c => c.model === model);
+    const successCount = modelCalls.filter(c => c.success).length;
+    stats[model].successRate = (successCount / modelCalls.length) * 100;
+  }
+
+  return stats;
 }
