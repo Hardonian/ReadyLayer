@@ -1,320 +1,283 @@
 /**
  * Test Executor Worker
  * 
- * Background worker for executing generated tests
- * - Runs tests in isolated sandbox environments
- * - Measures code coverage
- * - Handles framework detection and execution
- * - Non-blocking: tests complete asynchronously
+ * Background worker for executing generated tests in isolated environments
+ * with timeout handling, coverage reporting, and results persistence.
  */
 
-import { prisma } from '../lib/prisma';
-import { executeTests, TestExecutionRequest, TestExecutionResult } from '../services/test-engine/executor';
-import { logger } from '../observability/logging';
-import { metrics } from '../observability/metrics';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
+import { TestExecutionResult, TestRunStatus } from '@/lib/types/test-run';
+import { executeTests } from '@/services/test-engine/executor';
 
 export interface TestExecutionJob {
-  runId: string;
-  repositoryId: string;
+  id: string;
+  testRunId: string;
   organizationId: string;
-  filePath: string;
-  testContent: string;
-  sourceCode: string;
-  framework: 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other';
-  coverageThreshold?: number;
+  projectId: string;
+  generatedTests: Array<{
+    id: string;
+    framework: string;
+    code: string;
+    targetFile: string;
+  }>;
+  sandboxId?: string;
+  timeout?: number; // milliseconds
+  maxRetries?: number;
 }
 
 export interface TestExecutionJobResult {
-  runId: string;
-  filePath: string;
-  status: 'passed' | 'failed' | 'timeout';
-  testsPassed: number;
-  testsFailed: number;
-  totalTests: number;
-  coverage: {
-    linesCovered: number;
-    linesTotal: number;
-    percentCovered: number;
-  };
-  meetsThreshold: boolean;
-  durationMs: number;
-  error?: string;
+  jobId: string;
+  testRunId: string;
+  status: 'success' | 'failure' | 'timeout' | 'error';
+  results: TestExecutionResult[];
+  startedAt: Date;
   completedAt: Date;
+  duration: number;
+  error?: string;
 }
 
 /**
- * Process a test execution job
+ * Execute tests in a worker context
  */
-export async function processTestExecutionJob(
-  job: TestExecutionJob,
-  timeoutMs: number = 30000
+export async function executeTestJob(
+  job: TestExecutionJob
 ): Promise<TestExecutionJobResult> {
   const startTime = Date.now();
-  const jobId = `test_${job.runId}_${Math.random().toString(36).slice(2, 9)}`;
-
-  logger.info(
-    {
-      jobId,
-      runId: job.runId,
-      filePath: job.filePath,
-      framework: job.framework,
-    },
-    'Starting test execution job'
-  );
-
+  
   try {
-    // Check if test execution is enabled for this org
-    const org = await prisma.organizations.findUnique({
-      where: { id: job.organizationId },
-      select: { settings: true },
+    logger.info(
+      {
+        jobId: job.id,
+        testRunId: job.testRunId,
+        testCount: job.generatedTests.length,
+      },
+      'Starting test execution job'
+    );
+
+    metrics.increment('test_execution_job_started', {
+      organizationId: job.organizationId,
+      testCount: job.generatedTests.length.toString(),
     });
 
-    if (!org?.settings?.['test_execution_enabled']) {
-      metrics.increment('test_execution_skipped', { reason: 'disabled_for_org' });
+    // Execute tests with timeout
+    const timeout = job.timeout || 300000; // 5 minutes default
+    const maxRetries = job.maxRetries || 2;
 
-      logger.debug(
-        { runId: job.runId },
-        'Test execution disabled for organization'
-      );
+    let lastError: Error | null = null;
+    let results: TestExecutionResult[] = [];
 
-      return {
-        runId: job.runId,
-        filePath: job.filePath,
-        status: 'passed',
-        testsPassed: 0,
-        testsFailed: 0,
-        totalTests: 0,
-        coverage: {
-          linesCovered: 0,
-          linesTotal: 0,
-          percentCovered: 0,
-        },
-        meetsThreshold: true,
-        durationMs: Date.now() - startTime,
-        completedAt: new Date(),
-      };
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        results = await executeTestsWithTimeout(
+          job.generatedTests,
+          timeout,
+          job.sandboxId
+        );
+        lastError = null;
+        break;
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt < maxRetries) {
+          logger.warn(
+            {
+              jobId: job.id,
+              attempt: attempt + 1,
+              maxRetries,
+              error: lastError.message,
+            },
+            'Test execution failed, retrying...'
+          );
+          
+          metrics.increment('test_execution_retry', {
+            attempt: (attempt + 1).toString(),
+          });
+
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => 
+            setTimeout(resolve, Math.pow(2, attempt) * 1000)
+          );
+        }
+      }
     }
 
-    // Create timeout promise
-    const timeoutPromise = new Promise<TestExecutionJobResult>((_, reject) => {
-      setTimeout(() => {
-        const error = new Error(`Test execution timeout after ${timeoutMs}ms`);
-        reject(error);
-      }, timeoutMs);
-    });
+    if (lastError && results.length === 0) {
+      throw lastError;
+    }
 
-    // Create execution promise
-    const executionPromise = executeTestsWithSandbox(job);
+    const duration = Date.now() - startTime;
 
-    // Race: execution vs timeout
-    const executionResult = await Promise.race([executionPromise, timeoutPromise]);
+    // Calculate coverage metrics
+    const totalTests = results.length;
+    const passedTests = results.filter(r => r.status === 'passed').length;
+    const failedTests = results.filter(r => r.status === 'failed').length;
+    const skippedTests = results.filter(r => r.status === 'skipped').length;
+    const erroredTests = results.filter(r => r.status === 'error').length;
 
-    const durationMs = Date.now() - startTime;
-
-    metrics.recordHistogram('test_execution_duration_ms', durationMs);
-    metrics.increment('test_execution_success', {
-      framework: job.framework,
-      meetsThreshold: executionResult.meetsThreshold ? 'yes' : 'no',
-    });
+    const avgCoverage = 
+      results.length > 0
+        ? results.reduce((sum, r) => sum + (r.coverage?.percentage || 0), 0) / 
+          results.length
+        : 0;
 
     logger.info(
       {
-        jobId,
-        runId: job.runId,
-        filePath: job.filePath,
-        durationMs,
-        testsPassed: executionResult.testsPassed,
-        testsFailed: executionResult.testsFailed,
-        coverage: executionResult.coverage.percentCovered,
-        meetsThreshold: executionResult.meetsThreshold,
+        jobId: job.id,
+        testRunId: job.testRunId,
+        totalTests,
+        passedTests,
+        failedTests,
+        skippedTests,
+        erroredTests,
+        avgCoverage: Math.round(avgCoverage),
+        duration,
       },
-      'Test execution job completed'
+      'Test execution completed'
     );
 
+    metrics.increment('test_execution_job_completed', {
+      organizationId: job.organizationId,
+      status: 'success',
+    });
+
+    metrics.timing('test_execution_duration_ms', duration, {
+      organizationId: job.organizationId,
+    });
+
     return {
-      ...executionResult,
+      jobId: job.id,
+      testRunId: job.testRunId,
+      status: 'success',
+      results,
+      startedAt: new Date(startTime),
       completedAt: new Date(),
-      durationMs,
+      duration,
     };
   } catch (error) {
-    const durationMs = Date.now() - startTime;
-    const isTimeout = error instanceof Error && error.message.includes('timeout');
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    logger.warn(
+    logger.error(
       {
-        jobId,
-        runId: job.runId,
-        filePath: job.filePath,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        durationMs,
-        isTimeout,
+        jobId: job.id,
+        testRunId: job.testRunId,
+        error: errorMessage,
+        duration,
       },
       'Test execution job failed'
     );
 
-    metrics.increment('test_execution_failed', {
-      reason: isTimeout ? 'timeout' : 'error',
-      framework: job.framework,
+    metrics.increment('test_execution_job_failed', {
+      organizationId: job.organizationId,
+      errorType: error instanceof Error ? error.name : 'unknown',
     });
 
+    // Determine failure status
+    let status: 'failure' | 'timeout' | 'error' = 'error';
+    if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+      status = 'timeout';
+    }
+
     return {
-      runId: job.runId,
-      filePath: job.filePath,
-      status: isTimeout ? 'timeout' : 'failed',
-      testsPassed: 0,
-      testsFailed: 0,
-      totalTests: 0,
-      coverage: {
-        linesCovered: 0,
-        linesTotal: 0,
-        percentCovered: 0,
-      },
-      meetsThreshold: false,
-      durationMs,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      jobId: job.id,
+      testRunId: job.testRunId,
+      status,
+      results: [],
+      startedAt: new Date(startTime - duration),
       completedAt: new Date(),
+      duration,
+      error: errorMessage,
     };
   }
 }
 
 /**
- * Execute tests with sandbox isolation
+ * Execute tests with timeout enforcement
  */
-async function executeTestsWithSandbox(
-  job: TestExecutionJob,
-  timeoutMs: number = 30000
-): Promise<Omit<TestExecutionJobResult, 'completedAt' | 'durationMs'>> {
-  const executionRequest: TestExecutionRequest = {
-    filePath: job.filePath,
-    testContent: job.testContent,
-    sourceCode: job.sourceCode,
-    framework: job.framework,
-    coverageThreshold: job.coverageThreshold || 80,
-  };
-
-  // Execute tests
-  const result = await executeTests(executionRequest, timeoutMs);
-
-  // Convert coverage metrics
-  return {
-    runId: job.runId,
-    filePath: job.filePath,
-    status: result.status,
-    testsPassed: result.testsPassed,
-    testsFailed: result.testsFailed,
-    totalTests: result.totalTests,
-    coverage: {
-      linesCovered: result.coverage.lines.covered,
-      linesTotal: result.coverage.lines.total,
-      percentCovered: result.coverage.lines.percentage,
-    },
-    meetsThreshold: result.meetsThreshold,
-  };
+async function executeTestsWithTimeout(
+  tests: Array<{ id: string; framework: string; code: string; targetFile: string }>,
+  timeoutMs: number,
+  sandboxId?: string
+): Promise<TestExecutionResult[]> {
+  return Promise.race([
+    executeTests(tests, sandboxId),
+    new Promise<TestExecutionResult[]>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Test execution timeout after ${timeoutMs}ms`)),
+        timeoutMs
+      )
+    ),
+  ]);
 }
 
 /**
- * Enqueue a test execution job
+ * Batch execute multiple test jobs
  */
-export async function enqueueTestExecutionJob(
-  job: TestExecutionJob
-): Promise<{ jobId: string; queuedAt: Date }> {
-  const jobId = `test_${job.runId}_${Math.random().toString(36).slice(2, 9)}`;
+export async function executeBatchTestJobs(
+  jobs: TestExecutionJob[]
+): Promise<TestExecutionJobResult[]> {
+  logger.info(
+    {
+      jobCount: jobs.length,
+    },
+    'Starting batch test execution'
+  );
+
+  metrics.increment('test_execution_batch_started', {
+    jobCount: jobs.length.toString(),
+  });
+
+  const results = await Promise.all(
+    jobs.map(job => 
+      executeTestJob(job).catch(error => ({
+        jobId: job.id,
+        testRunId: job.testRunId,
+        status: 'error' as const,
+        results: [],
+        startedAt: new Date(),
+        completedAt: new Date(),
+        duration: 0,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }))
+    )
+  );
+
+  const successCount = results.filter(r => r.status === 'success').length;
+  const failureCount = results.filter(r => r.status !== 'success').length;
 
   logger.info(
     {
-      jobId,
-      runId: job.runId,
-      filePath: job.filePath,
-      framework: job.framework,
+      totalJobs: jobs.length,
+      successCount,
+      failureCount,
     },
-    'Enqueuing test execution job'
+    'Batch test execution completed'
   );
 
-  metrics.increment('test_execution_enqueued', {
-    framework: job.framework,
+  metrics.increment('test_execution_batch_completed', {
+    totalJobs: jobs.length.toString(),
+    successCount: successCount.toString(),
+    failureCount: failureCount.toString(),
   });
 
-  // In a real implementation, this would push to a queue (Redis, Bull, etc.)
-  // For now, we'll just log the intent
-  // TODO: Integrate with job queue system (BullMQ, Celery, etc.)
-
-  return {
-    jobId,
-    queuedAt: new Date(),
-  };
+  return results;
 }
 
 /**
- * Get test execution job status
+ * Validate test job structure
  */
-export async function getTestExecutionJobStatus(
-  jobId: string
-): Promise<{
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  result?: TestExecutionJobResult;
-  error?: string;
-}> {
-  // TODO: Implement job status tracking from queue system
-  return {
-    status: 'pending',
-  };
-}
-
-/**
- * Monitor test execution metrics
- */
-export interface TestExecutionMetrics {
-  totalTests: number;
-  passedTests: number;
-  failedTests: number;
-  averageCoverage: number;
-  averageDuration: number;
-  timeoutRate: number;
-  successRate: number;
-}
-
-const testMetrics = {
-  totalTests: 0,
-  passedTests: 0,
-  failedTests: 0,
-  totalCoverage: 0,
-  totalDuration: 0,
-  timeouts: 0,
-  successes: 0,
-};
-
-/**
- * Get test execution metrics
- */
-export function getTestExecutionMetrics(): TestExecutionMetrics {
-  const total = testMetrics.totalTests;
-  const avg = total > 0;
-
-  return {
-    totalTests: total,
-    passedTests: testMetrics.passedTests,
-    failedTests: testMetrics.failedTests,
-    averageCoverage: avg ? testMetrics.totalCoverage / total : 0,
-    averageDuration: avg ? testMetrics.totalDuration / total : 0,
-    timeoutRate: total > 0 ? (testMetrics.timeouts / total) * 100 : 0,
-    successRate: total > 0 ? (testMetrics.successes / total) * 100 : 0,
-  };
-}
-
-/**
- * Update test execution metrics
- */
-export function updateTestExecutionMetrics(result: TestExecutionJobResult): void {
-  testMetrics.totalTests++;
-  testMetrics.passedTests += result.testsPassed;
-  testMetrics.failedTests += result.testsFailed;
-  testMetrics.totalCoverage += result.coverage.percentCovered;
-  testMetrics.totalDuration += result.durationMs;
-
-  if (result.status === 'timeout') {
-    testMetrics.timeouts++;
-  }
-  if (result.status === 'passed') {
-    testMetrics.successes++;
-  }
+export function validateTestJob(job: any): job is TestExecutionJob {
+  return (
+    job &&
+    typeof job === 'object' &&
+    typeof job.id === 'string' &&
+    typeof job.testRunId === 'string' &&
+    typeof job.organizationId === 'string' &&
+    typeof job.projectId === 'string' &&
+    Array.isArray(job.generatedTests) &&
+    job.generatedTests.every((test: any) =>
+      test.id && test.framework && test.code && test.targetFile
+    )
+  );
 }
