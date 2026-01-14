@@ -196,7 +196,7 @@ export function UpgradePrompt({
             <p className="text-sm text-muted-foreground">{config.details}</p>
 
             <div className="flex gap-2">
-              <Button onClick={onUpgradeClick} className="gap-1 flex-1">
+              <Button onClick={handleUpgradeClick} className="gap-1 flex-1">
                 {config.cta}
                 <ArrowRight className="h-4 w-4" />
               </Button>
