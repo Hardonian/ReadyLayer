@@ -622,6 +622,110 @@ Return only the test code, no explanations.`;
   }
 
   /**
+   * Execute tests asynchronously (non-blocking)
+   *
+   * Queues test execution as a background job and returns immediately.
+   * Tests run in isolated sandboxes and results are stored for later retrieval.
+   *
+   * @param runId - Run ID to track execution
+   * @param repositoryId - Repository ID
+   * @param organizationId - Organization ID
+   * @param filePath - File path to test
+   * @param testContent - Generated test code
+   * @param sourceCode - Source code being tested
+   * @param framework - Test framework (jest, mocha, pytest, etc.)
+   * @param coverageThreshold - Coverage threshold (default 80%)
+   * @returns Job info with ID and queued timestamp
+   */
+  async executeTestsAsync(
+    runId: string,
+    repositoryId: string,
+    organizationId: string,
+    filePath: string,
+    testContent: string,
+    sourceCode: string,
+    framework: string = 'jest',
+    coverageThreshold: number = 80
+  ): Promise<{ jobId: string; queuedAt: Date }> {
+    logger.info(
+      {
+        runId,
+        repositoryId,
+        filePath,
+        framework,
+      },
+      'Queuing test execution job'
+    );
+
+    // Enqueue the job
+    const jobInfo = await enqueueTestExecutionJob({
+      runId,
+      repositoryId,
+      organizationId,
+      filePath,
+      testContent,
+      sourceCode,
+      framework: framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
+      coverageThreshold,
+    });
+
+    return jobInfo;
+  }
+
+  /**
+   * Process test execution job synchronously (for testing/debugging)
+   *
+   * @param runId - Run ID
+   * @param repositoryId - Repository ID
+   * @param organizationId - Organization ID
+   * @param filePath - File path to test
+   * @param testContent - Generated test code
+   * @param sourceCode - Source code being tested
+   * @param framework - Test framework
+   * @param coverageThreshold - Coverage threshold
+   * @param timeoutMs - Execution timeout in milliseconds
+   * @returns Test execution result
+   */
+  async executeTestsSync(
+    runId: string,
+    repositoryId: string,
+    organizationId: string,
+    filePath: string,
+    testContent: string,
+    sourceCode: string,
+    framework: string = 'jest',
+    coverageThreshold: number = 80,
+    timeoutMs: number = 30000
+  ) {
+    logger.info(
+      {
+        runId,
+        repositoryId,
+        filePath,
+        framework,
+        timeout: timeoutMs,
+      },
+      'Executing tests synchronously'
+    );
+
+    const result = await processTestExecutionJob(
+      {
+        runId,
+        repositoryId,
+        organizationId,
+        filePath,
+        testContent,
+        sourceCode,
+        framework: framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
+        coverageThreshold,
+      },
+      timeoutMs
+    );
+
+    return result;
+  }
+
+  /**
    * Get default config (enforcement-first)
    */
   private getDefaultConfig(): TestConfig {
