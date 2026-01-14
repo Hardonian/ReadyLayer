@@ -410,7 +410,24 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </motion.div>
-        
+
+        {/* Upgrade Prompt - Show contextually based on usage */}
+        <motion.div variants={fadeIn}>
+          <UpgradePrompt
+            context={usageStats && usageStats.percentageUsed > 80 ? 'usage-limit-approaching' : 'ai-disabled'}
+            show={usageStats ? usageStats.percentageUsed > 80 : true}
+            data={{
+              current: usageStats?.percentageUsed || 0,
+              limit: 100,
+            }}
+            onUpgradeClick={() => {
+              // Navigate to billing page
+              window.location.href = '/dashboard/billing'
+            }}
+            compact={false}
+          />
+        </motion.div>
+
         {/* Stats Grid */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-4 gap-6"
