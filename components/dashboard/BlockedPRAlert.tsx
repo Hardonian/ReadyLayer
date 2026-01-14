@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, FileText, Code2, Eye, MessageSquare, X } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { fadeIn } from '@/lib/design/motion'
+import { trackBlockedPREvent } from '@/lib/telemetry/analytics'
 
 export interface BlockedPRIssue {
   severity: 'critical' | 'high' | 'medium'
