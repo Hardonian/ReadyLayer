@@ -137,12 +137,12 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
 
     it('should detect and redact Stripe keys', () => {
       const code = `
-        const stripeKey = 'sk_live_abcdefghijklmnopqrstuvwx';
+        const stripeKey = 'sk_test_STRIPE_TEST_KEY_PLACEHOLDER_123456';
         const stripe = require('stripe')(stripeKey);
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('stripe-key');
       expect(result.redacted).toContain('[STRIPE-KEY_REDACTED]');
