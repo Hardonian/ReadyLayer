@@ -72,19 +72,22 @@ export function LoadingState({
 /**
  * Skeleton Loader
  * Structure-preserving loading state (better than spinners)
+ * Properly typed to accept both HTML and motion props
  */
 export function Skeleton({
   className,
   ...props
-}: Omit<React.HTMLAttributes<HTMLDivElement>, 'onAnimationStart' | 'onDrag' | 'onDragStart' | 'onDragEnd'>) {
+}: Omit<
+  HTMLMotionProps<'div'>,
+  'onAnimationStart' | 'onDrag' | 'onDragStart' | 'onDragEnd'
+>) {
   return (
     <motion.div
       className={cn('animate-pulse rounded-md bg-surface-muted', className)}
       variants={fadeIn}
       initial="hidden"
       animate="visible"
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      {...(props as any)}
+      {...props}
     />
   )
 }
