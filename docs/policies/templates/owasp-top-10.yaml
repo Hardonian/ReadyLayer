@@ -1,0 +1,130 @@
+name: OWASP Top 10 2021
+description: |
+  Security policy based on OWASP Top 10 vulnerabilities.
+  This template enforces security best practices to prevent
+  the most critical web application security risks.
+
+version: '2021'
+category: security
+
+rules:
+  - id: a01-injection
+    name: Prevent SQL Injection
+    pattern: '(query|sql)\s*=\s*[''"`].*(%|\$).*[''"`]'
+    severity: critical
+    action: block
+    description: |
+      Detects potential SQL injection vulnerabilities.
+      Never construct SQL queries with string concatenation.
+      Use parameterized queries instead.
+    remediation: |
+      Use parameterized queries:
+      ```javascript
+      // ❌ WRONG
+      const query = `SELECT * FROM users WHERE id = ${userId}`;
+      
+      // ✅ RIGHT
+      const query = 'SELECT * FROM users WHERE id = ?';
+      db.query(query, [userId]);
+      ```
+
+  - id: a02-authentication
+    name: Enforce Authentication
+    pattern: '(password|auth|token)\s*=\s*[''"`]?[^''"`]*[''"`]?'
+    severity: high
+    action: warn
+    description: |
+      Warns about hardcoded credentials in code.
+      Credentials should never be stored in version control.
+    remediation: |
+      Use environment variables:
+      ```javascript
+      // ❌ WRONG
+      const password = 'MySecretPassword123';
+      
+      // ✅ RIGHT
+      const password = process.env.DB_PASSWORD;
+      ```
+
+  - id: a03-broken-access
+    name: Check Access Control
+    pattern: '(admin|root|privileged)\s*=\s*(true|1)'
+    severity: high
+    action: warn
+    description: |
+      Detects potential privilege escalation issues.
+      Always verify user authorization before granting access.
+
+  - id: a04-insecure-design
+    name: Insecure Design Patterns
+    pattern: '(weak|insecure|deprecated)\s*(crypto|ssl|hash)'
+    severity: high
+    action: warn
+    description: |
+      Warns about insecure cryptographic algorithms.
+      Use modern, well-vetted algorithms and libraries.
+
+  - id: a05-vulnerable-components
+    name: Check Dependencies
+    pattern: 'package\.json|requirements\.txt|Gemfile'
+    severity: medium
+    action: info
+    description: |
+      Reminds to check dependency versions for known vulnerabilities.
+      Regularly update dependencies and scan for security issues.
+
+  - id: a06-api-security
+    name: API Security
+    pattern: '(api|endpoint).*[''"`](http|ftp)[''"`]'
+    severity: high
+    action: warn
+    description: |
+      Ensures API endpoints use HTTPS instead of HTTP.
+      All API communication should be encrypted in transit.
+
+  - id: a07-logging
+    name: Logging & Monitoring
+    pattern: 'console\.(log|debug).*password|secret|token'
+    severity: high
+    action: block
+    description: |
+      Prevents logging sensitive information like credentials.
+      Never log passwords, tokens, or other secrets.
+    remediation: |
+      Remove sensitive data from logs:
+      ```javascript
+      // ❌ WRONG
+      console.log('Password:', password);
+      
+      // ✅ RIGHT
+      console.log('User authenticated successfully');
+      ```
+
+  - id: a08-csrm
+    name: CSRF Protection
+    pattern: '(post|put|delete).*csrf.*'
+    severity: medium
+    action: warn
+    description: |
+      Ensures CSRF tokens are validated on state-changing requests.
+      Protect against Cross-Site Request Forgery attacks.
+
+best_practices:
+  - Always use parameterized queries for database access
+  - Store sensitive credentials in environment variables
+  - Use HTTPS for all external communication
+  - Implement proper authentication and authorization
+  - Log security events without exposing sensitive data
+  - Keep dependencies up to date
+  - Use strong encryption algorithms (AES-256, etc.)
+  - Implement CSRF protection on form submissions
+  - Validate and sanitize all user input
+  - Implement rate limiting to prevent brute force attacks
+
+resources:
+  - title: OWASP Top 10
+    url: https://owasp.org/www-project-top-ten/
+  - title: OWASP Secure Coding Practices
+    url: https://cheatsheetseries.owasp.org/
+  - title: CWE Top 25
+    url: https://cwe.mitre.org/top25/
