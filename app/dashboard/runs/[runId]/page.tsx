@@ -32,6 +32,7 @@ import {
   History,
 } from 'lucide-react'
 import Link from 'next/link'
+import { BlockedPRAlert } from '@/components/dashboard/BlockedPRAlert'
 
 interface Finding {
   ruleId: string
