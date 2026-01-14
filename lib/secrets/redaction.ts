@@ -261,23 +261,29 @@ export function makeSafeForLogging(text: string, maxLength: number = 100): strin
 
 /**
  * Validate that redacted code doesn't contain obvious secrets
- * Returns false if secrets are still present (redaction failed)
+ * Returns true if code is safe (no unredacted secrets), false otherwise
  */
 export function isRedactedSafe(code: string): boolean {
-  // Check for any remaining secret-like patterns
-  const suspiciousPatterns = [
-    /\[.*_REDACTED\]/g, // Already redacted markers
-    /sk_[a-z0-9]{20,}/i, // Remaining API keys
-    /-----BEGIN/i, // Remaining private keys
+  // Check for any remaining unredacted secret-like patterns
+  const unredactedSecretPatterns = [
+    /sk-[A-Za-z0-9]{20,250}/g, // OpenAI API keys
+    /AKIA[0-9A-Z]{16}/g, // AWS Access Keys
+    /ghp_[A-Za-z0-9_]{36,255}/g, // GitHub tokens
+    /-----BEGIN\s(?:RSA\s|DSA\s|EC\s|OPENSSH\s)?PRIVATE\sKEY-----/g, // Private keys
+    /xox[baprs]-[0-9]{10,12}-[A-Za-z0-9]{24,32}/g, // Slack tokens
+    /sk_live_[A-Za-z0-9]{24}/g, // Stripe keys
+    /(?:postgres|mysql|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\^[\]`]+/g, // DB URLs
   ];
 
-  for (const pattern of suspiciousPatterns) {
+  // If any unredacted secrets are found, it's NOT safe
+  for (const pattern of unredactedSecretPatterns) {
     if (pattern.test(code)) {
-      return true; // Safe - no unredacted secrets
+      return false;
     }
   }
 
-  return false;
+  // No unredacted secrets found - safe to use
+  return true;
 }
 
 /**
