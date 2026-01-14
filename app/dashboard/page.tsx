@@ -16,7 +16,7 @@ import {
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { getDifficultyColor, getImpactColor } from '@/lib/utils/color-mapping'
+import { getDifficultyColor, getImpactColor, type DifficultyLevel, type ImpactLevel } from '@/lib/utils/color-mapping'
 import { 
   Shield, 
   CheckCircle2, 
@@ -95,10 +95,10 @@ interface AIOptimizationData {
   suggestions: Array<{
     id: string
     type: string
-    difficulty: string
+    difficulty: DifficultyLevel
     title: string
     description: string
-    impact: string
+    impact: ImpactLevel
     effort: string
     estimatedSavings?: {
       tokens?: number
@@ -628,13 +628,13 @@ export default function DashboardPage() {
                               </div>
                               <div className="flex flex-col items-end gap-1">
                                 <span className={`text-xs px-2 py-1 rounded ${
-                                  getDifficultyColor(suggestion.difficulty as any).bg
-                                } ${getDifficultyColor(suggestion.difficulty as any).text}`}>
+                                  getDifficultyColor(suggestion.difficulty).bg
+                                } ${getDifficultyColor(suggestion.difficulty).text}`}>
                                   {suggestion.difficulty}
                                 </span>
                                 <span className={`text-xs px-2 py-1 rounded ${
-                                  getImpactColor(suggestion.impact as any).bg
-                                } ${getImpactColor(suggestion.impact as any).text}`}>
+                                  getImpactColor(suggestion.impact).bg
+                                } ${getImpactColor(suggestion.impact).text}`}>
                                   {suggestion.impact} impact
                                 </span>
                               </div>
