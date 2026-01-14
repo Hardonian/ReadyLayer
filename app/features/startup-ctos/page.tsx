@@ -224,7 +224,7 @@ export default function StartupCTOsPage() {
                 </p>
                 <div className="mt-3 flex gap-2 flex-wrap">
                   <span className="rounded-full bg-cyan-50 px-3 py-1 text-sm font-medium text-cyan-700">
-                    < 30s feedback
+                    30s feedback
                   </span>
                   <span className="rounded-full bg-cyan-50 px-3 py-1 text-sm font-medium text-cyan-700">
                     Clear guidance
