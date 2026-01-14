@@ -42,7 +42,7 @@ export interface ReviewConfig {
 
 export interface ReviewResult {
   id: string;
-  status: 'completed' | 'failed' | 'blocked';
+  status: 'completed' | 'failed' | 'blocked' | 'pending-enrichment';
   issues: Issue[];
   summary: {
     total: number;
@@ -55,6 +55,9 @@ export interface ReviewResult {
   blockedReason?: string;
   startedAt: Date;
   completedAt: Date;
+  // Async enrichment tracking
+  enrichmentJobIds?: string[];
+  enrichmentStatus?: 'pending' | 'enriching' | 'completed';
 }
 
 /**
