@@ -56,7 +56,22 @@ export default function UsersPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {/* TODO: Render user list with role management */}
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center justify-between py-2 border-b">
+                  <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs bg-secondary px-2 py-1 rounded">
+                      {user.role}
+                    </span>
+                    <Button variant="ghost" size="sm">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
