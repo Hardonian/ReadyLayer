@@ -39,7 +39,7 @@ export interface User {
   email: string;
 }
 
-const API_KEY = 'sk_live_1234567890abcdef'; // Hardcoded secret - will be detected
+const API_KEY = 'FAKE_STRIPE_KEY_DEMO_FOR_TESTING_ONLY'; // Hardcoded secret - will be detected
 
 export async function login(username: string, password: string): Promise<User | null> {
   // SQL injection vulnerability - will be detected
