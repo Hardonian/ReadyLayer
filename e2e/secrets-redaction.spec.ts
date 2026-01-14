@@ -123,7 +123,7 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
 
     it('should detect and redact Slack tokens', () => {
       const code = `
-        const slackToken = 'xoxb_TEST_SLACK_TOKEN_PLACEHOLDER_123456';
+        const slackToken = 'FAKE_SLACK_TOKEN_12345_FOR_TESTING_ONLY';
         client.auth(slackToken);
       `;
 
@@ -132,12 +132,12 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('slack-token');
       expect(result.redacted).toContain('[SLACK-TOKEN_REDACTED]');
-      expect(result.redacted).not.toContain('xoxb_TEST');
+      expect(result.redacted).not.toContain('FAKE_SLACK_TOKEN');
     });
 
     it('should detect and redact Stripe keys', () => {
       const code = `
-        const stripeKey = 'sk_test_STRIPE_TEST_KEY_PLACEHOLDER_123456';
+        const stripeKey = 'FAKE_STRIPE_KEY_12345_FOR_TESTING_ONLY';
         const stripe = require('stripe')(stripeKey);
       `;
 
@@ -359,19 +359,19 @@ export async function authenticate() {
       const realWorldCode = `
 const config = {
   stripe: {
-    publishable: 'pk_test_STRIPE_PUBLISHABLE_TEST_KEY_123',
-    secret: 'sk_test_STRIPE_SECRET_TEST_KEY_PLACEHOLDER',
+    publishable: 'FAKE_STRIPE_PUB_KEY_TEST_FOR_TESTING',
+    secret: 'FAKE_STRIPE_SECRET_KEY_TEST_FOR_TESTING',
   },
   database: {
-    url: 'postgresql://admin:TEST_PASSWORD_PLACEHOLDER@db.example.com:5432/production',
+    url: 'postgresql://admin:FAKE_PASSWORD_TEST@db.example.com:5432/production',
   },
   aws: {
-    accessKeyId: 'AKIA_TEST_ACCESS_KEY_PLACEHOLDER_1234',
-    secretAccessKey: 'TEST_AWS_SECRET_KEY_PLACEHOLDER_TESTING_123',
+    accessKeyId: 'FAKE_AWS_ACCESS_KEY_TEST_FOR_TESTING',
+    secretAccessKey: 'FAKE_AWS_SECRET_KEY_TEST_FOR_TESTING_12345',
   },
   api: {
-    openai: 'sk_test_OPENAI_TEST_KEY_PLACEHOLDER_12345',
-    github: 'ghp_TEST_GITHUB_TOKEN_PLACEHOLDER_123456',
+    openai: 'FAKE_OPENAI_KEY_TEST_FOR_TESTING_12345',
+    github: 'FAKE_GITHUB_TOKEN_TEST_FOR_TESTING_12345',
   },
 };
 
@@ -390,9 +390,9 @@ export function setupServices() {
 
       // Verify redacted code is safe
       expect(isRedactedSafe(result.redacted)).toBe(true);
-      expect(result.redacted).not.toContain('sk_test_STRIPE');
-      expect(result.redacted).not.toContain('TEST_AWS_SECRET');
-      expect(result.redacted).not.toContain('TEST_PASSWORD');
+      expect(result.redacted).not.toContain('FAKE_STRIPE_SECRET');
+      expect(result.redacted).not.toContain('FAKE_AWS_SECRET');
+      expect(result.redacted).not.toContain('FAKE_PASSWORD');
 
       // Verify code structure is preserved
       expect(result.redacted).toContain('const config = {');
