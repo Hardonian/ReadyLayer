@@ -11,6 +11,7 @@ import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../li
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
+import { redactSecrets } from '../../lib/secrets/redaction';
 
 export interface DocGenerationRequest {
   repositoryId: string;
