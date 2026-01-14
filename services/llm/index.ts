@@ -489,6 +489,9 @@ export class LLMService {
     if (process.env.ANTHROPIC_API_KEY) {
       this.providers.set('anthropic', new AnthropicProvider());
     }
+    if (process.env.OPENCODE_API_URL && process.env.OPENCODE_API_KEY) {
+      this.providers.set('opencode', new OpenCodeProvider());
+    }
 
     // During build time, skip validation
     const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
