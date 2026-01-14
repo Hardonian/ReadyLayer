@@ -96,7 +96,7 @@ export class EmailService {
   /**
    * Send via SendGrid
    */
-  private async sendViasentGrid(
+  private async sendViaSendGrid(
     message: EmailMessage,
     id: string
   ): Promise<EmailResult> {
