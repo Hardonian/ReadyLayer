@@ -1,302 +1,309 @@
+/**
+ * Policy Engine Templates
+ * 
+ * Pre-built policy templates for common compliance standards:
+ * - OWASP Top 10
+ * - PCI-DSS
+ * - HIPAA
+ * - SOC 2
+ */
+
+import { logger } from '@/observability/logging';
+
 export interface PolicyTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'security' | 'compliance' | 'code-quality' | 'custom';
-  rules: PolicyRule[];
-  version: string;
+  category: 'security' | 'compliance' | 'quality' | 'performance';
+  rules: Array<{
+    id: string;
+    name: string;
+    description: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    pattern: string;
+    remediation: string;
+  }>;
+  minCoverage: number;
+  enforcementLevel: 'required' | 'recommended' | 'optional';
 }
 
-export interface PolicyRule {
-  id: string;
-  name: string;
-  pattern: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  action: 'block' | 'warn' | 'info';
-  description: string;
-}
-
-// OWASP Top 10 Template
-export const OWASP_TOP_10_TEMPLATE: PolicyTemplate = {
+/**
+ * OWASP Top 10 Policy Template
+ */
+export const owaspTop10Template: PolicyTemplate = {
   id: 'owasp-top-10',
   name: 'OWASP Top 10',
-  description: 'Security policy based on OWASP Top 10 vulnerabilities',
+  description: 'OWASP Top 10 Web Application Security Risks',
   category: 'security',
-  version: '2021',
   rules: [
     {
       id: 'a01-injection',
-      name: 'Prevent SQL Injection',
-      pattern: '(query|sql)\\s*=\\s*[\'"`].*(%|\\$).*[\'"`]',
+      name: 'Injection Prevention',
+      description: 'Prevent SQL injection, NoSQL injection, and OS command injection',
       severity: 'critical',
-      action: 'block',
-      description: 'Detects potential SQL injection vulnerabilities',
+      pattern: '(SQLQuery|NoSQLQuery|exec|eval)\\s*\\(\\s*.*\\$|`.*\\$',
+      remediation:
+        'Use parameterized queries and prepared statements. Never concatenate user input into queries.',
     },
     {
-      id: 'a02-authentication',
-      name: 'Enforce Authentication',
-      pattern: '(password|auth|token)\\s*=\\s*[\'"`]?[^\'"`]*[\'"`]?',
+      id: 'a02-auth',
+      name: 'Authentication & Session Management',
+      description: 'Implement strong authentication and secure session handling',
+      severity: 'critical',
+      pattern:
+        '(password|credential)\\s*=\\s*[\'"]|session\\.destroy\\s*\\(\\s*\\)|hardcoded.*secret',
+      remediation:
+        'Use secure session management, enforce password policies, implement MFA.',
+    },
+    {
+      id: 'a03-sensitive-data',
+      name: 'Sensitive Data Exposure',
+      description: 'Protect sensitive data in transit and at rest',
+      severity: 'critical',
+      pattern: '(password|api_key|secret|token)\\s*=\\s*[\'"][^\'\"]*[\'"]',
+      remediation:
+        'Encrypt sensitive data, use HTTPS, implement proper access controls.',
+    },
+    {
+      id: 'a04-xxe',
+      name: 'XML External Entity (XXE)',
+      description: 'Prevent XML External Entity attacks',
       severity: 'high',
-      action: 'warn',
-      description: 'Warns about hardcoded credentials',
+      pattern: 'parseXML|XMLParser|DOCTYPE',
+      remediation:
+        'Disable XML external entity processing and DTD processing.',
     },
     {
-      id: 'a03-broken-access',
-      name: 'Check Access Control',
-      pattern: '(admin|root|privileged)\\s*=\\s*(true|1)',
+      id: 'a05-broken-access',
+      name: 'Broken Access Control',
+      description: 'Implement proper authorization controls',
+      severity: 'critical',
+      pattern: 'if\\s*\\(\\s*user\\.id\\s*===.*\\)|authorization\\s*:\\s*false',
+      remediation:
+        'Implement role-based access control and verify permissions on every request.',
+    },
+    {
+      id: 'a06-security-config',
+      name: 'Security Misconfiguration',
+      description: 'Secure configuration of frameworks and infrastructure',
       severity: 'high',
-      action: 'warn',
-      description: 'Detects potential privilege escalation',
+      pattern: 'debug\\s*:\\s*true|CORS\\s*:\\s*\\*|security\\s*:\\s*false',
+      remediation:
+        'Disable debug mode in production, restrict CORS, enable security headers.',
     },
     {
-      id: 'a04-insecure-design',
-      name: 'Insecure Design Patterns',
-      pattern: '(weak|insecure|deprecated)\\s*(crypto|ssl|hash)',
+      id: 'a07-xss',
+      name: 'Cross-Site Scripting (XSS)',
+      description: 'Prevent XSS attacks through input validation and output encoding',
       severity: 'high',
-      action: 'warn',
-      description: 'Warns about insecure design patterns',
+      pattern: 'innerHTML\\s*=|dangerouslySetInnerHTML|eval\\s*\\(|new\\s*Function',
+      remediation:
+        'Use content security policy, validate and sanitize all user inputs.',
     },
     {
-      id: 'a05-vulnerable-components',
-      name: 'Check Dependencies',
-      pattern: 'package\\.json|requirements\\.txt|Gemfile',
+      id: 'a08-insecure-deserial',
+      name: 'Insecure Deserialization',
+      description: 'Prevent arbitrary code execution through deserialization',
+      severity: 'high',
+      pattern: 'pickle\\.loads|deserialize|JSON\\.parse.*untrusted',
+      remediation:
+        'Validate and sanitize serialized data before deserialization.',
+    },
+    {
+      id: 'a09-known-vuln',
+      name: 'Using Components with Known Vulnerabilities',
+      description: 'Keep dependencies up to date',
+      severity: 'high',
+      pattern: 'dependencies.*vulnerable',
+      remediation: 'Regularly update dependencies and perform security audits.',
+    },
+    {
+      id: 'a10-logging',
+      name: 'Insufficient Logging and Monitoring',
+      description: 'Implement comprehensive logging and monitoring',
       severity: 'medium',
-      action: 'info',
-      description: 'Reminds to check dependency versions',
-    },
-    {
-      id: 'a06-api-security',
-      name: 'API Security',
-      pattern: '(api|endpoint).*[\'"`](http|ftp)[\'"`]',
-      severity: 'high',
-      action: 'warn',
-      description: 'Ensures API endpoints use HTTPS',
-    },
-    {
-      id: 'a07-logging',
-      name: 'Logging & Monitoring',
-      pattern: 'console\\.(log|debug).*password|secret|token',
-      severity: 'high',
-      action: 'block',
-      description: 'Prevents logging sensitive information',
-    },
-    {
-      id: 'a08-csrm',
-      name: 'CSRF Protection',
-      pattern: '(post|put|delete).*csrf.*',
-      severity: 'medium',
-      action: 'warn',
-      description: 'Ensures CSRF tokens are validated',
+      pattern: 'console\\.log|console\\.error',
+      remediation:
+        'Use structured logging, implement security event monitoring.',
     },
   ],
+  minCoverage: 80,
+  enforcementLevel: 'required',
 };
 
-// PCI-DSS Template
-export const PCI_DSS_TEMPLATE: PolicyTemplate = {
+/**
+ * PCI-DSS Policy Template
+ */
+export const pciDssTemplate: PolicyTemplate = {
   id: 'pci-dss',
-  name: 'PCI-DSS Compliance',
-  description: 'Policy for PCI Data Security Standard compliance',
+  name: 'PCI-DSS',
+  description: 'Payment Card Industry Data Security Standard',
   category: 'compliance',
-  version: '3.2.1',
   rules: [
     {
-      id: 'pci-1-firewall',
-      name: 'Network Segmentation',
-      pattern: '(firewall|port|network)\\s*=\\s*',
-      severity: 'high',
-      action: 'warn',
-      description: 'Review network configuration',
-    },
-    {
-      id: 'pci-2-defaults',
-      name: 'No Default Credentials',
-      pattern: '(admin|root)\\s*:\\s*(admin|password|123)',
+      id: 'pci-requirement-3',
+      name: 'Protect Stored Cardholder Data',
+      description: 'Render PAN unreadable anywhere it is stored',
       severity: 'critical',
-      action: 'block',
-      description: 'Blocks use of default credentials',
+      pattern: '(card_number|cardNumber|pan)\\s*=\\s*[\'"][0-9]{13,19}[\'"]',
+      remediation:
+        'Never store full PAN. Use tokenization or encryption.',
     },
     {
-      id: 'pci-3-cardholder',
-      name: 'Cardholder Data Protection',
-      pattern: '(card|pan|cvv|ssn)\\s*=\\s*',
+      id: 'pci-requirement-4',
+      name: 'Protect Transmission of Cardholder Data',
+      description: 'Use strong cryptography for data in transit',
       severity: 'critical',
-      action: 'block',
-      description: 'Prevents hardcoding payment card data',
+      pattern: 'http://.*card|plaintext.*payment',
+      remediation: 'Use TLS 1.2 or higher for all cardholder data transmission.',
     },
     {
-      id: 'pci-4-encryption',
-      name: 'Encryption in Transit',
-      pattern: '(http|ftp)://(?!localhost)',
-      severity: 'high',
-      action: 'block',
-      description: 'Requires HTTPS for all connections',
-    },
-    {
-      id: 'pci-6-secure-dev',
+      id: 'pci-requirement-6',
       name: 'Secure Development',
-      pattern: '(eval|exec|system)\\s*\\(',
+      description: 'Implement secure development practices',
       severity: 'high',
-      action: 'warn',
-      description: 'Warns about code execution risks',
+      pattern: 'eval|exec|code\\s*injection',
+      remediation: 'Use secure coding practices and code review processes.',
     },
     {
-      id: 'pci-10-logging',
-      name: 'Logging & Monitoring',
-      pattern: 'log.*=.*null|log.*disabled',
+      id: 'pci-requirement-8',
+      name: 'User Authentication',
+      description: 'Assign unique IDs and restrict access',
       severity: 'high',
-      action: 'warn',
-      description: 'Ensures logging is enabled',
+      pattern: 'password.*default|auth\\s*:\\s*false',
+      remediation: 'Implement strong password policies and multi-factor authentication.',
     },
   ],
+  minCoverage: 90,
+  enforcementLevel: 'required',
 };
 
-// HIPAA Template
-export const HIPAA_TEMPLATE: PolicyTemplate = {
+/**
+ * HIPAA Policy Template
+ */
+export const hipaaTemplate: PolicyTemplate = {
   id: 'hipaa',
-  name: 'HIPAA Compliance',
-  description: 'Policy for Health Insurance Portability and Accountability Act compliance',
+  name: 'HIPAA',
+  description: 'Health Insurance Portability and Accountability Act',
   category: 'compliance',
-  version: '1.0',
   rules: [
     {
-      id: 'hipaa-1-phi',
-      name: 'Protected Health Information',
-      pattern: '(ssn|patient|health|medical)\\s*=\\s*',
+      id: 'hipaa-phi-protection',
+      name: 'PHI Protection',
+      description: 'Protect Protected Health Information',
       severity: 'critical',
-      action: 'block',
-      description: 'Prevents exposure of PHI data',
+      pattern: '(ssn|social.*security|health.*record)\\s*=\\s*[\'"][^\'\"]*[\'"]',
+      remediation:
+        'Encrypt PHI at rest and in transit. Implement access controls.',
     },
     {
-      id: 'hipaa-2-encryption',
-      name: 'Encryption Required',
-      pattern: '(encrypt|aes|rsa)',
+      id: 'hipaa-audit-logging',
+      name: 'Audit Logging',
+      description: 'Maintain comprehensive audit logs',
       severity: 'high',
-      action: 'warn',
-      description: 'Ensures encryption standards',
+      pattern: 'audit.*disable|logging.*off',
+      remediation: 'Enable and maintain detailed audit logs of PHI access.',
     },
     {
-      id: 'hipaa-3-access',
+      id: 'hipaa-access-control',
       name: 'Access Control',
-      pattern: '(authorize|authenticate)\\s*=\\s*',
+      description: 'Implement role-based access controls',
       severity: 'high',
-      action: 'warn',
-      description: 'Verifies access controls',
-    },
-    {
-      id: 'hipaa-4-audit',
-      name: 'Audit Controls',
-      pattern: 'audit.*log|access.*log',
-      severity: 'medium',
-      action: 'info',
-      description: 'Requires audit logging',
+      pattern: 'authorization.*always|access.*check.*false',
+      remediation:
+        'Implement minimum necessary access principle and role-based access control.',
     },
   ],
+  minCoverage: 95,
+  enforcementLevel: 'required',
 };
 
-// Code Quality Template
-export const CODE_QUALITY_TEMPLATE: PolicyTemplate = {
-  id: 'code-quality',
-  name: 'Code Quality Standards',
-  description: 'Policy for enforcing code quality and best practices',
-  category: 'code-quality',
-  version: '1.0',
-  rules: [
-    {
-      id: 'cq-1-eslint',
-      name: 'ESLint Compliance',
-      pattern: '\\.(eslintrc|eslintignore)',
-      severity: 'medium',
-      action: 'info',
-      description: 'Verify ESLint configuration',
-    },
-    {
-      id: 'cq-2-tests',
-      name: 'Test Coverage',
-      pattern: '\\.(test|spec)\\.ts',
-      severity: 'medium',
-      action: 'warn',
-      description: 'Requires tests for new code',
-    },
-    {
-      id: 'cq-3-types',
-      name: 'TypeScript Strict Mode',
-      pattern: '"strict"\\s*:\\s*true',
-      severity: 'low',
-      action: 'warn',
-      description: 'Encourages strict mode',
-    },
-    {
-      id: 'cq-4-docs',
-      name: 'Documentation',
-      pattern: '\\/\\/\\s*TODO|\\/\\/\\s*FIXME',
-      severity: 'low',
-      action: 'info',
-      description: 'Tracks outstanding documentation',
-    },
-  ],
-};
-
-// SOC 2 Template
-export const SOC2_TEMPLATE: PolicyTemplate = {
-  id: 'soc2',
-  name: 'SOC 2 Compliance',
-  description: 'Policy for Service Organization Control 2 compliance',
+/**
+ * SOC 2 Policy Template
+ */
+export const soc2Template: PolicyTemplate = {
+  id: 'soc-2',
+  name: 'SOC 2',
+  description: 'Service Organization Control 2 Framework',
   category: 'compliance',
-  version: '1.0',
   rules: [
     {
-      id: 'soc2-1-access',
-      name: 'Access Control',
-      pattern: '(role|permission|access)\\s*=\\s*',
+      id: 'soc2-availability',
+      name: 'Availability',
+      description: 'System availability and performance controls',
       severity: 'high',
-      action: 'warn',
-      description: 'Reviews access control implementation',
+      pattern: 'timeout\\s*:\\s*0|retry.*false',
+      remediation: 'Implement proper timeout and retry logic.',
     },
     {
-      id: 'soc2-2-encryption',
-      name: 'Data Encryption',
-      pattern: '(encrypt|secure|tls|ssl)',
+      id: 'soc2-confidentiality',
+      name: 'Confidentiality',
+      description: 'Data confidentiality controls',
       severity: 'high',
-      action: 'warn',
-      description: 'Verifies encryption usage',
+      pattern: 'encrypt.*false|ssl.*disable',
+      remediation: 'Enable encryption for all sensitive data.',
     },
     {
-      id: 'soc2-3-logging',
-      name: 'Activity Logging',
-      pattern: '(log|audit|track)',
-      severity: 'medium',
-      action: 'warn',
-      description: 'Ensures activity is logged',
-    },
-    {
-      id: 'soc2-4-testing',
-      name: 'Change Testing',
-      pattern: '\\.(test|spec)',
-      severity: 'medium',
-      action: 'warn',
-      description: 'Requires change testing',
+      id: 'soc2-integrity',
+      name: 'Integrity',
+      description: 'Data integrity controls',
+      severity: 'high',
+      pattern: 'checksum.*false|validation.*skip',
+      remediation: 'Implement data integrity checks and validation.',
     },
   ],
+  minCoverage: 85,
+  enforcementLevel: 'recommended',
 };
 
-export const POLICY_TEMPLATES = [
-  OWASP_TOP_10_TEMPLATE,
-  PCI_DSS_TEMPLATE,
-  HIPAA_TEMPLATE,
-  CODE_QUALITY_TEMPLATE,
-  SOC2_TEMPLATE,
-];
+/**
+ * Get template by ID
+ */
+export function getTemplate(templateId: string): PolicyTemplate | null {
+  const templates: Record<string, PolicyTemplate> = {
+    'owasp-top-10': owaspTop10Template,
+    'pci-dss': pciDssTemplate,
+    hipaa: hipaaTemplate,
+    'soc-2': soc2Template,
+  };
 
-export function getTemplate(id: string): PolicyTemplate | undefined {
-  return POLICY_TEMPLATES.find((t) => t.id === id);
+  return templates[templateId] || null;
 }
 
+/**
+ * Get all templates
+ */
+export function getAllTemplates(): PolicyTemplate[] {
+  return [owaspTop10Template, pciDssTemplate, hipaaTemplate, soc2Template];
+}
+
+/**
+ * Get templates by category
+ */
 export function getTemplatesByCategory(
-  category: string
+  category: PolicyTemplate['category']
 ): PolicyTemplate[] {
-  return POLICY_TEMPLATES.filter((t) => t.category === category);
+  return getAllTemplates().filter(t => t.category === category);
 }
 
-export function listAllTemplates(): PolicyTemplate[] {
-  return POLICY_TEMPLATES;
+/**
+ * Validate rule against pattern
+ */
+export function validateRulePattern(
+  code: string,
+  rule: PolicyTemplate['rules'][0]
+): boolean {
+  try {
+    const pattern = new RegExp(rule.pattern, 'gi');
+    return pattern.test(code);
+  } catch (error) {
+    logger.error(
+      {
+        ruleId: rule.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Error validating rule pattern'
+    );
+    return false;
+  }
 }
