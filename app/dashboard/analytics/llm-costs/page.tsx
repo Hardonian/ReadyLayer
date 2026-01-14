@@ -1,201 +1,149 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
-interface LLMCostAnalytics {
-  totalCost: number
-  averageDailyCost: number
-  costByModel: Record<string, number>
-  costTrends: Array<{ date: string; cost: number }>
-  projectedMonthlyTotal: number
-  costComparison: {
-    previousMonth: number
-    changePercent: number
-  }
-}
+const costsByModel = [
+  { model: 'GPT-4', cost: 142.50 },
+  { model: 'GPT-3.5', cost: 48.30 },
+  { model: 'Embeddings', cost: 16.20 },
+  { model: 'Other', cost: 5.00 },
+]
 
-export default function LLMCostsAnalyticsPage() {
-  const [data, setData] = useState<LLMCostAnalytics | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+const costsByDay = [
+  { date: 'Day 1', cost: 24 },
+  { date: 'Day 2', cost: 19 },
+  { date: 'Day 3', cost: 28 },
+  { date: 'Day 4', cost: 31 },
+  { date: 'Day 5', cost: 26 },
+  { date: 'Day 6', cost: 35 },
+  { date: 'Day 7', cost: 44 },
+]
 
-  useEffect(() => {
-    fetchCostAnalytics()
-  }, [])
+const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981']
 
-  async function fetchCostAnalytics() {
-    try {
-      const response = await fetch('/api/v1/analytics/llm-costs')
-      if (response.ok) {
-        const analytics = await response.json()
-        setData(analytics)
-      }
-    } catch (error) {
-      console.error('Failed to fetch cost analytics:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (isLoading) {
-    return <div className="p-8">Loading LLM cost analytics...</div>
-  }
-
-  if (!data) {
-    return <div className="p-8">Unable to load analytics data</div>
-  }
-
-  const changeColor = data.costComparison.changePercent > 0 ? 'text-red-600' : 'text-green-600'
-  const changeIcon = data.costComparison.changePercent > 0 ? <TrendingUp /> : <TrendingDown />
-
+export default function LLMCostsPage() {
   return (
-    <div className="space-y-8 p-8">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">LLM Cost Analytics</h1>
-        <p className="text-muted-foreground">
-          Analyze your AI model usage and spending patterns
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">LLM Spending</h1>
+        <p className="text-muted-foreground mt-2">
+          Track LLM costs by model and usage patterns
         </p>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              This Month
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total LLM Calls</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${data.totalCost.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">month-to-date</p>
+            <div className="text-3xl font-bold">2,847</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              ↑ 12% from last week
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Daily Average
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Tokens</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${data.averageDailyCost.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">per day</p>
+            <div className="text-3xl font-bold">847.2k</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Input + output tokens this month
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Projected Monthly
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Avg Cost/Call</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${data.projectedMonthlyTotal.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">estimated total</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              vs Last Month
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold flex items-center gap-2 ${changeColor}`}>
-              {changeIcon}
-              {Math.abs(data.costComparison.changePercent).toFixed(1)}%
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">month over month</p>
+            <div className="text-3xl font-bold">$0.073</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              ↓ 3% from last month
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Cost Breakdown by Model */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Cost Breakdown by Model
-          </CardTitle>
+          <CardTitle>Daily Spending Trend</CardTitle>
+          <CardDescription>
+            LLM costs over the past 7 days
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {Object.entries(data.costByModel)
-              .sort(([, a], [, b]) => b - a)
-              .map(([model, cost]) => {
-                const percentage = (cost / data.totalCost) * 100
-                return (
-                  <div key={model}>
-                    <div className="flex justify-between items-center mb-2">
-                      <div>
-                        <p className="font-medium text-sm">{model}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {percentage.toFixed(1)}% of total
-                        </p>
-                      </div>
-                      <Badge variant="outline">${cost.toFixed(2)}</Badge>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-full bg-blue-600 rounded-full transition-all"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={costsByDay}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="cost" fill="#3b82f6" />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
 
-      {/* Cost Trend */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Daily Cost Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.costTrends.length > 0 ? (
-            <div className="space-y-2">
-              {data.costTrends.map((entry, index) => (
-                <div key={index} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                  <span className="text-sm text-muted-foreground">{entry.date}</span>
-                  <span className="font-medium">${entry.cost.toFixed(2)}</span>
-                </div>
-              ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Cost by Model</CardTitle>
+            <CardDescription>
+              Spending breakdown by LLM model
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={costsByModel}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ model, cost }) => `${model}: $${cost}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="cost"
+                >
+                  {costsByModel.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Model Efficiency</CardTitle>
+            <CardDescription>
+              Tokens per dollar by model
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">GPT-4</span>
+              <span className="font-medium">2,845 tokens/$</span>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No cost data available yet</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Insights */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Cost Insights</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm">
-              <span className="font-semibold">Top Model:</span> The most expensive model is{' '}
-              <span className="font-mono">
-                {Object.entries(data.costByModel).sort(([, a], [, b]) => b - a)[0]?.[0]}
-              </span>
-            </p>
-          </div>
-          <div className="p-4 bg-green-50 rounded-lg">
-            <p className="text-sm">
-              <span className="font-semibold">Optimization:</span> Consider using cheaper models for
-              lower-complexity tasks to reduce costs.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">GPT-3.5</span>
+              <span className="font-medium">18,923 tokens/$</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Embeddings</span>
+              <span className="font-medium">50,000+ tokens/$</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
