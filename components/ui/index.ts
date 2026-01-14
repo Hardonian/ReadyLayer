@@ -30,6 +30,13 @@ export {
   ModalFooter,
   ModalCloseButton,
 } from './modal'
+export {
+  ChartContainer,
+  LinearProgress,
+  BarChart,
+  DonutChart,
+  Sparkline,
+} from './chart'
 export { Input } from './input'
 export { Textarea } from './textarea'
 export { useToast, toast } from '@/lib/hooks/use-toast'
