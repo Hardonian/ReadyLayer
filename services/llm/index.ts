@@ -323,6 +323,150 @@ class AnthropicProvider implements LLMProvider {
   }
 }
 
+// OpenCode Provider (stable baseline model for governance)
+class OpenCodeProvider implements LLMProvider {
+  name = 'opencode';
+  private apiUrl: string | null = null;
+  private apiKey: string | null = null;
+
+  private getConfig(): { apiUrl: string; apiKey: string } {
+    if (!this.apiUrl) {
+      this.apiUrl = process.env.OPENCODE_API_URL || '';
+      if (!this.apiUrl) {
+        throw new Error('OPENCODE_API_URL environment variable is required');
+      }
+    }
+    if (!this.apiKey) {
+      this.apiKey = process.env.OPENCODE_API_KEY || '';
+      if (!this.apiKey) {
+        throw new Error('OPENCODE_API_KEY environment variable is required');
+      }
+    }
+    return { apiUrl: this.apiUrl, apiKey: this.apiKey };
+  }
+
+  async complete(request: LLMRequest): Promise<LLMResponse> {
+    const { apiUrl, apiKey } = this.getConfig();
+    const model = request.model || 'opencode-baseline-v1';
+    const url = `${apiUrl}/v1/completions`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          prompt: request.prompt,
+          temperature: request.temperature || 0.7,
+          max_tokens: request.maxTokens || 2000,
+        }),
+        signal: AbortSignal.timeout(60000), // 60 second timeout
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        throw new Error('OpenCode API request timed out');
+      }
+      if (error instanceof Error && error.message.includes('fetch')) {
+        throw new Error(`OpenCode API network error: ${error.message}`);
+      }
+      throw error;
+    }
+
+    if (!response.ok) {
+      let errorMessage = 'Unknown error';
+      try {
+        const errorData = await response.json() as unknown;
+        const error = errorData as { error?: { message?: string }; message?: string };
+        errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
+      } catch {
+        errorMessage = `${response.status} ${response.statusText}`;
+      }
+      throw new Error(`OpenCode API error: ${errorMessage}`);
+    }
+
+    let data: {
+      choices?: Array<{ text?: string }>;
+      usage?: { total_tokens?: number };
+    };
+    try {
+      const jsonData = await response.json() as unknown;
+      data = jsonData as typeof data;
+    } catch (error) {
+      throw new Error('Failed to parse OpenCode API response as JSON');
+    }
+
+    const content = data.choices?.[0]?.text || '';
+    const tokensUsed = data.usage?.total_tokens || 0;
+
+    if (!content) {
+      throw new Error('OpenCode API returned empty response');
+    }
+
+    // OpenCode cost (baseline is $0 or minimal)
+    const cost = this.calculateCost(model, tokensUsed);
+
+    // Track cost
+    try {
+      await this.trackCost(request.organizationId, model, tokensUsed, cost);
+    } catch (error) {
+      // Log but don't fail
+      console.error('Failed to track OpenCode cost:', error);
+    }
+
+    return {
+      content,
+      model,
+      tokensUsed,
+      cost,
+      cached: false,
+    };
+  }
+
+  private calculateCost(_model: string, _tokens: number): number {
+    // OpenCode baseline is free or minimal cost
+    return 0;
+  }
+
+  private async trackCost(
+    organizationId: string,
+    model: string,
+    tokens: number,
+    cost: number
+  ): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await prisma.costTracking.upsert({
+      where: {
+        organizationId_date_service_provider: {
+          organizationId,
+          date: today,
+          service: 'llm',
+          provider: 'opencode',
+        },
+      },
+      update: {
+        amount: { increment: cost },
+        units: { increment: tokens },
+        metadata: { model },
+      },
+      create: {
+        organizationId,
+        date: today,
+        service: 'llm',
+        provider: 'opencode',
+        amount: cost,
+        units: tokens,
+        metadata: { model },
+      },
+    });
+  }
+}
+
 // LLM Service with caching
 export class LLMService {
   private providers: Map<string, LLMProvider> = new Map();
