@@ -133,19 +133,28 @@ async function analyzeWithLLM(
   requestId: string
 ): Promise<Omit<LLMEnrichmentResult, 'completedAt' | 'durationMs'>> {
   try {
-    // Query RAG evidence if enabled
+    // SECURITY: Redact secrets before sending code to LLM
+    const redactionResult = redactSecrets(request.fileContent, {
+      redactEmail: false,
+      logDetections: true,
+    });
+    updateRedactionStats(redactionResult);
+
+    const redactedCode = redactionResult.redacted;
+
+    // Query RAG evidence if enabled (use redacted code)
     let evidence = '';
     if (isQueryEnabled(request.organizationId)) {
       const rawEvidence = await queryEvidence(
         request.repositoryId,
-        request.fileContent,
+        redactedCode,
         request.filePath
       );
       evidence = formatEvidenceForPrompt(rawEvidence);
     }
 
-    // Build LLM prompt
-    const prompt = buildLLMPrompt(request.filePath, request.fileContent, evidence);
+    // Build LLM prompt with redacted code
+    const prompt = buildLLMPrompt(request.filePath, redactedCode, evidence);
 
     // Call LLM service
     const llmResponse = await llmService.analyzeCode({
