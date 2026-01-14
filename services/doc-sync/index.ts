@@ -579,6 +579,9 @@ export class DocSyncService {
 
           if (allEvidence.length > 0) {
             evidenceSection = formatEvidenceForPrompt(allEvidence);
+            // SECURITY: Redact secrets from evidence before sending to LLM
+            const redactionResult = redactSecrets(evidenceSection, { logDetections: true });
+            evidenceSection = redactionResult.redacted;
           }
         } catch (error) {
           // Evidence retrieval failed - proceed without it (graceful degradation)
