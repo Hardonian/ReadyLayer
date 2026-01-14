@@ -5,78 +5,64 @@
   },
   "display_information": {
     "name": "ReadyLayer",
-    "description": "Code review and compliance automation",
-    "background_color": "#2c3e50",
-    "long_description": "ReadyLayer brings AI-powered code review and compliance enforcement to your development workflow. Get instant feedback on security, policy violations, and code quality."
+    "description": "AI-powered code review and testing for secure, quality-driven development",
+    "background_color": "#1a1a1a",
+    "long_description": "ReadyLayer integrates with your Slack workspace to notify teams about blocked PRs, security findings, and code quality issues."
   },
   "features": {
     "bot_user": {
-      "display_name": "ReadyLayer",
+      "display_name": "ReadyLayer Bot",
       "always_online": true
     },
     "slash_commands": [
       {
         "command": "/readylayer",
-        "url": "https://readylayer.io/api/webhooks/slack/commands",
-        "description": "Interact with ReadyLayer from Slack",
-        "should_escape": false
-      },
-      {
-        "command": "/readylayer-status",
-        "url": "https://readylayer.io/api/webhooks/slack/status",
-        "description": "Check your PR review status",
-        "should_escape": false
+        "url": "https://api.readylayer.io/integrations/slack/commands",
+        "description": "Interact with ReadyLayer",
+        "usage_hint": "[status|config|help]"
       }
     ]
   },
   "oauth_config": {
     "redirect_urls": [
-      "https://readylayer.io/integrations/slack/install/callback"
+      "https://readylayer.io/integrations/slack/callback"
     ],
     "scopes": {
       "bot": [
-        "channels:read",
         "chat:write",
         "chat:write.public",
-        "commands",
+        "chat:write.customize",
         "files:read",
+        "files:write",
+        "users:read",
+        "users:read.email",
+        "team:read",
+        "channels:read",
         "groups:read",
         "im:read",
         "mpim:read",
-        "reactions:read",
-        "reactions:write",
-        "team:read",
-        "users:read",
-        "workflow.steps:execute",
         "incoming-webhook",
-        "webhooks"
-      ],
-      "user": [
-        "channels:read",
-        "users:read"
+        "commands"
       ]
     }
   },
   "settings": {
-    "org_deploy_enabled": true,
-    "socket_mode_enabled": false,
-    "token_rotation_enabled": false,
     "event_subscriptions": {
-      "bot_events": [
+      "request_url": "https://api.readylayer.io/integrations/slack/events",
+      "events_bot": [
         "app_mention",
         "message.channels",
         "message.groups",
         "message.im",
-        "message.mpim",
-        "slash_commands",
-        "shortcut",
-        "team_domain_change"
+        "message.mpim"
       ]
     },
     "interactivity": {
       "is_enabled": true,
-      "request_url": "https://readylayer.io/api/webhooks/slack/interactions"
+      "request_url": "https://api.readylayer.io/integrations/slack/interactive"
     },
-    "org_deploy_enabled": true
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": false,
+    "token_rotation_enabled": false
   }
 }
