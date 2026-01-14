@@ -123,16 +123,16 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
 
     it('should detect and redact Slack tokens', () => {
       const code = `
-        const slackToken = 'xoxb-1234567890-1234567890-abcdefghijklmnop';
+        const slackToken = 'xoxb_TEST_SLACK_TOKEN_PLACEHOLDER_123456';
         client.auth(slackToken);
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('slack-token');
       expect(result.redacted).toContain('[SLACK-TOKEN_REDACTED]');
-      expect(result.redacted).not.toContain('xoxb-');
+      expect(result.redacted).not.toContain('xoxb_TEST');
     });
 
     it('should detect and redact Stripe keys', () => {
