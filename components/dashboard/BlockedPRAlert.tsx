@@ -58,9 +58,33 @@ export function BlockedPRAlert({
   const [isDismissed, setIsDismissed] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
 
+  // Track when alert is shown
+  useEffect(() => {
+    if (!isDismissed) {
+      const criticalCount = issues.filter((i) => i.severity === 'critical').length
+      const highCount = issues.filter((i) => i.severity === 'high').length
+      const mediumCount = issues.filter((i) => i.severity === 'medium').length
+
+      trackBlockedPREvent('shown', prNumber, {
+        prTitle,
+        issueCount: issues.length,
+        criticalCount,
+        highCount,
+        mediumCount,
+        repositoryName,
+      })
+    }
+  }, [isDismissed, prNumber, prTitle, issues, repositoryName])
+
   const handleDismiss = () => {
     setIsDismissed(true)
+    trackBlockedPREvent('dismissed', prNumber, { prTitle, repositoryName })
     onDismiss?.()
+  }
+
+  const handleViewDetails = () => {
+    trackBlockedPREvent('clicked', prNumber, { prTitle, repositoryName })
+    onViewDetails?.()
   }
 
   const criticalCount = issues.filter((i) => i.severity === 'critical').length
