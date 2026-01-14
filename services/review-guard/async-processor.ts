@@ -13,6 +13,7 @@ import { llmService } from '../llm';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
+import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
 
 export interface LLMEnrichmentRequest {
   reviewId: string;
