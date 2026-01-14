@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, TrendingUp, Zap, X, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { fadeIn } from '@/lib/design/motion'
+import { trackUpgradePromptEvent } from '@/lib/telemetry/analytics'
 
 export type UpgradeContext =
   | 'usage-limit-approaching'
