@@ -1,148 +1,167 @@
+/**
+ * Slack Events Handler
+ * 
+ * Processes Slack events (messages, reactions, etc.)
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
 
-interface SlackEvent {
-  token: string;
-  team_id: string;
-  api_app_id: string;
-  event: any;
-  type: string;
-  event_id: string;
-  event_time: number;
-  challenge?: string;
-}
+export const dynamic = 'force-dynamic';
 
+/**
+ * POST /integrations/slack/events
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body: SlackEvent = await request.json();
+    const payload = await request.json();
 
-    // Handle Slack URL verification challenge
-    if (body.type === 'url_verification') {
-      return NextResponse.json({ challenge: body.challenge });
+    // Handle URL verification challenge
+    if (payload.type === 'url_verification') {
+      logger.info('Slack URL verification challenge');
+      return NextResponse.json({
+        challenge: payload.challenge,
+      });
     }
 
-    // Verify token
-    if (body.token !== process.env.SLACK_VERIFICATION_TOKEN) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
+    // Handle events
+    if (payload.type === 'event_callback') {
+      const event = payload.event;
 
-    const supabase = createClient();
+      logger.info(
+        {
+          eventType: event.type,
+          userId: event.user,
+          channel: event.channel,
+        },
+        'Slack event received'
+      );
 
-    // Handle different event types
-    switch (body.event.type) {
-      case 'app_mention':
-        await handleAppMention(supabase, body);
-        break;
-      case 'message':
-        await handleMessage(supabase, body);
-        break;
-      case 'app_uninstalled':
-        await handleUninstall(supabase, body);
-        break;
+      metrics.increment('slack_event_received', {
+        eventType: event.type,
+      });
+
+      // Handle app mention
+      if (event.type === 'app_mention') {
+        await handleAppMention(event, payload.team_id);
+      }
+
+      // Handle message
+      if (event.type === 'message' && !event.bot_id) {
+        await handleMessage(event, payload.team_id);
+      }
+
+      // Handle reaction
+      if (event.type === 'reaction_added') {
+        await handleReaction(event, payload.team_id);
+      }
+
+      return NextResponse.json({ ok: true });
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error('Slack event error:', error);
+    logger.error(
+      {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Slack events route error'
+    );
+
+    metrics.increment('slack_event_error');
+
     return NextResponse.json(
-      { error: 'Failed to process event' },
+      { error: 'Failed to process Slack event' },
       { status: 500 }
     );
   }
 }
 
-async function handleAppMention(
-  supabase: any,
-  body: SlackEvent
-) {
-  const { event } = body;
+/**
+ * Handle app mention events
+ */
+async function handleAppMention(event: any, teamId: string): Promise<void> {
   const { user, channel, text } = event;
 
-  // Parse command from text
-  const command = text
-    .replace(/<@[^>|]+\|?[^>]*>/g, '')
-    .trim()
-    .split(' ')[0]
-    .toLowerCase();
+  logger.info(
+    {
+      userId: user,
+      channel,
+      teamId,
+    },
+    'Handling app mention'
+  );
 
-  let response = '';
+  metrics.increment('slack_app_mention');
+
+  // Parse command from text
+  const command = text.toLowerCase().split(/\s+/)[1];
 
   switch (command) {
     case 'status':
-      response =
-        'Your PR reviews are up to date. All checks passed! ✅';
+      await sendStatus(channel, teamId);
       break;
     case 'help':
-      response = `
-Available commands:
-• \`@ReadyLayer status\` - Check your PR review status
-• \`@ReadyLayer help\` - Show this message
-• \`@ReadyLayer dashboard\` - Open your dashboard
-      `.trim();
-      break;
-    case 'dashboard':
-      response = `Open your dashboard: ${process.env.NEXT_PUBLIC_APP_URL || 'https://readylayer.io'}/dashboard`;
+      await sendHelp(channel, teamId);
       break;
     default:
-      response =
-        'I didn\'t understand that command. Try `@ReadyLayer help` for available commands.';
-  }
-
-  // Send response to channel
-  if (process.env.SLACK_BOT_TOKEN) {
-    await fetch('https://slack.com/api/chat.postMessage', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        channel,
-        thread_ts: event.ts,
-        text: response,
-      }),
-    });
+      await sendUnknownCommand(channel, teamId);
   }
 }
 
-async function handleMessage(
-  supabase: any,
-  body: SlackEvent
-) {
-  // Handle DM messages
-  if (body.event.channel_type === 'im') {
-    const { user, text } = body.event;
+/**
+ * Handle message events
+ */
+async function handleMessage(event: any, teamId: string): Promise<void> {
+  logger.info(
+    {
+      channel: event.channel,
+      teamId,
+    },
+    'Handling message event'
+  );
 
-    // You could implement conversational features here
-    // For now, just acknowledge the message
-    if (text && text.includes('readylayer')) {
-      if (process.env.SLACK_BOT_TOKEN) {
-        await fetch('https://slack.com/api/chat.postMessage', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${process.env.SLACK_BOT_TOKEN}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            channel: user,
-            text: 'Hi! 👋 I can help you with your code reviews. Type `help` to learn more.',
-          }),
-        });
-      }
-    }
-  }
+  metrics.increment('slack_message_event');
 }
 
-async function handleUninstall(
-  supabase: any,
-  body: SlackEvent
-) {
-  // Remove Slack integration from database
-  await supabase
-    .from('notification_configs')
-    .update({
-      slack_access_token: null,
-      slack_installed_at: null,
-    })
-    .eq('slack_workspace_id', body.team_id);
+/**
+ * Handle reaction events
+ */
+async function handleReaction(event: any, teamId: string): Promise<void> {
+  logger.info(
+    {
+      reaction: event.reaction,
+      teamId,
+    },
+    'Handling reaction event'
+  );
+
+  metrics.increment('slack_reaction_event', {
+    reaction: event.reaction,
+  });
+}
+
+/**
+ * Send status message
+ */
+async function sendStatus(channel: string, teamId: string): Promise<void> {
+  // TODO: Fetch ReadyLayer status and send to Slack
+  logger.info('Sending status message to Slack');
+}
+
+/**
+ * Send help message
+ */
+async function sendHelp(channel: string, teamId: string): Promise<void> {
+  // TODO: Send help text to Slack
+  logger.info('Sending help message to Slack');
+}
+
+/**
+ * Send unknown command message
+ */
+async function sendUnknownCommand(channel: string, teamId: string): Promise<void> {
+  // TODO: Send error message to Slack
+  logger.info('Sending unknown command message to Slack');
 }
