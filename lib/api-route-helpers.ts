@@ -10,7 +10,16 @@ import { z } from 'zod';
 import { logger } from '../observability/logging';
 import { requireAuth, AuthUser } from './auth';
 import { createAuthzMiddleware, AuthzOptions } from './authz';
-import { ApiErrorResponse, ErrorCodes } from './errors';
+import {
+  ApiErrorResponse,
+  ErrorCodes,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+  DatabaseError,
+  RateLimitError,
+} from './errors';
 import { UsageLimitExceededError } from './usage-enforcement';
 
 /**
