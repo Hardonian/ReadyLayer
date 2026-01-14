@@ -1,432 +1,465 @@
 /**
  * Stripe Webhook Handler
  * 
- * Processes Stripe webhook events and updates subscription/billing status
- * Handles: subscription.updated, invoice.payment_succeeded, invoice.payment_failed, customer.subscription.deleted
+ * Processes Stripe webhook events for billing operations:
+ * - Subscription updates (upgrades, downgrades, cancellations)
+ * - Payment success/failure tracking
+ * - Invoice generation and tracking
+ * - Seat management (user additions)
  */
 
-import { prisma } from '../../lib/prisma'
-import { logger } from '../../observability/logging'
-import { metrics } from '../../observability/metrics'
+import { prisma } from '@/lib/prisma';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
 
-export interface StripeWebhookEvent {
-  id: string
-  type: string
+export interface StripeWebhookPayload {
+  id: string;
+  object: string;
+  api_version?: string;
+  created: number;
   data: {
-    object: any
-  }
-  created: number
-  livemode: boolean
-}
-
-export interface StripeCustomer {
-  id: string
-  email?: string
-  metadata?: Record<string, string>
-}
-
-export interface StripeSubscription {
-  id: string
-  customer: string
-  status: string
-  current_period_start: number
-  current_period_end: number
-  cancel_at_period_end: boolean
-  items?: {
-    data: Array<{
-      price: {
-        id: string
-        amount: number
-        currency: string
-        recurring?: {
-          interval: string
-          interval_count: number
-        }
-      }
-    }>
-  }
-  metadata?: Record<string, string>
-}
-
-export interface StripeInvoice {
-  id: string
-  customer: string
-  subscription: string
-  amount_due: number
-  amount_paid: number
-  status: string
-  paid: boolean
-  created: number
+    object: Record<string, any>;
+    previous_attributes?: Record<string, any>;
+  };
+  livemode: boolean;
+  pending_webhooks: number;
+  request?: {
+    id?: string;
+    idempotency_key?: string;
+  };
+  type: string;
 }
 
 /**
- * Handle Stripe webhook event
+ * Handle customer.subscription.updated events
  */
-export async function handleStripeWebhook(event: StripeWebhookEvent): Promise<void> {
-  const eventType = event.type
-  const requestId = `stripe_${event.id}`
+export async function handleSubscriptionUpdated(
+  event: StripeWebhookPayload
+): Promise<void> {
+  const subscription = event.data.object;
+  const previousAttributes = event.data.previous_attributes || {};
 
   logger.info(
-    { eventType, stripeEventId: event.id, requestId },
-    'Processing Stripe webhook'
-  )
+    {
+      subscriptionId: subscription.id,
+      customerId: subscription.customer,
+      status: subscription.status,
+      previousStatus: previousAttributes.status,
+    },
+    'Processing subscription update'
+  );
 
   try {
-    switch (eventType) {
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object as StripeSubscription, requestId)
-        break
+    const organization = await prisma.organizations.findUnique({
+      where: { stripeSubscriptionId: subscription.id },
+      select: { id: true, plan: true },
+    });
 
-      case 'invoice.payment_succeeded':
-        await handleInvoicePaymentSucceeded(event.data.object as StripeInvoice, requestId)
-        break
-
-      case 'invoice.payment_failed':
-        await handleInvoicePaymentFailed(event.data.object as StripeInvoice, requestId)
-        break
-
-      case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object as StripeSubscription, requestId)
-        break
-
-      default:
-        logger.debug({ eventType, requestId }, 'Ignoring unhandled webhook event type')
-        break
-    }
-
-    metrics.increment('stripe_webhook_processed', { type: eventType })
-  } catch (error) {
-    metrics.increment('stripe_webhook_failed', { type: eventType })
-
-    logger.error(
-      {
-        eventType,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        requestId,
-      },
-      'Failed to process Stripe webhook'
-    )
-
-    // Re-throw so caller can return error status to Stripe
-    throw error
-  }
-}
-
-/**
- * Handle subscription updated event
- */
-async function handleSubscriptionUpdated(
-  subscription: StripeSubscription,
-  requestId: string
-): Promise<void> {
-  logger.info(
-    { subscriptionId: subscription.id, customerId: subscription.customer, requestId },
-    'Handling subscription updated'
-  )
-
-  try {
-    // Extract organization ID from metadata
-    const organizationId = subscription.metadata?.organizationId
-
-    if (!organizationId) {
+    if (!organization) {
       logger.warn(
-        { subscriptionId: subscription.id, requestId },
-        'No organizationId in subscription metadata'
-      )
-      return
-    }
-
-    // Determine plan based on Stripe product
-    const plan = determinePlanFromSubscription(subscription)
-
-    // Update organization subscription
-    await prisma.subscription.upsert({
-      where: {
-        stripeSubscriptionId: subscription.id,
-      },
-      create: {
-        organizationId,
-        stripeCustomerId: subscription.customer,
-        stripeSubscriptionId: subscription.id,
-        plan,
-        status: subscription.status,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      },
-      update: {
-        plan,
-        status: subscription.status,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      },
-    })
-
-    // Update organization plan
-    await prisma.organization.update({
-      where: { id: organizationId },
-      data: { plan },
-    })
-
-    metrics.increment('subscription_updated', { plan })
-
-    logger.info(
-      { organizationId, plan, subscriptionId: subscription.id, requestId },
-      'Subscription updated successfully'
-    )
-  } catch (error) {
-    logger.error(
-      {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        requestId,
-      },
-      'Failed to handle subscription updated'
-    )
-    throw error
-  }
-}
-
-/**
- * Handle invoice payment succeeded event
- */
-async function handleInvoicePaymentSucceeded(
-  invoice: StripeInvoice,
-  requestId: string
-): Promise<void> {
-  logger.info(
-    { invoiceId: invoice.id, customerId: invoice.customer, requestId },
-    'Handling invoice payment succeeded'
-  )
-
-  try {
-    // Find subscription
-    const subscription = await prisma.subscription.findUnique({
-      where: {
-        stripeSubscriptionId: invoice.subscription,
-      },
-    })
-
-    if (!subscription) {
-      logger.warn(
-        { invoiceId: invoice.id, subscriptionId: invoice.subscription, requestId },
-        'Subscription not found'
-      )
-      return
-    }
-
-    // Log payment
-    await prisma.billingEvent.create({
-      data: {
-        organizationId: subscription.organizationId,
-        type: 'payment_succeeded',
-        stripeInvoiceId: invoice.id,
-        amount: invoice.amount_paid,
-        currency: 'usd',
-        metadata: {
-          status: invoice.status,
-        } as any,
-      },
-    })
-
-    metrics.increment('invoice_payment_succeeded', {
-      amount: (invoice.amount_paid / 100).toString(), // Convert cents to dollars
-    })
-
-    logger.info(
-      {
-        organizationId: subscription.organizationId,
-        invoiceId: invoice.id,
-        amount: invoice.amount_paid,
-        requestId,
-      },
-      'Invoice payment recorded'
-    )
-  } catch (error) {
-    logger.error(
-      {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        requestId,
-      },
-      'Failed to handle invoice payment succeeded'
-    )
-    throw error
-  }
-}
-
-/**
- * Handle invoice payment failed event
- */
-async function handleInvoicePaymentFailed(
-  invoice: StripeInvoice,
-  requestId: string
-): Promise<void> {
-  logger.warn(
-    { invoiceId: invoice.id, customerId: invoice.customer, requestId },
-    'Handling invoice payment failed'
-  )
-
-  try {
-    // Find subscription
-    const subscription = await prisma.subscription.findUnique({
-      where: {
-        stripeSubscriptionId: invoice.subscription,
-      },
-    })
-
-    if (!subscription) {
-      logger.warn(
-        { invoiceId: invoice.id, subscriptionId: invoice.subscription, requestId },
-        'Subscription not found for failed payment'
-      )
-      return
-    }
-
-    // Log failed payment
-    await prisma.billingEvent.create({
-      data: {
-        organizationId: subscription.organizationId,
-        type: 'payment_failed',
-        stripeInvoiceId: invoice.id,
-        amount: invoice.amount_due,
-        currency: 'usd',
-        metadata: {
-          status: invoice.status,
-          attemptCount: 1,
-        } as any,
-      },
-    })
-
-    // TODO: Send email notification to billing contact
-    // TODO: Update org to paused state if payment fails multiple times
-
-    metrics.increment('invoice_payment_failed', {
-      amount: (invoice.amount_due / 100).toString(),
-    })
-
-    logger.warn(
-      {
-        organizationId: subscription.organizationId,
-        invoiceId: invoice.id,
-        amount: invoice.amount_due,
-        requestId,
-      },
-      'Invoice payment failed - org may need to retry'
-    )
-  } catch (error) {
-    logger.error(
-      {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        requestId,
-      },
-      'Failed to handle invoice payment failed'
-    )
-    throw error
-  }
-}
-
-/**
- * Handle subscription deleted event
- */
-async function handleSubscriptionDeleted(
-  subscription: StripeSubscription,
-  requestId: string
-): Promise<void> {
-  logger.info(
-    { subscriptionId: subscription.id, customerId: subscription.customer, requestId },
-    'Handling subscription deleted'
-  )
-
-  try {
-    // Find subscription record
-    const dbSubscription = await prisma.subscription.findUnique({
-      where: {
-        stripeSubscriptionId: subscription.id,
-      },
-    })
-
-    if (!dbSubscription) {
-      logger.warn(
-        { subscriptionId: subscription.id, requestId },
-        'Subscription not found'
-      )
-      return
+        { subscriptionId: subscription.id },
+        'Subscription not found in database'
+      );
+      return;
     }
 
     // Update subscription status
-    await prisma.subscription.update({
-      where: { id: dbSubscription.id },
-      data: {
-        status: 'canceled',
-      },
-    })
+    if (previousAttributes.status !== subscription.status) {
+      logger.info(
+        {
+          organizationId: organization.id,
+          status: subscription.status,
+        },
+        'Subscription status changed'
+      );
 
-    // Downgrade org to starter plan
-    await prisma.organization.update({
-      where: { id: dbSubscription.organizationId },
-      data: { plan: 'starter' },
-    })
+      await prisma.organizations.update({
+        where: { id: organization.id },
+        data: {
+          stripeSubscriptionStatus: subscription.status,
+          updatedAt: new Date(),
+        },
+      });
 
-    metrics.increment('subscription_deleted')
+      // Handle status-specific logic
+      switch (subscription.status) {
+        case 'active':
+          await handleSubscriptionActive(organization.id, subscription);
+          break;
+        case 'past_due':
+          await handleSubscriptionPastDue(organization.id, subscription);
+          break;
+        case 'canceled':
+          await handleSubscriptionCanceled(organization.id, subscription);
+          break;
+      }
+    }
 
-    logger.info(
-      {
-        organizationId: dbSubscription.organizationId,
-        subscriptionId: subscription.id,
-        requestId,
-      },
-      'Subscription deleted - org downgraded to starter'
-    )
+    // Handle plan change
+    if (previousAttributes.items !== subscription.items) {
+      await handlePlanChange(organization.id, subscription);
+    }
+
+    metrics.increment('stripe_subscription_updated', {
+      status: subscription.status,
+    });
   } catch (error) {
     logger.error(
       {
+        subscriptionId: subscription.id,
         error: error instanceof Error ? error.message : 'Unknown error',
-        requestId,
       },
-      'Failed to handle subscription deleted'
-    )
-    throw error
+      'Error processing subscription update'
+    );
+    metrics.increment('stripe_webhook_error', { eventType: 'subscription.updated' });
+    throw error;
   }
 }
 
 /**
- * Determine plan from Stripe subscription
+ * Handle subscription activation
  */
-function determinePlanFromSubscription(subscription: StripeSubscription): string {
-  // Map Stripe price IDs to plan names
-  const priceToplan: Record<string, string> = {
-    // These would be your actual Stripe price IDs
-    'price_growth': 'growth',
-    'price_scale': 'scale',
-  }
+async function handleSubscriptionActive(
+  organizationId: string,
+  subscription: any
+): Promise<void> {
+  logger.info(
+    { organizationId, subscriptionId: subscription.id },
+    'Subscription activated'
+  );
 
-  if (!subscription.items?.data?.[0]?.price?.id) {
-    return 'starter' // Default to starter if no price found
-  }
+  // Unlock features for active subscription
+  await prisma.organizations.update({
+    where: { id: organizationId },
+    data: {
+      settings: {
+        aiEnabled: true,
+        testExecutionEnabled: true,
+        customPoliciesEnabled: true,
+      },
+    },
+  });
 
-  const priceId = subscription.items.data[0].price.id
-  return priceToplan[priceId] || 'starter'
+  metrics.increment('subscription_activated');
 }
 
 /**
- * Validate Stripe webhook signature
- * Prevents spoofed webhooks from processing
+ * Handle subscription past due
  */
-export function validateWebhookSignature(
-  payload: string,
-  signature: string,
-  webhookSecret: string
-): boolean {
-  // In production, use Stripe's official validation:
-  // import Stripe from 'stripe'
-  // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  // try {
-  //   stripe.webhooks.constructEvent(payload, signature, webhookSecret)
-  //   return true
-  // } catch {
-  //   return false
-  // }
+async function handleSubscriptionPastDue(
+  organizationId: string,
+  subscription: any
+): Promise<void> {
+  logger.warn(
+    { organizationId, subscriptionId: subscription.id },
+    'Subscription past due'
+  );
 
-  // Simplified validation - in production use Stripe SDK
-  return true
+  // Send notification (would integrate with email service)
+  // For now, just log the event
+  metrics.increment('subscription_past_due');
+}
+
+/**
+ * Handle subscription cancellation
+ */
+async function handleSubscriptionCanceled(
+  organizationId: string,
+  subscription: any
+): Promise<void> {
+  logger.info(
+    { organizationId, subscriptionId: subscription.id },
+    'Subscription canceled'
+  );
+
+  // Downgrade to free plan
+  await prisma.organizations.update({
+    where: { id: organizationId },
+    data: {
+      plan: 'free',
+      settings: {
+        aiEnabled: false,
+        testExecutionEnabled: false,
+        customPoliciesEnabled: false,
+      },
+    },
+  });
+
+  metrics.increment('subscription_canceled');
+}
+
+/**
+ * Handle plan changes (upgrades/downgrades)
+ */
+async function handlePlanChange(
+  organizationId: string,
+  subscription: any
+): Promise<void> {
+  const priceId = subscription.items?.data?.[0]?.price?.id;
+
+  logger.info(
+    { organizationId, subscriptionId: subscription.id, priceId },
+    'Plan changed'
+  );
+
+  if (!priceId) return;
+
+  // Map price ID to plan
+  const planMap: Record<string, string> = {
+    [process.env.STRIPE_PRICE_ID_GROWTH || 'price_growth']: 'growth',
+    [process.env.STRIPE_PRICE_ID_SCALE || 'price_scale']: 'scale',
+  };
+
+  const newPlan = planMap[priceId];
+  if (!newPlan) {
+    logger.warn({ priceId }, 'Unknown price ID');
+    return;
+  }
+
+  // Update organization plan
+  await prisma.organizations.update({
+    where: { id: organizationId },
+    data: {
+      plan: newPlan,
+      updatedAt: new Date(),
+    },
+  });
+
+  metrics.increment('plan_changed', { newPlan });
+}
+
+/**
+ * Handle invoice.payment_succeeded events
+ */
+export async function handlePaymentSucceeded(
+  event: StripeWebhookPayload
+): Promise<void> {
+  const invoice = event.data.object;
+
+  logger.info(
+    {
+      invoiceId: invoice.id,
+      customerId: invoice.customer,
+      amount: invoice.amount_paid,
+    },
+    'Payment succeeded'
+  );
+
+  try {
+    const organization = await prisma.organizations.findUnique({
+      where: { stripeCustomerId: invoice.customer },
+      select: { id: true },
+    });
+
+    if (!organization) {
+      logger.warn(
+        { customerId: invoice.customer },
+        'Customer not found in database'
+      );
+      return;
+    }
+
+    // Record payment
+    await prisma.billingEvents.create({
+      data: {
+        organizationId: organization.id,
+        type: 'payment_succeeded',
+        stripeInvoiceId: invoice.id,
+        amountCents: invoice.amount_paid,
+        metadata: {
+          invoiceNumber: invoice.number,
+          paidAt: new Date(invoice.paid_at * 1000).toISOString(),
+        },
+      },
+    });
+
+    metrics.increment('payment_succeeded', {
+      amount: (invoice.amount_paid / 100).toString(),
+    });
+  } catch (error) {
+    logger.error(
+      {
+        invoiceId: invoice.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Error processing payment succeeded'
+    );
+    metrics.increment('stripe_webhook_error', { eventType: 'invoice.payment_succeeded' });
+    throw error;
+  }
+}
+
+/**
+ * Handle invoice.payment_failed events
+ */
+export async function handlePaymentFailed(
+  event: StripeWebhookPayload
+): Promise<void> {
+  const invoice = event.data.object;
+
+  logger.warn(
+    {
+      invoiceId: invoice.id,
+      customerId: invoice.customer,
+      attemptCount: invoice.attempt_count,
+    },
+    'Payment failed'
+  );
+
+  try {
+    const organization = await prisma.organizations.findUnique({
+      where: { stripeCustomerId: invoice.customer },
+      select: { id: true },
+    });
+
+    if (!organization) return;
+
+    // Record failed payment
+    await prisma.billingEvents.create({
+      data: {
+        organizationId: organization.id,
+        type: 'payment_failed',
+        stripeInvoiceId: invoice.id,
+        amountCents: invoice.amount_due,
+        metadata: {
+          invoiceNumber: invoice.number,
+          attemptCount: invoice.attempt_count,
+          failureCode: invoice.last_payment_error?.code,
+        },
+      },
+    });
+
+    // Pause organization if payment failed multiple times
+    if (invoice.attempt_count >= 3) {
+      logger.error(
+        { organizationId: organization.id },
+        'Pausing organization after 3 failed payment attempts'
+      );
+
+      await prisma.organizations.update({
+        where: { id: organization.id },
+        data: {
+          status: 'paused',
+          settings: {
+            aiEnabled: false,
+            testExecutionEnabled: false,
+          },
+        },
+      });
+    }
+
+    metrics.increment('payment_failed', {
+      attemptCount: invoice.attempt_count.toString(),
+    });
+  } catch (error) {
+    logger.error(
+      {
+        invoiceId: invoice.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Error processing payment failed'
+    );
+    metrics.increment('stripe_webhook_error', { eventType: 'invoice.payment_failed' });
+    throw error;
+  }
+}
+
+/**
+ * Handle customer.created events (new signups)
+ */
+export async function handleCustomerCreated(
+  event: StripeWebhookPayload
+): Promise<void> {
+  const customer = event.data.object;
+
+  logger.info(
+    {
+      customerId: customer.id,
+      email: customer.email,
+    },
+    'New customer created in Stripe'
+  );
+
+  metrics.increment('stripe_customer_created');
+}
+
+/**
+ * Route webhook event to appropriate handler
+ */
+export async function handleStripeWebhookEvent(
+  event: StripeWebhookPayload
+): Promise<void> {
+  logger.debug({ eventType: event.type }, 'Processing Stripe webhook');
+
+  try {
+    switch (event.type) {
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event);
+        break;
+
+      case 'invoice.payment_succeeded':
+        await handlePaymentSucceeded(event);
+        break;
+
+      case 'invoice.payment_failed':
+        await handlePaymentFailed(event);
+        break;
+
+      case 'customer.created':
+        await handleCustomerCreated(event);
+        break;
+
+      // Ignore other event types
+      default:
+        logger.debug({ eventType: event.type }, 'Unhandled webhook event type');
+    }
+
+    metrics.increment('stripe_webhook_processed', {
+      eventType: event.type,
+    });
+  } catch (error) {
+    logger.error(
+      {
+        eventType: event.type,
+        eventId: event.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Error handling Stripe webhook'
+    );
+    metrics.increment('stripe_webhook_failed', { eventType: event.type });
+    throw error;
+  }
+}
+
+/**
+ * Get organization subscription status
+ */
+export async function getSubscriptionStatus(
+  organizationId: string
+): Promise<{
+  status: string;
+  plan: string;
+  currentPeriodEnd: Date | null;
+  cancelAtPeriodEnd: boolean;
+}> {
+  const organization = await prisma.organizations.findUnique({
+    where: { id: organizationId },
+    select: {
+      stripeSubscriptionStatus: true,
+      plan: true,
+      stripeSubscriptionEndDate: true,
+      stripeCancelAtPeriodEnd: true,
+    },
+  });
+
+  if (!organization) {
+    throw new Error(`Organization ${organizationId} not found`);
+  }
+
+  return {
+    status: organization.stripeSubscriptionStatus || 'unknown',
+    plan: organization.plan,
+    currentPeriodEnd: organization.stripeSubscriptionEndDate,
+    cancelAtPeriodEnd: organization.stripeCancelAtPeriodEnd || false,
+  };
 }
