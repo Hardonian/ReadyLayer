@@ -1,150 +1,81 @@
-name: PCI Data Security Standard
-description: |
-  Policy for PCI-DSS compliance. Enforces payment card industry
-  data security standards to protect cardholder information.
-
-version: '3.2.1'
+id: pci-dss
+name: PCI-DSS Compliance Policy
+description: Payment Card Industry Data Security Standard v3.2.1
+version: "3.2.1"
 category: compliance
+enforced: true
+minimumCoverage: 90
 
 rules:
-  - id: pci-1-firewall
-    name: Network Segmentation
-    pattern: '(firewall|port|network)\s*=\s*'
-    severity: high
-    action: warn
-    description: |
-      Review network configuration for proper segmentation.
-      PCI-DSS requires network isolation for cardholder data.
-
-  - id: pci-2-defaults
-    name: No Default Credentials
-    pattern: '(admin|root)\s*:\s*(admin|password|123)'
+  - id: pci-req-3-1
+    name: Protect Stored Cardholder Data
+    description: Render PAN unreadable anywhere it is stored
     severity: critical
-    action: block
-    description: |
-      Blocks use of default credentials.
-      Change all default passwords immediately upon installation.
-    remediation: |
-      Always set strong, unique credentials:
-      ```
-      username: admin_unique_123
-      password: SecurePassword!@#$%
-      ```
+    patterns:
+      - card_number\s*=
+      - cardNumber\s*=
+      - pan\s*=
+      - credit.*card.*=
+    remediation: Use tokenization or encryption. Never store full PAN.
+    references:
+      - https://www.pcisecuritystandards.org/
 
-  - id: pci-3-cardholder
-    name: Cardholder Data Protection
-    pattern: '(card|pan|cvv|ssn)\s*=\s*'
+  - id: pci-req-4-1
+    name: Protect Transmission of Cardholder Data
+    description: Use strong cryptography for data in transit
     severity: critical
-    action: block
-    description: |
-      Prevents hardcoding payment card or PII data.
-      Cardholder data must be encrypted and access controlled.
-    remediation: |
-      Never store card data in code or logs:
-      ```javascript
-      // ❌ WRONG - NEVER DO THIS
-      const cardNumber = '4532-1111-2222-3333';
-      
-      // ✅ RIGHT - Use secure payment processors
-      const token = await stripe.createPaymentMethod({
-        type: 'card',
-        card: { /* tokenized data */ }
-      });
-      ```
+    patterns:
+      - http://.*card
+      - plaintext.*payment
+      - cleartext.*credential
+    remediation: Use TLS 1.2 or higher for all cardholder data transmission
+    references:
+      - https://www.pcisecuritystandards.org/
 
-  - id: pci-4-encryption
-    name: Encryption in Transit
-    pattern: '(http|ftp)://(?!localhost)'
+  - id: pci-req-6-5-1
+    name: Injection Prevention
+    description: Prevent injection flaws
+    severity: critical
+    patterns:
+      - SQLQuery.*\$
+      - executeQuery.*user.*input
+      - eval\s*\(.*user
+    remediation: Use parameterized queries and input validation
+    references:
+      - https://www.pcisecuritystandards.org/
+
+  - id: pci-req-6-5-10
+    name: Weak Cryptography
+    description: Ensure strong cryptographic standards
+    severity: critical
+    patterns:
+      - md5\s*\(
+      - sha1\s*\(
+      - crypto:\s*weak
+    remediation: Use SHA-256 or stronger for hashing, AES-256 for encryption
+    references:
+      - https://www.pcisecuritystandards.org/
+
+  - id: pci-req-8-1
+    name: User Authentication
+    description: Assign unique IDs and restrict access
     severity: high
-    action: block
-    description: |
-      Requires HTTPS for all external connections.
-      All cardholder data transmission must be encrypted.
+    patterns:
+      - password.*default
+      - auth:\s*false
+      - authorization:\s*false
+    remediation: Implement strong password policies and MFA
+    references:
+      - https://www.pcisecuritystandards.org/
 
-  - id: pci-6-secure-dev
-    name: Secure Development
-    pattern: '(eval|exec|system)\s*\('
+  - id: pci-req-10-3
+    name: Audit Logging
+    description: Maintain comprehensive audit logs
     severity: high
-    action: warn
-    description: |
-      Warns about dynamic code execution risks.
-      Avoid eval and similar functions that can execute arbitrary code.
-
-  - id: pci-10-logging
-    name: Logging & Monitoring
-    pattern: 'log.*=.*null|log.*disabled'
-    severity: high
-    action: warn
-    description: |
-      Ensures logging is enabled for audit trails.
-      PCI-DSS requires logging of all access to cardholder data.
-
-requirements:
-  requirement_1:
-    title: Install and maintain firewall configuration
-    controls:
-      - Establish network architecture that protects systems
-      - Define firewall rules and test them regularly
-      - Change default passwords on network devices
-
-  requirement_2:
-    title: Do not use vendor-supplied defaults
-    controls:
-      - Change all default passwords
-      - Remove unnecessary user accounts
-      - Disable unused services
-
-  requirement_3:
-    title: Protect stored cardholder data
-    controls:
-      - Keep cardholder data storage to a minimum
-      - Render PANs unreadable (encryption, hashing)
-      - Limit retention time
-
-  requirement_4:
-    title: Encrypt cardholder data in transit
-    controls:
-      - Use TLS/SSL or IPSec
-      - Use strong encryption algorithms
-      - Never send PAN via email
-
-  requirement_6:
-    title: Develop secure systems and applications
-    controls:
-      - Use secure development lifecycle
-      - Follow secure coding standards
-      - Test for security vulnerabilities
-
-  requirement_10:
-    title: Track and monitor access to cardholder data
-    controls:
-      - Implement logging and monitoring
-      - Review logs regularly
-      - Retain audit logs for at least one year
-
-best_practices:
-  - Use tokenization for cardholder data
-  - Implement encryption for data at rest (AES-256)
-  - Use only PCI-compliant payment processors
-  - Implement access controls and authentication
-  - Perform regular penetration testing
-  - Maintain incident response procedures
-  - Train staff on security policies
-  - Monitor for suspicious activity
-  - Keep systems patched and updated
-
-compliance_notes: |
-  PCI-DSS compliance is mandatory for any organization that
-  handles credit card payments. Non-compliance can result in:
-  - Fines from payment card brands ($5,000-$100,000/month)
-  - Loss of payment processing ability
-  - Legal liability for data breaches
-  - Reputational damage
-
-resources:
-  - title: PCI Security Standards Council
-    url: https://www.pcisecuritystandards.org/
-  - title: PCI-DSS Quick Reference
-    url: https://www.pcisecuritystandards.org/documents/PCI-DSSv3-2-1-Quick-Reference-Guide-r1.pdf
-  - title: Tokenization Best Practices
-    url: https://www.pcisecuritystandards.org/documents/Tokenization_Best_Practices.pdf
+    patterns:
+      - logging.*disable
+      - audit.*false
+      - logger.*null
+    remediation: Enable and maintain detailed audit logs of all access
+    references:
+      - https://www.pcisecuritystandards.org/
