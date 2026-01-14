@@ -150,7 +150,7 @@ export function extractApiKey(request: NextRequest): string | null {
 }
 
 /**
- * Require authentication (throws if not authenticated)
+ * Require authentication (throws UnauthorizedError if not authenticated)
  */
 export async function requireAuth(request: NextRequest): Promise<AuthUser> {
   // Try API key first
@@ -160,12 +160,14 @@ export async function requireAuth(request: NextRequest): Promise<AuthUser> {
     if (user) {
       return user;
     }
+    // Invalid API key
+    throw new UnauthorizedError('Invalid API key', { reason: 'invalid_api_key' });
   }
 
   // Try session-based auth
   const user = await getAuthenticatedUser(request);
   if (!user) {
-    throw new Error('UNAUTHORIZED');
+    throw new UnauthorizedError('Session not found or expired', { reason: 'no_session' });
   }
 
   return user;
