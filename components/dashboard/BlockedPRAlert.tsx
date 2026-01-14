@@ -117,7 +117,7 @@ export function BlockedPRAlert({
                 <Button size="sm" variant="outline" onClick={handleDismiss}>
                   Dismiss
                 </Button>
-                <Button size="sm" onClick={onViewDetails}>
+                <Button size="sm" onClick={handleViewDetails}>
                   View
                 </Button>
               </div>
