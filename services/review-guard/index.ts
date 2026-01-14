@@ -435,13 +435,15 @@ export class ReviewGuardService {
 
       return {
         id: review.id,
-        status: isBlocked ? 'blocked' : 'completed',
+        status: isBlocked ? 'blocked' : reviewStatus,
         issues: evaluationResult.nonWaivedFindings,
         summary,
         isBlocked,
         blockedReason,
         startedAt,
-        completedAt,
+        completedAt: reviewCompletedAt || completedAt,
+        enrichmentJobIds: enrichmentJobIds.length > 0 ? enrichmentJobIds : undefined,
+        enrichmentStatus: hasEnrichmentJobs ? 'pending' : 'completed',
       };
     } catch (error) {
       // All failures MUST block PR
