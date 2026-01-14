@@ -225,3 +225,92 @@ export function getOrganizationId(request: NextRequest): string | null {
     null
   );
 }
+
+/**
+ * Track LLM API cost for billing
+ */
+export async function trackLLMCostForBilling(
+  organizationId: string,
+  modelName: string,
+  inputTokens: number,
+  outputTokens: number,
+  metadata?: Record<string, any>
+): Promise<void> {
+  try {
+    const { trackLLMCost, calculateLLMCost } = await import('../telemetry/llm-costs');
+
+    const costUSD = calculateLLMCost(modelName, inputTokens, outputTokens);
+
+    await trackLLMCost({
+      organizationId,
+      modelName,
+      inputTokens,
+      outputTokens,
+      totalTokens: inputTokens + outputTokens,
+      costUSD,
+      timestamp: new Date(),
+      metadata,
+    });
+  } catch (error) {
+    logger.warn(
+      {
+        organizationId,
+        modelName,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Failed to track LLM cost'
+    );
+    // Don't throw - cost tracking failures should not break API calls
+  }
+}
+
+/**
+ * Get organization spending status
+ */
+export async function getOrganizationSpendingStatus(
+  organizationId: string
+): Promise<{
+  monthlySpend: number;
+  monthlyBudget: number;
+  percentageUsed: number;
+  withinBudget: boolean;
+  status: 'ok' | 'warning' | 'critical';
+}> {
+  try {
+    const { getOrganizationMonthlySpend, getBudgetUtilization, checkBudgetAlerts } = await import(
+      '../telemetry/llm-costs'
+    );
+
+    const tier = await billingService.getOrganizationTier(organizationId);
+    const monthlyBudget = tier.features.llmBudget || 500;
+
+    const monthlySpend = await getOrganizationMonthlySpend(organizationId);
+    const percentageUsed = await getBudgetUtilization(organizationId, monthlyBudget);
+    const status = await checkBudgetAlerts(organizationId, monthlyBudget);
+
+    return {
+      monthlySpend,
+      monthlyBudget,
+      percentageUsed,
+      withinBudget: monthlySpend <= monthlyBudget,
+      status,
+    };
+  } catch (error) {
+    logger.warn(
+      {
+        organizationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Failed to get spending status'
+    );
+
+    // Return default status on error (fail-open)
+    return {
+      monthlySpend: 0,
+      monthlyBudget: 500,
+      percentageUsed: 0,
+      withinBudget: true,
+      status: 'ok',
+    };
+  }
+}
