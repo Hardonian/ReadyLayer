@@ -53,6 +53,102 @@ export const ErrorCodes = {
 } as const
 
 /**
+ * Typed error classes for common scenarios
+ */
+
+/**
+ * UnauthorizedError: 401 - Authentication failed or missing
+ * Thrown when a request lacks valid credentials or authentication fails
+ */
+export class UnauthorizedError extends ApiErrorResponse {
+  constructor(message: string = 'Authentication required', context?: Record<string, unknown>) {
+    super(401, {
+      code: ErrorCodes.UNAUTHORIZED,
+      message,
+      context,
+      fix: 'Please sign in at /auth/signin or provide a valid API key in the Authorization header',
+    })
+    this.name = 'UnauthorizedError'
+  }
+}
+
+/**
+ * ForbiddenError: 403 - Authenticated but lacks permission
+ * Thrown when a user is authenticated but doesn't have access to the resource
+ */
+export class ForbiddenError extends ApiErrorResponse {
+  constructor(message: string = 'You do not have permission to perform this action', context?: Record<string, unknown>) {
+    super(403, {
+      code: ErrorCodes.FORBIDDEN,
+      message,
+      context,
+      fix: 'Check your organization membership and role. Contact an organization admin if you need access',
+    })
+    this.name = 'ForbiddenError'
+  }
+}
+
+/**
+ * NotFoundError: 404 - Resource not found
+ */
+export class NotFoundError extends ApiErrorResponse {
+  constructor(resource: string, id?: string) {
+    super(404, {
+      code: ErrorCodes.NOT_FOUND,
+      message: `${resource} not found`,
+      context: id ? { id, resource } : { resource },
+      fix: `Verify the ${resource.toLowerCase()} ID exists and you have access to it`,
+    })
+    this.name = 'NotFoundError'
+  }
+}
+
+/**
+ * ValidationError: 400 - Invalid request data
+ */
+export class ValidationError extends ApiErrorResponse {
+  constructor(message: string = 'Invalid input data', context?: Record<string, unknown>) {
+    super(400, {
+      code: ErrorCodes.VALIDATION_ERROR,
+      message,
+      context,
+      fix: 'Review the request body and ensure all required fields are present and correctly formatted',
+    })
+    this.name = 'ValidationError'
+  }
+}
+
+/**
+ * DatabaseError: 500 - Database operation failed
+ */
+export class DatabaseError extends ApiErrorResponse {
+  constructor(originalError?: Error) {
+    super(500, {
+      code: ErrorCodes.DATABASE_ERROR,
+      message: 'Database operation failed',
+      context: process.env.NODE_ENV === 'development' ? { originalMessage: originalError?.message } : undefined,
+      fix: 'This is a temporary issue. Please try again in a few moments. If the problem persists, contact support@readylayer.com',
+    })
+    this.name = 'DatabaseError'
+  }
+}
+
+/**
+ * RateLimitError: 429 - Too many requests
+ */
+export class RateLimitError extends ApiErrorResponse {
+  constructor(resetAfterSeconds: number = 60) {
+    super(429, {
+      code: ErrorCodes.RATE_LIMIT_EXCEEDED,
+      message: 'Rate limit exceeded',
+      context: { resetAfterSeconds },
+      fix: `Please wait ${resetAfterSeconds} seconds before making another request, or upgrade your plan for higher limits`,
+    })
+    this.name = 'RateLimitError'
+  }
+}
+
+/**
  * Common error messages with actionable fixes
  */
 export const ErrorMessages = {
