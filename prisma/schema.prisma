@@ -862,3 +862,115 @@ model OutboxIntent {
   @@index([idempotencyKey])
   @@index([createdAt])
 }
+
+// ============================================================================
+// GOVERNANCE & VARIANCE MODELS (OpenRouter/OpenCode Integration)
+// ============================================================================
+
+// Provider Configuration (encrypted API keys, routing strategy per org)
+model ProviderConfig {
+  id                String   @id @default(cuid())
+  organizationId    String
+  provider          String   // openai, anthropic, opencode, openrouter
+  encryptedKey      String   @db.Text // Encrypted API key (ChaCha20-Poly1305)
+  encryptionVersion String   @default("v1") // Track encryption version for rotation
+  routingStrategy   String   @default("single") // single, fallback, variance
+  isActive          Boolean  @default(true)
+  metadata          Json?    // Additional provider-specific config
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
+  @@index([provider])
+  @@index([isActive])
+}
+
+// Governance Run (orchestrates single/variance governance execution)
+model GovernanceRun {
+  id                String   @id @default(cuid())
+  organizationId    String
+  repositoryId      String?
+  mode              String   // single-model, opencode-baseline, variance
+  model             String   // Model name or provider:model
+  modelEpoch        String   // ISO timestamp or semantic version
+  status            String   @default("created") // created, executing, completed, failed
+  diffHash          String?  // SHA256 hash of diff (not the diff itself)
+  diffSize          Int?     // Diff size in bytes (for analytics)
+  intentHash        String?  // SHA256 hash of intent (not raw intent)
+  intentSource      String?  // pr_description, commit_message, prompt_metadata
+  error             String?  @db.Text
+  executionDurationMs Int?
+  createdAt         DateTime @default(now())
+  completedAt       DateTime?
+  updatedAt         DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  repository   Repository?  @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
+  results      GovernanceRunResult?
+  intentArtifact IntentArtifact?
+  auditLogs    AuditLog[]   @relation("GovernanceRunAuditLogs")
+
+  @@index([organizationId])
+  @@index([repositoryId])
+  @@index([status])
+  @@index([mode])
+  @@index([modelEpoch])
+  @@index([createdAt])
+}
+
+// Governance Run Result (findings + signals from governance execution)
+model GovernanceRunResult {
+  id                String   @id @default(cuid())
+  governanceRunId   String   @unique
+  findings          Json     // Array of Finding objects (normalized)
+  varianceScore     Decimal? @db.Decimal(5, 4) // 0-1: model disagreement score
+  varianceMetrics   Json?    // Detailed variance analysis (multi-model mode)
+  intentDrift       Json?    // { score: 0-1, category: high|medium|low|none, signals: [...] }
+  confidenceInflation Json?  // { score: 0-1, quadrant: "confident+stable|..." }
+  temporalFragility Json?    // { tag: fresh|stale-14d|stale-90d|deprecated, age_days: int }
+  negativeSpaceGaps Json?    // Array of missing invariants { type, severity, recommendation }
+  socioTechnicalRisk Json?   // { ai_authorship_pct, reviewer_count, review_duration_ms, orphaned_intelligence: bool }
+  modelAccuracy     Decimal? @db.Decimal(5, 4) // Historical accuracy from ModelPerformanceAggregate
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  governanceRun GovernanceRun @relation(fields: [governanceRunId], references: [id], onDelete: Cascade)
+
+  @@index([governanceRunId])
+  @@index([createdAt])
+}
+
+// Intent Artifact (captured intent sources, hashed + optional raw storage)
+model IntentArtifact {
+  id                String   @id @default(cuid())
+  governanceRunId   String   @unique
+  intentFingerprint String   // SHA256(concat(intent sources))
+  intentSource      String   // pr_description, commit_message, prompt_metadata (or union)
+  rawIntent         String?  @db.Text // Optional raw intent (requires org opt-in)
+  rawIntentAllowed  Boolean  @default(false) // Tracks if org allowed raw storage
+  createdAt         DateTime @default(now())
+
+  governanceRun GovernanceRun @relation(fields: [governanceRunId], references: [id], onDelete: Cascade)
+
+  @@index([governanceRunId])
+  @@index([intentFingerprint])
+  @@index([createdAt])
+}
+
+// Review Signal (socio-technical metrics: reviewers, duration, disagreement)
+model ReviewSignal {
+  id                String   @id @default(cuid())
+  reviewId          String   @unique
+  reviewDurationMs  Int?     // Time from creation to approval
+  reviewerCount     Int      @default(0)
+  reviewerIds       String[] // Array of reviewer user IDs
+  disagreementScore Decimal? @db.Decimal(5, 4) // 0-1: magnitude of reviewer disagreement
+  metadata          Json?    // Additional signals
+  createdAt         DateTime @default(now())
+
+  @@index([reviewId])
+  @@index([createdAt])
+}
