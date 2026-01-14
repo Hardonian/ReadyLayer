@@ -9,6 +9,7 @@ import { createServerClient } from '@supabase/ssr';
 import { prisma } from './prisma';
 import { createHash, randomFillSync } from 'crypto';
 import { logger } from '../observability/logging';
+import { UnauthorizedError } from './errors';
 
 export interface AuthUser {
   id: string;
