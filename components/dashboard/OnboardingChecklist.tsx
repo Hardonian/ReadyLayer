@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, ChevronDown, ChevronUp, Zap } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
+import { trackOnboardingEvent } from '@/lib/telemetry/analytics'
 
 export interface ChecklistItem {
   id: string
