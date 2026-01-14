@@ -112,6 +112,7 @@ model Repository {
   aiSuggestions AIOptimizationSuggestion[]
   tokenUsage    TokenUsage[]
   runs          ReadyLayerRun[]
+  governanceRuns GovernanceRun[]
 
   @@unique([fullName, provider])
   @@index([organizationId])
