@@ -1,130 +1,121 @@
-name: OWASP Top 10 2021
-description: |
-  Security policy based on OWASP Top 10 vulnerabilities.
-  This template enforces security best practices to prevent
-  the most critical web application security risks.
-
-version: '2021'
+id: owasp-top-10
+name: OWASP Top 10 Security Policy
+description: OWASP Top 10 Web Application Security Risks
+version: "2.1"
 category: security
+enforced: true
+minimumCoverage: 80
 
 rules:
   - id: a01-injection
-    name: Prevent SQL Injection
-    pattern: '(query|sql)\s*=\s*[''"`].*(%|\$).*[''"`]'
+    name: Injection Prevention
+    description: Prevent SQL injection, NoSQL injection, and OS command injection
     severity: critical
-    action: block
-    description: |
-      Detects potential SQL injection vulnerabilities.
-      Never construct SQL queries with string concatenation.
-      Use parameterized queries instead.
-    remediation: |
-      Use parameterized queries:
-      ```javascript
-      // ❌ WRONG
-      const query = `SELECT * FROM users WHERE id = ${userId}`;
-      
-      // ✅ RIGHT
-      const query = 'SELECT * FROM users WHERE id = ?';
-      db.query(query, [userId]);
-      ```
+    patterns:
+      - SQLQuery.*\$
+      - NoSQLQuery.*\$
+      - eval\s*\(
+      - exec\s*\(
+    remediation: Use parameterized queries and prepared statements
+    references:
+      - https://owasp.org/www-project-top-ten/
 
   - id: a02-authentication
-    name: Enforce Authentication
-    pattern: '(password|auth|token)\s*=\s*[''"`]?[^''"`]*[''"`]?'
-    severity: high
-    action: warn
-    description: |
-      Warns about hardcoded credentials in code.
-      Credentials should never be stored in version control.
-    remediation: |
-      Use environment variables:
-      ```javascript
-      // ❌ WRONG
-      const password = 'MySecretPassword123';
-      
-      // ✅ RIGHT
-      const password = process.env.DB_PASSWORD;
-      ```
+    name: Authentication & Session Management
+    description: Implement strong authentication and secure session handling
+    severity: critical
+    patterns:
+      - hardcoded.*password
+      - hardcoded.*secret
+      - hardcoded.*token
+    remediation: Use secure session management, enforce password policies
+    references:
+      - https://owasp.org/www-project-top-ten/
 
-  - id: a03-broken-access
-    name: Check Access Control
-    pattern: '(admin|root|privileged)\s*=\s*(true|1)'
-    severity: high
-    action: warn
-    description: |
-      Detects potential privilege escalation issues.
-      Always verify user authorization before granting access.
+  - id: a03-sensitive-data
+    name: Sensitive Data Exposure
+    description: Protect sensitive data in transit and at rest
+    severity: critical
+    patterns:
+      - plaintext.*password
+      - cleartext.*credential
+      - http://.*password
+    remediation: Encrypt sensitive data, use HTTPS, implement access controls
+    references:
+      - https://owasp.org/www-project-top-ten/
 
-  - id: a04-insecure-design
-    name: Insecure Design Patterns
-    pattern: '(weak|insecure|deprecated)\s*(crypto|ssl|hash)'
+  - id: a04-xxe
+    name: XML External Entity (XXE)
+    description: Prevent XXE attacks
     severity: high
-    action: warn
-    description: |
-      Warns about insecure cryptographic algorithms.
-      Use modern, well-vetted algorithms and libraries.
+    patterns:
+      - DOCTYPE\s
+      - ENTITY\s
+      - parseXML
+    remediation: Disable XML external entity processing and DTD
+    references:
+      - https://owasp.org/www-project-top-ten/
 
-  - id: a05-vulnerable-components
-    name: Check Dependencies
-    pattern: 'package\.json|requirements\.txt|Gemfile'
+  - id: a05-broken-access
+    name: Broken Access Control
+    description: Implement proper authorization controls
+    severity: critical
+    patterns:
+      - authorization:\s*false
+      - permission:\s*false
+      - auth:\s*false
+    remediation: Implement RBAC and verify permissions on every request
+    references:
+      - https://owasp.org/www-project-top-ten/
+
+  - id: a06-config
+    name: Security Misconfiguration
+    description: Secure configuration of frameworks
+    severity: high
+    patterns:
+      - debug:\s*true
+      - CORS:\s*\*
+      - security:\s*false
+    remediation: Disable debug mode, restrict CORS, enable security headers
+    references:
+      - https://owasp.org/www-project-top-ten/
+
+  - id: a07-xss
+    name: Cross-Site Scripting (XSS)
+    description: Prevent XSS attacks
+    severity: high
+    patterns:
+      - innerHTML\s*=
+      - dangerouslySetInnerHTML
+      - eval\s*\(
+    remediation: Use CSP, validate and sanitize inputs
+    references:
+      - https://owasp.org/www-project-top-ten/
+
+  - id: a08-deserial
+    name: Insecure Deserialization
+    description: Prevent arbitrary code execution
+    severity: high
+    patterns:
+      - pickle\.loads
+      - unserialize
+      - deserialize.*untrusted
+    remediation: Validate serialized data before deserialization
+    references:
+      - https://owasp.org/www-project-top-ten/
+
+  - id: a09-vulnerable
+    name: Using Components with Known Vulnerabilities
+    description: Keep dependencies up to date
+    severity: high
+    remediation: Update dependencies, run security audits
+    references:
+      - https://owasp.org/www-project-top-ten/
+
+  - id: a10-logging
+    name: Insufficient Logging & Monitoring
+    description: Implement comprehensive logging
     severity: medium
-    action: info
-    description: |
-      Reminds to check dependency versions for known vulnerabilities.
-      Regularly update dependencies and scan for security issues.
-
-  - id: a06-api-security
-    name: API Security
-    pattern: '(api|endpoint).*[''"`](http|ftp)[''"`]'
-    severity: high
-    action: warn
-    description: |
-      Ensures API endpoints use HTTPS instead of HTTP.
-      All API communication should be encrypted in transit.
-
-  - id: a07-logging
-    name: Logging & Monitoring
-    pattern: 'console\.(log|debug).*password|secret|token'
-    severity: high
-    action: block
-    description: |
-      Prevents logging sensitive information like credentials.
-      Never log passwords, tokens, or other secrets.
-    remediation: |
-      Remove sensitive data from logs:
-      ```javascript
-      // ❌ WRONG
-      console.log('Password:', password);
-      
-      // ✅ RIGHT
-      console.log('User authenticated successfully');
-      ```
-
-  - id: a08-csrm
-    name: CSRF Protection
-    pattern: '(post|put|delete).*csrf.*'
-    severity: medium
-    action: warn
-    description: |
-      Ensures CSRF tokens are validated on state-changing requests.
-      Protect against Cross-Site Request Forgery attacks.
-
-best_practices:
-  - Always use parameterized queries for database access
-  - Store sensitive credentials in environment variables
-  - Use HTTPS for all external communication
-  - Implement proper authentication and authorization
-  - Log security events without exposing sensitive data
-  - Keep dependencies up to date
-  - Use strong encryption algorithms (AES-256, etc.)
-  - Implement CSRF protection on form submissions
-  - Validate and sanitize all user input
-  - Implement rate limiting to prevent brute force attacks
-
-resources:
-  - title: OWASP Top 10
-    url: https://owasp.org/www-project-top-ten/
-  - title: OWASP Secure Coding Practices
-    url: https://cheatsheetseries.owasp.org/
-  - title: CWE Top 25
-    url: https://cwe.mitre.org/top25/
+    remediation: Use structured logging, implement security monitoring
+    references:
+      - https://owasp.org/www-project-top-ten/
