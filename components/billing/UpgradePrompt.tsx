@@ -147,7 +147,7 @@ export function UpgradePrompt({
                 <Button size="sm" variant="outline" onClick={handleDismiss}>
                   Dismiss
                 </Button>
-                <Button size="sm" onClick={onUpgradeClick}>
+                <Button size="sm" onClick={handleUpgradeClick}>
                   {config.cta}
                 </Button>
               </div>
