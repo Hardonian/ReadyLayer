@@ -1,7 +1,7 @@
 /**
  * Webhook Processor Worker
- * 
- * Processes queued webhook events
+ *
+ * Processes queued webhook events with full type safety
  */
 
 import { queueService } from '../queue';
@@ -19,6 +19,15 @@ import { redactSecret } from '../lib/crypto';
 import { isKeyConfigured } from '../lib/crypto';
 import { testEngineService } from '../services/test-engine';
 import { docSyncService } from '../services/doc-sync';
+import {
+  WebhookEvent,
+  validateWebhookEvent,
+  isWebhookPROpened,
+  isWebhookPRUpdated,
+  isWebhookMergeCompleted,
+  isWebhookCICompleted,
+} from '../lib/contracts/webhooks';
+import { ValidationError } from '../lib/errors';
 
 
 /**
