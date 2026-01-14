@@ -250,11 +250,11 @@ async function processPREvent(
   // This will automatically post status updates to the provider during each stage
   try {
     const runRequest: RunRequest = {
-      repositoryId: repository.id,
+      repositoryId: String(repository.id),
       trigger: 'webhook',
       triggerMetadata: {
         prNumber: pr.number,
-        prSha: pr.sha,
+        prSha: pr.head.sha,
         prTitle: pr.title,
         diff,
         files,
