@@ -121,25 +121,20 @@ async function processWebhookEvent(rawPayload: unknown): Promise<void> {
     // Never log the token - use redacted version if needed
     log.debug({ tokenPreview: redactSecret(accessToken) }, 'Using installation token');
 
-    switch (type) {
-      case 'pr.opened':
-      case 'pr.updated':
-        await processPREvent(repository, pr, accessToken, log, requestId);
-        break;
-
-      case 'merge.completed':
-        await processMergeEvent(repository, pr, accessToken, log, requestId);
-        break;
-
-      case 'ci.completed':
-        await processCIEvent(repository, pr, accessToken, log);
-        break;
-
-      default:
-        log.warn({ type }, 'Unknown webhook event type');
+    // Route event to appropriate handler using type guards
+    if (isWebhookPROpened(event) || isWebhookPRUpdated(event)) {
+      await processPREvent(event, accessToken, log, requestId);
+    } else if (isWebhookMergeCompleted(event)) {
+      await processMergeEvent(event, accessToken, log, requestId);
+    } else if (isWebhookCICompleted(event)) {
+      await processCIEvent(event, accessToken, log);
+    } else {
+      // TypeScript exhaustiveness check: this should never happen
+      const _exhaustive: never = event;
+      log.warn({ event: _exhaustive }, 'Unknown webhook event type');
     }
 
-    metrics.increment('webhooks.processed', { type, status: 'success' });
+    metrics.increment('webhooks.processed', { type: event.type, status: 'success' });
   } catch (error) {
     // Redact any secrets from error messages
     const errorMessage = error instanceof Error ? error.message : String(error);
