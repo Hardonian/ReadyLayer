@@ -59,6 +59,8 @@ model Organization {
   dataRetentionPolicy DataRetentionPolicy?
   userConsents UserConsent[]
   predictiveAlerts PredictiveAlert[]
+  providerConfigs ProviderConfig[]
+  governanceRuns GovernanceRun[]
 
   @@index([slug])
 }
