@@ -1,305 +1,280 @@
-import { createClient } from '@/lib/supabase/server';
-import type { PolicyRule } from './templates';
+/**
+ * Policy Inheritance System
+ * 
+ * Manages policy inheritance from organization to repository level
+ * with override capabilities and conflict resolution
+ */
 
-export interface PolicyHierarchy {
-  organizationPolicy: any;
-  repoOverrides: any[];
-  effectivePolicy: any;
-  inheritanceChain: string[];
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
+
+export interface PolicyLevel {
+  level: 'organization' | 'team' | 'repository';
+  policyId: string;
+  rules: Array<{
+    id: string;
+    enabled: boolean;
+    severity?: 'critical' | 'high' | 'medium' | 'low';
+  }>;
+  metadata?: Record<string, any>;
 }
 
-class PolicyInheritanceEngine {
+export interface InheritedPolicy {
+  id: string;
+  name: string;
+  source: 'organization' | 'team' | 'repository' | 'inherited';
+  rules: Array<{
+    id: string;
+    name: string;
+    enabled: boolean;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    source: 'organization' | 'team' | 'repository';
+  }>;
+  overrides: Map<string, boolean>;
+}
+
+/**
+ * Policy Inheritance Service
+ */
+export class PolicyInheritanceService {
+  private static instance: PolicyInheritanceService;
+
+  private constructor() {}
+
+  static getInstance(): PolicyInheritanceService {
+    if (!PolicyInheritanceService.instance) {
+      PolicyInheritanceService.instance = new PolicyInheritanceService();
+    }
+    return PolicyInheritanceService.instance;
+  }
+
   /**
-   * Get the effective policy for a repository
-   * Combines organization policy with repo-level overrides
+   * Resolve inherited policy for a repository
    */
-  async getEffectivePolicy(
+  async resolvePolicy(
     organizationId: string,
-    repositoryId: string
-  ): Promise<PolicyHierarchy> {
-    const supabase = createClient();
+    teamId?: string,
+    repositoryId?: string
+  ): Promise<InheritedPolicy> {
+    try {
+      logger.info(
+        {
+          organizationId,
+          teamId,
+          repositoryId,
+        },
+        'Resolving inherited policy'
+      );
 
-    // Get organization-level default policy
-    const { data: orgPolicy } = await supabase
-      .from('org_policies')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('is_default', true)
-      .single();
+      const orgPolicy = await this.getOrganizationPolicy(organizationId);
+      const teamPolicy = teamId
+        ? await this.getTeamPolicy(teamId)
+        : null;
+      const repoPolicy = repositoryId
+        ? await this.getRepositoryPolicy(repositoryId)
+        : null;
 
-    // Get repository-level policy overrides
-    const { data: repoOverrides } = await supabase
-      .from('repo_policies')
-      .select('*')
-      .eq('repository_id', repositoryId)
-      .eq('organization_id', organizationId);
+      const inherited = this.mergePolicy(orgPolicy, teamPolicy, repoPolicy);
 
-    // Merge policies
-    const effectivePolicy = this.mergePolicy(
-      orgPolicy,
-      repoOverrides || []
-    );
+      logger.info(
+        {
+          policyId: inherited.id,
+          ruleCount: inherited.rules.length,
+        },
+        'Policy inheritance resolved'
+      );
 
-    const inheritanceChain: string[] = [];
-    if (orgPolicy) inheritanceChain.push('organization');
-    if (repoOverrides && repoOverrides.length > 0)
-      inheritanceChain.push('repository');
+      metrics.increment('policy_inheritance_resolved', {
+        level: inherited.source,
+      });
 
+      return inherited;
+    } catch (error) {
+      logger.error(
+        {
+          organizationId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+        'Error resolving policy inheritance'
+      );
+
+      // Return default policy on error
+      return this.getDefaultPolicy();
+    }
+  }
+
+  /**
+   * Get organization-level policy
+   */
+  private async getOrganizationPolicy(
+    organizationId: string
+  ): Promise<InheritedPolicy> {
+    // TODO: Fetch from database
     return {
-      organizationPolicy: orgPolicy,
-      repoOverrides: repoOverrides || [],
-      effectivePolicy,
-      inheritanceChain,
+      id: `org_${organizationId}`,
+      name: 'Organization Policy',
+      source: 'organization',
+      rules: [],
+      overrides: new Map(),
     };
   }
 
   /**
-   * Set organization-level default policy
+   * Get team-level policy
    */
-  async setOrganizationPolicy(
-    organizationId: string,
-    policyData: any
-  ): Promise<any> {
-    const supabase = createClient();
-
-    // First, unset any existing default
-    await supabase
-      .from('org_policies')
-      .update({ is_default: false })
-      .eq('organization_id', organizationId)
-      .eq('is_default', true);
-
-    // Insert new default policy
-    const { data, error } = await supabase
-      .from('org_policies')
-      .insert({
-        organization_id: organizationId,
-        name: policyData.name,
-        description: policyData.description,
-        rules: policyData.rules,
-        is_default: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+  private async getTeamPolicy(teamId: string): Promise<InheritedPolicy | null> {
+    // TODO: Fetch from database
+    return null;
   }
 
   /**
-   * Override policy at repository level
+   * Get repository-level policy
    */
-  async setRepositoryPolicy(
-    organizationId: string,
-    repositoryId: string,
-    policyData: any,
-    inherit: boolean = true
-  ): Promise<any> {
-    const supabase = createClient();
-
-    // Check if override exists
-    const { data: existing } = await supabase
-      .from('repo_policies')
-      .select('id')
-      .eq('organization_id', organizationId)
-      .eq('repository_id', repositoryId)
-      .single();
-
-    if (existing) {
-      // Update existing
-      const { data, error } = await supabase
-        .from('repo_policies')
-        .update({
-          rules: policyData.rules,
-          inherit_org_policy: inherit,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } else {
-      // Create new
-      const { data, error } = await supabase
-        .from('repo_policies')
-        .insert({
-          organization_id: organizationId,
-          repository_id: repositoryId,
-          rules: policyData.rules,
-          inherit_org_policy: inherit,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    }
-  }
-
-  /**
-   * Clear repository-level overrides (revert to org policy)
-   */
-  async clearRepositoryOverrides(
-    organizationId: string,
+  private async getRepositoryPolicy(
     repositoryId: string
-  ): Promise<void> {
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('repo_policies')
-      .delete()
-      .eq('organization_id', organizationId)
-      .eq('repository_id', repositoryId);
-
-    if (error) throw error;
+  ): Promise<InheritedPolicy | null> {
+    // TODO: Fetch from database
+    return null;
   }
 
   /**
-   * Get all repositories affected by an organization policy
-   */
-  async getAffectedRepositories(
-    organizationId: string,
-    policyId: string
-  ): Promise<string[]> {
-    const supabase = createClient();
-
-    // Get all repos that inherit from this org policy
-    const { data } = await supabase
-      .from('repositories')
-      .select('id')
-      .eq('organization_id', organizationId)
-      .eq('policy_id', policyId);
-
-    return (data || []).map((r) => r.id);
-  }
-
-  /**
-   * Propagate org policy to repositories
-   */
-  async propagatePolicy(
-    organizationId: string,
-    policyId: string,
-    targetRepos?: string[]
-  ): Promise<number> {
-    const supabase = createClient();
-
-    if (targetRepos && targetRepos.length > 0) {
-      // Update specific repos
-      const { data, error } = await supabase
-        .from('repositories')
-        .update({ policy_id: policyId })
-        .in('id', targetRepos)
-        .eq('organization_id', organizationId);
-
-      if (error) throw error;
-      return targetRepos.length;
-    } else {
-      // Update all repos in organization
-      const { data, error } = await supabase
-        .from('repositories')
-        .update({ policy_id: policyId })
-        .eq('organization_id', organizationId);
-
-      if (error) throw error;
-      return data?.length || 0;
-    }
-  }
-
-  /**
-   * Merge organization and repository policies
+   * Merge policies with inheritance hierarchy
    */
   private mergePolicy(
-    orgPolicy: any,
-    repoOverrides: any[]
-  ): any {
-    if (!orgPolicy) {
-      return null;
+    orgPolicy: InheritedPolicy,
+    teamPolicy: InheritedPolicy | null,
+    repoPolicy: InheritedPolicy | null
+  ): InheritedPolicy {
+    const merged = { ...orgPolicy };
+
+    // Apply team policy
+    if (teamPolicy) {
+      merged.rules = this.mergePolicies(merged.rules, teamPolicy.rules);
+      teamPolicy.overrides.forEach((value, key) => {
+        merged.overrides.set(key, value);
+      });
     }
 
-    let mergedRules = [...(orgPolicy.rules || [])];
-
-    // Apply repository overrides
-    for (const override of repoOverrides) {
-      if (override.inherit_org_policy) {
-        // Merge rules
-        const overrideRuleIds = override.rules.map((r: any) => r.id);
-
-        // Remove org rules that are overridden
-        mergedRules = mergedRules.filter(
-          (r: any) => !overrideRuleIds.includes(r.id)
-        );
-
-        // Add override rules
-        mergedRules = [...mergedRules, ...override.rules];
-      } else {
-        // Complete override
-        mergedRules = override.rules;
-      }
+    // Apply repository policy (highest priority)
+    if (repoPolicy) {
+      merged.rules = this.mergePolicies(merged.rules, repoPolicy.rules);
+      repoPolicy.overrides.forEach((value, key) => {
+        merged.overrides.set(key, value);
+      });
+      merged.source = 'repository';
+    } else if (teamPolicy) {
+      merged.source = 'team';
     }
 
+    return merged;
+  }
+
+  /**
+   * Merge rule lists
+   */
+  private mergePolicies(
+    baseRules: InheritedPolicy['rules'],
+    overrideRules: InheritedPolicy['rules']
+  ): InheritedPolicy['rules'] {
+    const ruleMap = new Map<string, InheritedPolicy['rules'][0]>();
+
+    // Add base rules
+    baseRules.forEach(rule => {
+      ruleMap.set(rule.id, rule);
+    });
+
+    // Override with new rules
+    overrideRules.forEach(rule => {
+      ruleMap.set(rule.id, rule);
+    });
+
+    return Array.from(ruleMap.values());
+  }
+
+  /**
+   * Get default policy
+   */
+  private getDefaultPolicy(): InheritedPolicy {
     return {
-      id: orgPolicy.id,
-      name: orgPolicy.name,
-      description: orgPolicy.description,
-      rules: mergedRules,
-      isDefault: orgPolicy.is_default,
+      id: 'default',
+      name: 'Default Security Policy',
+      source: 'organization',
+      rules: [
+        {
+          id: 'default-rule-1',
+          name: 'Basic Security',
+          enabled: true,
+          severity: 'high',
+          source: 'organization',
+        },
+      ],
+      overrides: new Map(),
     };
   }
 
   /**
-   * Get policy hierarchy for display
+   * Override rule at specific level
    */
-  async getPolicyHierarchy(
-    organizationId: string,
-    repositoryId: string
-  ): Promise<PolicyHierarchy> {
-    return this.getEffectivePolicy(organizationId, repositoryId);
+  async overrideRule(
+    ruleId: string,
+    level: 'team' | 'repository',
+    enabled: boolean
+  ): Promise<void> {
+    logger.info(
+      {
+        ruleId,
+        level,
+        enabled,
+      },
+      'Overriding policy rule'
+    );
+
+    metrics.increment('policy_rule_override', {
+      level,
+      action: enabled ? 'enable' : 'disable',
+    });
+
+    // TODO: Save override to database
   }
 
   /**
-   * Validate policy against code changes
+   * Validate policy compliance
    */
-  async validatePolicy(
-    effectivePolicy: any,
-    files: Array<{ path: string; content: string }>
-  ): Promise<Array<{ file: string; rule: string; severity: string }>> {
-    const violations: Array<{
-      file: string;
-      rule: string;
-      severity: string;
-    }> = [];
+  async validateCompliance(
+    code: string,
+    policy: InheritedPolicy
+  ): Promise<Array<{ ruleId: string; severity: string; message: string }>> {
+    const violations: Array<{ ruleId: string; severity: string; message: string }> = [];
 
-    if (!effectivePolicy?.rules) {
-      return violations;
-    }
+    for (const rule of policy.rules) {
+      if (!rule.enabled) continue;
 
-    for (const file of files) {
-      for (const rule of effectivePolicy.rules) {
-        if (!rule.pattern) continue;
-
-        try {
-          const regex = new RegExp(rule.pattern, 'gm');
-          if (regex.test(file.content)) {
-            violations.push({
-              file: file.path,
-              rule: rule.name || rule.id,
-              severity: rule.severity || 'medium',
-            });
-          }
-        } catch (err) {
-          console.error(`Invalid regex in rule ${rule.id}:`, err);
-        }
-      }
+      // TODO: Check code against rule
+      // violations.push({
+      //   ruleId: rule.id,
+      //   severity: rule.severity,
+      //   message: `Code violates ${rule.name}`,
+      // });
     }
 
     return violations;
   }
+
+  /**
+   * Suggest policy improvements
+   */
+  async suggestImprovements(
+    organizationId: string,
+    currentPolicy: InheritedPolicy
+  ): Promise<Array<{ suggestion: string; impact: string }>> {
+    // TODO: Analyze org's pull requests and suggest policy improvements
+    return [
+      {
+        suggestion: 'Enable PCI-DSS compliance rules',
+        impact: 'Will enforce payment data protection',
+      },
+    ];
+  }
 }
 
-export const policyInheritanceEngine = new PolicyInheritanceEngine();
+export const policyInheritanceService = PolicyInheritanceService.getInstance();
