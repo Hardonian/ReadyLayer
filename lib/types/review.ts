@@ -41,6 +41,28 @@ export const FindingSchema = z.object({
   remediation: z.string().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
+  // Governance & variance metadata
+  modelId: z.string().optional().describe('Model that generated this finding'),
+  modelEpoch: z.string().optional().describe('ISO timestamp or semantic version of model'),
+  variance_score: z.number().min(0).max(1).optional().describe('Multi-model disagreement score'),
+  intent_drift: z.object({
+    score: z.number().min(0).max(1),
+    category: z.enum(['high', 'medium', 'low', 'none']),
+    signals: z.array(z.string()).optional(),
+  }).optional(),
+  confidence_inflation_risk: z.object({
+    score: z.number().min(0).max(1),
+    quadrant: z.enum(['confident+stable', 'confident+unstable', 'cautious+stable', 'cautious+unstable']),
+  }).optional(),
+  temporal_fragility: z.object({
+    tag: z.enum(['fresh', 'stale-14d', 'stale-90d', 'deprecated']),
+    age_days: z.number().int(),
+  }).optional(),
+  negative_space_risk: z.object({
+    type: z.enum(['missing-auth', 'missing-ratelimit', 'missing-timeout', 'missing-errorbound']),
+    severity: SeveritySchema,
+    recommendation: z.string(),
+  }).optional(),
   metadata: z.record(z.unknown()).optional(),
 })
 
