@@ -534,7 +534,13 @@ export class LLMService {
     }
 
     // Get provider
-    const providerName = request.model?.includes('claude') ? 'anthropic' : this.defaultProvider;
+    let providerName = this.defaultProvider;
+    if (request.model?.includes('claude')) {
+      providerName = 'anthropic';
+    } else if (request.model?.includes('opencode')) {
+      providerName = 'opencode';
+    }
+
     const provider = this.providers.get(providerName);
     if (!provider) {
       throw new Error(`Provider ${providerName} not available`);
