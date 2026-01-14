@@ -72,14 +72,31 @@ function generateSuggestedFix(issue: Issue, fileContent: string): string | null 
 
 /**
  * Process webhook event
+ * Validates payload, extracts typed event, and routes to appropriate handler
  */
-async function processWebhookEvent(payload: any): Promise<void> {
-  const { type, repository, pr, installationId } = payload;
+async function processWebhookEvent(rawPayload: unknown): Promise<void> {
   const requestId = `webhook_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-  const log = logger.child({ requestId, type, repositoryId: repository.id });
+
+  // Validate webhook payload against schema
+  const validation = validateWebhookEvent(rawPayload);
+  if (!validation.success) {
+    logger.error(
+      { requestId, errors: validation.error.errors },
+      'Invalid webhook payload - validation failed'
+    );
+    throw new ValidationError('Invalid webhook payload', {
+      errors: validation.error.errors.map(e => ({
+        path: e.path.join('.'),
+        message: e.message
+      }))
+    });
+  }
+
+  const event: WebhookEvent = validation.data;
+  const log = logger.child({ requestId, type: event.type, repositoryId: String(event.repository.id) });
 
   try {
-    log.info({ type }, 'Processing webhook event');
+    log.info({ type: event.type }, 'Processing webhook event');
 
     // Check if encryption keys are configured
     if (!isKeyConfigured()) {
@@ -88,7 +105,7 @@ async function processWebhookEvent(payload: any): Promise<void> {
     }
 
     // Get installation with decrypted token
-    const installation = await getInstallationWithDecryptedToken(installationId);
+    const installation = await getInstallationWithDecryptedToken(event.installation.installationId);
 
     if (!installation) {
       log.error({ installationId }, 'Installation not found');
