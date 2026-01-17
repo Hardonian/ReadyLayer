@@ -1,8 +1,9 @@
 /**
  * LLM Service
- * 
+ *
  * Centralized LLM interaction and prompt management
  * Supports OpenAI and Anthropic APIs with caching and cost tracking
+ * P3-FIX: Circuit breaker protection for LLM provider failures
  */
 
 import { prisma } from '../../lib/prisma';
@@ -12,6 +13,7 @@ import {
   getCachedResponse as getCached,
   setCachedResponse as setCached,
 } from '../../lib/cache/llm-cache';
+import { getCircuitBreaker } from '../../lib/circuit-breaker';
 
 export interface LLMRequest {
   prompt: string;
@@ -57,21 +59,26 @@ class OpenAIProvider implements LLMProvider {
     const model = request.model || 'gpt-4-turbo-preview';
     const url = `${this.baseUrl}/chat/completions`;
 
+    // P3-FIX: Wrap API call with circuit breaker
+    const circuitBreaker = getCircuitBreaker('openai');
+
     let response: Response;
     try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: request.prompt }],
-          temperature: request.temperature || 0.7,
-          max_tokens: request.maxTokens || 2000,
-        }),
-        signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
+      response = await circuitBreaker.execute(async () => {
+        return await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: request.prompt }],
+            temperature: request.temperature || 0.7,
+            max_tokens: request.maxTokens || 2000,
+          }),
+          signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
+        });
       });
     } catch (error) {
       if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
@@ -201,22 +208,27 @@ class AnthropicProvider implements LLMProvider {
     const model = request.model || 'claude-3-opus-20240229';
     const url = `${this.baseUrl}/messages`;
 
+    // P3-FIX: Wrap API call with circuit breaker
+    const circuitBreaker = getCircuitBreaker('anthropic');
+
     let response: Response;
     try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: request.prompt }],
-          temperature: request.temperature || 0.7,
-          max_tokens: request.maxTokens || 2000,
-        }),
-        signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
+      response = await circuitBreaker.execute(async () => {
+        return await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: request.prompt }],
+            temperature: request.temperature || 0.7,
+            max_tokens: request.maxTokens || 2000,
+          }),
+          signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
+        });
       });
     } catch (error) {
       if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
