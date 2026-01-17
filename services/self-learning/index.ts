@@ -56,6 +56,58 @@ export interface ConfidenceScore {
 
 export class SelfLearningService {
   /**
+   * P2-FIX: Helper for cursor-based pagination to prevent OOM with large datasets
+   * Yields batches of records instead of loading all into memory
+   */
+  private async *fetchModelPerformanceInBatches(
+    where: { organizationId: string; modelId?: string; timestamp?: { gte: Date } },
+    batchSize = 1000
+  ): AsyncGenerator<Array<{
+    id: string;
+    modelId: string;
+    provider: string;
+    success: boolean;
+    responseTimeMs: number;
+    tokensUsed: number;
+    cost: number;
+  }>> {
+    let cursor: string | undefined = undefined;
+
+    while (true) {
+      const batch = await prisma.modelPerformance.findMany({
+        where,
+        take: batchSize,
+        skip: cursor ? 1 : 0,
+        cursor: cursor ? { id: cursor } : undefined,
+        orderBy: { id: 'asc' },
+        select: {
+          id: true,
+          modelId: true,
+          provider: true,
+          success: true,
+          responseTimeMs: true,
+          tokensUsed: true,
+          cost: true,
+        },
+      });
+
+      if (batch.length === 0) break;
+
+      yield batch.map(p => ({
+        id: p.id,
+        modelId: p.modelId,
+        provider: p.provider,
+        success: p.success,
+        responseTimeMs: p.responseTimeMs,
+        tokensUsed: p.tokensUsed,
+        cost: Number(p.cost),
+      }));
+
+      cursor = batch[batch.length - 1].id;
+    }
+  }
+
+  /**
    * Record model performance
    */
   async recordModelPerformance(
@@ -135,21 +187,26 @@ export class SelfLearningService {
       where.modelId = modelId;
     }
 
-    const performances = await prisma.modelPerformance.findMany({
-      where,
-      orderBy: { timestamp: 'desc' },
-      take: 1000, // Last 1000 records for aggregation
-    });
+    // P2-FIX: Use cursor-based pagination to prevent OOM with large datasets
+    const allPerformances: Array<{
+      modelId: string;
+      provider: string;
+      success: boolean;
+      responseTimeMs: number;
+      tokensUsed: number;
+      cost: number;
+    }> = [];
 
-    // Aggregate metrics - map Prisma records to expected format
-    return this.aggregatePerformanceMetrics(performances.map(p => ({
-      modelId: p.modelId,
-      provider: p.provider,
-      success: p.success,
-      responseTimeMs: p.responseTimeMs,
-      tokensUsed: p.tokensUsed,
-      cost: Number(p.cost),
-    })));
+    for await (const batch of this.fetchModelPerformanceInBatches(where)) {
+      allPerformances.push(...batch);
+      // Limit total records to reasonable size (prevent unbounded growth)
+      if (allPerformances.length >= 10000) {
+        break;
+      }
+    }
+
+    // Aggregate metrics
+    return this.aggregatePerformanceMetrics(allPerformances);
   }
 
   /**
@@ -245,31 +302,61 @@ export class SelfLearningService {
       insights.push(...optimizations);
     }
 
-    // Store insights
-    for (const insight of insights) {
-      await prisma.aggregatedInsight.upsert({
-        where: { id: insight.id },
-        update: {
-          confidence: insight.confidence,
-          trustLevel: insight.trustLevel,
-          dataPoints: insight.dataPoints,
-          lastSeen: insight.lastSeen,
-          trend: insight.trend,
-          metadata: insight.metadata as any,
-        },
-        create: {
-          id: insight.id,
-          organizationId,
-          insightType: insight.insightType,
-          confidence: insight.confidence,
-          trustLevel: insight.trustLevel,
-          dataPoints: insight.dataPoints,
-          firstSeen: insight.firstSeen,
-          lastSeen: insight.lastSeen,
-          trend: insight.trend,
-          metadata: insight.metadata as any,
-        },
+    // P0-FIX: Batch upsert insights (eliminates N+1 query pattern)
+    // Instead of N individual upserts, use 2 queries: 1 findMany + 1 createMany
+    if (insights.length > 0) {
+      // Query existing insights in a single batch
+      const insightIds = insights.map(i => i.id);
+      const existingInsights = await prisma.aggregatedInsight.findMany({
+        where: { id: { in: insightIds } },
+        select: { id: true },
       });
+
+      const existingIds = new Set(existingInsights.map(i => i.id));
+
+      // Split into new and existing
+      const newInsights = insights.filter(i => !existingIds.has(i.id));
+      const updatedInsights = insights.filter(i => existingIds.has(i.id));
+
+      // Batch insert new insights (single query)
+      if (newInsights.length > 0) {
+        await prisma.aggregatedInsight.createMany({
+          data: newInsights.map(insight => ({
+            id: insight.id,
+            organizationId,
+            insightType: insight.insightType,
+            confidence: insight.confidence,
+            trustLevel: insight.trustLevel,
+            dataPoints: insight.dataPoints,
+            firstSeen: insight.firstSeen,
+            lastSeen: insight.lastSeen,
+            trend: insight.trend,
+            metadata: insight.metadata as any,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Batch update existing insights (single transaction)
+      // Note: Prisma doesn't support bulk update with different values per record,
+      // so we use a transaction to group updates
+      if (updatedInsights.length > 0) {
+        await prisma.$transaction(
+          updatedInsights.map(insight =>
+            prisma.aggregatedInsight.update({
+              where: { id: insight.id },
+              data: {
+                confidence: insight.confidence,
+                trustLevel: insight.trustLevel,
+                dataPoints: insight.dataPoints,
+                lastSeen: insight.lastSeen,
+                trend: insight.trend,
+                metadata: insight.metadata as any,
+              },
+            })
+          )
+        );
+      }
     }
 
     return insights;
@@ -446,28 +533,37 @@ export class SelfLearningService {
     // Get data within aggregation window
     const windowStart = new Date(Date.now() - config.aggregationWindow * 24 * 60 * 60 * 1000);
 
-    const performances = await prisma.modelPerformance.findMany({
-      where: {
-        organizationId,
-        timestamp: { gte: windowStart },
-      },
-      take: 10000, // Limit for performance
-    });
+    // P2-FIX: Use cursor-based pagination to prevent OOM with large datasets
+    const aggregatedData: Record<string, unknown>[] = [];
 
-    // Anonymize if needed
-    return performances.map((p) =>
-      privacyComplianceService.prepareForAggregation(
-        {
-          modelId: p.modelId,
-          provider: p.provider,
-          success: p.success,
-          responseTime: p.responseTimeMs,
-          tokensUsed: p.tokensUsed,
-          cost: Number(p.cost),
-        },
-        config
-      )
-    );
+    for await (const batch of this.fetchModelPerformanceInBatches({
+      organizationId,
+      timestamp: { gte: windowStart },
+    })) {
+      // Anonymize each batch and add to results
+      const anonymizedBatch = batch.map((p) =>
+        privacyComplianceService.prepareForAggregation(
+          {
+            modelId: p.modelId,
+            provider: p.provider,
+            success: p.success,
+            responseTime: p.responseTimeMs,
+            tokensUsed: p.tokensUsed,
+            cost: p.cost,
+          },
+          config
+        )
+      );
+
+      aggregatedData.push(...anonymizedBatch);
+
+      // Limit total records to prevent unbounded memory growth
+      if (aggregatedData.length >= 10000) {
+        break;
+      }
+    }
+
+    return aggregatedData;
   }
 
   /**

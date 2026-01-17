@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { requireAuth, generateApiKey } from '../../../../lib/auth';
 import { logger } from '../../../../observability/logging';
 import { createAuthzMiddleware } from '../../../../lib/authz';
 import { parseJsonBody } from '../../../../lib/api-route-helpers';
+
+// P2-FIX: Use Zod schema for consistent validation (matches pattern in other routes)
+const createApiKeySchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
+  scopes: z.array(z.enum(['read', 'write', 'admin'])).min(1, 'At least one scope is required'),
+  expiresAt: z.string().datetime().optional(),
+});
 
 /**
  * POST /api/v1/api-keys
@@ -28,55 +36,33 @@ export async function POST(request: NextRequest) {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
-    const body = bodyResult.data;
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_BODY',
-            message: 'Request body must be an object',
-          },
-        },
-        { status: 400 }
-      );
-    }
-    const bodyObj = body as Record<string, unknown>;
-    const name = bodyObj.name;
-    const scopes = bodyObj.scopes;
-    const expiresAt = bodyObj.expiresAt;
 
-    if (!name || typeof name !== 'string' || !scopes || !Array.isArray(scopes)) {
+    // P2-FIX: Validate with Zod instead of manual type checking
+    const validationResult = createApiKeySchema.safeParse(bodyResult.data);
+    if (!validationResult.success) {
       return NextResponse.json(
         {
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Missing required fields: name (string), scopes (array)',
+            message: 'Invalid request body',
+            details: validationResult.error.errors.map(e => ({
+              path: e.path.join('.'),
+              message: e.message,
+            })),
           },
         },
         { status: 400 }
       );
     }
 
-    // Validate scopes array contains only strings
-    if (!scopes.every((s): s is string => typeof s === 'string')) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'scopes must be an array of strings',
-          },
-        },
-        { status: 400 }
-      );
-    }
+    const { name, scopes, expiresAt } = validationResult.data;
 
     // Generate API key
     const { key, id } = await generateApiKey(
       user.id,
       name,
       scopes,
-      expiresAt && typeof expiresAt === 'string' ? new Date(expiresAt) : undefined
+      expiresAt ? new Date(expiresAt) : undefined
     );
 
     log.info({ userId: user.id, keyId: id }, 'API key created');

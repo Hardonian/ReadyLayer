@@ -46,15 +46,27 @@ export function createAuthzMiddleware(options: AuthzOptions = {}) {
             userScopes = apiKeyRecord.scopes;
           }
         } else {
-          // Session-based auth: default to read scope, admin if org owner
+          // P1-FIX: Session-based auth scope determination
+          // Default to read scope for all authenticated users
           userScopes = ['read'];
+
+          // Grant admin scope if user is owner or admin role
           if (options.requireOrganization) {
             const orgId = request.nextUrl.searchParams.get('organizationId') ||
                          request.headers.get('x-organization-id');
-            if (orgId && await hasRole(user.id, orgId, 'owner')) {
-              userScopes.push('admin');
+            if (orgId) {
+              // Check if user has admin or owner role (both grant admin scope)
+              // hasRole uses hierarchy: owner >= admin, so this catches both
+              const isAdmin = await hasRole(user.id, orgId, 'admin');
+              if (isAdmin) {
+                userScopes.push('admin');
+              }
             }
           }
+
+          // Grant write scope for all authenticated users
+          // (API operations generally need write access)
+          userScopes.push('write');
         }
 
         const hasRequiredScope = options.requiredScopes.some(scope =>

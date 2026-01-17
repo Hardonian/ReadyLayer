@@ -1,4 +1,18 @@
 /** @type {import('next').NextConfig} */
+
+// P3-FIX: Bundle analyzer configuration (optional, only used when ANALYZE=true)
+let withBundleAnalyzer = (config) => config;
+try {
+  if (process.env.ANALYZE === 'true') {
+    withBundleAnalyzer = require('@next/bundle-analyzer')({
+      enabled: true,
+    });
+  }
+} catch (error) {
+  // @next/bundle-analyzer not installed, skip bundle analysis
+  console.warn('Bundle analyzer not available. Install @next/bundle-analyzer to enable: npm install --save-dev @next/bundle-analyzer');
+}
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
@@ -27,4 +41,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withBundleAnalyzer(nextConfig)

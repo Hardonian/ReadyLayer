@@ -37,6 +37,26 @@ const reviewConfigSchema = z.object({
   excludedPaths: z.array(z.string()).optional(),
 });
 
+// P3-FIX: API response field filtering schema
+const reviewFieldsSchema = z.enum([
+  'id',
+  'repositoryId',
+  'prNumber',
+  'prSha',
+  'prTitle',
+  'status',
+  'isBlocked',
+  'blockedReason',
+  'result',
+  'issuesFound',
+  'summary',
+  'startedAt',
+  'completedAt',
+  'createdAt',
+  'updatedAt',
+  'repository',
+]);
+
 const createReviewSchema = z.object({
   repositoryId: z.string().min(1),
   prNumber: z.union([z.string(), z.number()]).transform((val) => 
@@ -219,6 +239,24 @@ export const GET = createRouteHandler(
     const prNumber = searchParams.get('prNumber');
     const { limit, offset } = parsePagination(request);
 
+    // P3-FIX: Parse field selection for response filtering
+    const selectParam = searchParams.get('select');
+    let selectedFields: string[] | null = null;
+    if (selectParam) {
+      try {
+        const fields = selectParam.split(',').map((f) => f.trim());
+        // Validate each field
+        fields.forEach((field) => reviewFieldsSchema.parse(field));
+        selectedFields = fields;
+      } catch (error) {
+        return errorResponse(
+          'VALIDATION_ERROR',
+          `Invalid field selection. Allowed fields: ${reviewFieldsSchema.options.join(', ')}`,
+          400
+        );
+      }
+    }
+
     // Get user's organization memberships for tenant isolation
     const memberships = await prisma.organizationMember.findMany({
       where: { userId: user.id },
@@ -282,8 +320,40 @@ export const GET = createRouteHandler(
       prisma.review.count({ where }),
     ]);
 
-    return paginatedResponse(
-      reviews.map((r) => ({
+    // P3-FIX: Filter response fields based on select parameter
+    const filteredReviews = reviews.map((r) => {
+      const fullReview: Record<string, unknown> = {
+        id: r.id,
+        repositoryId: r.repositoryId,
+        prNumber: r.prNumber,
+        prSha: r.prSha,
+        prTitle: r.prTitle,
+        status: r.status,
+        isBlocked: r.isBlocked,
+        blockedReason: r.blockedReason,
+        result: r.result,
+        issuesFound: r.issuesFound,
+        summary: r.summary,
+        startedAt: r.startedAt,
+        completedAt: r.completedAt,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        repository: r.repository,
+      };
+
+      // If fields selected, filter to only those fields
+      if (selectedFields) {
+        const filtered: Record<string, unknown> = {};
+        selectedFields.forEach((field) => {
+          if (field in fullReview) {
+            filtered[field] = fullReview[field];
+          }
+        });
+        return filtered;
+      }
+
+      // Return minimal fields by default (backward compatible)
+      return {
         id: r.id,
         repositoryId: r.repositoryId,
         prNumber: r.prNumber,
@@ -295,7 +365,11 @@ export const GET = createRouteHandler(
         summary: r.summary,
         createdAt: r.createdAt,
         completedAt: r.completedAt,
-      })),
+      };
+    });
+
+    return paginatedResponse(
+      filteredReviews,
       total,
       limit,
       offset

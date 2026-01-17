@@ -27,12 +27,19 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Unit Tests
+        run: npm test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
       - name: Build
         run: npm run build
 
       - name: Security Scan
         run: |
           # Simple check for exposed secrets in codebase
-          ! grep -r "STRIPE_SECRET_KEY=" . 
+          ! grep -r "STRIPE_SECRET_KEY=" .
           ! grep -r "SUPABASE_SERVICE_ROLE_KEY=" .
           echo "No hardcoded secrets found."

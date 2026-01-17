@@ -154,8 +154,13 @@ export class ReviewGuardService {
       });
       const initialOrgId = initialRepo?.organizationId || '';
 
-      // Track enrichment job IDs for async processing
-      const enrichmentJobIds: string[] = [];
+      // Track file data for async enrichment (after review creation)
+      interface FileEnrichmentData {
+        filePath: string;
+        fileContent: string;
+        staticIssues: Issue[];
+      }
+      const filesForEnrichment: FileEnrichmentData[] = [];
 
       for (const file of filesToReview) {
         try {
@@ -163,38 +168,13 @@ export class ReviewGuardService {
           const staticIssues = await staticAnalysisService.analyze(file.path, file.content);
           allIssues.push(...staticIssues);
 
-          // AI analysis - ASYNCHRONOUS, NON-BLOCKING
-          // Queue LLM enrichment as background job instead of blocking
-          try {
-            // Check if LLM is enabled for this organization
-            if (isQueryEnabled(initialOrgId)) {
-              // Queue async LLM enrichment
-              const jobId = await enqueueLLMEnrichment(
-                '', // Will be set after review is created
-                request.repositoryId,
-                initialOrgId,
-                file.path,
-                file.content,
-                staticIssues
-              );
-              enrichmentJobIds.push(jobId);
-
-              logger.debug(
-                { repositoryId: request.repositoryId, filePath: file.path, jobId },
-                'LLM enrichment job queued'
-              );
-            }
-          } catch (error) {
-            // Handle usage limit errors - these should still throw
-            if (error instanceof UsageLimitExceededError) {
-              throw error;
-            }
-
-            // For other errors during queueing, log but don't block
-            logger.warn(
-              { repositoryId: request.repositoryId, filePath: file.path, error },
-              'Failed to queue LLM enrichment, continuing with static analysis'
-            );
+          // Store file data for async enrichment (will queue after review creation)
+          if (isQueryEnabled(initialOrgId)) {
+            filesForEnrichment.push({
+              filePath: file.path,
+              fileContent: file.content,
+              staticIssues,
+            });
           }
         } catch (error) {
           // Parse errors MUST block PR
@@ -282,12 +262,12 @@ export class ReviewGuardService {
         policy.pack.checksum
       );
 
-      // Determine review status based on enrichment jobs
-      const hasEnrichmentJobs = enrichmentJobIds.length > 0;
+      // Determine review status based on files queued for enrichment
+      const hasEnrichmentJobs = filesForEnrichment.length > 0;
       const reviewStatus = hasEnrichmentJobs ? 'pending-enrichment' : 'completed';
       const reviewCompletedAt = hasEnrichmentJobs ? undefined : completedAt;
 
-      // Save review result
+      // Save review result FIRST (creates review.id for job queueing)
       const review = await prisma.review.create({
         data: {
           repositoryId: request.repositoryId,
@@ -312,7 +292,7 @@ export class ReviewGuardService {
           startedAt,
           completedAt: reviewCompletedAt,
           metadata: {
-            enrichmentJobIds,
+            enrichmentJobIds: [], // Will be updated after queueing
             enrichmentStatus: hasEnrichmentJobs ? 'pending' : 'completed',
             totalFiles: filesToReview.length,
           } as any,
@@ -322,11 +302,55 @@ export class ReviewGuardService {
       // P0: Assert INV-D1 - Review status consistency
       assertReviewStatusConsistency(review);
 
-      // Update enrichment jobs with review ID
-      if (enrichmentJobIds.length > 0) {
+      // P0-FIX: Queue LLM enrichment jobs AFTER review creation (prevents race condition)
+      // Jobs now have valid review.id, so worker can find review when processing
+      const enrichmentJobIds: string[] = [];
+      if (filesForEnrichment.length > 0) {
+        for (const fileData of filesForEnrichment) {
+          try {
+            const jobId = await enqueueLLMEnrichment(
+              review.id, // NOW VALID: review exists in database
+              request.repositoryId,
+              initialOrgId,
+              fileData.filePath,
+              fileData.fileContent,
+              fileData.staticIssues
+            );
+            enrichmentJobIds.push(jobId);
+
+            logger.debug(
+              { reviewId: review.id, filePath: fileData.filePath, jobId },
+              'LLM enrichment job queued with valid review ID'
+            );
+          } catch (error) {
+            // Handle usage limit errors - these should still throw
+            if (error instanceof UsageLimitExceededError) {
+              throw error;
+            }
+
+            // For other errors during queueing, log but don't block
+            logger.warn(
+              { reviewId: review.id, filePath: fileData.filePath, error },
+              'Failed to queue LLM enrichment job, continuing without enrichment'
+            );
+          }
+        }
+
+        // Update review metadata with actual job IDs
+        await prisma.review.update({
+          where: { id: review.id },
+          data: {
+            metadata: {
+              enrichmentJobIds,
+              enrichmentStatus: 'pending',
+              totalFiles: filesToReview.length,
+            } as any,
+          },
+        });
+
         logger.info(
           { reviewId: review.id, jobCount: enrichmentJobIds.length },
-          'Review created with async enrichment jobs'
+          'Review created and LLM enrichment jobs queued'
         );
       }
 
