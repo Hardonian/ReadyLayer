@@ -17,8 +17,8 @@
 
 import { createClient, RedisClientType } from 'redis';
 import { createHash } from 'crypto';
-import { logger } from '../observability/logging';
-import { metrics } from '../observability/metrics';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
 
 export interface CachedLLMResponse {
   content: string;

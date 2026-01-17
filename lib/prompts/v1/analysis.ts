@@ -189,9 +189,10 @@ Return variance analysis with confidence levels.`,
  */
 export function buildLayeredPrompt(
   systemPromptKey: string,
-  analysisPromptFn: (...args: any[]) => string,
-  ...args: any[]
+  analysisPromptFn: (...args: unknown[]) => string,
+  ...args: unknown[]
 ): { system: string; user: string } {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { getSystemPrompt } = require('./system');
 
   return {

@@ -71,7 +71,7 @@ export default function OSSMaintainersPage() {
                 License Compliance Risk
               </h3>
               <p className="mt-2 text-slate-600">
-                Importing GPL/AGPL packages accidentally, violating your project's license or creating legal issues.
+                Importing GPL/AGPL packages accidentally, violating your project&apos;s license or creating legal issues.
               </p>
             </div>
 

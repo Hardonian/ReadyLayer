@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Plus, Edit2, Copy, Trash2 } from 'lucide-react'
 
 export default function PoliciesPage() {
-  const [policies, setPolicies] = useState<any[]>([])
+  const [policies] = useState<any[]>([])
   const [showBuilder, setShowBuilder] = useState(false)
 
   return (

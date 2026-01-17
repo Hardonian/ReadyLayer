@@ -2,7 +2,7 @@
 
 import { ObservabilityDashboard } from '@/components/dashboard/metrics/ObservabilityDashboard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle, AlertTriangle } from 'lucide-react'
 
 export default function HealthPage() {
   return (

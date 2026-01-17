@@ -5,7 +5,7 @@
  * GET /api/v1/providers - List provider configs for org
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createRouteHandler } from '@/lib/api-route-helpers';
 import { providerConfigService } from '@/lib/services/provider-config';
@@ -15,11 +15,6 @@ const ProviderConfigSchema = z.object({
   apiKey: z.string().min(10, 'API key too short'),
   routingStrategy: z.enum(['single', 'fallback', 'variance']).optional(),
   testConnectivity: z.boolean().optional(),
-});
-
-const TestConnectivitySchema = z.object({
-  provider: z.enum(['openai', 'anthropic', 'opencode', 'openrouter']),
-  apiKey: z.string().min(10, 'API key too short'),
 });
 
 export const POST = createRouteHandler(

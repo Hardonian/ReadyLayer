@@ -7,7 +7,7 @@
  * Reference: INVARIANTS.md
  */
 
-import { logger } from '../observability/logging';
+import { logger } from '@/observability/logging';
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 

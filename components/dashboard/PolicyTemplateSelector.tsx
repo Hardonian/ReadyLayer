@@ -43,19 +43,6 @@ export function PolicyTemplateSelector({
     }
   }
 
-  const getColor = (category: string) => {
-    switch (category) {
-      case 'security':
-        return 'bg-red-100 text-red-800'
-      case 'compliance':
-        return 'bg-blue-100 text-blue-800'
-      case 'quality':
-        return 'bg-green-100 text-green-800'
-      default:
-        return 'bg-purple-100 text-purple-800'
-    }
-  }
-
   return (
     <div className="space-y-6">
       {categories.map(category => (

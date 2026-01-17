@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -14,7 +13,7 @@ export interface UserInviteFormProps {
 }
 
 export function UserInviteForm({
-  organizationId,
+  organizationId: _organizationId,
   onSuccess,
   onError,
 }: UserInviteFormProps) {

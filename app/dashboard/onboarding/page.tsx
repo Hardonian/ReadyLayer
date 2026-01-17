@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/container'
-import { OnboardingChecklist } from '@/components/dashboard/OnboardingChecklist'
+import { OnboardingChecklist, type ChecklistItem } from '@/components/dashboard/OnboardingChecklist'
 import { UpgradePrompt } from '@/components/billing/UpgradePrompt'
-import { useOnboardingProgress, type OnboardingStep } from '@/lib/hooks/use-onboarding-progress'
+import { useOnboardingProgress } from '@/lib/hooks/use-onboarding-progress'
 import { staggerContainer, staggerItem } from '@/lib/design/motion'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -55,7 +55,7 @@ export default function OnboardingPage() {
   }
 
   // Transform progress steps to checklist items
-  const checklistItems: OnboardingStep[] = progress.steps.map((step, index) => ({
+  const checklistItems: ChecklistItem[] = progress.steps.map((step, _index) => ({
     ...step,
     estimatedMinutes:
       {
@@ -84,7 +84,7 @@ export default function OnboardingPage() {
         <motion.div variants={staggerItem} className="text-center space-y-3">
           <h1 className="text-4xl font-bold">Welcome to ReadyLayer</h1>
           <p className="text-lg text-muted-foreground">
-            Let's set up enforcement for your team in 5 minutes
+            Let&apos;s set up enforcement for your team in 5 minutes
           </p>
         </motion.div>
 
@@ -207,13 +207,13 @@ function getStepDescription(stepId: string): string {
     'connect-repo':
       'Connect your GitHub, GitLab, or Bitbucket repository to ReadyLayer. This takes less than a minute.',
     'review-results':
-      'Trigger your first code review to see ReadyLayer in action. We\'ll analyze a sample PR.',
+      'Trigger your first code review to see ReadyLayer in action. We&apos;ll analyze a sample PR.',
     'understand-enforcement':
       'Learn how ReadyLayer enforces security, coverage, and documentation policies on every PR.',
     'invite-team':
       'Add your team members so they can see reviews and enforce policies together.',
     'configure-policies':
-      'Customize enforcement rules to match your team\'s standards and risk tolerance.',
+      'Customize enforcement rules to match your team&apos;s standards and risk tolerance.',
   }
   return descriptions[stepId] || ''
 }

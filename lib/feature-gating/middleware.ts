@@ -12,7 +12,7 @@ import {
   FeatureNotAvailableError,
   TierFeatures,
 } from './tier-features';
-import { logger } from '../observability/logging';
+import { logger } from '@/observability/logging';
 
 /**
  * Get organization's billing tier

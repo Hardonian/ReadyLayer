@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, TrendingUp, Activity, Zap } from 'lucide-react'
 
 export interface MetricData {
@@ -21,17 +21,15 @@ export function ObservabilityDashboard({
   organizationId,
   refreshInterval = 30000,
 }: ObservabilityDashboardProps) {
-  const [metrics, setMetrics] = useState<MetricData[]>([
+  const [metrics] = useState<MetricData[]>([
     { label: 'Queue Depth', value: 42, unit: 'jobs', trend: 5, status: 'healthy' },
     { label: 'Worker Latency', value: 285, unit: 'ms', trend: -12, status: 'healthy' },
     { label: 'Error Rate', value: 0.3, unit: '%', trend: 0, status: 'healthy' },
     { label: 'Uptime', value: 99.98, unit: '%', trend: 0, status: 'healthy' },
   ])
-  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      setLoading(true)
       try {
         // TODO: Fetch actual metrics from /api/v1/metrics
         // const response = await fetch(`/api/v1/metrics?organizationId=${organizationId}`)
@@ -39,8 +37,6 @@ export function ObservabilityDashboard({
         // setMetrics(data.metrics)
       } catch (error) {
         console.error('Failed to fetch metrics:', error)
-      } finally {
-        setLoading(false)
       }
     }
 

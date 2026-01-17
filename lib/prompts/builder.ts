@@ -5,7 +5,7 @@
  * Reference: PROMPT_ARCHITECTURE.md - RECOMMENDED ARCHITECTURE
  */
 
-import { getSystemPrompt, SystemPromptKey, PROMPT_VERSION } from './v1/system';
+import { getSystemPrompt, PROMPT_VERSION } from './v1/system';
 import {
   reviewGuardPrompts,
   testEnginePrompts,

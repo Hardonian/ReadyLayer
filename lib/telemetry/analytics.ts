@@ -5,8 +5,8 @@
  * and product engagement metrics.
  */
 
-import { logger } from '../observability/logging';
-import { metrics } from '../observability/metrics';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
 
 export type EventCategory =
   | 'upgrade-prompt'

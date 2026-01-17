@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { useLocalStorage } from './use-local-storage'
 
 export interface OnboardingStep {
   id: string

@@ -15,8 +15,8 @@
  * - Password literals
  */
 
-import { logger } from '../observability/logging';
-import { metrics } from '../observability/metrics';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
 
 export interface RedactionResult {
   original: string;
@@ -296,7 +296,7 @@ export interface RedactionStats {
   redactionSuccessRate: number;
 }
 
-let redactionStats = {
+const redactionStats = {
   totalChecks: 0,
   secretsFound: 0,
   secretsByType: new Map<string, number>(),

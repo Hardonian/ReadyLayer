@@ -16,8 +16,8 @@
 
 import { RateLimiterRedis, RateLimiterMemory } from 'rate-limiter-flexible';
 import { createClient, RedisClientType } from 'redis';
-import { logger } from '../observability/logging';
-import { metrics } from '../observability/metrics';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
 
 export interface RateLimitConfig {
   windowMs: number;

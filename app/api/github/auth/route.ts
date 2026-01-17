@@ -8,12 +8,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateOAuthStateToken, generateGitHubOAuthURL } from '@/integrations/github/oauth';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
-import { cookies } from 'next/headers';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Generate CSRF state token
     const stateToken = generateOAuthStateToken();

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { TrendingUp, AlertCircle, BarChart3, Zap, Shield, Workflow } from 'lucide-react';
+import { TrendingUp, AlertCircle, BarChart3, Zap, Shield, Workflow, CheckCircle } from 'lucide-react';
 
 export default function StartupCTOsPage() {
   return (
@@ -47,7 +47,7 @@ export default function StartupCTOsPage() {
       {/* Challenges Section */}
       <section className="relative px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-slate-900">The Startup CTO's Dilemma</h2>
+          <h2 className="text-3xl font-bold text-slate-900">The Startup CTO&apos;s Dilemma</h2>
           <p className="mt-4 text-lg text-slate-600">
             You need to move fast without breaking production. We make that possible.
           </p>
@@ -60,7 +60,7 @@ export default function StartupCTOsPage() {
                 Production Blindness
               </h3>
               <p className="mt-2 text-slate-600">
-                You don't know your real uptime, latency, or error rates. Flying blind into scale.
+                You don&apos;t know your real uptime, latency, or error rates. Flying blind into scale.
               </p>
             </div>
 
@@ -71,7 +71,7 @@ export default function StartupCTOsPage() {
                 Cost Surprises
               </h3>
               <p className="mt-2 text-slate-600">
-                LLM, database, and API costs spiral. You don't know where money is going.
+                LLM, database, and API costs spiral. You don&apos;t know where money is going.
               </p>
             </div>
 

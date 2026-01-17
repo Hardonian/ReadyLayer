@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
 const costsByModel = [
   { model: 'GPT-4', cost: 142.50 },
@@ -106,12 +106,12 @@ export default function LLMCostsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ model, cost }) => `${model}: $${cost}`}
+                  label={(entry: any) => `${entry.model}: $${entry.cost}`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="cost"
                 >
-                  {costsByModel.map((entry, index) => (
+                  {costsByModel.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
