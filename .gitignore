@@ -40,3 +40,10 @@ next-env.d.ts
 /prisma/migrations/
 # But keep backend migrations
 !backend/prisma/migrations/
+
+# bug triage logs
+logs/bug-triage/*.log
+logs/bug-triage/*.md
+!logs/bug-triage/README.md
+logs/mcp/*.log
+!logs/mcp/README.md

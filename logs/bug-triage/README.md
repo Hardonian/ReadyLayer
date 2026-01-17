@@ -1,0 +1,1 @@
+# Bug Triage Logs\n\nThis directory contains logs from bug triage sessions.\n\n- `bug-*-unit-tests.log` - Unit test output\n- `bug-*-e2e-tests.log` - E2E test output\n- `bug-*-debug-*.log` - Debug session logs\n- `bug-*-verify-*.log` - Verification logs\n- `bug-*-summary.md` - Bug triage summary
