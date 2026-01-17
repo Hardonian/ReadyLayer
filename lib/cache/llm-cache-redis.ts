@@ -31,6 +31,7 @@ export interface CachedLLMResponse {
 interface CacheEntry {
   response: CachedLLMResponse;
   expiresAt: number;
+  lastAccessed: number; // P3-FIX: Track for LRU eviction
 }
 
 class RedisLLMCache {
@@ -127,6 +128,10 @@ class RedisLLMCache {
     // Fall back to in-memory cache
     const inMemEntry = this.inMemoryCache.get(cacheKey);
     if (inMemEntry && Date.now() < inMemEntry.expiresAt) {
+      // P3-FIX: Update lastAccessed for LRU tracking
+      inMemEntry.lastAccessed = Date.now();
+      this.inMemoryCache.set(cacheKey, inMemEntry);
+
       this.cacheMetrics.inMemoryHits++;
       metrics.increment('llm_cache_memory_hit');
       logger.debug({ cacheKey }, 'In-memory LLM cache hit');
@@ -157,17 +162,28 @@ class RedisLLMCache {
     };
 
     const expiresAt = Date.now() + this.inMemoryTTL;
-    const entry: CacheEntry = { response: cachedResponse, expiresAt };
+    const lastAccessed = Date.now();
+    const entry: CacheEntry = { response: cachedResponse, expiresAt, lastAccessed };
 
     // Write to in-memory cache (short TTL, fast access)
     try {
       if (this.inMemoryCache.size >= this.inMemoryMaxSize) {
-        // Evict oldest entry (FIFO - could be improved to LRU)
-        const firstKey = this.inMemoryCache.keys().next().value;
-        if (firstKey) {
-          this.inMemoryCache.delete(firstKey);
+        // P3-FIX: Evict least recently used entry (LRU) instead of oldest (FIFO)
+        let lruKey: string | null = null;
+        let oldestAccess = Date.now();
+
+        for (const [key, value] of this.inMemoryCache.entries()) {
+          if (value.lastAccessed < oldestAccess) {
+            oldestAccess = value.lastAccessed;
+            lruKey = key;
+          }
+        }
+
+        if (lruKey) {
+          this.inMemoryCache.delete(lruKey);
           this.cacheMetrics.evictions++;
           metrics.increment('llm_cache_eviction');
+          logger.debug({ evictedKey: lruKey, lastAccessed: oldestAccess }, 'LRU cache eviction');
         }
       }
       this.inMemoryCache.set(cacheKey, entry);
