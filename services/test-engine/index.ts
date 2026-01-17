@@ -15,6 +15,7 @@ import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
 import { enqueueTestExecutionJob, processTestExecutionJob } from '../../workers/test-executor-worker';
 import { logger } from '../../observability/logging';
+import { testEnginePromptBuilder, combinedPrompt } from '../../lib/prompts/builder';
 
 export interface TestGenerationRequest {
   repositoryId: string;
@@ -271,6 +272,7 @@ export class TestEngineService {
         model: 'gpt-4-turbo-preview',
         organizationId: request.repositoryId, // Would get orgId from repo
         cache: true,
+        temperature: 0, // P0: Deterministic test generation for reproducibility
       };
 
       const response = await llmService.complete(llmRequest);
@@ -461,46 +463,16 @@ export class TestEngineService {
     repositoryId: string,
     organizationId: string
   ): Promise<string> {
-    // Query evidence if RAG is enabled
-    let evidenceSection = '';
-    if (isQueryEnabled()) {
-      try {
-        const evidenceQueries = [
-          `similar files previously tested in repository ${repositoryId}`,
-          `test framework conventions for ${framework}`,
-          `test patterns for ${filePath}`,
-        ];
+    // P2: Use centralized, versioned prompts (PROMPT_ARCHITECTURE)
+    const builtPrompt = testEnginePromptBuilder.buildGenerateTestsPrompt(
+      filePath,
+      content,
+      framework
+    );
 
-        const allEvidence = [];
-        for (const queryText of evidenceQueries) {
-          const results = await queryEvidence({
-            organizationId,
-            repositoryId,
-            queryText,
-            topK: 3,
-            filters: {
-              sourceTypes: ['test_precedent', 'repo_file'],
-            },
-          });
-          allEvidence.push(...results);
-        }
+    return combinedPrompt(builtPrompt);
 
-        if (allEvidence.length > 0) {
-          evidenceSection = formatEvidenceForPrompt(allEvidence);
-        }
-      } catch (error) {
-        // Evidence retrieval failed - proceed without it (graceful degradation)
-        // Use structured logger instead of console.warn for observability
-        const { logger } = await import('../../observability/logging');
-        logger.warn({
-          err: error instanceof Error ? error : new Error(String(error)),
-          repositoryId,
-          filePath,
-        }, 'Evidence retrieval failed, proceeding without evidence');
-      }
-    }
-
-    return `Generate comprehensive tests for the following code using ${framework}.
+    // Note: Evidence integration can be re-added later as a prompt enhancement
 
 File: ${filePath}
 

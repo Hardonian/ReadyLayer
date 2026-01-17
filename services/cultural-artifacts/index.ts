@@ -1,16 +1,20 @@
 /**
  * Cultural Lock-In Artifacts Service
- * 
+ *
  * Generates first-class artifacts that shift behavior:
  * - Merge Confidence Certificate
  * - Readiness Score™ per repository
  * - AI Risk Exposure Index™ per organization
- * 
+ *
  * These artifacts make ReadyLayer's absence visible and create
  * cultural lock-in through visible trust signals.
  */
 
 import { prisma } from '../../lib/prisma';
+import {
+  assertConfidenceBounds,
+  assertWeightsSumToOne,
+} from '../../lib/invariants/assertions';
 // import { policyEngineService } from '../policy-engine'; // Reserved for future use
 
 export interface MergeConfidenceCertificate {
@@ -108,27 +112,66 @@ export class CulturalArtifactsService {
     // Generate certificate ID
     const certificateId = `cert_${review.id}_${Date.now()}`;
 
+    // P0: Actually check test engine results (not hardcoded)
+    const testEngineResult = await prisma.test.findFirst({
+      where: {
+        repositoryId: review.repositoryId,
+        prNumber: review.prNumber,
+        prSha: review.prSha,
+        status: 'generated',
+      },
+    });
+    const testEnginePassed = testEngineResult !== null && testEngineResult.status === 'generated';
+
+    // P0: Actually check doc sync results (not hardcoded)
+    const docSyncResult = await prisma.doc.findFirst({
+      where: {
+        repositoryId: review.repositoryId,
+        ref: review.prSha,
+      },
+    });
+    const docSyncPassed = docSyncResult !== null && !docSyncResult.driftDetected;
+
+    const reviewGuardPassed = review.status === 'completed' && !review.isBlocked;
+
+    // P0: Persist certificate to database (INV-D2: Immutable)
+    const persistedCertificate = await prisma.mergeConfidenceCertificate.create({
+      data: {
+        certificateId,
+        reviewId: review.id,
+        repositoryId: review.repositoryId,
+        prNumber: review.prNumber,
+        prSha: review.prSha,
+        confidenceScore,
+        readinessLevel,
+        reviewGuardPassed,
+        testEnginePassed,
+        docSyncPassed,
+        policyVersion,
+        policyChecksum,
+        evidenceBundleId: evidenceBundle?.id,
+        evaluatedAt: review.completedAt || review.createdAt,
+      },
+    });
+
     const certificate: MergeConfidenceCertificate = {
-      reviewId: review.id,
-      repositoryId: review.repositoryId,
-      prNumber: review.prNumber,
-      prSha: review.prSha,
-      confidenceScore,
+      reviewId: persistedCertificate.reviewId,
+      repositoryId: persistedCertificate.repositoryId,
+      prNumber: persistedCertificate.prNumber,
+      prSha: persistedCertificate.prSha,
+      confidenceScore: Number(persistedCertificate.confidenceScore),
       readinessLevel,
       gatesPassed: {
-        reviewGuard: review.status === 'completed' && !review.isBlocked,
-        testEngine: false, // Would check test engine results
-        docSync: false, // Would check doc sync results
+        reviewGuard: persistedCertificate.reviewGuardPassed,
+        testEngine: persistedCertificate.testEnginePassed,
+        docSync: persistedCertificate.docSyncPassed,
       },
-      policyVersion,
-      policyChecksum,
-      evaluatedAt: review.completedAt || review.createdAt,
-      certificateId,
-      evidenceBundleId: evidenceBundle?.id,
+      policyVersion: persistedCertificate.policyVersion,
+      policyChecksum: persistedCertificate.policyChecksum,
+      evaluatedAt: persistedCertificate.evaluatedAt,
+      certificateId: persistedCertificate.certificateId,
+      evidenceBundleId: persistedCertificate.evidenceBundleId || undefined,
     };
-
-    // Store certificate (could be in a separate table)
-    // For now, return it
 
     return certificate;
   }
@@ -160,24 +203,67 @@ export class CulturalArtifactsService {
         }, 0) / reviews.length / 100
       : 1;
 
-    // Policy compliance (would check policy violations)
-    const policyCompliance = 0.9; // Placeholder
+    // P0: Calculate policy compliance from actual violations (no placeholders)
+    const violations = await prisma.violation.findMany({
+      where: {
+        repositoryId,
+        detectedAt: { gte: thirtyDaysAgo },
+      },
+    });
+    const criticalViolations = violations.filter((v) => v.severity === 'critical').length;
+    const totalViolations = violations.length;
+    const policyCompliance = totalViolations > 0
+      ? Math.max(0, 1 - (criticalViolations * 0.5 + totalViolations * 0.05))
+      : 1;
 
-    // Test coverage (would check test engine results)
-    const testCoverage = 0.85; // Placeholder
+    // P0: Calculate test coverage from actual test engine results (no placeholders)
+    const testRuns = await prisma.testRun.findMany({
+      where: {
+        repositoryId,
+        createdAt: { gte: thirtyDaysAgo },
+        status: 'completed',
+      },
+    });
+    const testCoverage = testRuns.length > 0
+      ? testRuns.reduce((sum, tr) => {
+          const coverage = tr.coverage as { total?: number } | null;
+          return sum + (coverage?.total || 0);
+        }, 0) / testRuns.length / 100
+      : 0;
 
-    // Doc sync (would check doc sync results)
-    const docSync = 0.9; // Placeholder
+    // P0: Calculate doc sync from actual doc sync results (no placeholders)
+    const docs = await prisma.doc.findMany({
+      where: {
+        repositoryId,
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    });
+    const docSync = docs.length > 0
+      ? docs.filter((d) => !d.driftDetected && d.status === 'published').length / docs.length
+      : 0;
+
+    // P0: Assert INV-S2 - Readiness score weights sum to 1.0
+    const weights = {
+      gatePassRate: 0.3,
+      averageConfidence: 0.3,
+      policyCompliance: 0.2,
+      testCoverage: 0.1,
+      docSync: 0.1,
+    };
+    assertWeightsSumToOne(weights, { repositoryId });
 
     // Calculate overall score
     const score = Math.round(
-      (gatePassRate * 0.3 +
-        averageConfidence * 0.3 +
-        policyCompliance * 0.2 +
-        testCoverage * 0.1 +
-        docSync * 0.1) *
+      (gatePassRate * weights.gatePassRate +
+        averageConfidence * weights.averageConfidence +
+        policyCompliance * weights.policyCompliance +
+        testCoverage * weights.testCoverage +
+        docSync * weights.docSync) *
         100
     );
+
+    // P0: Assert INV-D4 - Confidence score bounds (0-100 for display)
+    assertConfidenceBounds(score, '0-100', { repositoryId });
 
     // Determine level
     const level =
@@ -211,6 +297,22 @@ export class CulturalArtifactsService {
         : recentScore < olderScore * 0.9
         ? 'declining'
         : 'stable';
+
+    // P0: Persist readiness score snapshot (INV-S5: Immutable)
+    await prisma.readinessScoreSnapshot.create({
+      data: {
+        repositoryId,
+        score,
+        level,
+        gatePassRate,
+        averageConfidence,
+        policyCompliance,
+        testCoverage,
+        docSync,
+        totalReviews: reviews.length,
+        period: '30d',
+      },
+    });
 
     return {
       repositoryId,
@@ -254,16 +356,23 @@ export class CulturalArtifactsService {
         ? runs.filter((r) => r.aiTouchedDetected).length / runs.length
         : 0;
 
-    // Count unreviewed merges (would need to track this)
-    const unreviewedMerges = 0; // Placeholder
+    // P0: Count unreviewed merges from actual data (no placeholders)
+    const allReviews = await prisma.review.findMany({
+      where: {
+        repositoryId: { in: repositories.map((r) => r.id) },
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    });
+    const unreviewedMerges = allReviews.filter((r) => r.status === 'pending' || r.status === 'failed').length;
 
+    // P0: Calculate average confidence from actual review data (no placeholders)
     const averageConfidence =
-      runs.length > 0
-        ? runs.reduce((sum, _r) => {
-            // Would calculate from review results
-            return sum + 0.8;
-          }, 0) / runs.length
-        : 0.8;
+      allReviews.length > 0
+        ? allReviews.reduce((sum, r) => {
+            const score = this.calculateConfidenceScore(r);
+            return sum + score / 100;
+          }, 0) / allReviews.length
+        : 0;
 
     // Critical findings rate
     const reviews = await prisma.review.findMany({
@@ -300,8 +409,81 @@ export class CulturalArtifactsService {
         ? 'moderate'
         : 'low';
 
-    // Calculate trend
-    const trend = 'stable'; // Would compare periods
+    // Calculate trend (compare last 15 days vs previous 15 days)
+    const fifteenDaysAgo = new Date();
+    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+    const recentRuns = runs.filter((r) => r.createdAt >= fifteenDaysAgo);
+    const olderRuns = runs.filter((r) => r.createdAt < fifteenDaysAgo);
+
+    const recentRisk = recentRuns.length > 0
+      ? recentRuns.filter((r) => r.aiTouchedDetected && !r.gatesPassed).length / recentRuns.length
+      : 0;
+    const olderRisk = olderRuns.length > 0
+      ? olderRuns.filter((r) => r.aiTouchedDetected && !r.gatesPassed).length / olderRuns.length
+      : 0;
+
+    const trend =
+      recentRisk < olderRisk * 0.9
+        ? 'improving'
+        : recentRisk > olderRisk * 1.1
+        ? 'declining'
+        : 'stable';
+
+    // P0: Calculate orphaned intelligence (AI code without human understanding)
+    const orphanedIntelligence = runs.length > 0
+      ? runs.filter((r) => {
+          const metadata = r.triggerMetadata as { reviewerCount?: number } | null;
+          return r.aiTouchedDetected && (metadata?.reviewerCount || 0) === 0;
+        }).length / runs.length
+      : 0;
+
+    // Calculate review intensity (human review depth)
+    const reviewIntensity = allReviews.length > 0
+      ? allReviews.reduce((sum, r) => {
+          // Higher review duration = higher intensity
+          const duration = r.completedAt && r.startedAt
+            ? (r.completedAt.getTime() - r.startedAt.getTime()) / (1000 * 60)
+            : 0;
+          return sum + Math.min(duration / 30, 1); // Cap at 30 minutes
+        }, 0) / allReviews.length
+      : 0;
+
+    // Calculate test coverage score
+    const testCoverageScore = allReviews.length > 0
+      ? allReviews.filter((r) => {
+          // Check if test coverage is above threshold
+          const summary = r.summary as { testCoverage?: number } | null;
+          return (summary?.testCoverage || 0) >= 80;
+        }).length / allReviews.length
+      : 0;
+
+    // Calculate velocity risk (speed vs safety)
+    const velocityRisk = runs.length > 0
+      ? runs.reduce((sum, r) => {
+          const duration = r.completedAt && r.startedAt
+            ? (r.completedAt.getTime() - r.startedAt.getTime()) / (1000 * 60)
+            : 30;
+          // Faster runs (< 5 min) = higher risk, slower runs (> 30 min) = lower risk
+          return sum + Math.max(0, 1 - duration / 30);
+        }, 0) / runs.length
+      : 0;
+
+    // P0: Persist AI Risk Exposure Index to database
+    await prisma.aIRiskExposureIndex.create({
+      data: {
+        organizationId,
+        aiAuthorshipPercent: aiTouchedPercentage * 100,
+        reviewIntensity,
+        testCoverageScore,
+        velocityRisk,
+        orphanedIntelligence,
+        riskIndex: index,
+        riskLevel: level,
+        totalRepositories: repositories.length,
+        period: '30d',
+      },
+    });
 
     return {
       organizationId,
@@ -326,7 +508,11 @@ export class CulturalArtifactsService {
       | { total: number; critical: number; high: number; medium: number; low: number }
       | null;
 
-    if (!summary) return 100;
+    if (!summary) {
+      // P0: Assert INV-D4 - Confidence score bounds
+      assertConfidenceBounds(100, '0-100', { reviewId: review.id });
+      return 100;
+    }
 
     // Start at 100, deduct for issues
     let score = 100;
@@ -335,7 +521,12 @@ export class CulturalArtifactsService {
     score -= summary.medium * 5;
     score -= summary.low * 2;
 
-    return Math.max(0, Math.min(100, score));
+    score = Math.max(0, Math.min(100, score));
+
+    // P0: Assert INV-D4 - Confidence score bounds
+    assertConfidenceBounds(score, '0-100', { reviewId: review.id, summary });
+
+    return score;
   }
 
   /**

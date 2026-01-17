@@ -19,6 +19,9 @@ import { predictiveDetectionService } from '../predictive-detection';
 import { failureIntelligenceService } from '../failure-intelligence';
 import { enqueueLLMEnrichment } from './async-processor';
 import { logger } from '../../observability/logging';
+import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
+import { assertReviewStatusConsistency } from '../../lib/invariants/assertions';
+import { reviewGuardPromptBuilder, combinedPrompt } from '../../lib/prompts/builder';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -316,6 +319,9 @@ export class ReviewGuardService {
         },
       });
 
+      // P0: Assert INV-D1 - Review status consistency
+      assertReviewStatusConsistency(review);
+
       // Update enrichment jobs with review ID
       if (enrichmentJobIds.length > 0) {
         logger.info(
@@ -559,33 +565,41 @@ export class ReviewGuardService {
       }
     }
 
-    const codeBlockStart = '```';
-    const codeBlockEnd = '```';
-    const prompt = `Analyze the following code for security vulnerabilities, quality issues, and potential bugs.
+    // P0: SECURITY - Redact secrets before sending to LLM (INV-E5)
+    const redactionResult = redactSecrets(content, {
+      redactEmail: false,
+      logDetections: true,
+    });
+    updateRedactionStats(redactionResult);
 
-File: ${filePath}
+    if (redactionResult.secretsFound > 0) {
+      logger.warn(
+        {
+          filePath,
+          repositoryId,
+          secretsFound: redactionResult.secretsFound,
+          secretTypes: redactionResult.secretTypes,
+        },
+        'Secrets detected and redacted before LLM analysis'
+      );
+    }
 
-${codeBlockStart}
-${content}
-${codeBlockEnd}
-${evidenceSection}
+    const redactedContent = redactionResult.redacted;
 
-Return a JSON array of issues found, each with:
-- ruleId: string (e.g., "security.sql-injection")
-- severity: "critical" | "high" | "medium" | "low"
-- file: string
-- line: number
-- message: string
-- fix: string (actionable fix instruction)
-- confidence: number (0-1)
-
-Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message": "...", "fix": "...", "confidence": 0.9}]`;
+    // P2: Use centralized, versioned prompts (PROMPT_ARCHITECTURE)
+    const builtPrompt = reviewGuardPromptBuilder.buildAnalyzeFilePrompt(
+      filePath,
+      redactedContent,
+      evidenceSection
+    );
+    const prompt = combinedPrompt(builtPrompt);
 
     const llmRequest: LLMRequest = {
       prompt,
       model: 'gpt-4-turbo-preview',
       organizationId,
       cache: true,
+      temperature: 0, // P0: Deterministic governance - same inputs = same outputs
     };
 
     try {

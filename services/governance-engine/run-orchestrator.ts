@@ -139,7 +139,7 @@ export class GovernanceRunOrchestrator {
           prompt,
           model: run.model,
           organizationId: run.organizationId,
-          temperature: 0.3, // Lower temperature for deterministic governance
+          temperature: 0, // P0: Fully deterministic governance - same inputs = same outputs
           maxTokens: 4000,
         });
         content = response.content;

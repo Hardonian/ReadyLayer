@@ -980,3 +980,98 @@ model ReviewSignal {
   @@index([reviewId])
   @@index([createdAt])
 }
+
+// ============================================================================
+// CULTURAL ARTIFACTS (Trust Signaling)
+// ============================================================================
+
+// Merge Confidence Certificate (P0: Complete implementation - immutable audit records)
+model MergeConfidenceCertificate {
+  id                String   @id @default(cuid()) // Stable certificate ID
+  certificateId     String   @unique // Public certificate ID (cert_reviewId_timestamp)
+  reviewId          String   @unique // One certificate per review
+  repositoryId      String
+  prNumber          Int
+  prSha             String
+
+  // Confidence scoring
+  confidenceScore   Decimal  @db.Decimal(5, 2) // 0-100
+  readinessLevel    String   // ready, needs_review, blocked
+
+  // Gates passed (P0: No longer hardcoded)
+  reviewGuardPassed Boolean  @default(false)
+  testEnginePassed  Boolean  @default(false)
+  docSyncPassed     Boolean  @default(false)
+
+  // Policy tracking
+  policyVersion     String
+  policyChecksum    String
+
+  // Evidence bundle link
+  evidenceBundleId  String?
+
+  // Timestamps (INV-D2: Immutable after creation)
+  evaluatedAt       DateTime
+  createdAt         DateTime @default(now())
+
+  @@index([reviewId])
+  @@index([repositoryId])
+  @@index([certificateId])
+  @@index([createdAt])
+}
+
+// Readiness Score Snapshot (P0: Historical tracking, INV-S5: Immutable)
+model ReadinessScoreSnapshot {
+  id                   String   @id @default(cuid())
+  repositoryId         String
+
+  // Score and level
+  score                Decimal  @db.Decimal(5, 2) // 0-100
+  level                String   // excellent, good, fair, poor
+
+  // Factor breakdown (P0: Remove placeholders, use actual values)
+  gatePassRate         Decimal  @db.Decimal(5, 4) // 0-1
+  averageConfidence    Decimal  @db.Decimal(5, 4) // 0-1
+  policyCompliance     Decimal  @db.Decimal(5, 4) // 0-1
+  testCoverage         Decimal  @db.Decimal(5, 4) // 0-1
+  docSync              Decimal  @db.Decimal(5, 4) // 0-1
+
+  // Metadata
+  totalReviews         Int
+  period               String   // 30d, 90d, etc.
+
+  // Immutability (created once, never updated)
+  createdAt            DateTime @default(now())
+
+  @@index([repositoryId])
+  @@index([createdAt])
+  @@index([score])
+}
+
+// AI Risk Exposure Index (P0: Implement from scratch)
+model AIRiskExposureIndex {
+  id                   String   @id @default(cuid())
+  organizationId       String
+
+  // Risk components
+  aiAuthorshipPercent  Decimal  @db.Decimal(5, 2) // % of code authored by AI
+  reviewIntensity      Decimal  @db.Decimal(5, 4) // 0-1: Human review depth
+  testCoverageScore    Decimal  @db.Decimal(5, 4) // 0-1: Test quality score
+  velocityRisk         Decimal  @db.Decimal(5, 4) // 0-1: Speed vs safety balance
+  orphanedIntelligence Decimal  @db.Decimal(5, 4) // 0-1: AI knowledge without human understanding
+
+  // Overall index
+  riskIndex            Decimal  @db.Decimal(5, 2) // 0-100
+  riskLevel            String   // low, medium, high, critical
+
+  // Calculation metadata
+  totalRepositories    Int
+  period               String   // 30d, 90d, etc.
+
+  createdAt            DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([riskIndex])
+  @@index([riskLevel])
+  @@index([createdAt])
+}

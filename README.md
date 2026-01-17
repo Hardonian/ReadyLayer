@@ -1,8 +1,8 @@
 # ReadyLayer
 
 > **The default authority for AI-generated code safety.**
-> 
-> Deterministic governance gates. Every decision is signed, traceable, and defendable in audits.
+>
+> Deterministic governance gates. Every decision is hashed, traceable, and defendable in audits.
 
 [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/readylayer/readylayer)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -18,13 +18,13 @@
 
 ## What is ReadyLayer?
 
-ReadyLayer is an **AI-aware code governance platform** that enforces security, test coverage, and documentation standards automatically. It blocks risky pull requests *before they ship* with cryptographically signed, auditable decisions.
+ReadyLayer is an **AI-aware code governance platform** that enforces security, test coverage, and documentation standards automatically. It blocks risky pull requests *before they ship* with cryptographically hashed, auditable decisions.
 
 ### Built for modern teams shipping AI-assisted code:
 - ✅ **Review Guard** — Security & policy scanning with deterministic verdicts
 - ✅ **Test Engine** — AI-powered test generation + coverage enforcement  
 - ✅ **Doc Sync** — Catch documentation drift in APIs and schemas
-- ✅ **Signed Decisions** — Every gate decision includes policy hash for audit trails
+- ✅ **Hashed Decisions** — Every gate decision includes policy hash for audit trails
 - ✅ **Zero dependency on AI** — Works perfectly with just deterministic rules
 
 ---
