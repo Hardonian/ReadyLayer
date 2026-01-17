@@ -284,7 +284,7 @@ export const traceContextManager = new TraceContextManager();
  */
 export function traceMiddleware(
   req: { headers?: Record<string, string> },
-  res?: any
+  _res?: any
 ): (next: () => Promise<void>) => Promise<void> {
   return async (next: () => Promise<void>) => {
     const headers = req.headers || {};

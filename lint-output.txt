@@ -1,0 +1,157 @@
+
+> readylayer@1.0.0 lint
+> next lint
+
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+
+./app/api/github/auth/route.ts
+11:10  Error: 'cookies' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+16:27  Error: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/github/callback/route.ts
+14:10  Error: 'prisma' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/v1/analytics/events/route.ts
+19:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/api/v1/providers/route.ts
+8:10  Error: 'NextRequest' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+20:7  Error: 'TestConnectivitySchema' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/webhooks/slack/blocked-pr/route.ts
+84:70  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+149:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/dashboard/admin/page.tsx
+9:10  Error: 'loading' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/admin/policies/page.tsx
+9:20  Error: 'setPolicies' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+9:44  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/dashboard/admin/users/page.tsx
+6:24  Error: 'Shield' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+9:17  Error: 'setUsers' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+9:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./app/dashboard/analytics/health/page.tsx
+5:10  Error: 'AlertCircle' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/analytics/llm-costs/page.tsx
+4:63  Error: 'Legend' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/dashboard/onboarding/page.tsx
+11:22  Error: 'CheckCircle2' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+58:70  Error: 'index' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+87:16  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/features/oss-maintainers/page.tsx
+74:81  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./app/features/startup-ctos/page.tsx
+50:76  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+63:24  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+74:61  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+287:20  Error: 'CheckCircle' is not defined.  react/jsx-no-undef
+
+./components/admin/UserInviteForm.tsx
+5:10  Error: 'Input' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+17:3  Error: 'organizationId' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/billing/UpgradePrompt.tsx
+33:45  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./components/dashboard/BlockedPRAlert.tsx
+5:25  Error: 'FileText' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/dashboard/OnboardingChecklist.tsx
+8:10  Error: 'fadeIn' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+42:22  Error: 'setLocalItems' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/dashboard/PolicyTemplateSelector.tsx
+46:9  Error: 'getColor' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/dashboard/metrics/ObservabilityDashboard.tsx
+4:29  Error: 'CardDescription' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+24:19  Error: 'setMetrics' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+30:10  Error: 'loading' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/ui/modal.tsx
+210:38  Error: 'ref' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./lib/api-route-helpers.ts
+18:3  Error: 'NotFoundError' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+19:3  Error: 'ValidationError' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+20:3  Error: 'DatabaseError' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+21:3  Error: 'RateLimitError' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./lib/billing-middleware.ts
+237:29  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/debug/error-context.ts
+224:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/debug/security-validator.ts
+68:5  Error: 'filePath' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+79:41  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+126:3  Error: 'type' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+434:3  Warning: Unexpected console statement.  no-console
+
+./lib/hooks/use-onboarding-progress.ts
+161:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+166:5  Warning: Unexpected console statement.  no-console
+
+./lib/invariants/assertions.ts
+18:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+34:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+86:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+111:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+159:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+183:28  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/middleware/trace-context.ts
+37:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+41:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+150:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+160:77  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+188:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+287:3  Error: 'res' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+287:9  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+295:16  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+332:90  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/prompts/builder.ts
+8:27  Error: 'SystemPromptKey' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./lib/prompts/v1/analysis.ts
+192:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+193:12  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+195:31  Error: Require statement not part of import statement.  @typescript-eslint/no-var-requires
+
+./lib/rate-limiting/redis-rate-limiter.ts
+140:26  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+179:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/secrets/redaction.ts
+299:5  Error: 'redactionStats' is never reassigned. Use 'const' instead.  prefer-const
+
+./lib/telemetry/analytics.ts
+25:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+41:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+88:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+102:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+116:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+130:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+144:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+158:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+229:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./lib/telemetry/llm-costs.ts
+362:76  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+369:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules

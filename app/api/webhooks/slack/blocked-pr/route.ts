@@ -146,7 +146,7 @@ function buildBlockedPRMessage(notification: BlockedPRNotification): any {
 /**
  * Send message to Slack
  */
-async function sendToSlack(channelId: string, message: any): Promise<void> {
+async function sendToSlack(_channelId: string, message: any): Promise<void> {
   try {
     const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 

@@ -207,7 +207,7 @@ interface ModalProps {
 }
 
 const Modal = React.forwardRef<HTMLDivElement, ModalProps>(
-  ({ open, onOpenChange, children }, ref) => (
+  ({ open, onOpenChange, children }, _ref) => (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {children}
     </Dialog>

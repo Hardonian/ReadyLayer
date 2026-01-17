@@ -65,7 +65,6 @@ export async function validateSecurity(
   const {
     code,
     type = 'service',
-    filePath,
     enableAllChecks = true,
     checks = [],
   } = options;
@@ -123,7 +122,7 @@ export async function validateSecurity(
 function checkTenantIsolation(
   code: string,
   lines: string[],
-  type: string
+  _type: string
 ): SecurityIssue[] {
   const issues: SecurityIssue[] = [];
 

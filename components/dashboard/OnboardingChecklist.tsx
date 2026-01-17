@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, Circle, ChevronDown, ChevronUp, Zap } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
+import { staggerContainer, staggerItem } from '@/lib/design/motion'
 import { trackOnboardingEvent } from '@/lib/telemetry/analytics'
 
 export interface ChecklistItem {
@@ -39,7 +39,7 @@ export function OnboardingChecklist({
   compact = false,
 }: OnboardingChecklistProps) {
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
-  const [localItems, setLocalItems] = useState(items)
+  const [localItems] = useState(items)
 
   const completedCount = localItems.filter((item) => item.completed).length
   const progress = (completedCount / localItems.length) * 100

@@ -11,7 +11,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateOAuthStateToken, exchangeOAuthCodeForToken, getGitHubUser } from '@/integrations/github/oauth';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
-import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 
 // Force dynamic rendering
@@ -57,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     // Get stored state from session/cookies
     const cookieStore = await cookies();
-    const storedState = cookieStore.get('github_oauth_state')?.value;
+    const storedState = cookieStore.get('github_oauth_state')?.value ?? null;
 
     // Validate CSRF token (state parameter)
     if (!validateOAuthStateToken(state, storedState)) {

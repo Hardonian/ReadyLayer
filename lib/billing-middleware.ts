@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { billingService } from '../billing';
-import { logger } from '../observability/logging';
+import { logger } from '@/observability/logging';
 import { LimitType } from './usage-enforcement';
 
 export interface BillingCheckOptions {
@@ -237,7 +237,7 @@ export async function trackLLMCostForBilling(
   metadata?: Record<string, any>
 ): Promise<void> {
   try {
-    const { trackLLMCost, calculateLLMCost } = await import('../telemetry/llm-costs');
+    const { trackLLMCost, calculateLLMCost } = await import('@/lib/telemetry/llm-costs');
 
     const costUSD = calculateLLMCost(modelName, inputTokens, outputTokens);
 
@@ -278,7 +278,7 @@ export async function getOrganizationSpendingStatus(
 }> {
   try {
     const { getOrganizationMonthlySpend, getBudgetUtilization, checkBudgetAlerts } = await import(
-      '../telemetry/llm-costs'
+      '@/lib/telemetry/llm-costs'
     );
 
     const tier = await billingService.getOrganizationTier(organizationId);

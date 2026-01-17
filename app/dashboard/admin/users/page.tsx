@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2, Shield, User } from 'lucide-react'
+import { Plus, Trash2, User } from 'lucide-react'
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<any[]>([])
+  const [users] = useState<any[]>([])
   const [showInviteForm, setShowInviteForm] = useState(false)
 
   return (

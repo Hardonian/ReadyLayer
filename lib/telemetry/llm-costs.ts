@@ -5,8 +5,8 @@
  * Supports multiple LLM providers (OpenAI, Claude, etc.)
  */
 
-import { logger } from '../observability/logging';
-import { metrics } from '../observability/metrics';
+import { logger } from '@/observability/logging';
+import { metrics } from '@/observability/metrics';
 
 export type LLMProvider = 'openai' | 'anthropic' | 'cohere' | 'huggingface';
 

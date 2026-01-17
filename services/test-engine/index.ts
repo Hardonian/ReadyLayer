@@ -473,25 +473,6 @@ export class TestEngineService {
     return combinedPrompt(builtPrompt);
 
     // Note: Evidence integration can be re-added later as a prompt enhancement
-
-File: ${filePath}
-
-Code:
-\`\`\`
-${content}
-\`\`\`
-
-Functions to test:
-${parseResult.functions.map((f: any) => `- ${f.name} (line ${f.line})`).join('\n')}
-${evidenceSection}
-
-Requirements:
-1. Cover all functions and edge cases
-2. Include error cases
-3. Match existing test style if present
-4. Use ${framework} syntax and best practices
-
-Return only the test code, no explanations.`;
   }
 
   /**

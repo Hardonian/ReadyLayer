@@ -1,16 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Users, Shield, Bell, Zap } from 'lucide-react'
 
 export default function AdminPage() {
-  const [loading, setLoading] = useState(true)
-
   useEffect(() => {
     // TODO: Fetch organization admin data
-    setLoading(false)
   }, [])
 
   return (
