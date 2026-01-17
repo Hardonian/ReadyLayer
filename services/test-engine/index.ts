@@ -271,6 +271,7 @@ export class TestEngineService {
         model: 'gpt-4-turbo-preview',
         organizationId: request.repositoryId, // Would get orgId from repo
         cache: true,
+        temperature: 0, // P0: Deterministic test generation for reproducibility
       };
 
       const response = await llmService.complete(llmRequest);

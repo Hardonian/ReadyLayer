@@ -19,6 +19,8 @@ import { predictiveDetectionService } from '../predictive-detection';
 import { failureIntelligenceService } from '../failure-intelligence';
 import { enqueueLLMEnrichment } from './async-processor';
 import { logger } from '../../observability/logging';
+import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
+import { assertReviewStatusConsistency } from '../../lib/invariants/assertions';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -316,6 +318,9 @@ export class ReviewGuardService {
         },
       });
 
+      // P0: Assert INV-D1 - Review status consistency
+      assertReviewStatusConsistency(review);
+
       // Update enrichment jobs with review ID
       if (enrichmentJobIds.length > 0) {
         logger.info(
@@ -559,6 +564,27 @@ export class ReviewGuardService {
       }
     }
 
+    // P0: SECURITY - Redact secrets before sending to LLM (INV-E5)
+    const redactionResult = redactSecrets(content, {
+      redactEmail: false,
+      logDetections: true,
+    });
+    updateRedactionStats(redactionResult);
+
+    if (redactionResult.secretsFound > 0) {
+      logger.warn(
+        {
+          filePath,
+          repositoryId,
+          secretsFound: redactionResult.secretsFound,
+          secretTypes: redactionResult.secretTypes,
+        },
+        'Secrets detected and redacted before LLM analysis'
+      );
+    }
+
+    const redactedContent = redactionResult.redacted;
+
     const codeBlockStart = '```';
     const codeBlockEnd = '```';
     const prompt = `Analyze the following code for security vulnerabilities, quality issues, and potential bugs.
@@ -566,7 +592,7 @@ export class ReviewGuardService {
 File: ${filePath}
 
 ${codeBlockStart}
-${content}
+${redactedContent}
 ${codeBlockEnd}
 ${evidenceSection}
 
@@ -586,6 +612,7 @@ Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message
       model: 'gpt-4-turbo-preview',
       organizationId,
       cache: true,
+      temperature: 0, // P0: Deterministic governance - same inputs = same outputs
     };
 
     try {

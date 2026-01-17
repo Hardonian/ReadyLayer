@@ -7,7 +7,11 @@
 
 import { prisma } from '../../lib/prisma';
 import { usageEnforcementService } from '../../lib/usage-enforcement';
-// import { createHash } from 'crypto'; // Reserved for future caching
+import {
+  generateCacheKey,
+  getCachedResponse as getCached,
+  setCachedResponse as setCached,
+} from '../../lib/cache/llm-cache';
 
 export interface LLMRequest {
   prompt: string;
@@ -568,20 +572,52 @@ export class LLMService {
   // Removed checkBudget - now handled by usageEnforcementService
 
   /**
-   * Get cached response
-   * TODO: Implement Redis caching
+   * Get cached response (P0: Implemented for deterministic governance)
    */
-  private async getCachedResponse(_request: LLMRequest): Promise<LLMResponse | null> {
-    // Caching not yet implemented
+  private async getCachedResponse(request: LLMRequest): Promise<LLMResponse | null> {
+    const model = request.model || 'gpt-4-turbo-preview';
+    const temperature = request.temperature ?? 0;
+
+    // P0: Only cache deterministic requests (temperature = 0)
+    if (temperature !== 0) {
+      return null;
+    }
+
+    const cacheKey = generateCacheKey(request.prompt, model, temperature);
+    const cached = await getCached(cacheKey);
+
+    if (cached) {
+      return {
+        content: cached.content,
+        model: cached.model,
+        tokensUsed: cached.tokensUsed,
+        cost: cached.cost,
+        cached: true,
+      };
+    }
+
     return null;
   }
 
   /**
-   * Cache response
-   * TODO: Implement Redis caching
+   * Cache response (P0: Implemented for deterministic governance)
    */
-  private async cacheResponse(_request: LLMRequest, _response: LLMResponse): Promise<void> {
-    // Caching not yet implemented
+  private async cacheResponse(request: LLMRequest, response: LLMResponse): Promise<void> {
+    const model = request.model || 'gpt-4-turbo-preview';
+    const temperature = request.temperature ?? 0;
+
+    // P0: Only cache deterministic requests (temperature = 0)
+    if (temperature !== 0) {
+      return;
+    }
+
+    const cacheKey = generateCacheKey(request.prompt, model, temperature);
+    await setCached(cacheKey, {
+      content: response.content,
+      model: response.model,
+      tokensUsed: response.tokensUsed,
+      cost: response.cost,
+    });
   }
 }
 
