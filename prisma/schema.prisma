@@ -38,6 +38,7 @@ model Organization {
   slug         String   @unique
   plan         String   @default("starter") // starter, growth, scale
   billingEmail String?
+  timezone     String   @default("UTC") // P2-FIX: Organization timezone for daily usage limit resets
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

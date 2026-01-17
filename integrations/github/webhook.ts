@@ -83,13 +83,20 @@ export class GitHubWebhookHandler {
     installationId: string,
     signature: string
   ): Promise<void> {
-    // Get installation
+    // Get installation (P2-FIX: Include updatedAt for optimistic locking)
     const installation = await prisma.installation.findUnique({
       where: {
         provider_providerId: {
           provider: 'github',
           providerId: installationId,
         },
+      },
+      select: {
+        id: true,
+        webhookSecret: true,
+        organizationId: true,
+        repositoryId: true,
+        updatedAt: true, // P2-FIX: Track for race condition detection
       },
     });
 
@@ -105,6 +112,25 @@ export class GitHubWebhookHandler {
 
     // Normalize event (getOrCreateRepository is now synchronous placeholder)
     const normalized = await this.normalizeEvent(event, installation);
+
+    // P2-FIX: Verify installation hasn't been modified during processing (optimistic locking)
+    const currentInstallation = await prisma.installation.findUnique({
+      where: {
+        provider_providerId: {
+          provider: 'github',
+          providerId: installationId,
+        },
+        updatedAt: installation.updatedAt, // Only match if updatedAt is unchanged
+      },
+      select: { id: true },
+    });
+
+    if (!currentInstallation) {
+      throw new Error(
+        'Installation was modified or deleted during webhook processing. ' +
+        'This webhook event will be retried by GitHub if still valid.'
+      );
+    }
 
     // Get organizationId from installation for usage enforcement
     const organizationId = installation.organizationId ?? undefined;

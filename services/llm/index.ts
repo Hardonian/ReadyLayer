@@ -116,13 +116,11 @@ class OpenAIProvider implements LLMProvider {
     // Calculate cost (approximate, varies by model)
     const cost = this.calculateCost(model, tokensUsed);
 
-    // Track cost (don't fail on cost tracking errors)
-    try {
-      await this.trackCost(request.organizationId, model, tokensUsed, cost);
-    } catch (error) {
+    // P2-FIX: Track cost asynchronously (non-blocking) to avoid 50-100ms latency
+    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((error) => {
       // Log but don't fail the request
       console.error('Failed to track LLM cost:', error);
-    }
+    });
 
     return {
       content,
@@ -263,13 +261,11 @@ class AnthropicProvider implements LLMProvider {
     // Calculate cost
     const cost = this.calculateCost(model, tokensUsed);
 
-    // Track cost (don't fail on cost tracking errors)
-    try {
-      await this.trackCost(request.organizationId, model, tokensUsed, cost);
-    } catch (error) {
+    // P2-FIX: Track cost asynchronously (non-blocking) to avoid 50-100ms latency
+    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((error) => {
       // Log but don't fail the request
       console.error('Failed to track LLM cost:', error);
-    }
+    });
 
     return {
       content,
@@ -413,13 +409,11 @@ class OpenCodeProvider implements LLMProvider {
     // OpenCode cost (baseline is $0 or minimal)
     const cost = this.calculateCost(model, tokensUsed);
 
-    // Track cost
-    try {
-      await this.trackCost(request.organizationId, model, tokensUsed, cost);
-    } catch (error) {
+    // P2-FIX: Track cost asynchronously (non-blocking) to avoid 50-100ms latency
+    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((error) => {
       // Log but don't fail
       console.error('Failed to track OpenCode cost:', error);
-    }
+    });
 
     return {
       content,
