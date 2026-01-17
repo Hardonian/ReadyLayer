@@ -21,6 +21,7 @@ import { enqueueLLMEnrichment } from './async-processor';
 import { logger } from '../../observability/logging';
 import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
 import { assertReviewStatusConsistency } from '../../lib/invariants/assertions';
+import { reviewGuardPromptBuilder, combinedPrompt } from '../../lib/prompts/builder';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -585,27 +586,13 @@ export class ReviewGuardService {
 
     const redactedContent = redactionResult.redacted;
 
-    const codeBlockStart = '```';
-    const codeBlockEnd = '```';
-    const prompt = `Analyze the following code for security vulnerabilities, quality issues, and potential bugs.
-
-File: ${filePath}
-
-${codeBlockStart}
-${redactedContent}
-${codeBlockEnd}
-${evidenceSection}
-
-Return a JSON array of issues found, each with:
-- ruleId: string (e.g., "security.sql-injection")
-- severity: "critical" | "high" | "medium" | "low"
-- file: string
-- line: number
-- message: string
-- fix: string (actionable fix instruction)
-- confidence: number (0-1)
-
-Format: [{"ruleId": "...", "severity": "...", "file": "...", "line": 1, "message": "...", "fix": "...", "confidence": 0.9}]`;
+    // P2: Use centralized, versioned prompts (PROMPT_ARCHITECTURE)
+    const builtPrompt = reviewGuardPromptBuilder.buildAnalyzeFilePrompt(
+      filePath,
+      redactedContent,
+      evidenceSection
+    );
+    const prompt = combinedPrompt(builtPrompt);
 
     const llmRequest: LLMRequest = {
       prompt,

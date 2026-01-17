@@ -93,7 +93,7 @@ export function HeroProof({ user }: HeroProofProps) {
                 <span className="text-text-primary">AI-generated code safety</span>
               </h1>
               <p className="text-base sm:text-lg lg:text-xl text-text-muted max-w-xl mb-2">
-                Deterministic governance gates. Every decision is signed, traceable, and defensible in audits.
+                Deterministic governance gates. Every decision is hashed, traceable, and defensible in audits.
               </p>
               <p className="text-sm text-text-muted max-w-xl">
                 <strong className="text-text-primary">Inevitability Mode:</strong> If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms. 
@@ -121,7 +121,7 @@ export function HeroProof({ user }: HeroProofProps) {
                 <div className="flex-1">
                   <div className="font-semibold mb-1">Review Guard</div>
                   <div className="text-sm text-text-muted">
-                    Deterministic security, performance, and quality scans. Every finding is signed with policy version hash.
+                    Deterministic security, performance, and quality scans. Every finding is identified with policy version hash.
                   </div>
                 </div>
               </motion.div>
@@ -179,7 +179,7 @@ export function HeroProof({ user }: HeroProofProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <Eye className="h-3.5 w-3.5 text-accent" />
-                    <span className="text-text-muted">Signed Review IDs</span>
+                    <span className="text-text-muted">Hashed Review IDs</span>
                   </div>
                 </div>
                 <div className="text-xs text-text-muted p-2 bg-background/50 rounded border border-primary/20">

@@ -92,7 +92,7 @@ export function CulturalArtifacts() {
                   </div>
                   <div className="pt-3 border-t border-border">
                     <div className="text-xs text-text-muted">
-                      <strong className="text-text-primary">Signed with:</strong> Policy version hash, review ID signature, immutable evidence bundle
+                      <strong className="text-text-primary">Identified with:</strong> Policy version hash, review ID hash, immutable evidence bundle
                     </div>
                   </div>
                 </div>
