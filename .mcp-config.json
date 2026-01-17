@@ -1,0 +1,150 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema/mcp-config.json",
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "env": {
+        "PLAYWRIGHT_BROWSERS_PATH": "${workspaceFolder}/node_modules/.cache/ms-playwright"
+      },
+      "description": "Playwright automation for UI debugging and E2E test creation"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"],
+      "description": "File system access for reading logs, code, and test files"
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_TOKEN}"
+      },
+      "description": "GitHub integration for issue tracking and PR analysis"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Enhanced reasoning for complex bug triage and root cause analysis"
+    }
+  },
+  "debugConfig": {
+    "enabledByDefault": true,
+    "logLevel": "debug",
+    "logDirectory": "logs/mcp",
+    "tools": {
+      "playwright": {
+        "headless": false,
+        "slowMo": 100,
+        "recordVideo": true,
+        "videoDir": "logs/bug-triage/videos",
+        "screenshotOnFailure": true,
+        "screenshotDir": "logs/bug-triage/screenshots"
+      },
+      "filesystem": {
+        "allowedPaths": [
+          "${workspaceFolder}",
+          "${workspaceFolder}/logs",
+          "${workspaceFolder}/e2e",
+          "${workspaceFolder}/services",
+          "${workspaceFolder}/components",
+          "${workspaceFolder}/app"
+        ],
+        "excludePaths": [
+          "${workspaceFolder}/node_modules",
+          "${workspaceFolder}/.next",
+          "${workspaceFolder}/dist"
+        ]
+      }
+    }
+  },
+  "bugTriageWorkflow": {
+    "description": "Configuration for AI-assisted bug triage using MCP tools",
+    "steps": [
+      {
+        "name": "capture",
+        "description": "Capture failing test output and error context",
+        "tools": ["filesystem"],
+        "actions": [
+          "Read test output logs",
+          "Capture error stack traces",
+          "Extract relevant code context"
+        ]
+      },
+      {
+        "name": "reproduce",
+        "description": "Reproduce the bug in isolation",
+        "tools": ["playwright", "filesystem"],
+        "actions": [
+          "Create minimal reproduction",
+          "Record video of bug occurrence",
+          "Capture screenshots at failure point"
+        ]
+      },
+      {
+        "name": "analyze",
+        "description": "Analyze root cause with AI assistance",
+        "tools": ["sequential-thinking", "filesystem"],
+        "actions": [
+          "Review code flow",
+          "Identify data transformations",
+          "Check security filters",
+          "Verify tenant isolation"
+        ]
+      },
+      {
+        "name": "fix",
+        "description": "Implement and verify fix",
+        "tools": ["filesystem", "playwright"],
+        "actions": [
+          "Write reproduction test",
+          "Implement fix",
+          "Verify all tests pass",
+          "Check for regressions"
+        ]
+      },
+      {
+        "name": "document",
+        "description": "Document the fix",
+        "tools": ["filesystem", "github"],
+        "actions": [
+          "Update PROGRESS.md",
+          "Create pull request",
+          "Add comments to code",
+          "Update documentation"
+        ]
+      }
+    ]
+  },
+  "securityChecks": {
+    "description": "Security-focused debugging checks",
+    "enabled": true,
+    "checks": [
+      {
+        "name": "secret-exposure",
+        "description": "Ensure no secrets are exposed in logs or error messages",
+        "pattern": "Check for API keys, tokens, passwords in debug output"
+      },
+      {
+        "name": "tenant-isolation",
+        "description": "Verify tenant isolation is maintained",
+        "pattern": "Ensure all queries filter by organizationId"
+      },
+      {
+        "name": "input-validation",
+        "description": "Verify input validation with Zod schemas",
+        "pattern": "Check that all API inputs are validated"
+      },
+      {
+        "name": "sql-injection",
+        "description": "Ensure no raw SQL queries",
+        "pattern": "Only use Prisma ORM, never raw SQL"
+      },
+      {
+        "name": "xss-prevention",
+        "description": "Check for XSS vulnerabilities",
+        "pattern": "Verify React sanitization, check dangerouslySetInnerHTML usage"
+      }
+    ]
+  }
+}
