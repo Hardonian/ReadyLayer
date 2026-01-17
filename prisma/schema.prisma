@@ -27,6 +27,7 @@ model User {
   jobs          Job[]
   auditLogs     AuditLog[]
   subscriptions Subscription[]
+  oauthStates   OAuthState[]
 
   @@index([email])
 }
@@ -62,6 +63,7 @@ model Organization {
   predictiveAlerts PredictiveAlert[]
   providerConfigs ProviderConfig[]
   governanceRuns GovernanceRun[]
+  oauthStates    OAuthState[]
 
   @@index([slug])
 }
@@ -144,6 +146,25 @@ model Installation {
   @@index([organizationId])
   @@index([repositoryId])
   @@index([tokenEncrypted])
+}
+
+// OAuth State for CSRF protection
+model OAuthState {
+  id             String   @id @default(cuid())
+  stateHash      String   @unique // SHA-256 hash of state token
+  userId         String
+  organizationId String
+  provider       String   // github, gitlab, bitbucket
+  returnUrl      String   @default("/dashboard/repos")
+  expiresAt      DateTime
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([stateHash])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // Repository Configurations (.readylayer.yml)

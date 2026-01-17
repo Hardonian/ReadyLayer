@@ -594,11 +594,16 @@ export class DocSyncService {
         }
       }
 
+      // SECURITY: Redact any potential secrets in the spec before sending to LLM
+      const specString = JSON.stringify(spec, null, 2);
+      const specRedactionResult = redactSecrets(specString, { logDetections: true });
+      const redactedSpec = specRedactionResult.redacted;
+
       const prompt = `Enhance the following OpenAPI spec with detailed descriptions, parameters, and examples.
 
 OpenAPI Spec:
 \`\`\`json
-${JSON.stringify(spec, null, 2)}
+${redactedSpec}
 \`\`\`
 ${evidenceSection}
 

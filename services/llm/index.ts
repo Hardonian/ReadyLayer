@@ -517,6 +517,20 @@ export class LLMService {
    * Complete a prompt with caching support
    */
   async complete(request: LLMRequest): Promise<LLMResponse> {
+    // SECURITY: Validate that prompt doesn't contain unredacted secrets
+    const { isRedactedSafe } = await import('../../lib/secrets/redaction');
+    if (!isRedactedSafe(request.prompt)) {
+      const { logger } = await import('../../observability/logging');
+      logger.error(
+        {
+          organizationId: request.organizationId,
+          promptLength: request.prompt.length,
+        },
+        'CRITICAL: Unredacted secrets detected in LLM prompt - blocking request'
+      );
+      throw new Error('Security violation: Unredacted secrets detected in prompt. All code must be redacted before LLM calls.');
+    }
+
     // Initialize providers lazily
     this.initializeProviders();
 
