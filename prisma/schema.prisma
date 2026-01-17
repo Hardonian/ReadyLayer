@@ -205,6 +205,9 @@ model Review {
   @@index([status])
   @@index([isBlocked])
   @@index([createdAt])
+  // P1-FIX: Composite indexes for dashboard queries (reduces 500ms+ latency)
+  @@index([repositoryId, createdAt]) // Repository timeline queries
+  @@index([repositoryId, status, createdAt]) // Filtered repository queries
 }
 
 // Test Engine Results
@@ -395,6 +398,8 @@ model Violation {
   @@index([ruleId])
   @@index([severity])
   @@index([detectedAt])
+  // P1-FIX: Composite index for violation timeline queries
+  @@index([repositoryId, detectedAt]) // Repository violation history
 }
 
 // API Keys (for programmatic access)
