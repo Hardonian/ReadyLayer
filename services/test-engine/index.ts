@@ -16,6 +16,7 @@ import { Issue } from '../static-analysis';
 import { enqueueTestExecutionJob, processTestExecutionJob } from '../../workers/test-executor-worker';
 import { logger } from '../../observability/logging';
 import { testEnginePromptBuilder, combinedPrompt } from '../../lib/prompts/builder';
+import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
 
 export interface TestGenerationRequest {
   repositoryId: string;
@@ -233,8 +234,16 @@ export class TestEngineService {
     const framework = request.framework || (await this.detectFramework(request.repositoryId));
 
     try {
-      // Parse code structure
-      const parseResult = await codeParserService.parse(request.filePath, request.fileContent);
+      // SECURITY: Redact secrets before sending code to LLM
+      const redactionResult = redactSecrets(request.fileContent, {
+        redactEmail: false,
+        logDetections: true,
+      });
+      updateRedactionStats(redactionResult);
+      const redactedCode = redactionResult.redacted;
+
+      // Parse code structure (use redacted code)
+      const parseResult = await codeParserService.parse(request.filePath, redactedCode);
 
       // Get organization ID from repository
       const repoForOrg = await prisma.repository.findUnique({
@@ -257,10 +266,10 @@ export class TestEngineService {
         checkLLMBudget: true,
       });
 
-      // Generate tests using LLM
+      // Generate tests using LLM with REDACTED code
       const prompt = await this.buildTestPrompt(
         request.filePath,
-        request.fileContent,
+        redactedCode, // Use redacted code, NEVER original
         parseResult,
         framework,
         request.repositoryId,

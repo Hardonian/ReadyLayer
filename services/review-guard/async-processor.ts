@@ -156,9 +156,9 @@ async function analyzeWithLLM(
     // Build LLM prompt with redacted code
     const prompt = buildLLMPrompt(request.filePath, redactedCode, evidence);
 
-    // Call LLM service
+    // Call LLM service with REDACTED code (security critical!)
     const llmResponse = await llmService.analyzeCode({
-      code: request.fileContent,
+      code: redactedCode, // Use redacted code, NEVER original
       filePath: request.filePath,
       prompt,
       context: {
