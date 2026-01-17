@@ -81,11 +81,21 @@ export function decrypt(encrypted: string): string {
     return '';
   }
 
-  // Check if already decrypted (for migration compatibility)
-  // If it doesn't contain colons, assume it's plaintext (legacy data)
+  // P1-FIX: Removed plaintext fallback for security
+  // All tokens must be encrypted. Use migration scripts if needed:
+  // - npm run secrets:encrypt-tokens (encrypt existing tokens)
+  // - npm run secrets:migrate-tokens (migrate installation tokens)
   if (!encrypted.includes(':')) {
-    logger.warn('Attempting to decrypt plaintext (legacy data)');
-    return encrypted;
+    const error = new Error(
+      'PLAINTEXT_TOKEN_DETECTED: All tokens must be encrypted. ' +
+      'Run migration: npm run secrets:encrypt-tokens'
+    );
+    logger.error({
+      err: error,
+      hasColons: encrypted.includes(':'),
+      length: encrypted.length,
+    }, 'Plaintext token detected - encryption required');
+    throw error;
   }
 
   try {
