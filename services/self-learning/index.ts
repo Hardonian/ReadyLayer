@@ -245,31 +245,61 @@ export class SelfLearningService {
       insights.push(...optimizations);
     }
 
-    // Store insights
-    for (const insight of insights) {
-      await prisma.aggregatedInsight.upsert({
-        where: { id: insight.id },
-        update: {
-          confidence: insight.confidence,
-          trustLevel: insight.trustLevel,
-          dataPoints: insight.dataPoints,
-          lastSeen: insight.lastSeen,
-          trend: insight.trend,
-          metadata: insight.metadata as any,
-        },
-        create: {
-          id: insight.id,
-          organizationId,
-          insightType: insight.insightType,
-          confidence: insight.confidence,
-          trustLevel: insight.trustLevel,
-          dataPoints: insight.dataPoints,
-          firstSeen: insight.firstSeen,
-          lastSeen: insight.lastSeen,
-          trend: insight.trend,
-          metadata: insight.metadata as any,
-        },
+    // P0-FIX: Batch upsert insights (eliminates N+1 query pattern)
+    // Instead of N individual upserts, use 2 queries: 1 findMany + 1 createMany
+    if (insights.length > 0) {
+      // Query existing insights in a single batch
+      const insightIds = insights.map(i => i.id);
+      const existingInsights = await prisma.aggregatedInsight.findMany({
+        where: { id: { in: insightIds } },
+        select: { id: true },
       });
+
+      const existingIds = new Set(existingInsights.map(i => i.id));
+
+      // Split into new and existing
+      const newInsights = insights.filter(i => !existingIds.has(i.id));
+      const updatedInsights = insights.filter(i => existingIds.has(i.id));
+
+      // Batch insert new insights (single query)
+      if (newInsights.length > 0) {
+        await prisma.aggregatedInsight.createMany({
+          data: newInsights.map(insight => ({
+            id: insight.id,
+            organizationId,
+            insightType: insight.insightType,
+            confidence: insight.confidence,
+            trustLevel: insight.trustLevel,
+            dataPoints: insight.dataPoints,
+            firstSeen: insight.firstSeen,
+            lastSeen: insight.lastSeen,
+            trend: insight.trend,
+            metadata: insight.metadata as any,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      // Batch update existing insights (single transaction)
+      // Note: Prisma doesn't support bulk update with different values per record,
+      // so we use a transaction to group updates
+      if (updatedInsights.length > 0) {
+        await prisma.$transaction(
+          updatedInsights.map(insight =>
+            prisma.aggregatedInsight.update({
+              where: { id: insight.id },
+              data: {
+                confidence: insight.confidence,
+                trustLevel: insight.trustLevel,
+                dataPoints: insight.dataPoints,
+                lastSeen: insight.lastSeen,
+                trend: insight.trend,
+                metadata: insight.metadata as any,
+              },
+            })
+          )
+        );
+      }
     }
 
     return insights;
