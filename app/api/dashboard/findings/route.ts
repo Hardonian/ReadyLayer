@@ -69,12 +69,17 @@ export const GET = createRouteHandler(
       // Get total count
       const total = await prisma.violation.count({ where })
 
-      // Get violations (findings)
+      // P1-FIX: Single-pass loading with nested include (eliminates extra query)
+      // Load violations with repository, review, AND run in one query
       const violations = await prisma.violation.findMany({
         where,
         include: {
           repository: true,
-          review: true,
+          review: {
+            include: {
+              run: true, // Nested include: loads run through review relation
+            },
+          },
         },
         orderBy: { detectedAt: 'desc' },
         take: limit,
@@ -84,7 +89,7 @@ export const GET = createRouteHandler(
         repositoryId: string
         repository: { fullName: string }
         reviewId: string | null
-        review: { isBlocked: boolean; status: string } | null
+        review: { isBlocked: boolean; status: string; run: { id: string } | null } | null
         ruleId: string
         severity: string
         file: string
@@ -93,25 +98,15 @@ export const GET = createRouteHandler(
         detectedAt: Date
       }>
 
-      // Get runs for evidence references
-      const reviewIds = violations.map((v) => v.reviewId).filter((id): id is string => Boolean(id))
-      const runs = await prisma.readyLayerRun.findMany({
-        where: {
-          reviewId: { in: reviewIds },
-        },
-      }) as Array<{
-        id: string
-        reviewId: string | null
-      }>
-
-      const runMap = new Map(runs.map((r) => [r.reviewId, r]))
+      // No longer need separate run query - runs are included in reviews
+      // Removed: extra findMany query for runs (was 2 queries, now 1 query)
 
       const findings = violations.map((violation: {
         id: string
         repositoryId: string
         repository: { fullName: string }
         reviewId: string | null
-        review: { isBlocked: boolean; status: string } | null
+        review: { isBlocked: boolean; status: string; run: { id: string } | null } | null
         ruleId: string
         severity: string
         file: string
@@ -119,7 +114,8 @@ export const GET = createRouteHandler(
         message: string
         detectedAt: Date
       }) => {
-        const run = violation.reviewId ? runMap.get(violation.reviewId) : null
+        // Run is now directly accessible via nested relation
+        const run = violation.review?.run || null
 
         // Determine status
         let status: 'pass' | 'fail' | 'blocked' | 'needs_review' | 'overridden' | 'resolved' =
@@ -132,7 +128,7 @@ export const GET = createRouteHandler(
 
         // Evidence references (simplified - would link to evidence bundles)
         const evidenceReferences: string[] = []
-        if (run && run.reviewId) {
+        if (run) {
           evidenceReferences.push(`run:${run.id}`)
         }
         if (violation.reviewId) {
