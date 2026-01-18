@@ -13,7 +13,7 @@ import { metrics } from '@/observability/metrics';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-04-10',
+  apiVersion: '2023-10-16',
 });
 
 export interface StripeWebhookEvent {
@@ -155,7 +155,7 @@ async function handleSubscriptionCreated(
 /**
  * Handle subscription updated
  */
-async function handleSubscriptionUpdated(
+export async function handleSubscriptionUpdated(
   event: StripeWebhookEvent
 ): Promise<BillingEventResult> {
   const subscription = event.data.object as Stripe.Subscription;
@@ -453,7 +453,7 @@ export function verifyWebhookSignature(
 ): boolean {
   try {
     const crypto = require('crypto');
-    
+
     const hash = crypto
       .createHmac('sha256', secret)
       .update(payload)
@@ -470,3 +470,29 @@ export function verifyWebhookSignature(
     return false;
   }
 }
+
+/**
+ * Get subscription status from Stripe
+ */
+export async function getSubscriptionStatus(
+  subscriptionId: string
+): Promise<Stripe.Subscription | null> {
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    return subscription;
+  } catch (error) {
+    logger.error(
+      {
+        subscriptionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      'Error retrieving subscription status'
+    );
+    return null;
+  }
+}
+
+/**
+ * Alias for handleInvoicePaymentSucceeded
+ */
+export const handlePaymentSucceeded = handleInvoicePaymentSucceeded;

@@ -9,7 +9,6 @@ import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/observability/logging';
 import { createInstallationWithEncryptedToken } from '@/lib/secrets/installation-helpers';
-import { Octokit } from '@octokit/rest';
 
 const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
 const GITHUB_APP_PRIVATE_KEY = process.env.GITHUB_APP_PRIVATE_KEY;
@@ -101,18 +100,20 @@ export async function GET(req: NextRequest) {
 
     // Get installation access token
     const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10));
-    const { data: installation } = await installationOctokit.rest.apps.getInstallation({
+    const { data: installation } = await (installationOctokit as any).rest.apps.getInstallation({
       installation_id: parseInt(installationId, 10),
     });
 
     // Get installation access token
-    const { data: tokenResponse } = await installationOctokit.rest.apps.createInstallationAccessToken({
+    const { data: tokenResponse } = await (installationOctokit as any).rest.apps.createInstallationAccessToken({
       installation_id: parseInt(installationId, 10),
     });
 
     // Store installation with encrypted token
     const savedInstallation = await createInstallationWithEncryptedToken({
-      organizationId: oauthState.organizationId,
+      organization: {
+        connect: { id: oauthState.organizationId },
+      },
       provider: 'github',
       providerId: installationId,
       accessToken: tokenResponse.token,

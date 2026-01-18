@@ -122,7 +122,7 @@ export class PolicyInheritanceService {
   /**
    * Get team-level policy
    */
-  private async getTeamPolicy(teamId: string): Promise<InheritedPolicy | null> {
+  private async getTeamPolicy(_teamId: string): Promise<InheritedPolicy | null> {
     // TODO: Fetch from database
     return null;
   }
@@ -131,7 +131,7 @@ export class PolicyInheritanceService {
    * Get repository-level policy
    */
   private async getRepositoryPolicy(
-    repositoryId: string
+    _repositoryId: string
   ): Promise<InheritedPolicy | null> {
     // TODO: Fetch from database
     return null;
@@ -241,7 +241,7 @@ export class PolicyInheritanceService {
    * Validate policy compliance
    */
   async validateCompliance(
-    code: string,
+    _code: string,
     policy: InheritedPolicy
   ): Promise<Array<{ ruleId: string; severity: string; message: string }>> {
     const violations: Array<{ ruleId: string; severity: string; message: string }> = [];
@@ -264,8 +264,8 @@ export class PolicyInheritanceService {
    * Suggest policy improvements
    */
   async suggestImprovements(
-    organizationId: string,
-    currentPolicy: InheritedPolicy
+    _organizationId: string,
+    _currentPolicy: InheritedPolicy
   ): Promise<Array<{ suggestion: string; impact: string }>> {
     // TODO: Analyze org's pull requests and suggest policy improvements
     return [

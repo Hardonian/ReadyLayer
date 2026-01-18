@@ -197,6 +197,7 @@ class RedisLLMCache {
         const redisEntry: CacheEntry = {
           response: cachedResponse,
           expiresAt: Date.now() + this.redisTTL * 1000,
+          lastAccessed: Date.now(),
         };
         await this.redisClient.setEx(
           cacheKey,
@@ -262,7 +263,14 @@ class RedisLLMCache {
   getStats(): {
     size: number;
     hitRate: number;
-    metrics: typeof this.cacheMetrics;
+    metrics: {
+      redisHits: number;
+      redisMisses: number;
+      inMemoryHits: number;
+      inMemoryMisses: number;
+      errors: number;
+      writes: number;
+    };
   } {
     const totalHits = this.cacheMetrics.redisHits + this.cacheMetrics.inMemoryHits;
     const totalMisses = this.cacheMetrics.redisMisses + this.cacheMetrics.inMemoryMisses;

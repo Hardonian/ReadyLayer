@@ -180,7 +180,7 @@ interface TestFrameworkExecutor {
  * Jest Executor
  */
 class JestExecutor implements TestFrameworkExecutor {
-  async execute(sourceCode: string, testCode: string, filePath: string): Promise<TestExecutionResult> {
+  async execute(_sourceCode: string, _testCode: string, filePath: string): Promise<TestExecutionResult> {
     // Simulate Jest execution
     // In production, this would spawn a child process and run Jest
     const testsPassed = Math.floor(Math.random() * 5) + 1
@@ -204,7 +204,7 @@ class JestExecutor implements TestFrameworkExecutor {
  * Mocha Executor
  */
 class MochaExecutor implements TestFrameworkExecutor {
-  async execute(sourceCode: string, testCode: string, filePath: string): Promise<TestExecutionResult> {
+  async execute(_sourceCode: string, _testCode: string, filePath: string): Promise<TestExecutionResult> {
     // Simulate Mocha execution
     const testsPassed = Math.floor(Math.random() * 4) + 1
     const testsFailed = 0
@@ -227,7 +227,7 @@ class MochaExecutor implements TestFrameworkExecutor {
  * Pytest Executor
  */
 class PytestExecutor implements TestFrameworkExecutor {
-  async execute(sourceCode: string, testCode: string, filePath: string): Promise<TestExecutionResult> {
+  async execute(_sourceCode: string, _testCode: string, filePath: string): Promise<TestExecutionResult> {
     // Simulate pytest execution
     const testsPassed = Math.floor(Math.random() * 6) + 1
     const testsFailed = Math.random() > 0.9 ? 1 : 0
@@ -250,7 +250,7 @@ class PytestExecutor implements TestFrameworkExecutor {
  * Vitest Executor
  */
 class VitestExecutor implements TestFrameworkExecutor {
-  async execute(sourceCode: string, testCode: string, filePath: string): Promise<TestExecutionResult> {
+  async execute(_sourceCode: string, _testCode: string, filePath: string): Promise<TestExecutionResult> {
     // Simulate Vitest execution (same as Jest but faster)
     const testsPassed = Math.floor(Math.random() * 5) + 1
     const testsFailed = 0
@@ -273,7 +273,7 @@ class VitestExecutor implements TestFrameworkExecutor {
  * Generic/fallback executor
  */
 class GenericExecutor implements TestFrameworkExecutor {
-  async execute(sourceCode: string, testCode: string, filePath: string): Promise<TestExecutionResult> {
+  async execute(_sourceCode: string, _testCode: string, filePath: string): Promise<TestExecutionResult> {
     // Generic executor - assumes tests can be run
     const testsPassed = Math.floor(Math.random() * 4) + 1
     const testsFailed = 0

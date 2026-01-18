@@ -19,7 +19,6 @@ import {
   checkBudgetAlerts,
 } from '../lib/telemetry/llm-costs';
 import {
-  getSubscriptionStatus,
   handleSubscriptionUpdated,
   handlePaymentSucceeded,
 } from '../services/billing/stripe-webhook-handler';
@@ -28,19 +27,21 @@ test.describe('Billing and Subscription Workflow', () => {
   const testOrgId = 'org_test_' + Date.now();
 
   test('should track LLM costs accurately', async () => {
-    const entry = {
-      organizationId: testOrgId,
-      modelName: 'gpt-4-turbo',
+    const metrics = {
+      provider: 'openai' as const,
+      model: 'gpt-4-turbo',
       inputTokens: 1000,
       outputTokens: 500,
       totalTokens: 1500,
       costUSD: 0.025, // 0.01 + 0.015
+      requestDurationMs: 100,
       timestamp: new Date(),
+      success: true,
     };
 
-    await trackLLMCost(entry);
+    trackLLMCost(testOrgId, metrics);
 
-    const spend = await getOrganizationMonthlySpend(testOrgId);
+    const spend = getOrganizationMonthlySpend(testOrgId);
     expect(spend).toBeGreaterThan(0);
   });
 
@@ -49,21 +50,23 @@ test.describe('Billing and Subscription Workflow', () => {
 
     // Track expenses
     for (let i = 0; i < 50; i++) {
-      await trackLLMCost({
-        organizationId: testOrgId,
-        modelName: 'gpt-3.5-turbo',
+      trackLLMCost(testOrgId, {
+        provider: 'openai' as const,
+        model: 'gpt-3.5-turbo',
         inputTokens: 1000,
         outputTokens: 1000,
         totalTokens: 2000,
         costUSD: 0.002, // Cheap model
+        requestDurationMs: 100,
         timestamp: new Date(),
+        success: true,
       });
     }
 
-    const withinBudget = await isWithinBudget(testOrgId, monthlyBudget);
+    const withinBudget = isWithinBudget(testOrgId, monthlyBudget);
     expect(typeof withinBudget).toBe('boolean');
 
-    const remaining = await getRemainingBudget(testOrgId, monthlyBudget);
+    const remaining = getRemainingBudget(testOrgId, monthlyBudget);
     expect(remaining).toBeLessThanOrEqual(monthlyBudget);
   });
 
@@ -72,18 +75,20 @@ test.describe('Billing and Subscription Workflow', () => {
 
     // Add some costs
     for (let i = 0; i < 10; i++) {
-      await trackLLMCost({
-        organizationId: testOrgId + '_utilization',
-        modelName: 'gpt-4-turbo',
+      trackLLMCost(testOrgId + '_utilization', {
+        provider: 'openai' as const,
+        model: 'gpt-4-turbo',
         inputTokens: 1000,
         outputTokens: 1000,
         totalTokens: 2000,
         costUSD: 0.04,
+        requestDurationMs: 100,
         timestamp: new Date(),
+        success: true,
       });
     }
 
-    const utilization = await getBudgetUtilization(testOrgId + '_utilization', monthlyBudget);
+    const utilization = getBudgetUtilization(testOrgId + '_utilization', monthlyBudget);
     expect(utilization).toBeGreaterThan(0);
     expect(utilization).toBeLessThanOrEqual(100);
   });
@@ -94,18 +99,20 @@ test.describe('Billing and Subscription Workflow', () => {
 
     // Track expensive usage to trigger warning
     for (let i = 0; i < 200; i++) {
-      await trackLLMCost({
-        organizationId: testId,
-        modelName: 'gpt-4-turbo',
+      trackLLMCost(testId, {
+        provider: 'openai' as const,
+        model: 'gpt-4-turbo',
         inputTokens: 1000,
         outputTokens: 1000,
         totalTokens: 2000,
         costUSD: 0.04,
+        requestDurationMs: 100,
         timestamp: new Date(),
+        success: true,
       });
     }
 
-    const alert = await checkBudgetAlerts(testId, monthlyBudget);
+    const alert = checkBudgetAlerts(testId, monthlyBudget);
     expect(['ok', 'warning', 'critical']).toContain(alert);
   });
 
@@ -213,18 +220,20 @@ test.describe('Billing and Subscription Workflow', () => {
     // Track multiple LLM calls (free tier might have limits)
     const calls = 10;
     for (let i = 0; i < calls; i++) {
-      await trackLLMCost({
-        organizationId: freeOrgId,
-        modelName: 'gpt-3.5-turbo',
+      trackLLMCost(freeOrgId, {
+        provider: 'openai' as const,
+        model: 'gpt-3.5-turbo',
         inputTokens: 100,
         outputTokens: 100,
         totalTokens: 200,
         costUSD: 0.00004,
+        requestDurationMs: 100,
         timestamp: new Date(),
+        success: true,
       });
     }
 
-    const spend = await getOrganizationMonthlySpend(freeOrgId);
+    const spend = getOrganizationMonthlySpend(freeOrgId);
     expect(spend).toBeGreaterThan(0);
   });
 
@@ -235,21 +244,23 @@ test.describe('Billing and Subscription Workflow', () => {
     const models = ['gpt-4-turbo', 'gpt-3.5-turbo', 'claude-3-haiku'];
     for (const model of models) {
       for (let i = 0; i < 5; i++) {
-        await trackLLMCost({
-          organizationId: testId,
-          modelName: model,
+        trackLLMCost(testId, {
+          provider: 'openai' as const,
+          model: model,
           inputTokens: Math.floor(Math.random() * 2000),
           outputTokens: Math.floor(Math.random() * 1000),
           totalTokens: Math.floor(Math.random() * 3000),
           costUSD: Math.random() * 0.1,
+          requestDurationMs: 100,
           timestamp: new Date(Date.now() - Math.random() * 86400000 * 30),
+          success: true,
         });
       }
     }
 
-    const spend = await getOrganizationMonthlySpend(testId);
-    const utilization = await getBudgetUtilization(testId, 500);
-    const remaining = await getRemainingBudget(testId, 500);
+    const spend = getOrganizationMonthlySpend(testId);
+    const utilization = getBudgetUtilization(testId, 500);
+    const remaining = getRemainingBudget(testId, 500);
 
     expect(spend).toBeGreaterThanOrEqual(0);
     expect(utilization).toBeGreaterThanOrEqual(0);
@@ -261,17 +272,19 @@ test.describe('Billing and Subscription Workflow', () => {
 
     // Track a known cost
     const costPerOp = 0.05;
-    await trackLLMCost({
-      organizationId: testId,
-      modelName: 'gpt-4-turbo',
+    trackLLMCost(testId, {
+      provider: 'openai' as const,
+      model: 'gpt-4-turbo',
       inputTokens: 2000,
       outputTokens: 1000,
       totalTokens: 3000,
       costUSD: costPerOp,
+      requestDurationMs: 100,
       timestamp: new Date(),
+      success: true,
     });
 
-    const spend = await getOrganizationMonthlySpend(testId);
+    const spend = getOrganizationMonthlySpend(testId);
     expect(spend).toBeCloseTo(costPerOp);
   });
 
@@ -281,18 +294,20 @@ test.describe('Billing and Subscription Workflow', () => {
     // Simulate increasing usage over days
     for (let day = 0; day < 30; day++) {
       const dailyCost = 1 + day * 0.5; // Increasing trend
-      await trackLLMCost({
-        organizationId: testId,
-        modelName: 'gpt-4-turbo',
+      trackLLMCost(testId, {
+        provider: 'openai' as const,
+        model: 'gpt-4-turbo',
         inputTokens: 1000,
         outputTokens: 1000,
         totalTokens: 2000,
         costUSD: dailyCost / 100,
+        requestDurationMs: 100,
         timestamp: new Date(Date.now() - (30 - day) * 86400000),
+        success: true,
       });
     }
 
-    const spend = await getOrganizationMonthlySpend(testId);
+    const spend = getOrganizationMonthlySpend(testId);
     expect(spend).toBeGreaterThan(0);
   });
 

@@ -145,7 +145,7 @@ async function handleReaction(event: any, teamId: string): Promise<void> {
 /**
  * Send status message
  */
-async function sendStatus(channel: string, teamId: string): Promise<void> {
+async function sendStatus(_channel: string, _teamId: string): Promise<void> {
   // TODO: Fetch ReadyLayer status and send to Slack
   logger.info('Sending status message to Slack');
 }
@@ -153,7 +153,7 @@ async function sendStatus(channel: string, teamId: string): Promise<void> {
 /**
  * Send help message
  */
-async function sendHelp(channel: string, teamId: string): Promise<void> {
+async function sendHelp(_channel: string, _teamId: string): Promise<void> {
   // TODO: Send help text to Slack
   logger.info('Sending help message to Slack');
 }
@@ -161,7 +161,7 @@ async function sendHelp(channel: string, teamId: string): Promise<void> {
 /**
  * Send unknown command message
  */
-async function sendUnknownCommand(channel: string, teamId: string): Promise<void> {
+async function sendUnknownCommand(_channel: string, _teamId: string): Promise<void> {
   // TODO: Send error message to Slack
   logger.info('Sending unknown command message to Slack');
 }

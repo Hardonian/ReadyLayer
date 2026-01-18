@@ -114,10 +114,14 @@ export function createDebugLogger(
         : JSON.stringify(data, null, 2);
 
       // Redact secrets if enabled
-      const safe = shouldRedact ? redactSecrets(stringified) : stringified;
+      const safeString = shouldRedact
+        ? (typeof redactSecrets(stringified) === 'string'
+            ? redactSecrets(stringified)
+            : (redactSecrets(stringified) as any).redacted)
+        : stringified;
 
       // Parse back to object if it was originally an object
-      return typeof data === 'string' ? safe : JSON.parse(safe);
+      return typeof data === 'string' ? safeString : JSON.parse(safeString);
     } catch (err) {
       // If JSON parsing fails, return as-is (already redacted as string)
       return data;

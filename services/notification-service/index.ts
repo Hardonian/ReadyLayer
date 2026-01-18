@@ -168,7 +168,7 @@ export class NotificationService {
   private async sendEmail(
     recipientId: string,
     message: NotificationMessage,
-    organizationId?: string
+    _organizationId?: string
   ): Promise<NotificationResult> {
     // TODO: Integrate with SendGrid/Postmark
     logger.info(
@@ -194,7 +194,7 @@ export class NotificationService {
   private async sendSlack(
     recipientId: string,
     message: NotificationMessage,
-    organizationId?: string
+    _organizationId?: string
   ): Promise<NotificationResult> {
     // TODO: Integrate with Slack API
     logger.info(
@@ -220,7 +220,7 @@ export class NotificationService {
   private async sendInApp(
     recipientId: string,
     message: NotificationMessage,
-    organizationId?: string
+    _organizationId?: string
   ): Promise<NotificationResult> {
     // TODO: Store in notifications table
     logger.info(
@@ -246,7 +246,7 @@ export class NotificationService {
   private async sendWebhook(
     recipientId: string,
     message: NotificationMessage,
-    organizationId?: string
+    _organizationId?: string
   ): Promise<NotificationResult> {
     // TODO: Make HTTP POST to webhook endpoint
     logger.info(
@@ -279,7 +279,7 @@ export class NotificationService {
   /**
    * Get user preferences
    */
-  async getPreferences(recipientId: string): Promise<NotificationRecipient | null> {
+  async getPreferences(_recipientId: string): Promise<NotificationRecipient | null> {
     // TODO: Fetch from database
     return null;
   }

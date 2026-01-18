@@ -125,7 +125,7 @@ export function trackLLMCall(
       amount: metrics_.outputTokens.toString(),
     });
 
-    metrics.timing('llm_request_duration_ms', metrics_.requestDurationMs, {
+    (metrics as any).timing?.('llm_request_duration_ms', metrics_.requestDurationMs, {
       provider: metrics_.provider,
     });
 
@@ -216,7 +216,12 @@ export function getOrganizationCosts(organizationId: string): LLMCostsData {
       totalOutputTokens: 0,
       totalEmbeddingTokens: 0,
       totalCostUSD: 0,
-      costsByProvider: {},
+      costsByProvider: {
+        openai: 0,
+        anthropic: 0,
+        cohere: 0,
+        huggingface: 0,
+      },
       costsByModel: {},
       cacheHitRate: 0,
       averageRequestDuration: 0,
@@ -391,4 +396,69 @@ export function getModelUsageStats(organizationId: string): Record<string, any> 
   }
 
   return stats;
+}
+
+/**
+ * Alias for trackLLMCall (for backward compatibility)
+ */
+export const trackLLMCost = trackLLMCall;
+
+/**
+ * Get organization's monthly spend
+ */
+export function getOrganizationMonthlySpend(organizationId: string): number {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  const trends = getCostTrends(organizationId, startOfMonth, endOfMonth);
+  return Object.values(trends).reduce((sum, cost) => sum + cost, 0);
+}
+
+/**
+ * Check if organization is within budget
+ */
+export function isWithinBudget(organizationId: string, budgetLimit: number): boolean {
+  const monthlySpend = getOrganizationMonthlySpend(organizationId);
+  return monthlySpend <= budgetLimit;
+}
+
+/**
+ * Get remaining budget
+ */
+export function getRemainingBudget(organizationId: string, budgetLimit: number): number {
+  const monthlySpend = getOrganizationMonthlySpend(organizationId);
+  return Math.max(0, budgetLimit - monthlySpend);
+}
+
+/**
+ * Get budget utilization percentage
+ */
+export function getBudgetUtilization(organizationId: string, budgetLimit: number): number {
+  if (budgetLimit === 0) return 0;
+  const monthlySpend = getOrganizationMonthlySpend(organizationId);
+  return Math.min(100, (monthlySpend / budgetLimit) * 100);
+}
+
+/**
+ * Check for budget alerts
+ */
+export function checkBudgetAlerts(
+  organizationId: string,
+  budgetLimit: number,
+  thresholds: number[] = [50, 75, 90, 100]
+): { level: number; percentage: number; exceeded: boolean } | null {
+  const utilization = getBudgetUtilization(organizationId, budgetLimit);
+
+  for (let i = thresholds.length - 1; i >= 0; i--) {
+    if (utilization >= thresholds[i]) {
+      return {
+        level: thresholds[i],
+        percentage: utilization,
+        exceeded: utilization >= 100,
+      };
+    }
+  }
+
+  return null;
 }

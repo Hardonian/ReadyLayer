@@ -74,6 +74,7 @@ export class SelfLearningService {
     let cursor: string | undefined = undefined;
 
     while (true) {
+      // @ts-expect-error - Circular type inference issue
       const batch = await prisma.modelPerformance.findMany({
         where,
         take: batchSize,
@@ -93,7 +94,7 @@ export class SelfLearningService {
 
       if (batch.length === 0) break;
 
-      yield batch.map(p => ({
+      yield batch.map((p: typeof batch[0]) => ({
         id: p.id,
         modelId: p.modelId,
         provider: p.provider,

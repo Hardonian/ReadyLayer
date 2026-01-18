@@ -6,8 +6,8 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { v4 as uuid } from 'crypto';
-import type { Organization, Repository, User } from '@prisma/client';
+import { randomUUID as uuid } from 'crypto';
+import type { Organization, Repository } from '@prisma/client';
 
 export class TestDataSeeder {
   /**
@@ -52,14 +52,16 @@ export class TestDataSeeder {
     organizationId: string,
     overrides?: Partial<Repository>
   ): Promise<Repository> {
+    const timestamp = Date.now();
     return prisma.repository.create({
       data: {
         id: uuid(),
         organizationId,
-        name: `test-repo-${Date.now()}`,
-        externalId: `github_${Date.now()}`,
+        name: `test-repo-${timestamp}`,
+        fullName: `test-org/test-repo-${timestamp}`,
+        providerId: `github_${timestamp}`,
         provider: 'github',
-        url: `https://github.com/test/repo-${Date.now()}`,
+        url: `https://github.com/test/repo-${timestamp}`,
         isPrivate: false,
         ...overrides,
       },

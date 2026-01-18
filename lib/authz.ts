@@ -310,6 +310,10 @@ export async function canAccessRun(
       return false;
     }
 
+    if (!run.repository) {
+      return false;
+    }
+
     const membership = await prisma.organizationMember.findFirst({
       where: {
         userId,

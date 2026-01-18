@@ -247,9 +247,9 @@ export class EmailService {
    * Send templated email
    */
   async sendTemplate(
-    to: string | string[],
-    templateId: string,
-    variables: Record<string, string>
+    _to: string | string[],
+    _templateId: string,
+    _variables: Record<string, string>
   ): Promise<EmailResult> {
     // TODO: Implement template support
     return {

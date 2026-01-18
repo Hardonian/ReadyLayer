@@ -9,7 +9,7 @@
  * 5. Various secret types are properly detected
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@playwright/test';
+import { describe, it, expect } from 'vitest';
 import {
   redactSecrets,
   containsSecrets,

@@ -100,7 +100,7 @@ export function addBreadcrumb(
     category,
     message,
     level,
-    data: data ? JSON.parse(redactSecrets(JSON.stringify(data))) : undefined,
+    data: data ? JSON.parse(redactSecrets(JSON.stringify(data)).redacted) : undefined,
   };
 
   breadcrumbs.push(breadcrumb);
@@ -186,7 +186,7 @@ export function captureErrorContext(
     request: requestContext,
     user,
     system: systemContext,
-    custom: custom ? JSON.parse(redactSecrets(JSON.stringify(custom))) : undefined,
+    custom: custom ? JSON.parse(redactSecrets(JSON.stringify(custom)).redacted) : undefined,
     breadcrumbs: getBreadcrumbs(),
   };
 

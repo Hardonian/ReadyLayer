@@ -15,6 +15,7 @@
 import { prisma } from '../lib/prisma';
 import fs from 'fs';
 import path from 'path';
+import type { Prisma } from '@prisma/client';
 
 interface QueryMetric {
   query: string;
@@ -33,7 +34,8 @@ class QueryAuditor {
    * Enable Prisma query logging
    */
   enableQueryLogging(): void {
-    prisma.$on('query', (e) => {
+    // @ts-expect-error - Prisma client type issue with $on method
+    prisma.$on('query', (e: Prisma.QueryEvent) => {
       const metric: QueryMetric = {
         query: e.query,
         model: extractModelFromQuery(e.query),

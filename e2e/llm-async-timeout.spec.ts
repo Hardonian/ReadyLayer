@@ -56,7 +56,6 @@ const query = \`SELECT * FROM users WHERE id = \${userId}\`;
     }
 
     // Step 5: Wait for async LLM results (up to 30 seconds)
-    const enrichedBadge = page.locator('[data-testid="status-enriched"]');
     await page.waitForSelector('[data-testid="status-enriched"]', {
       timeout: 30000,
     }).catch(() => {
@@ -118,7 +117,7 @@ function complexAlgorithm() {
 
     // Status should indicate static analysis only
     const badge = page.locator('[data-testid="static-analysis-only"]');
-    const isStaticOnly = await badge.isVisible().catch(() => false);
+    await badge.isVisible().catch(() => false);
 
     // Step 5: If there's an error message, it should be helpful
     const errorMsg = page.locator('[data-testid="llm-timeout-notice"]');
@@ -191,16 +190,13 @@ function complexAlgorithm() {
 
   test('Timeout configuration is respected', async ({
     page,
-    context,
   }) => {
     // This test verifies the 60-second timeout is enforced
 
-    let requestDuration = 0;
     page.on('response', async (response) => {
       if (response.url().includes('/api/v1/llm/')) {
-        // Track response time
-        const timing = await response.timing();
-        requestDuration = timing.responseEnd - timing.requestStart;
+        // Track response time - timing info logged for debugging
+        console.log('LLM API response received:', response.url());
       }
     });
 

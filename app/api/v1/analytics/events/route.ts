@@ -25,8 +25,7 @@ interface AnalyticsPayload {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get current session (optional - events can be anonymous)
-    const session = null;
+    // Events are anonymous - no session required
 
     // Parse payload
     const payload: AnalyticsPayload = await request.json();
@@ -65,8 +64,8 @@ export async function POST(request: NextRequest) {
     // Enrich events with session data
     const enrichedEvents = validEvents.map((event) => ({
       ...event,
-      userId: session?.user?.id || event.userId,
-      organizationId: session?.organizationId || event.organizationId,
+      userId: event.userId,
+      organizationId: event.organizationId,
       processedAt: new Date().toISOString(),
     }));
 

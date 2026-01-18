@@ -105,7 +105,7 @@ async function updateReviewWithEnrichment(
   const review = await prisma.review.findUnique({
     where: { id: reviewId },
     select: {
-      metadata: true,
+      result: true,
       id: true,
     },
   });
@@ -115,17 +115,16 @@ async function updateReviewWithEnrichment(
     return;
   }
 
-  const metadata = review.metadata as any;
-  const enrichedFiles = (metadata?.enrichedFiles || 0) + 1;
-  const totalFiles = metadata?.totalFiles || 0;
+  // Store enrichment data in the result JSON field
+  const currentResult = (review.result as any) || {};
+  const enrichedFiles = (currentResult.enrichedFiles || 0) + 1;
+  const totalFiles = currentResult.totalFiles || 0;
 
-  // Store enrichment data (could be in separate table in production)
-  // For now, storing in metadata
   await prisma.review.update({
     where: { id: reviewId },
     data: {
-      metadata: {
-        ...metadata,
+      result: {
+        ...currentResult,
         enrichedFiles,
         enrichmentResult: enrichmentResult,
         lastEnrichedFile: enrichmentResult.filePath,

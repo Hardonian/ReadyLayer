@@ -66,6 +66,8 @@ export function MobileNav({ navItems }: MobileNavProps) {
       document.addEventListener('keydown', handleEscape)
       return () => document.removeEventListener('keydown', handleEscape)
     }
+
+    return undefined
   }, [isOpen, closeMenu])
 
   // Focus trap: trap focus within menu when open

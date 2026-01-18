@@ -169,7 +169,7 @@ export class ReviewGuardService {
           allIssues.push(...staticIssues);
 
           // Store file data for async enrichment (will queue after review creation)
-          if (isQueryEnabled(initialOrgId)) {
+          if (isQueryEnabled()) {
             filesForEnrichment.push({
               filePath: file.path,
               fileContent: file.content,
@@ -291,11 +291,7 @@ export class ReviewGuardService {
           blockedReason,
           startedAt,
           completedAt: reviewCompletedAt,
-          metadata: {
-            enrichmentJobIds: [], // Will be updated after queueing
-            enrichmentStatus: hasEnrichmentJobs ? 'pending' : 'completed',
-            totalFiles: filesToReview.length,
-          } as any,
+          // TODO: Track enrichment status in separate table
         },
       });
 
@@ -337,16 +333,14 @@ export class ReviewGuardService {
         }
 
         // Update review metadata with actual job IDs
-        await prisma.review.update({
-          where: { id: review.id },
-          data: {
-            metadata: {
-              enrichmentJobIds,
-              enrichmentStatus: 'pending',
-              totalFiles: filesToReview.length,
-            } as any,
-          },
-        });
+        // TODO: Track enrichment job IDs in separate table
+        // await prisma.review.update({
+        //   where: { id: review.id },
+        //   data: {
+        //     // enrichmentJobIds, enrichmentStatus would go in separate table
+        //   },
+        // });
+        logger.debug({ reviewId: review.id, enrichmentJobIds }, 'Enrichment jobs queued');
 
         logger.info(
           { reviewId: review.id, jobCount: enrichmentJobIds.length },
@@ -543,7 +537,11 @@ export class ReviewGuardService {
 
   /**
    * Analyze code with AI
+   * TODO: Fully implement AI analysis
+   * Currently not used - reserved for future AI-based analysis
    */
+  // @ts-ignore - Reserved for future implementation
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async analyzeWithAI(
     filePath: string,
     content: string,

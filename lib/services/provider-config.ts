@@ -6,7 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { encrypt, decrypt } from '@/lib/crypto';
+import { encryptToString as encrypt, decryptFromString as decrypt } from '@/lib/crypto';
 import { logger } from '@/observability/logging';
 
 export interface ProviderConfigInput {
