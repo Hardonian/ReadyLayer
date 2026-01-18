@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+// import { Inter } from 'next/font/google' // Disabled for build - network issues
 import './globals.css'
 import { AppLayout } from '@/components/layout/app-layout'
 import { ThemeProvider } from '@/components/providers/theme-provider'
@@ -9,11 +9,12 @@ import { RuntimeUiConfigProvider } from '@/components/providers/runtime-ui-confi
 import { AISupportBot } from '@/components/ai-support/chat-bot'
 import { Toaster } from '@/components/ui/toaster'
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-})
+// const inter = Inter({
+//   subsets: ['latin'],
+//   display: 'swap',
+//   variable: '--font-inter',
+// })
+const inter = { variable: '--font-inter', className: '' } // Fallback for build
 
 export const metadata: Metadata = {
   title: {

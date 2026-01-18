@@ -12,10 +12,12 @@ import { createAuthzMiddleware } from '../../../../../../lib/authz';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { reviewId: string } }
+  { params }: { params: Promise<{ reviewId: string }> }
 ) {
+  const { reviewId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, reviewId: params.reviewId });
+  const log = logger.child({ requestId, reviewId: reviewId });
 
   try {
     await requireAuth(request);
@@ -26,8 +28,6 @@ export async function GET(
     if (authzResponse) {
       return authzResponse;
     }
-
-    const reviewId = params.reviewId;
 
     try {
       const certificate = await culturalArtifactsService.generateMergeConfidenceCertificate(reviewId);

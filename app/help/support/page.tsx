@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+
 import { Container } from '@/components/ui/container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { motion } from 'framer-motion'

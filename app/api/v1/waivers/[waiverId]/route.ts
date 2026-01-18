@@ -17,10 +17,12 @@ import { createAuthzMiddleware } from '../../../../../lib/authz';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { waiverId: string } }
+  { params }: { params: Promise<{ waiverId: string }> }
 ) {
+  const { waiverId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, waiverId: params.waiverId });
+  const log = logger.child({ requestId, waiverId: waiverId });
 
   try {
     const user = await requireAuth(request);
@@ -33,7 +35,7 @@ export async function GET(
     }
 
     const waiver = await prisma.waiver.findUnique({
-      where: { id: params.waiverId },
+      where: { id: waiverId },
       include: {
         organization: {
           select: {
@@ -121,10 +123,12 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { waiverId: string } }
+  { params }: { params: Promise<{ waiverId: string }> }
 ) {
+  const { waiverId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, waiverId: params.waiverId });
+  const log = logger.child({ requestId, waiverId: waiverId });
 
   try {
     const user = await requireAuth(request);
@@ -138,7 +142,7 @@ export async function DELETE(
 
     // Get existing waiver
     const existing = await prisma.waiver.findUnique({
-      where: { id: params.waiverId },
+      where: { id: waiverId },
     });
 
     if (!existing) {
@@ -177,10 +181,10 @@ export async function DELETE(
 
     // Delete waiver
     await prisma.waiver.delete({
-      where: { id: params.waiverId },
+      where: { id: waiverId },
     });
 
-    log.info({ waiverId: params.waiverId }, 'Waiver revoked');
+    log.info({ waiverId: waiverId }, 'Waiver revoked');
 
     return NextResponse.json(
       {

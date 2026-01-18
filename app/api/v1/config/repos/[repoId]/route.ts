@@ -12,10 +12,12 @@ import { parseJsonBody } from '../../../../../../lib/api-route-helpers';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { repoId: string } }
+  { params }: { params: Promise<{ repoId: string }> }
 ) {
+  const { repoId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, repoId: params.repoId });
+  const log = logger.child({ requestId, repoId: repoId });
 
   try {
     // Require authentication
@@ -31,13 +33,13 @@ export async function GET(
 
     // Verify user belongs to repository's organization (tenant isolation)
     const repo = await prisma.repository.findUnique({
-      where: { id: params.repoId },
+      where: { id: repoId },
       select: { organizationId: true },
     });
 
     if (!repo) {
       const { ErrorMessages } = await import('../../../../../../lib/errors');
-      const notFound = ErrorMessages.NOT_FOUND('Repository', params.repoId);
+      const notFound = ErrorMessages.NOT_FOUND('Repository', repoId);
       return NextResponse.json(
         {
           error: {
@@ -67,7 +69,7 @@ export async function GET(
           error: {
             code: 'FORBIDDEN',
             message: ErrorMessages.FORBIDDEN.message,
-            context: { repositoryId: params.repoId },
+            context: { repositoryId: repoId },
             fix: ErrorMessages.FORBIDDEN.fix,
           },
         },
@@ -75,7 +77,7 @@ export async function GET(
       );
     }
 
-    const config = await configService.getRepositoryConfig(params.repoId);
+    const config = await configService.getRepositoryConfig(repoId);
 
     return NextResponse.json({ config });
   } catch (error) {
@@ -98,10 +100,12 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { repoId: string } }
+  { params }: { params: Promise<{ repoId: string }> }
 ) {
+  const { repoId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, repoId: params.repoId });
+  const log = logger.child({ requestId, repoId: repoId });
 
   try {
     // Require authentication
@@ -117,7 +121,7 @@ export async function PUT(
 
     // Verify user belongs to repository's organization and has admin role (tenant isolation)
     const repo = await prisma.repository.findUnique({
-      where: { id: params.repoId },
+      where: { id: repoId },
       select: { organizationId: true },
     });
 
@@ -126,7 +130,7 @@ export async function PUT(
         {
           error: {
             code: 'NOT_FOUND',
-            message: `Repository ${params.repoId} not found`,
+            message: `Repository ${repoId} not found`,
           },
         },
         { status: 404 }
@@ -149,7 +153,7 @@ export async function PUT(
           error: {
             code: 'FORBIDDEN',
             message: ErrorMessages.FORBIDDEN.message,
-            context: { repositoryId: params.repoId, userRole: membership?.role || 'none' },
+            context: { repositoryId: repoId, userRole: membership?.role || 'none' },
             fix: 'You must be an organization owner or admin to update repository configuration. Contact an organization admin to grant you admin access.',
           },
         },
@@ -194,7 +198,7 @@ export async function PUT(
     // Validate and update config
     // The service will validate the structure matches ReadyLayerConfig
     await configService.updateRepositoryConfig(
-      params.repoId, 
+      repoId, 
       config as ReadyLayerConfig,
       rawConfig as string | undefined
     );
@@ -207,9 +211,9 @@ export async function PUT(
         userId: user.id,
         action: AuditActions.REPO_CONFIG_UPDATED,
         resourceType: 'repository_config',
-        resourceId: params.repoId,
+        resourceId: repoId,
         details: {
-          repositoryId: params.repoId,
+          repositoryId: repoId,
           configVersion: typeof config === 'object' && config !== null && 'version' in config ? (config as { version?: number }).version : undefined,
         },
       });
@@ -217,10 +221,10 @@ export async function PUT(
       // Don't fail on audit log errors
     }
 
-    log.info({ repoId: params.repoId, userId: user.id }, 'Repository config updated successfully');
+    log.info({ repoId: repoId, userId: user.id }, 'Repository config updated successfully');
 
     return NextResponse.json({
-      id: params.repoId,
+      id: repoId,
       config,
       updatedAt: new Date(),
       message: 'Configuration updated successfully. Changes will apply to the next PR review.',

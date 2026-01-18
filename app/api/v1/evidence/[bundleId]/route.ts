@@ -17,10 +17,12 @@ import { createAuthzMiddleware } from '../../../../../lib/authz';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { bundleId: string } }
+  { params }: { params: Promise<{ bundleId: string }> }
 ) {
+  const { bundleId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, bundleId: params.bundleId });
+  const log = logger.child({ requestId, bundleId: bundleId });
 
   try {
     const user = await requireAuth(request);
@@ -33,7 +35,7 @@ export async function GET(
     }
 
     const bundle = await prisma.evidenceBundle.findUnique({
-      where: { id: params.bundleId },
+      where: { id: bundleId },
       include: {
         review: {
           select: {

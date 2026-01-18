@@ -4,10 +4,11 @@ import { createHash } from 'crypto';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { bundleId: string } }
+  { params }: { params: Promise<{ bundleId: string }> }
 ) {
+  const { bundleId } = await params;
+
   try {
-    const { bundleId } = params;
 
     const bundle = await prisma.evidenceBundle.findUnique({
       where: { id: bundleId },

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+
 import { useDashboardMetrics, useDashboardPRs, useDashboardRuns, useDashboardFindings, useOrganizationId } from '@/lib/hooks'
 import { useStreamConnection } from '@/lib/hooks/use-stream-connection'
 import { Container } from '@/components/ui/container'

@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'

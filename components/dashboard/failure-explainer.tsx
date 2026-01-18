@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { AlertTriangle, ExternalLink, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'

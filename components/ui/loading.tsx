@@ -1,6 +1,5 @@
 'use client'
 
-import * as React from 'react'
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { fadeIn } from '@/lib/design/motion'

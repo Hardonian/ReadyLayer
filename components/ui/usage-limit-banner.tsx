@@ -1,6 +1,5 @@
 'use client'
 
-import * as React from 'react'
 import { Card, CardContent } from './card'
 import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
