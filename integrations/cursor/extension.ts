@@ -152,7 +152,7 @@ async function reviewFile(filePath: string, config: CursorConfig) {
       throw new Error(`Review failed: ${response.statusText}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const result = await response.json() as {
       data?: {
         issuesCount?: number;
@@ -204,7 +204,7 @@ async function generateTests(filePath: string, config: CursorConfig) {
       throw new Error(`Test generation failed: ${response.statusText}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const result = await response.json() as {
       data?: {
         testContent?: string;
@@ -310,7 +310,7 @@ async function getFileIssues(filePath: string, config: CursorConfig): Promise<Is
       return null;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const result = await response.json() as {
       data?: {
         issues?: Issue[];

@@ -80,22 +80,22 @@ class OpenAIProvider implements LLMProvider {
           signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
         });
       });
-    } catch (error) {
-      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+    } catch (_error) {
+      if (_error instanceof Error && (_error.name === 'TimeoutError' || _error.name === 'AbortError')) {
         throw new Error('OpenAI API request timed out');
       }
-      if (error instanceof Error && error.message.includes('fetch')) {
-        throw new Error(`OpenAI API network error: ${error.message}`);
+      if (_error instanceof Error && _error.message.includes('fetch')) {
+        throw new Error(`OpenAI API network error: ${_error.message}`);
       }
-      throw error;
+      throw _error;
     }
 
     if (!response.ok) {
       let errorMessage = 'Unknown error';
       try {
         const errorData = await response.json() as unknown;
-        const error = errorData as { error?: { message?: string }; message?: string };
-        errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
+        const errorObj = errorData as { error?: { message?: string }; message?: string };
+        errorMessage = errorObj.error?.message || errorObj.message || `${response.status} ${response.statusText}`;
       } catch {
         errorMessage = `${response.status} ${response.statusText}`;
       }
@@ -109,7 +109,7 @@ class OpenAIProvider implements LLMProvider {
     try {
       const jsonData = await response.json() as unknown;
       data = jsonData as typeof data;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Failed to parse OpenAI API response as JSON');
     }
 
@@ -124,9 +124,9 @@ class OpenAIProvider implements LLMProvider {
     const cost = this.calculateCost(model, tokensUsed);
 
     // P2-FIX: Track cost asynchronously (non-blocking) to avoid 50-100ms latency
-    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((error) => {
+    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((_error) => {
       // Log but don't fail the request
-      console.error('Failed to track LLM cost:', error);
+      console.error('Failed to track LLM cost:', _error);
     });
 
     return {
@@ -230,22 +230,22 @@ class AnthropicProvider implements LLMProvider {
           signal: AbortSignal.timeout(60000), // 60 second timeout for LLM
         });
       });
-    } catch (error) {
-      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+    } catch (_error) {
+      if (_error instanceof Error && (_error.name === 'TimeoutError' || _error.name === 'AbortError')) {
         throw new Error('Anthropic API request timed out');
       }
-      if (error instanceof Error && error.message.includes('fetch')) {
-        throw new Error(`Anthropic API network error: ${error.message}`);
+      if (_error instanceof Error && _error.message.includes('fetch')) {
+        throw new Error(`Anthropic API network error: ${_error.message}`);
       }
-      throw error;
+      throw _error;
     }
 
     if (!response.ok) {
       let errorMessage = 'Unknown error';
       try {
         const errorData = await response.json() as unknown;
-        const error = errorData as { error?: { message?: string }; message?: string };
-        errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
+        const errorObj = errorData as { error?: { message?: string }; message?: string };
+        errorMessage = errorObj.error?.message || errorObj.message || `${response.status} ${response.statusText}`;
       } catch {
         errorMessage = `${response.status} ${response.statusText}`;
       }
@@ -259,7 +259,7 @@ class AnthropicProvider implements LLMProvider {
     try {
       const jsonData = await response.json() as unknown;
       data = jsonData as typeof data;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Failed to parse Anthropic API response as JSON');
     }
 
@@ -274,9 +274,9 @@ class AnthropicProvider implements LLMProvider {
     const cost = this.calculateCost(model, tokensUsed);
 
     // P2-FIX: Track cost asynchronously (non-blocking) to avoid 50-100ms latency
-    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((error) => {
+    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((_error) => {
       // Log but don't fail the request
-      console.error('Failed to track LLM cost:', error);
+      console.error('Failed to track LLM cost:', _error);
     });
 
     return {
@@ -378,22 +378,22 @@ class OpenCodeProvider implements LLMProvider {
         }),
         signal: AbortSignal.timeout(60000), // 60 second timeout
       });
-    } catch (error) {
-      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+    } catch (_error) {
+      if (_error instanceof Error && (_error.name === 'TimeoutError' || _error.name === 'AbortError')) {
         throw new Error('OpenCode API request timed out');
       }
-      if (error instanceof Error && error.message.includes('fetch')) {
-        throw new Error(`OpenCode API network error: ${error.message}`);
+      if (_error instanceof Error && _error.message.includes('fetch')) {
+        throw new Error(`OpenCode API network error: ${_error.message}`);
       }
-      throw error;
+      throw _error;
     }
 
     if (!response.ok) {
       let errorMessage = 'Unknown error';
       try {
         const errorData = await response.json() as unknown;
-        const error = errorData as { error?: { message?: string }; message?: string };
-        errorMessage = error.error?.message || error.message || `${response.status} ${response.statusText}`;
+        const errorObj = errorData as { error?: { message?: string }; message?: string };
+        errorMessage = errorObj.error?.message || errorObj.message || `${response.status} ${response.statusText}`;
       } catch {
         errorMessage = `${response.status} ${response.statusText}`;
       }
@@ -407,7 +407,7 @@ class OpenCodeProvider implements LLMProvider {
     try {
       const jsonData = await response.json() as unknown;
       data = jsonData as typeof data;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Failed to parse OpenCode API response as JSON');
     }
 
@@ -422,9 +422,9 @@ class OpenCodeProvider implements LLMProvider {
     const cost = this.calculateCost(model, tokensUsed);
 
     // P2-FIX: Track cost asynchronously (non-blocking) to avoid 50-100ms latency
-    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((error) => {
+    this.trackCost(request.organizationId, model, tokensUsed, cost).catch((_error) => {
       // Log but don't fail
-      console.error('Failed to track OpenCode cost:', error);
+      console.error('Failed to track OpenCode cost:', _error);
     });
 
     return {
@@ -552,9 +552,9 @@ export class LLMService {
         request.userId || null,
         estimatedTokens
       );
-    } catch (error) {
+    } catch (_error) {
       // Re-throw usage limit errors as-is (they have proper HTTP status codes)
-      throw error;
+      throw _error;
     }
 
     // Get provider
@@ -579,13 +579,13 @@ export class LLMService {
       }
 
       return response;
-    } catch (error) {
+    } catch (_error) {
       // If primary provider fails, try fallback
       if (providerName !== this.defaultProvider && this.providers.has(this.defaultProvider)) {
         const fallbackProvider = this.providers.get(this.defaultProvider)!;
         return fallbackProvider.complete(request);
       }
-      throw error;
+      throw _error;
     }
   }
 

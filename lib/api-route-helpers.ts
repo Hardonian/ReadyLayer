@@ -60,7 +60,7 @@ export async function parseJsonBody(
   try {
     const body = (await request.json()) as unknown;
     return { success: true, data: body };
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       response: errorResponse('INVALID_JSON', 'Request body must be valid JSON', 400),
@@ -165,21 +165,21 @@ export async function createRouteContext(
         requestId,
       },
     };
-  } catch (error) {
+  } catch (_error) {
     // Handle typed auth errors
-    if (error instanceof UnauthorizedError) {
+    if (_error instanceof UnauthorizedError) {
       return {
         success: false,
-        response: errorResponse(error.error.code, error.error.message, 401, error.error.context),
+        response: errorResponse(_error.error.code, _error.error.message, 401, _error.error.context),
       };
     }
-    if (error instanceof ForbiddenError) {
+    if (_error instanceof ForbiddenError) {
       return {
         success: false,
-        response: errorResponse(error.error.code, error.error.message, 403, error.error.context),
+        response: errorResponse(_error.error.code, _error.error.message, 403, _error.error.context),
       };
     }
-    log.error(error, 'Failed to create route context');
+    log.error(_error, 'Failed to create route context');
     return {
       success: false,
       response: errorResponse('INTERNAL_ERROR', 'Failed to authenticate', 500),
@@ -218,40 +218,40 @@ export function createRouteHandler(
 
       // Execute handler
       return await handler(context);
-    } catch (error) {
-      log.error(error, 'Route handler error');
+    } catch (_error) {
+      log.error(_error, 'Route handler error');
 
       // Handle typed auth/permission errors first (highest priority)
-      if (error instanceof UnauthorizedError) {
-        return errorResponse(error.error.code, error.error.message, 401, error.error.context);
+      if (_error instanceof UnauthorizedError) {
+        return errorResponse(_error.error.code, _error.error.message, 401, _error.error.context);
       }
-      if (error instanceof ForbiddenError) {
-        return errorResponse(error.error.code, error.error.message, 403, error.error.context);
+      if (_error instanceof ForbiddenError) {
+        return errorResponse(_error.error.code, _error.error.message, 403, _error.error.context);
       }
 
       // Handle generic ApiErrorResponse (includes all typed errors)
-      if (error instanceof ApiErrorResponse) {
-        return errorResponse(error.error.code, error.error.message, error.statusCode, error.error.context);
+      if (_error instanceof ApiErrorResponse) {
+        return errorResponse(_error.error.code, _error.error.message, _error.statusCode, _error.error.context);
       }
 
       // Handle usage limit errors (429/402)
-      if (error instanceof UsageLimitExceededError) {
+      if (_error instanceof UsageLimitExceededError) {
         return errorResponse(
           'USAGE_LIMIT_EXCEEDED',
-          error.message,
-          error.httpStatus,
+          _error.message,
+          _error.httpStatus,
           {
-            limitType: error.limitType,
-            current: error.current,
-            limit: error.limit,
-            remaining: error.limit - error.current,
+            limitType: _error.limitType,
+            current: _error.current,
+            limit: _error.limit,
+            remaining: _error.limit - _error.current,
           }
         );
       }
 
       // Handle Prisma errors (common database scenarios)
-      if (error && typeof error === 'object' && 'code' in error) {
-        const prismaError = error as { code: string; meta?: unknown };
+      if (_error && typeof _error === 'object' && 'code' in _error) {
+        const prismaError = _error as { code: string; meta?: unknown };
         if (prismaError.code === 'P2002') {
           return errorResponse('DUPLICATE_ENTRY', 'A record with this value already exists', 409);
         }
@@ -270,7 +270,7 @@ export function createRouteHandler(
       // Generic error fallback
       return errorResponse(
         'INTERNAL_ERROR',
-        error instanceof Error ? error.message : 'An unexpected error occurred',
+        _error instanceof Error ? _error.message : 'An unexpected error occurred',
         500
       );
     }

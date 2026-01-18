@@ -144,14 +144,14 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
       }
 
       return await response.text();
-    } catch (error) {
-      if (error instanceof Error && error.name === 'TimeoutError') {
+    } catch (_error) {
+      if (_error instanceof Error && _error.name === 'TimeoutError') {
         throw new Error('GitHub API request timed out');
       }
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (_error instanceof Error && _error.name === 'AbortError') {
         throw new Error('GitHub API request was aborted');
       }
-      throw error;
+      throw _error;
     }
   }
 
@@ -241,7 +241,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
       }
 
       if (checkRunsResponse.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+         
         const checkRunsData = await checkRunsResponse.json() as {
           check_runs?: Array<{ id: number; name: string; head_sha: string }>;
         };
@@ -266,7 +266,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
           });
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // If lookup fails, proceed to create new check-run
       // This is safe - worst case we create a duplicate which GitHub will handle gracefully
       // The request() method will handle retries and rate limiting for the create call
@@ -322,7 +322,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+             
             const errorData = await response.json() as { message?: string };
             errorMessage = errorData.message ?? errorMessage;
           } catch {
@@ -332,16 +332,16 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
         }
 
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+           
           return await response.json() as T;
         } catch {
           throw new Error('Failed to parse GitHub API response as JSON');
         }
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unknown error');
+      } catch (_error) {
+        lastError = _error instanceof Error ? _error : new Error('Unknown error');
         
         // Handle timeout/abort errors
-        if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        if (_error instanceof Error && (_error.name === 'TimeoutError' || _error.name === 'AbortError')) {
           if (attempt < maxRetries - 1) {
             const delay = Math.pow(2, attempt) * 1000;
             await this.sleep(delay);
@@ -365,9 +365,9 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
   /**
    * Check if error is retryable
    */
-  private isRetryableError(error: Error): boolean {
+  private isRetryableError(_error: Error): boolean {
     const retryableMessages = ['timeout', 'network', 'ECONNRESET', 'ETIMEDOUT'];
-    return retryableMessages.some((msg) => error.message.toLowerCase().includes(msg));
+    return retryableMessages.some((msg) => _error.message.toLowerCase().includes(msg));
   }
 
   /**

@@ -19,22 +19,35 @@ const InviteRequestSchema = z.object({
 });
 
 export const POST = createRouteHandler(
-  async ({ request, user, organization }) => {
+  async ({ request, user }) => {
     const bodyResult = await parseJsonBody(request);
     if (!bodyResult.success) return bodyResult.response;
 
     const validation = InviteRequestSchema.safeParse(bodyResult.data);
     if (!validation.success) {
       return errorResponse('VALIDATION_ERROR', 'Invalid request body', 400, {
-        errors: validation.error.errors,
+        errors: validation.error.issues,
       });
     }
 
     const { emails, role } = validation.data;
 
+    // Get user's organization (users must belong to exactly one org for now)
+    const { prisma } = await import('@/lib/prisma');
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId: user.id },
+      include: { organization: true },
+    });
+
+    if (!membership) {
+      return errorResponse('FORBIDDEN', 'User does not belong to an organization', 403);
+    }
+
+    const organizationId = membership.organizationId;
+
     logger.info(
       {
-        organizationId: organization.id,
+        organizationId,
         userId: user.id,
         emailCount: emails.length,
         role,
@@ -51,7 +64,7 @@ export const POST = createRouteHandler(
     const invitations = emails.map(email => ({
       email,
       role,
-      organizationId: organization.id,
+      organizationId,
       createdAt: new Date(),
     }));
 

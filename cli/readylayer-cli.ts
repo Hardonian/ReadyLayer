@@ -38,7 +38,7 @@ function loadConfig(): ReadyLayerConfig {
   const envApiUrl = process.env.READYLAYER_API_URL || 'https://api.readylayer.com';
 
   if (fs.existsSync(configPath)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Partial<ReadyLayerConfig>;
     return {
       apiKey: (config.apiKey as string | undefined) || envApiKey || '',
@@ -64,13 +64,13 @@ async function reviewFile(filePath: string, options: ReviewOptions) {
   const config = loadConfig();
   
   if (!config.apiKey) {
-    // eslint-disable-next-line no-console
+     
     console.error('Error: READYLAYER_API_KEY not set. Set it in .readylayer.json or environment.');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
-    // eslint-disable-next-line no-console
+     
     console.error(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
@@ -79,7 +79,7 @@ async function reviewFile(filePath: string, options: ReviewOptions) {
   const repositoryId = options.repository ?? config.repositoryId;
 
   if (!repositoryId) {
-    // eslint-disable-next-line no-console
+     
     console.error('Error: Repository ID required. Use --repository or set in .readylayer.json');
     process.exit(1);
   }
@@ -103,14 +103,14 @@ async function reviewFile(filePath: string, options: ReviewOptions) {
     });
 
     if (!response.ok) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const error = await response.json() as { error?: { message?: string } };
-      // eslint-disable-next-line no-console
+       
       console.error(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const result = await response.json() as {
       data?: {
         status?: string;
@@ -175,13 +175,13 @@ async function generateTests(filePath: string, options: TestOptions) {
   const config = loadConfig();
   
   if (!config.apiKey) {
-    // eslint-disable-next-line no-console
+     
     console.error('Error: READYLAYER_API_KEY not set');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
-    // eslint-disable-next-line no-console
+     
     console.error(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
@@ -190,7 +190,7 @@ async function generateTests(filePath: string, options: TestOptions) {
   const repositoryId = options.repository ?? config.repositoryId;
 
   if (!repositoryId) {
-    // eslint-disable-next-line no-console
+     
     console.error('Error: Repository ID required');
     process.exit(1);
   }
@@ -214,14 +214,14 @@ async function generateTests(filePath: string, options: TestOptions) {
     });
 
     if (!response.ok) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const error = await response.json() as { error?: { message?: string } };
-      // eslint-disable-next-line no-console
+       
       console.error(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const result = await response.json() as {
       data?: {
         testContent?: string;

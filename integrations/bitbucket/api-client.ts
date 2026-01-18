@@ -388,7 +388,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+             
             const errorData = await response.json() as { error?: { message?: string } };
             errorMessage = errorData.error?.message ?? errorMessage;
           } catch {
@@ -398,7 +398,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
         }
 
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+           
           return await response.json() as T;
         } catch {
           throw new Error('Failed to parse Bitbucket API response as JSON');

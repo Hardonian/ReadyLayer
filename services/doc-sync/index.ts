@@ -619,7 +619,7 @@ Return the enhanced OpenAPI spec as JSON.`;
       try {
         const response = await llmService.complete(llmRequest);
         spec = JSON.parse(response.content);
-      } catch (error) {
+      } catch {
         // LLM enhancement failed, use basic spec
         // Error is handled gracefully, basic spec is used
       }

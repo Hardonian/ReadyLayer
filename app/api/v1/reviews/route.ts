@@ -147,8 +147,8 @@ export const POST = createRouteHandler(
         requireFeature: 'reviewGuard',
         checkLLMBudget: true,
       });
-    } catch (error) {
-      if (error instanceof UsageLimitExceededError) {
+    } catch (_error) {
+      if (_error instanceof UsageLimitExceededError) {
         // Audit log billing limit exceeded
         try {
           const { createAuditLog, AuditActions } = await import('../../../../lib/audit');
@@ -166,20 +166,20 @@ export const POST = createRouteHandler(
         } catch {
           // Don't fail on audit log errors
         }
-        
+
         // Return 402 Payment Required for budget exceeded, 403 for feature access
         return errorResponse(
           'BILLING_LIMIT_EXCEEDED',
-          error.message,
-          error.httpStatus || 403,
+          _error.message,
+          _error.httpStatus || 403,
           {
-            limitType: error.limitType,
-            currentUsage: error.currentUsage,
-            limit: error.limit,
+            limitType: _error.limitType,
+            currentUsage: _error.currentUsage,
+            limit: _error.limit,
           }
         );
       }
-      throw error;
+      throw _error;
     }
 
     log.info({ repositoryId, prNumber, userId: user.id }, 'Starting review - billing check passed');
@@ -248,7 +248,7 @@ export const GET = createRouteHandler(
         // Validate each field
         fields.forEach((field) => reviewFieldsSchema.parse(field));
         selectedFields = fields;
-      } catch (error) {
+      } catch (_error) {
         return errorResponse(
           'VALIDATION_ERROR',
           `Invalid field selection. Allowed fields: ${reviewFieldsSchema.options.join(', ')}`,

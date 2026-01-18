@@ -52,7 +52,7 @@ export class StaticAnalysisService {
       try {
         const ruleIssues = rule.evaluate(parseResult, filePath, content);
         issues.push(...ruleIssues);
-      } catch (error) {
+      } catch (_error) {
         // Log error but don't fail analysis
         // Error is handled gracefully, analysis continues with other rules
       }

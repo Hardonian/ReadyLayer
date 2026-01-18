@@ -176,10 +176,10 @@ export class ReviewGuardService {
               staticIssues,
             });
           }
-        } catch (error) {
+        } catch (_error) {
           // Parse errors MUST block PR
           throw new Error(
-            `Failed to analyze ${file.path}: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
+            `Failed to analyze ${file.path}: ${_error instanceof Error ? _error.message : 'Unknown error'}. ` +
             `This PR is BLOCKED until all files can be analyzed.`
           );
         }
@@ -199,14 +199,14 @@ export class ReviewGuardService {
             codeFiles: filesToReview.map(f => ({ path: f.path, content: f.content })),
           });
           allIssues.push(...schemaResult.issues);
-        } catch (error) {
+        } catch (_error) {
           // Schema reconciliation failure is high severity but doesn't block
           allIssues.push({
             ruleId: 'founder.schema-reconciliation',
             severity: 'high',
             file: 'migration',
             line: 1,
-            message: `Schema reconciliation check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            message: `Schema reconciliation check failed: ${_error instanceof Error ? _error.message : 'Unknown error'}`,
             fix: 'Manually verify schema changes match code expectations',
             confidence: 0.8,
           });
@@ -318,15 +318,15 @@ export class ReviewGuardService {
               { reviewId: review.id, filePath: fileData.filePath, jobId },
               'LLM enrichment job queued with valid review ID'
             );
-          } catch (error) {
+          } catch (_error) {
             // Handle usage limit errors - these should still throw
-            if (error instanceof UsageLimitExceededError) {
-              throw error;
+            if (_error instanceof UsageLimitExceededError) {
+              throw _error;
             }
 
             // For other errors during queueing, log but don't block
             logger.warn(
-              { reviewId: review.id, filePath: fileData.filePath, error },
+              { reviewId: review.id, filePath: fileData.filePath, _error },
               'Failed to queue LLM enrichment job, continuing without enrichment'
             );
           }
@@ -384,9 +384,9 @@ export class ReviewGuardService {
               framework: 'unknown', // Would detect framework
             }
           );
-        } catch (error) {
+        } catch (_error) {
           // Don't fail review if pattern recording fails
-          console.error('Failed to record failure pattern:', error);
+          console.error('Failed to record failure pattern:', _error);
         }
       }
 
@@ -424,7 +424,7 @@ export class ReviewGuardService {
             blockedReason,
           },
         });
-      } catch (error) {
+      } catch (_error) {
         // Don't fail review on audit log errors
       }
 
@@ -452,9 +452,9 @@ export class ReviewGuardService {
         for (const _alert of predictiveAlerts.filter((a) => a.confidence.finalConfidence > 0.7)) {
           // Alerts are stored by predictive detection service
         }
-      } catch (error) {
+      } catch (_error) {
         // Don't fail review if predictive detection fails
-        console.error('Predictive detection failed:', error);
+        console.error('Predictive detection failed:', _error);
       }
 
       return {
@@ -469,9 +469,9 @@ export class ReviewGuardService {
         enrichmentJobIds: enrichmentJobIds.length > 0 ? enrichmentJobIds : undefined,
         enrichmentStatus: hasEnrichmentJobs ? 'pending' : 'completed',
       };
-    } catch (error) {
+    } catch (_error) {
       // All failures MUST block PR
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = _error instanceof Error ? _error.message : 'Unknown error';
 
       const review = await prisma.review.create({
         data: {
@@ -541,7 +541,7 @@ export class ReviewGuardService {
    * Currently not used - reserved for future AI-based analysis
    */
   // @ts-ignore - Reserved for future implementation
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private async analyzeWithAI(
     filePath: string,
     content: string,
@@ -575,12 +575,12 @@ export class ReviewGuardService {
         if (allEvidence.length > 0) {
           evidenceSection = formatEvidenceForPrompt(allEvidence);
         }
-      } catch (error) {
+      } catch (_error) {
         // Evidence retrieval failed - proceed without it (graceful degradation)
         // Use structured logger instead of console.warn for observability
         const { logger } = await import('../../observability/logging');
         logger.warn({
-          err: error instanceof Error ? error : new Error(String(error)),
+          err: _error instanceof Error ? _error : new Error(String(_error)),
           repositoryId,
           filePath,
         }, 'Evidence retrieval failed, proceeding without evidence');
@@ -642,10 +642,10 @@ export class ReviewGuardService {
           issue.line > 0
         );
       });
-    } catch (error) {
+    } catch (_error) {
       // LLM failures MUST block PR
       throw new Error(
-        `LLM analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}. ` +
+        `LLM analysis failed: ${_error instanceof Error ? _error.message : 'Unknown error'}. ` +
         `Cannot complete AI-aware security analysis.`
       );
     }
@@ -693,9 +693,9 @@ export class ReviewGuardService {
         cost: Number(response.cost),
         predictionId: tokenUsage.id,
       });
-    } catch (error) {
+    } catch (_error) {
       // Don't fail review if token tracking fails
-      console.error('Failed to track token usage:', error);
+      console.error('Failed to track token usage:', _error);
     }
   }
 
@@ -722,9 +722,9 @@ export class ReviewGuardService {
         cost: 0, // Would track actual cost
         predictionId: reviewId,
       });
-    } catch (error) {
+    } catch (_error) {
       // Don't fail review if performance tracking fails
-      console.error('Failed to record model performance:', error);
+      console.error('Failed to record model performance:', _error);
     }
   }
 

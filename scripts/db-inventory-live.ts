@@ -359,7 +359,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
       FROM storage.buckets;
     `;
     storageBuckets = bucketsResult;
-  } catch (error) {
+  } catch {
     // Storage schema might not exist
     console.error('⚠️  Storage schema not accessible (this is OK if not using Supabase Storage)');
   }
@@ -373,7 +373,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
       WHERE pubname LIKE '%realtime%';
     `;
     realtimePublications = pubResult.map(p => p.pubname);
-  } catch (error) {
+  } catch {
     console.error('⚠️  Could not query publications');
   }
 

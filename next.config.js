@@ -15,15 +15,11 @@ try {
 
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   typescript: {
     ignoreBuildErrors: false,
   },
-  eslint: {
-    // Only fail on errors, not warnings
-    ignoreDuringBuilds: process.env.ESLINT_NO_DEV_ERRORS === 'true',
-    dirs: ['app', 'components', 'lib'],
-  },
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {},
   // Force middleware to use Node.js runtime (not Edge)
   // This is required because middleware uses Node.js modules (crypto, prisma, etc.)
   experimental: {

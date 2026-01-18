@@ -156,7 +156,7 @@ export class SchemaReconciliationService {
             }
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Skip files that can't be parsed
         continue;
       }

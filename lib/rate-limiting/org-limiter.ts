@@ -198,7 +198,7 @@ class RedisRateLimiter {
         return config.points;
       }
       return Math.max(0, config.points - parseInt(count, 10));
-    } catch (error) {
+    } catch {
       return config.points; // Fail open
     }
   }

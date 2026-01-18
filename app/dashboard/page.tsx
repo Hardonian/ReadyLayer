@@ -173,11 +173,11 @@ export default function DashboardPage() {
           }
 
           reposData = (await reposResponse.json()) as { repositories?: Repository[]; pagination?: { total: number } }
-        } catch (error) {
-          if (error instanceof Error && error.name === 'TimeoutError') {
+        } catch (_error) {
+          if (_error instanceof Error && _error.name === 'TimeoutError') {
             throw new Error('Request timed out while fetching repositories')
           }
-          throw error
+          throw _error
         }
 
         const repositories = reposData.repositories || []
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             setReviews(reviewsData.reviews || [])
           }
           // Silently handle failed review fetch - not critical for dashboard
-        } catch (error) {
+        } catch (_error) {
           // Silently handle review fetch errors - not critical for dashboard
         }
 
