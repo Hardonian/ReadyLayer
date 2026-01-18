@@ -1,36 +1,41 @@
 /**
  * User Bulk Invite API Endpoint
- * 
+ *
  * POST /api/v1/admin/users/invite
+ *
+ * SECURITY: Requires authentication and admin/owner role
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandler, errorResponse, successResponse, parseJsonBody } from '@/lib/api-route-helpers';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
-  try {
-    const { emails, role, organizationId } = await request.json();
+const InviteRequestSchema = z.object({
+  emails: z.array(z.string().email()).min(1).max(50),
+  role: z.enum(['member', 'lead', 'admin']),
+});
 
-    if (!emails || !Array.isArray(emails) || emails.length === 0) {
-      return NextResponse.json(
-        { error: 'Invalid emails array' },
-        { status: 400 }
-      );
+export const POST = createRouteHandler(
+  async ({ request, user, organization }) => {
+    const bodyResult = await parseJsonBody(request);
+    if (!bodyResult.success) return bodyResult.response;
+
+    const validation = InviteRequestSchema.safeParse(bodyResult.data);
+    if (!validation.success) {
+      return errorResponse('VALIDATION_ERROR', 'Invalid request body', 400, {
+        errors: validation.error.errors,
+      });
     }
 
-    if (!role || !['member', 'lead', 'admin'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role' },
-        { status: 400 }
-      );
-    }
+    const { emails, role } = validation.data;
 
     logger.info(
       {
-        organizationId,
+        organizationId: organization.id,
+        userId: user.id,
         emailCount: emails.length,
         role,
       },
@@ -46,28 +51,19 @@ export async function POST(request: NextRequest) {
     const invitations = emails.map(email => ({
       email,
       role,
-      organizationId,
+      organizationId: organization.id,
       createdAt: new Date(),
     }));
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       invitations,
       sentCount: invitations.length,
-    });
-  } catch (error) {
-    logger.error(
-      {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      'Error processing user invitations'
-    );
-
-    metrics.increment('user_invites_error');
-
-    return NextResponse.json(
-      { error: 'Failed to send invitations' },
-      { status: 500 }
-    );
+    }, 200);
+  },
+  {
+    authz: {
+      requireOrganization: true,
+      requireRole: 'admin' // Only admins and owners can invite users
+    }
   }
-}
+);
