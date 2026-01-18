@@ -15,9 +15,9 @@ import { z } from 'zod';
 import { parseJsonBody } from '../../../../../../../lib/api-route-helpers';
 
 const updateRuleSchema = z.object({
-  severityMapping: z.record(z.enum(['block', 'warn', 'allow'])).optional(),
+  severityMapping: z.record(z.string(), z.enum(['block', 'warn', 'allow'])).optional(),
   enabled: z.boolean().optional(),
-  params: z.record(z.any()).optional(),
+  params: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -131,7 +131,7 @@ export async function PUT(
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request body',
-            details: error.errors,
+            details: error.issues,
           },
         },
         { status: 400 }

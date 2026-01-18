@@ -296,7 +296,7 @@ docs:
     // Validate config
     const validation = this.validateConfig(config);
     if (!validation.valid) {
-      const errorMessage = `Invalid configuration:\n${validation.errors?.map(e => `  - ${e}`).join('\n')}\n\nFix: Update your .readylayer.yml file to resolve these errors. See https://docs.readylayer.com/config for valid configuration options.`;
+      const errorMessage = `Invalid configuration:\n${validation.errors?.map((e: string) => `  - ${e}`).join('\n')}\n\nFix: Update your .readylayer.yml file to resolve these errors. See https://docs.readylayer.com/config for valid configuration options.`;
       throw new Error(errorMessage);
     }
 

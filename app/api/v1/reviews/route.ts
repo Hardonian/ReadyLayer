@@ -89,7 +89,7 @@ export const POST = createRouteHandler(
         'VALIDATION_ERROR',
         'Invalid request body',
         400,
-        { errors: validationResult.error.errors }
+        { errors: validationResult.error.issues }
       );
     }
 

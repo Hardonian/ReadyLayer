@@ -61,7 +61,7 @@ export const RuntimeUiConfigSchema = z.object({
       aiSupportBotEnabled: true,
       polishModeEnabled: false,
     }),
-  copy: z.record(z.string().max(500)).default({}),
+  copy: z.record(z.string(), z.string().max(500)).default({}),
 })
 
 export type RuntimeUiConfig = z.infer<typeof RuntimeUiConfigSchema>
@@ -98,7 +98,7 @@ export const RuntimeUiConfigPatchSchema = z.object({
       polishModeEnabled: z.boolean().optional(),
     })
     .optional(),
-  copy: z.record(z.string().max(500)).optional(),
+  copy: z.record(z.string(), z.string().max(500)).optional(),
 })
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

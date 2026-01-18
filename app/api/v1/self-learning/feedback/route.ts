@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid feedback data',
-            errors: validationResult.error.errors,
+            errors: validationResult.error.issues,
           },
         },
         { status: 400 }

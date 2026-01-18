@@ -5,8 +5,7 @@
  * Never hard-500 user routes - return friendly errors instead.
  */
 
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { logger } from './logger';
 
 export interface DatabaseGuardResult<T> {
@@ -24,7 +23,7 @@ export interface DatabaseGuardResult<T> {
  * Check if a database error indicates a missing table or schema issue
  */
 function isSchemaError(error: unknown): boolean {
-  if (error instanceof PrismaClientKnownRequestError) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
     // P2021: Table does not exist
     // P2022: Column does not exist
     // P2023: Foreign key constraint failed (might indicate missing table)

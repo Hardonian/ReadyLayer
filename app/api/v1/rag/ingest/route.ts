@@ -19,7 +19,7 @@ const ingestSchema = z.object({
   sourceRef: z.string(),
   title: z.string().optional(),
   content: z.string().max(1000000), // Max 1MB content
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request body',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

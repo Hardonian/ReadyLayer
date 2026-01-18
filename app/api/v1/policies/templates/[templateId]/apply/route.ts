@@ -107,7 +107,7 @@ export async function POST(
         'VALIDATION_ERROR',
         'Invalid request body',
         400,
-        { errors: validation.error.errors }
+        { errors: validation.error.issues }
       );
     }
 

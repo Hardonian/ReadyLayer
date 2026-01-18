@@ -71,7 +71,7 @@ export async function updateRuntimeUiConfigForOrganization(params: {
   if (!patchParsed.success) {
     const error = new Error('Invalid runtime UI config patch')
     ;(error as unknown as { code?: string; details?: unknown }).code = 'VALIDATION_ERROR'
-    ;(error as unknown as { code?: string; details?: unknown }).details = patchParsed.error.errors
+    ;(error as unknown as { code?: string; details?: unknown }).details = patchParsed.error.issues
     throw error
   }
 

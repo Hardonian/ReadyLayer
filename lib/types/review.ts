@@ -63,7 +63,7 @@ export const FindingSchema = z.object({
     severity: SeveritySchema,
     recommendation: z.string(),
   }).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type Finding = z.infer<typeof FindingSchema>
@@ -85,7 +85,7 @@ export const ReviewGuardScanSchema = z.object({
   detectionType: z.enum(['deterministic', 'ai-assisted', 'manual']).optional(),
   executedAt: z.coerce.date(),
   durationMs: z.number().int().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type ReviewGuardScan = z.infer<typeof ReviewGuardScanSchema>
@@ -111,7 +111,7 @@ export const TestEngineResultSchema = z.object({
     url: z.string().url(),
     type: z.enum(['test', 'coverage-report', 'log']),
   })).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type TestEngineResult = z.infer<typeof TestEngineResultSchema>
@@ -128,7 +128,7 @@ export const DocSyncResultSchema = z.object({
   findings: z.array(FindingSchema).default([]),
   executedAt: z.coerce.date(),
   durationMs: z.number().int().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type DocSyncResult = z.infer<typeof DocSyncResultSchema>
@@ -181,7 +181,7 @@ export const ReviewBaseSchema = z.object({
   signed: z.boolean().optional().describe('Cryptographically signed'),
   signatureHash: z.string().optional().describe('SHA256 signature for verification'),
   createdBy: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type ReviewBase = z.infer<typeof ReviewBaseSchema>

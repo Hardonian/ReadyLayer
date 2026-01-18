@@ -31,7 +31,7 @@ export const GET = createRouteHandler(
 
     if (!queryResult.success) {
       return errorResponse('VALIDATION_ERROR', 'Invalid query parameters', 400, {
-        errors: queryResult.error.errors,
+        errors: queryResult.error.issues,
       })
     }
 

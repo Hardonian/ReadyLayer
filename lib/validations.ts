@@ -8,7 +8,7 @@ export const badgeSchema = z.object({
   tier: z.enum(['bronze', 'silver', 'gold', 'platinum', 'diamond']),
   icon: z.string().optional(),
   color: z.string().optional(),
-  criteria: z.record(z.unknown()),
+  criteria: z.record(z.string(), z.unknown()),
 })
 
 export const achievementSchema = z.object({
@@ -17,7 +17,7 @@ export const achievementSchema = z.object({
   description: z.string().optional(),
   category: z.string().min(1),
   icon: z.string().optional(),
-  criteria: z.record(z.unknown()),
+  criteria: z.record(z.string(), z.unknown()),
   rewardPoints: z.number().int().min(0).default(0),
 })
 
@@ -41,7 +41,7 @@ export const challengeSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().optional(),
   type: z.enum(['zero_issues', 'coverage', 'security', 'documentation']),
-  goal: z.record(z.unknown()),
+  goal: z.record(z.string(), z.unknown()),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
 })
