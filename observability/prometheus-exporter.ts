@@ -71,7 +71,7 @@ class PrometheusExporter {
    */
   stop(): void {
     if (this.exportInterval) {
-      clearInterval(this.exportInterval);
+      clearInterval(this.exportInterval as any);
       this.exportInterval = null;
       logger.info('Prometheus exporter stopped');
     }

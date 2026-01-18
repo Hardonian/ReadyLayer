@@ -11,7 +11,7 @@ import { logger } from '../observability/logging';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16; // 128 bits
 const KEY_LENGTH = 32; // 256 bits
-const AUTH_TAG_LENGTH = 16; // 128 bits
+// AUTH_TAG_LENGTH = 16 (128 bits, reserved for future explicit tag handling)
 
 /**
  * Check if encryption keys are configured
@@ -198,4 +198,16 @@ export function hashValue(value: string): string {
  */
 export function generateEncryptionKey(): string {
   return randomBytes(KEY_LENGTH).toString('base64');
+}
+
+/**
+ * Get available key versions (for health check)
+ */
+export function getAvailableKeyVersions(): string[] {
+  // For the simple version, we only support v1
+  // The multi-key version is in lib/crypto/index.ts
+  if (isKeyConfigured()) {
+    return ['v1'];
+  }
+  return [];
 }

@@ -134,7 +134,9 @@ export async function GET(req: NextRequest) {
 
     // Store installation with encrypted token
     const installation = await createInstallationWithEncryptedToken({
-      organizationId: oauthState.organizationId,
+      organization: {
+        connect: { id: oauthState.organizationId },
+      },
       provider: 'bitbucket',
       providerId: userData.uuid,
       accessToken: tokenData.access_token,

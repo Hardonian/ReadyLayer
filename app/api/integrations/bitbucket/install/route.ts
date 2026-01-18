@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createHash, randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/observability/logging';
-import { getServerSession } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 
 const BITBUCKET_CLIENT_ID = process.env.BITBUCKET_CLIENT_ID;
 
@@ -27,21 +27,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Get authenticated user
-    const session = await getServerSession();
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authUser = await requireAuth(req);
+    const userId = authUser.id;
 
-    const userId = session.user.id;
-
-    // Get user's organization
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        organizationId: true,
+    // Get user's organization (first one if multiple)
+    const membership = await prisma.organizationMember.findFirst({
+      where: { userId },
+      include: {
         organization: {
           select: {
             id: true,
@@ -51,12 +43,14 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    if (!user?.organizationId) {
+    if (!membership) {
       return NextResponse.json(
         { error: 'User must belong to an organization' },
         { status: 400 }
       );
     }
+
+    const organizationId = membership.organizationId;
 
     // Generate secure state token for CSRF protection
     const state = randomBytes(32).toString('hex');
@@ -67,7 +61,7 @@ export async function GET(req: NextRequest) {
       data: {
         stateHash,
         userId,
-        organizationId: user.organizationId,
+        organizationId,
         provider: 'bitbucket',
         returnUrl: req.nextUrl.searchParams.get('returnUrl') || '/dashboard/repos',
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
@@ -85,7 +79,7 @@ export async function GET(req: NextRequest) {
     logger.info(
       {
         userId,
-        organizationId: user.organizationId,
+        organizationId,
         state: stateHash,
       },
       'Redirecting to Bitbucket OAuth'

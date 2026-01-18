@@ -166,15 +166,15 @@ function test(condition) {
 
   test('should calculate LLM costs correctly', () => {
     // GPT-4 Turbo: $0.01 per 1K input, $0.03 per 1K output
-    const cost = calculateLLMCost('gpt-4-turbo', 1000, 1000);
+    const cost = calculateLLMCost('openai', 'gpt-4-turbo', 1000, 1000);
     expect(cost).toBe(0.04); // 0.01 + 0.03
 
     // Claude 3 Haiku: $0.00025 per 1K input, $0.00125 per 1K output
-    const haikuCost = calculateLLMCost('claude-3-haiku', 1000, 1000);
+    const haikuCost = calculateLLMCost('anthropic', 'claude-3-haiku', 1000, 1000);
     expect(haikuCost).toBeCloseTo(0.0015);
 
     // GPT-3.5 Turbo (cheaper): $0.0005 + $0.0015 = $0.002
-    const gpt35Cost = calculateLLMCost('gpt-3.5-turbo', 1000, 1000);
+    const gpt35Cost = calculateLLMCost('openai', 'gpt-3.5-turbo', 1000, 1000);
     expect(gpt35Cost).toBeCloseTo(0.002);
   });
 

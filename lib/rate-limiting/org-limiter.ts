@@ -293,7 +293,7 @@ export async function enforceOrgRateLimit(
 }> {
   const result = await checkOrgRateLimit(organizationId, tier);
 
-  const headers = {
+  const headers: Record<string, string> = {
     'X-RateLimit-Limit': result.limit.toString(),
     'X-RateLimit-Remaining': result.remaining.toString(),
     'X-RateLimit-Reset': Math.floor(result.resetAt.getTime() / 1000).toString(),

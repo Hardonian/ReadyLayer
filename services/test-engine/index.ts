@@ -8,15 +8,17 @@
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { codeParserService } from '../code-parser';
-import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
+// TODO: Re-enable RAG integration when test generation uses evidence
+// import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 // Billing check imported dynamically to avoid circular dependencies
 import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
-import { enqueueTestExecutionJob, processTestExecutionJob } from '../../workers/test-executor-worker';
+import { enqueueTestExecutionJob } from '../../workers/test-executor-worker';
 import { logger } from '../../observability/logging';
 import { testEnginePromptBuilder, combinedPrompt } from '../../lib/prompts/builder';
 import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
+import { executeTests } from './executor';
 
 export interface TestGenerationRequest {
   repositoryId: string;
@@ -467,10 +469,10 @@ export class TestEngineService {
   private async buildTestPrompt(
     filePath: string,
     content: string,
-    parseResult: any,
+    _parseResult: any,
     framework: string,
-    repositoryId: string,
-    organizationId: string
+    _repositoryId: string,
+    _organizationId: string
   ): Promise<string> {
     // P2: Use centralized, versioned prompts (PROMPT_ARCHITECTURE)
     const builtPrompt = testEnginePromptBuilder.buildGenerateTestsPrompt(
@@ -605,9 +607,9 @@ export class TestEngineService {
     organizationId: string,
     filePath: string,
     testContent: string,
-    sourceCode: string,
+    _sourceCode: string,
     framework: string = 'jest',
-    coverageThreshold: number = 80
+    _coverageThreshold: number = 80
   ): Promise<{ jobId: string; queuedAt: Date }> {
     logger.info(
       {
@@ -621,17 +623,22 @@ export class TestEngineService {
 
     // Enqueue the job
     const jobInfo = await enqueueTestExecutionJob({
-      runId,
-      repositoryId,
+      id: `job_${runId}_${Date.now()}`,
+      testRunId: runId,
       organizationId,
-      filePath,
-      testContent,
-      sourceCode,
-      framework: framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
-      coverageThreshold,
+      projectId: repositoryId,
+      generatedTests: [{
+        id: `test_${Date.now()}`,
+        framework: framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
+        code: testContent,
+        targetFile: filePath,
+      }],
     });
 
-    return jobInfo;
+    return {
+      jobId: jobInfo.id,
+      queuedAt: new Date(),
+    };
   }
 
   /**
@@ -649,40 +656,33 @@ export class TestEngineService {
    * @returns Test execution result
    */
   async executeTestsSync(
-    runId: string,
-    repositoryId: string,
-    organizationId: string,
+    _runId: string,
+    _repositoryId: string,
+    _organizationId: string,
     filePath: string,
     testContent: string,
     sourceCode: string,
     framework: string = 'jest',
-    coverageThreshold: number = 80,
-    timeoutMs: number = 30000
+    _coverageThreshold: number = 80,
+    _timeoutMs: number = 30000
   ) {
     logger.info(
       {
-        runId,
-        repositoryId,
+        runId: _runId,
+        repositoryId: _repositoryId,
         filePath,
         framework,
-        timeout: timeoutMs,
+        timeout: _timeoutMs,
       },
       'Executing tests synchronously'
     );
 
-    const result = await processTestExecutionJob(
-      {
-        runId,
-        repositoryId,
-        organizationId,
-        filePath,
-        testContent,
-        sourceCode,
-        framework: framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
-        coverageThreshold,
-      },
-      timeoutMs
-    );
+    const result = await executeTests({
+      filePath,
+      testContent,
+      sourceCode,
+      framework: framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
+    });
 
     return result;
   }

@@ -414,10 +414,10 @@ export default function DashboardPage() {
         {/* Upgrade Prompt - Show contextually based on usage */}
         <motion.div variants={fadeIn}>
           <UpgradePrompt
-            context={usageStats && usageStats.percentageUsed > 80 ? 'usage-limit-approaching' : 'ai-disabled'}
-            show={usageStats ? usageStats.percentageUsed > 80 : true}
+            context={usageStats && (usageStats.percentageUsed ?? 0) > 80 ? 'usage-limit-approaching' : 'ai-disabled'}
+            show={usageStats ? (usageStats.percentageUsed ?? 0) > 80 : true}
             data={{
-              current: usageStats?.percentageUsed || 0,
+              current: usageStats?.percentageUsed ?? 0,
               limit: 100,
             }}
             onUpgradeClick={() => {

@@ -196,7 +196,7 @@ function checkSecretExposure(code: string, lines: string[]): SecurityIssue[] {
         message,
         line: lineNumber,
         suggestion: 'Use environment variables: process.env.API_KEY',
-        codeSnippet: redactSecrets(lines[lineNumber - 1]),
+        codeSnippet: redactSecrets(lines[lineNumber - 1]).redacted,
       });
     }
   });
@@ -269,7 +269,7 @@ function checkXSS(code: string, lines: string[]): SecurityIssue[] {
  */
 function checkInputValidation(
   code: string,
-  lines: string[],
+  _lines: string[],
   type: string
 ): SecurityIssue[] {
   const issues: SecurityIssue[] = [];
@@ -337,7 +337,7 @@ function checkLoggingSafety(code: string, lines: string[]): SecurityIssue[] {
       message: 'Logging potentially sensitive data',
       line: lineNumber,
       suggestion: 'Use redactSecrets() before logging or use safe logger',
-      codeSnippet: redactSecrets(lines[lineNumber - 1]),
+      codeSnippet: redactSecrets(lines[lineNumber - 1]).redacted,
     });
   }
 

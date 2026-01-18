@@ -6,6 +6,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { llmService } from '@/services/llm';
 import { logger } from '@/observability/logging';
 import { createHash } from 'crypto';
@@ -185,9 +186,9 @@ export class GovernanceRunOrchestrator {
           governanceRunId: runId,
           findings: findings as any, // JSON type
           varianceScore: null,
-          intentDrift: governanceSignals.intent_drift,
-          temporalFragility: governanceSignals.temporal_fragility,
-          negativeSpaceGaps: governanceSignals.negative_space_gaps,
+          intentDrift: governanceSignals.intent_drift === null ? Prisma.JsonNull : governanceSignals.intent_drift,
+          temporalFragility: governanceSignals.temporal_fragility === null ? Prisma.JsonNull : governanceSignals.temporal_fragility,
+          negativeSpaceGaps: governanceSignals.negative_space_gaps === null ? Prisma.JsonNull : governanceSignals.negative_space_gaps,
         },
       });
 

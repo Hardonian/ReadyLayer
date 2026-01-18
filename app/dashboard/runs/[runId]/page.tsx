@@ -71,6 +71,8 @@ interface RunDetails {
   trigger: 'webhook' | 'manual' | 'sandbox'
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
   conclusion?: 'success' | 'failure' | 'partial_success' | 'cancelled'
+  prNumber?: number
+  prTitle?: string
   reviewGuardStatus: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped'
   testEngineStatus: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped'
   docSyncStatus: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped'
@@ -85,6 +87,7 @@ interface RunDetails {
       medium: number
       low: number
     }
+    issues?: Finding[]
   }
   testEngineResult?: {
     testsGenerated: number
@@ -244,14 +247,16 @@ export default function RunDetailsPage() {
               prNumber={run.prNumber || 0}
               prTitle={run.prTitle}
               repositoryName={run.repository?.name}
-              issues={run.reviewGuardResult?.issues?.map((issue: Finding) => ({
-                severity: issue.severity,
-                ruleId: issue.ruleId,
-                message: issue.message,
-                file: issue.file,
-                line: issue.line,
-                fix: issue.fix,
-              })) || []}
+              issues={run.reviewGuardResult?.issues
+                ?.filter((issue: Finding) => issue.severity !== 'low')
+                .map((issue: Finding) => ({
+                  severity: issue.severity as 'critical' | 'high' | 'medium',
+                  ruleId: issue.ruleId,
+                  message: issue.message,
+                  file: issue.file,
+                  line: issue.line,
+                  fix: issue.fix,
+                })) || []}
               onViewDetails={() => {
                 // Scroll to findings section
                 document.getElementById('findings-section')?.scrollIntoView({ behavior: 'smooth' })

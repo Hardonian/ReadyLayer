@@ -16,6 +16,7 @@ export interface UsageStats {
   runs: { today: number; limit: number }
   concurrentJobs: { current: number; limit: number }
   budget: { current: number; limit: number; remaining: number }
+  percentageUsed?: number
 }
 
 interface UsageLimitBannerProps {

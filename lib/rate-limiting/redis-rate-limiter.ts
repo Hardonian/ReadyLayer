@@ -252,7 +252,7 @@ class RedisRateLimiter {
    */
   getHealthStatus(): {
     redisHealthy: boolean;
-    metrics: typeof this.rateLimitMetrics;
+    metrics: RedisRateLimiter['rateLimitMetrics'];
   } {
     return {
       redisHealthy: this.isRedisHealthy,

@@ -19,9 +19,6 @@ test.describe('GitHub App OAuth Flow', () => {
   });
 
   test('should initiate OAuth flow with CSRF protection', async ({ page, context }) => {
-    // Get the initial cookies
-    const initialCookies = await context.cookies();
-    
     // Click GitHub OAuth button
     const githubButton = page.getByRole('button', { name: /GitHub/i }).first();
     await expect(githubButton).toBeVisible();
@@ -121,7 +118,7 @@ test.describe('GitHub App OAuth Flow', () => {
     expect(oauthStateCookie).toBeUndefined();
   });
 
-  test('should reject OAuth callback without state token', async ({ page, context }) => {
+  test('should reject OAuth callback without state token', async ({ page }) => {
     // Don't set any state cookie
     
     // Try callback without state token
@@ -255,7 +252,7 @@ test.describe('GitHub App OAuth Flow', () => {
     expect([302, 307, 308, 500].includes(response?.status() || 0)).toBeTruthy();
   });
 
-  test('should support both GET and POST OAuth initiation', async ({ page, context }) => {
+  test('should support both GET and POST OAuth initiation', async ({ page }) => {
     // Test POST endpoint for OAuth initiation
     const response = await page.request.post('/api/github/auth', {
       data: {},

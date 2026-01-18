@@ -51,7 +51,7 @@ export async function processLLMEnrichment(
 
   try {
     // Check if LLM queries are enabled for this org
-    const llmEnabled = isQueryEnabled(request.organizationId);
+    const llmEnabled = isQueryEnabled();
     if (!llmEnabled) {
       metrics.increment('llm_enrichment_skipped', { reason: 'disabled' });
       logger.debug({ reviewId: request.reviewId }, 'LLM queries disabled for org');
@@ -144,12 +144,12 @@ async function analyzeWithLLM(
 
     // Query RAG evidence if enabled (use redacted code)
     let evidence = '';
-    if (isQueryEnabled(request.organizationId)) {
-      const rawEvidence = await queryEvidence(
-        request.repositoryId,
-        redactedCode,
-        request.filePath
-      );
+    if (isQueryEnabled()) {
+      const rawEvidence = await queryEvidence({
+        organizationId: request.organizationId,
+        repositoryId: request.repositoryId,
+        queryText: `${request.filePath}: ${redactedCode}`,
+      });
       evidence = formatEvidenceForPrompt(rawEvidence);
     }
 
@@ -157,19 +157,14 @@ async function analyzeWithLLM(
     const prompt = buildLLMPrompt(request.filePath, redactedCode, evidence);
 
     // Call LLM service with REDACTED code (security critical!)
-    const llmResponse = await llmService.analyzeCode({
-      code: redactedCode, // Use redacted code, NEVER original
-      filePath: request.filePath,
-      prompt,
-      context: {
-        organizationId: request.organizationId,
-        repositoryId: request.repositoryId,
-        reviewId: request.reviewId,
-      },
+    const llmResponse = await llmService.complete({
+      prompt: `${prompt}\n\nFile: ${request.filePath}\nCode:\n${redactedCode}`,
+      organizationId: request.organizationId,
+      userId: undefined,
     });
 
     // Extract issues from LLM response
-    const aiIssues = parseLLMResponse(llmResponse, request.filePath);
+    const aiIssues = parseLLMResponse(llmResponse.content, request.filePath);
 
     logger.debug(
       { reviewId: request.reviewId, filePath: request.filePath, issueCount: aiIssues.length, requestId },
@@ -271,7 +266,6 @@ export async function checkEnrichmentStatus(reviewId: string): Promise<{
     select: {
       status: true,
       updatedAt: true,
-      metadata: true,
     },
   });
 
@@ -283,11 +277,30 @@ export async function checkEnrichmentStatus(reviewId: string): Promise<{
     };
   }
 
-  const metadata = enrichmentData.metadata as any;
+  // TODO: Track enrichment progress in separate table or field
   return {
     status: enrichmentData.status === 'completed' ? 'completed' : 'enriching',
-    enrichedFiles: metadata?.enrichedFiles || 0,
-    totalFiles: metadata?.totalFiles || 0,
+    enrichedFiles: 0,
+    totalFiles: 0,
     completedAt: enrichmentData.status === 'completed' ? enrichmentData.updatedAt : undefined,
   };
+}
+
+/**
+ * Enqueue LLM enrichment job
+ * TODO: Implement proper job queue (Redis/Bull)
+ */
+export async function enqueueLLMEnrichment(
+  _reviewId: string,
+  _repositoryId: string,
+  _organizationId: string,
+  _filePath: string,
+  _fileContent: string,
+  _staticIssues: any[]
+): Promise<string> {
+  // TODO: Queue job in Redis/Bull and return job ID
+  // For now, return a placeholder job ID
+  const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  logger.debug({ jobId }, 'LLM enrichment job queued (stub)');
+  return jobId;
 }

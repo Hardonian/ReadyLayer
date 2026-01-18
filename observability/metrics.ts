@@ -85,7 +85,7 @@ class MetricsCollector {
   /**
    * Get key for metric
    */
-  private getKey(name: string, labels?: Record<string, string>): string {
+  protected getKey(name: string, labels?: Record<string, string>): string {
     if (!labels) {
       return name;
     }
@@ -165,23 +165,9 @@ class ExtendedMetricsCollector extends MetricsCollector {
   }
 
   /**
-   * Get key for metric
-   */
-  private getKey(name: string, labels?: Record<string, string>): string {
-    if (!labels) {
-      return name;
-    }
-    const labelStr = Object.entries(labels)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}=${v}`)
-      .join(',');
-    return `${name}{${labelStr}}`;
-  }
-
-  /**
    * Clear old data
    */
-  clearOldData(maxAge: number = 3600000): void {
+  clearOldData(_maxAge: number = 3600000): void {
     // Keep only recent data (default: 1 hour)
     // In production, would use timestamps for each value
   }

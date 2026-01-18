@@ -61,7 +61,10 @@ class ProductionReadinessService {
     testCoverage: 80,
   };
 
-  constructor(private endpoints: ServiceEndpoint[] = []) {}
+  constructor(private endpoints: ServiceEndpoint[] = []) {
+    // Endpoints will be used for distributed health checks in the future
+    void this.endpoints;
+  }
 
   /**
    * Record health check result

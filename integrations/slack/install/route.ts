@@ -11,15 +11,15 @@ import { metrics } from '@/observability/metrics';
 export const dynamic = 'force-dynamic';
 
 const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
-const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
-const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI || 
+// SLACK_CLIENT_SECRET reserved for OAuth callback handling
+const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI ||
   `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/integrations/slack/callback`;
 
 /**
  * GET /integrations/slack/install
  * Initiate Slack OAuth flow
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     if (!SLACK_CLIENT_ID) {
       logger.error('Slack client ID not configured');

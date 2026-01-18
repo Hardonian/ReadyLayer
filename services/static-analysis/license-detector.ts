@@ -120,8 +120,8 @@ export function detectLicense(content: string): LicenseIssue | null {
         file: '',
         line: lineNumber,
         license,
-        licenseType: type,
-        severity,
+        licenseType: type as 'permissive' | 'weak-copyleft' | 'copyleft' | 'proprietary' | 'unknown',
+        severity: severity as 'low' | 'medium' | 'high' | 'critical',
         message,
         confidence: 0.95,
       };
@@ -160,7 +160,7 @@ export function scanFileForLicense(filePath: string, content: string): LicenseIs
 export function scanImportsForLicenseConflicts(
   filePath: string,
   content: string,
-  projectLicense?: string
+  _projectLicense?: string
 ): LicenseIssue[] {
   const issues: LicenseIssue[] = [];
 

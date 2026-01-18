@@ -234,22 +234,25 @@ export async function trackLLMCostForBilling(
   modelName: string,
   inputTokens: number,
   outputTokens: number,
-  metadata?: Record<string, any>
+  _metadata?: Record<string, any>
 ): Promise<void> {
   try {
     const { trackLLMCost, calculateLLMCost } = await import('@/lib/telemetry/llm-costs');
 
-    const costUSD = calculateLLMCost(modelName, inputTokens, outputTokens);
+    // Extract provider from model name (simplified)
+    const provider = modelName.includes('claude') ? 'anthropic' : 'openai';
+    const costUSD = calculateLLMCost(provider, modelName, inputTokens, outputTokens);
 
-    await trackLLMCost({
-      organizationId,
-      modelName,
+    trackLLMCost(organizationId, {
+      provider,
+      model: modelName,
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
       costUSD,
+      requestDurationMs: 0,
       timestamp: new Date(),
-      metadata,
+      success: true,
     });
   } catch (error) {
     logger.warn(
@@ -282,11 +285,17 @@ export async function getOrganizationSpendingStatus(
     );
 
     const tier = await billingService.getOrganizationTier(organizationId);
-    const monthlyBudget = tier.features.llmBudget || 500;
+    const monthlyBudget = (tier.features as any).llmBudget || 500;
 
     const monthlySpend = await getOrganizationMonthlySpend(organizationId);
     const percentageUsed = await getBudgetUtilization(organizationId, monthlyBudget);
-    const status = await checkBudgetAlerts(organizationId, monthlyBudget);
+    const alerts = await checkBudgetAlerts(organizationId, monthlyBudget);
+
+    const status: 'ok' | 'warning' | 'critical' = alerts?.level === 2
+      ? 'critical'
+      : alerts?.level === 1
+      ? 'warning'
+      : 'ok';
 
     return {
       monthlySpend,

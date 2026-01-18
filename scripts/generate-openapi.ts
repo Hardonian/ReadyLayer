@@ -13,7 +13,6 @@ import { z } from 'zod';
 
 // Import all types/schemas
 import { FindingSchema } from '../lib/types/review';
-import type { Severity } from '../lib/types/review';
 
 interface OpenAPISpec {
   openapi: string;
@@ -109,7 +108,7 @@ function zodToOpenAPI(schema: z.ZodType<any>): any {
 
   if (schema instanceof z.ZodUnion) {
     return {
-      oneOf: schema.options.map(opt => zodToOpenAPI(opt as z.ZodType)),
+      oneOf: schema.options.map((opt: z.ZodTypeAny) => zodToOpenAPI(opt as z.ZodType)),
       description: schema.description,
     };
   }

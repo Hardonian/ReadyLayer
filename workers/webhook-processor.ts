@@ -108,13 +108,13 @@ async function processWebhookEvent(rawPayload: unknown): Promise<void> {
     const installation = await getInstallationWithDecryptedToken(event.installation.installationId);
 
     if (!installation) {
-      log.error({ installationId }, 'Installation not found');
-      throw new Error(`Installation ${installationId} not found`);
+      log.error({ installationId: event.installation.installationId }, 'Installation not found');
+      throw new Error(`Installation ${event.installation.installationId} not found`);
     }
 
     if (!installation.isActive) {
-      log.warn({ installationId }, 'Installation is inactive');
-      throw new Error(`Installation ${installationId} is inactive`);
+      log.warn({ installationId: event.installation.installationId }, 'Installation is inactive');
+      throw new Error(`Installation ${event.installation.installationId} is inactive`);
     }
 
     const accessToken = installation.accessToken; // Already decrypted
@@ -143,7 +143,7 @@ async function processWebhookEvent(rawPayload: unknown): Promise<void> {
       return match.replace(tokenValue, redactSecret(tokenValue));
     });
     log.error({ err: error, message: redactedMessage }, 'Webhook processing failed');
-    metrics.increment('webhooks.processed', { type, status: 'failed' });
+    metrics.increment('webhooks.processed', { type: event.type, status: 'failed' });
     throw error;
   }
 }
@@ -312,14 +312,14 @@ async function processPREvent(
     if (isIngestEnabled() && runResult.reviewGuardResult?.reviewId) {
       try {
         const repo = await prisma.repository.findUnique({
-          where: { id: repository.id },
+          where: { id: String(repository.id) },
           select: { organizationId: true },
         });
 
         if (repo) {
           await ingestDocument({
             organizationId: repo.organizationId,
-            repositoryId: repository.id,
+            repositoryId: String(repository.id),
             sourceType: 'review_result',
             sourceRef: `pr-${pr.number}`,
             title: `Review for PR #${pr.number}: ${pr.title}`,
@@ -330,7 +330,7 @@ async function processPREvent(
             }),
             metadata: {
               prNumber: pr.number,
-              prSha: pr.sha,
+              prSha: pr.head.sha,
               reviewId: runResult.reviewGuardResult.reviewId,
               runId: runResult.id,
             },
@@ -354,10 +354,10 @@ async function processPREvent(
     try {
       await prAdapter.createOrUpdateCheckRun(
         repository.fullName,
-        pr.sha,
+        pr.head.sha,
         {
           name: 'ReadyLayer',
-          head_sha: pr.sha,
+          head_sha: pr.head.sha,
           status: 'completed',
           conclusion: isUsageLimitError ? 'action_required' : 'failure',
           output: {
@@ -377,15 +377,15 @@ async function processPREvent(
 
   // Run Test Engine
   try {
-    const aiTouchedFiles = await testEngineService.detectAITouchedFiles(repository.id, files);
+    const aiTouchedFiles = await testEngineService.detectAITouchedFiles(String(repository.id), files);
 
     for (const file of aiTouchedFiles) {
       const fileContent = files.find(f => f.path === file.path)?.content;
       if (fileContent) {
         const testResult = await testEngineService.generateTests({
-          repositoryId: repository.id,
+          repositoryId: String(repository.id),
           prNumber: pr.number,
-          prSha: pr.sha,
+          prSha: pr.head.sha,
           filePath: file.path,
           fileContent,
         });
@@ -394,14 +394,14 @@ async function processPREvent(
         if (isIngestEnabled() && testResult.testContent) {
           try {
             const repo = await prisma.repository.findUnique({
-              where: { id: repository.id },
+              where: { id: String(repository.id) },
               select: { organizationId: true },
             });
 
             if (repo) {
               await ingestDocument({
                 organizationId: repo.organizationId,
-                repositoryId: repository.id,
+                repositoryId: String(repository.id),
                 sourceType: 'test_precedent',
                 sourceRef: file.path,
                 title: `Test for ${file.path}`,
@@ -429,15 +429,15 @@ async function processPREvent(
     // This checks for drift between code and docs, but doesn't generate new docs
     try {
       const repo = await prisma.repository.findUnique({
-        where: { id: repository.id },
+        where: { id: String(repository.id) },
         select: { organizationId: true },
       });
 
       if (repo) {
         // Check for drift without generating new docs
         const driftResult = await docSyncService.checkDrift(
-          repository.id,
-          pr.sha,
+          String(repository.id),
+          pr.head.sha,
           {
             driftPrevention: {
               enabled: true,
@@ -461,10 +461,10 @@ async function processPREvent(
 
           await prAdapter.createOrUpdateCheckRun(
             repository.fullName,
-            pr.sha,
+            pr.head.sha,
             {
               name: 'ReadyLayer Doc Sync',
-              head_sha: pr.sha,
+              head_sha: pr.head.sha,
               status: 'completed',
               conclusion: 'failure',
               output: {
@@ -490,21 +490,21 @@ async function processPREvent(
     if (isIngestEnabled() && diff) {
     try {
       const repo = await prisma.repository.findUnique({
-        where: { id: repository.id },
+        where: { id: String(repository.id) },
         select: { organizationId: true },
       });
 
       if (repo && diff.length > 0 && diff.length < 50000) { // Limit diff size
         await ingestDocument({
           organizationId: repo.organizationId,
-          repositoryId: repository.id,
+          repositoryId: String(repository.id),
           sourceType: 'pr_diff',
           sourceRef: `pr-${pr.number}`,
           title: `PR #${pr.number}: ${pr.title}`,
           content: diff.substring(0, 50000), // Cap at 50KB
           metadata: {
             prNumber: pr.number,
-            prSha: pr.sha,
+            prSha: pr.head.sha,
             fileCount: files.length,
           },
         }, requestId);
@@ -520,20 +520,20 @@ async function processPREvent(
  * Process merge event
  */
 async function processMergeEvent(
-  repository: any,
-  pr: any,
+  event: import('../lib/contracts/webhooks').WebhookMergeCompleted,
   _accessToken: string,
-  log: any,
+  log: ReturnType<typeof logger.child>,
   requestId?: string
 ): Promise<void> {
+    const { repository, pr } = event;
     const traceId = requestId || `webhook_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     log.info({ prNumber: pr.number, requestId: traceId }, 'Processing merge event');
 
   // Run Doc Sync (on merge)
   try {
     const docResult = await docSyncService.generateDocs({
-      repositoryId: repository.id,
-      ref: pr.sha,
+      repositoryId: String(repository.id),
+      ref: pr.head.sha,
       format: 'openapi',
     });
 
@@ -541,21 +541,21 @@ async function processMergeEvent(
     if (isIngestEnabled() && docResult.content) {
       try {
         const repo = await prisma.repository.findUnique({
-          where: { id: repository.id },
+          where: { id: String(repository.id) },
           select: { organizationId: true },
         });
 
         if (repo) {
           await ingestDocument({
             organizationId: repo.organizationId,
-            repositoryId: repository.id,
+            repositoryId: String(repository.id),
             sourceType: 'doc_convention',
-            sourceRef: `openapi-${pr.sha.substring(0, 8)}`,
-            title: `OpenAPI Spec for ${pr.sha.substring(0, 8)}`,
+            sourceRef: `openapi-${pr.head.sha.substring(0, 8)}`,
+            title: `OpenAPI Spec for ${pr.head.sha.substring(0, 8)}`,
             content: docResult.content.substring(0, 50000), // Cap at 50KB
             metadata: {
               format: docResult.format,
-              ref: pr.sha,
+              ref: pr.head.sha,
               prNumber: pr.number,
             },
           }, traceId);
@@ -574,25 +574,26 @@ async function processMergeEvent(
  * Process CI completed event
  */
 async function processCIEvent(
-  repository: any,
-  pr: any,
+  event: import('../lib/contracts/webhooks').WebhookCICompleted,
   _accessToken: string,
-  log: any
+  log: ReturnType<typeof logger.child>
 ): Promise<void> {
-  log.info({ repositoryId: repository.id, prNumber: pr?.number }, 'Processing CI event');
+  const { repository } = event;
+  const ciRun = (event as any).ciRun; // TODO: Update WebhookCICompleted type to include ciRun
+  log.info({ repositoryId: String(repository.id), ciRunName: ciRun?.name }, 'Processing CI event');
 
   // Check coverage when CI workflow completes
   // This integrates with GitHub Actions coverage reports
-  if (pr?.sha && repository.id) {
+  if (ciRun.headSha && repository.id) {
     try {
       // Get repository to find organization
       const repo = await prisma.repository.findUnique({
-        where: { id: repository.id },
+        where: { id: String(repository.id) },
         select: { organizationId: true },
       });
 
       if (!repo) {
-        log.warn({ repositoryId: repository.id }, 'Repository not found for CI event');
+        log.warn({ repositoryId: String(repository.id) }, 'Repository not found for CI event');
         return;
       }
 
@@ -603,9 +604,9 @@ async function processCIEvent(
       // 3. Call testEngineService.checkCoverage()
       // 4. Create GitHub check run if coverage below threshold
 
-      log.info({ repositoryId: repository.id, prSha: pr.sha }, 'CI event processed (coverage check placeholder)');
+      log.info({ repositoryId: String(repository.id), headSha: ciRun.headSha }, 'CI event processed (coverage check placeholder)');
     } catch (error) {
-      log.error({ err: error, repositoryId: repository.id }, 'Failed to process CI event');
+      log.error({ err: error, repositoryId: String(repository.id) }, 'Failed to process CI event');
       // Don't throw - CI event processing is non-blocking
     }
   }

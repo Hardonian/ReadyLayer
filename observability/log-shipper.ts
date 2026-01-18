@@ -31,7 +31,7 @@ export interface LogEntry {
 class LogShipper {
   private config: LogShipperConfig;
   private logBuffer: LogEntry[] = [];
-  private flushInterval: NodeJS.Timer | null = null;
+  private flushInterval: NodeJS.Timeout | null = null;
   private maxBufferSize = 100;
 
   constructor(config?: Partial<LogShipperConfig>) {
@@ -166,7 +166,8 @@ class LogShipper {
     }));
 
     // AWS SDK integration would go here
-    logger.debug({ count: logs.length, logGroup }, 'CloudWatch logs prepared');
+    // TODO: Implement CloudWatch Logs putLogEvents with logStream and logEvents
+    logger.debug({ count: logs.length, logGroup, logStream, eventCount: logEvents.length }, 'CloudWatch logs prepared');
   }
 
   /**
