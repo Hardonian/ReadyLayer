@@ -175,7 +175,7 @@ function getEnvConfig(): EnvConfig {
     // Return safe defaults for build
     const defaults = new EnvValidator().getDefaults();
     envConfig = {
-      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/readylayer',
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://build-placeholder:build-placeholder@localhost:5432/readylayer',
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
@@ -214,7 +214,7 @@ function getEnvConfig(): EnvConfig {
       // Use defaults for development/build
       const defaults = new EnvValidator().getDefaults();
       envConfig = {
-        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://user:password@localhost:5432/readylayer',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://dev-placeholder:dev-placeholder@localhost:5432/readylayer',
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
         NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
         SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
