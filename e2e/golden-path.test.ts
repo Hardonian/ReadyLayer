@@ -197,7 +197,7 @@ describe('Golden Path: ReadyLayer Activation Flow', () => {
     const validation = validateResponse(apiResponse, runResponseSchema);
     
     if (!validation.success) {
-      console.error('Contract validation failed:', validation.errors.errors);
+      console.error('Contract validation failed:', validation.issues.errors);
     }
     
     expect(validation.success).toBe(true);

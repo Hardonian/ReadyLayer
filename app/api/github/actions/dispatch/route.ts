@@ -12,7 +12,7 @@ const dispatchSchema = z.object({
   repositoryId: z.string().min(1),
   workflowId: z.string().optional(), // GitHub workflow file path (optional for GitLab/Bitbucket)
   ref: z.string().min(1), // Branch or commit SHA
-  inputs: z.record(z.string()).optional(), // Pipeline variables
+  inputs: z.record(z.string(), z.string()).optional(), // Pipeline variables
 });
 
 /**

@@ -41,7 +41,7 @@ export const metricsSnapshotSchema = z.object({
       merged: z.number().int().min(0),
       blocked: z.number().int().min(0),
     }),
-    gateOutcomes: z.record(z.object({
+    gateOutcomes: z.record(z.string(), z.object({
       passed: z.number().int().min(0),
       failed: z.number().int().min(0),
     })),
@@ -155,7 +155,7 @@ export const policySnapshotSchema = z.object({
       id: z.string(),
       ruleId: z.string(),
       enabled: z.boolean(),
-      severityMapping: z.record(z.string()),
+      severityMapping: z.record(z.string(), z.string()),
     })),
     coverage: z.object({
       reposCovered: z.number().int().min(0),
@@ -188,7 +188,7 @@ export const deltaEventSchema = z.object({
   timestamp: z.string().datetime(),
   organizationId: z.string(),
   repositoryId: z.string().optional(),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 })
 
 // Stream connection params

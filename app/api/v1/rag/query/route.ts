@@ -18,7 +18,7 @@ const querySchema = z.object({
   topK: z.number().int().min(1).max(50).optional().default(10),
   filters: z.object({
     sourceTypes: z.array(z.enum(['pr_diff', 'repo_file', 'review_result', 'policy_doc', 'test_precedent', 'doc_convention'])).optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   }).optional(),
 });
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid request body',
-            details: validation.error.errors,
+            details: validation.error.issues,
           },
         },
         { status: 400 }

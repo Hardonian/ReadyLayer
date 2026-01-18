@@ -83,7 +83,7 @@ export function validateBody<T>(
         'VALIDATION_ERROR',
         'Invalid request body',
         400,
-        { errors: result.error.errors }
+        { errors: result.error.issues }
       ),
     };
   }

@@ -36,7 +36,7 @@ export const TestCaseSchema = z.object({
   duration: z.number().int().min(0),
   message: z.string().optional(),
   stack: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type TestCase = z.infer<typeof TestCaseSchema>
@@ -55,7 +55,7 @@ export const TestSuiteSchema = z.object({
   failedTests: z.number().int(),
   skippedTests: z.number().int(),
   duration: z.number().int(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type TestSuite = z.infer<typeof TestSuiteSchema>
@@ -149,7 +149,7 @@ export const TestRunSchema = z.object({
   updatedAt: z.coerce.date(),
   
   // Additional metadata
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type TestRun = z.infer<typeof TestRunSchema>

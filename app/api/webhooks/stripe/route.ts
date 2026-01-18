@@ -208,8 +208,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           plan,
           status: mapStripeStatus(subscription.status),
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           updatedAt: new Date(),
         },
@@ -236,8 +236,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           status: mapStripeStatus(subscription.status),
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         },
       });
@@ -329,13 +329,13 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
 
     if (subscription) {
       // Update subscription period if needed
-      if (invoice.subscription && typeof invoice.subscription !== 'string') {
-        const stripeSubscription = invoice.subscription as Stripe.Subscription;
+      if ((invoice as any).subscription && typeof (invoice as any).subscription !== 'string') {
+        const stripeSubscription = (invoice as any).subscription as Stripe.Subscription;
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: {
-            currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+            currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
+            currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
             status: 'active',
             updatedAt: new Date(),
           },

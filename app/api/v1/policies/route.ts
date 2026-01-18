@@ -26,9 +26,9 @@ const createPolicyPackSchema = z.object({
   source: z.string().min(1, 'Policy source is required'),
   rules: z.array(z.object({
     ruleId: z.string(),
-    severityMapping: z.record(z.enum(['block', 'warn', 'allow'])),
+    severityMapping: z.record(z.string(), z.enum(['block', 'warn', 'allow'])),
     enabled: z.boolean().default(true),
-    params: z.record(z.any()).optional(),
+    params: z.record(z.string(), z.any()).optional(),
   })).optional().default([]),
 });
 
@@ -51,7 +51,7 @@ export const POST = createRouteHandler(
         'VALIDATION_ERROR',
         'Invalid request body',
         400,
-        { errors: validationResult.error.errors }
+        { errors: validationResult.error.issues }
       );
     }
 

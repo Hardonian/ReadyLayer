@@ -81,11 +81,11 @@ async function processWebhookEvent(rawPayload: unknown): Promise<void> {
   const validation = validateWebhookEvent(rawPayload);
   if (!validation.success) {
     logger.error(
-      { requestId, errors: validation.error.errors },
+      { requestId, errors: validation.error.issues },
       'Invalid webhook payload - validation failed'
     );
     throw new ValidationError('Invalid webhook payload', {
-      errors: validation.error.errors.map(e => ({
+      errors: validation.error.issues.map(e => ({
         path: e.path.join('.'),
         message: e.message
       }))

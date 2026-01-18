@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
           error: {
             code: 'VALIDATION_ERROR',
             message: 'Invalid query parameters',
-            context: { errors: queryResult.error.errors },
+            context: { errors: queryResult.error.issues },
           },
         }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }

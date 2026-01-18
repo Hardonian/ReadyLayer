@@ -8,7 +8,7 @@ import { errorResponse, successResponse, validateBody, parseJsonBody } from '../
 const integrationSchema = z.object({
   type: z.enum(['cli', 'cursor', 'vscode', 'tabnine', 'jetbrains']),
   name: z.string().min(1),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
   enabled: z.boolean().default(true),
 });
 
