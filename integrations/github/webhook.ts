@@ -9,9 +9,9 @@
  * but some properties may be undefined or have unexpected types.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+ 
+ 
+ 
 
 import { createHmac } from 'crypto';
 import { prisma } from '../../lib/prisma';
@@ -295,7 +295,7 @@ export class GitHubWebhookHandler {
     try {
       const { configService } = await import('../../services/config');
       await configService.autoGenerateConfig(repo.id);
-    } catch (error) {
+    } catch (_error) {
       // Don't fail repo creation if config generation fails
       // Config will be auto-generated on first use
     }

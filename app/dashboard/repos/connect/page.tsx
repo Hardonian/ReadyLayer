@@ -67,7 +67,7 @@ export default function ConnectRepositoryPage() {
           const reposData = (await reposResponse.json()) as { repositories?: Repository[] }
           setRepositories(reposData.repositories || [])
         }
-      } catch (error) {
+      } catch (_error) {
         // Silently handle fetch errors - UI will show empty state
       }
     }
@@ -97,11 +97,11 @@ export default function ConnectRepositoryPage() {
       const oauthUrl = `/api/auth/${provider}`
       window.location.href = oauthUrl
       
-    } catch (error) {
+    } catch (_error) {
       toast({
         variant: 'destructive',
         title: 'Connection failed',
-        description: error instanceof Error ? error.message : 'Failed to connect repository. Please try again.',
+        description: _error instanceof Error ? _error.message : 'Failed to connect repository. Please try again.',
       })
       setConnecting(false)
       setSelectedProvider(null)
@@ -148,11 +148,11 @@ export default function ConnectRepositoryPage() {
           description: data.error?.message || 'Failed to test connection.',
         })
       }
-    } catch (error) {
+    } catch (_error) {
       toast({
         variant: 'destructive',
         title: 'Test failed',
-        description: error instanceof Error ? error.message : 'Failed to test connection.',
+        description: _error instanceof Error ? _error.message : 'Failed to test connection.',
       })
     } finally {
       setTestingConnection(null)

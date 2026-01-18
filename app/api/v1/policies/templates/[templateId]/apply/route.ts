@@ -77,10 +77,12 @@ const POLICY_TEMPLATES: Record<string, { source: string }> = {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { templateId: string } }
+  { params }: { params: Promise<{ templateId: string }> }
 ) {
+  const { templateId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, templateId: params.templateId });
+  const log = logger.child({ requestId, templateId: templateId });
 
   try {
     // Require authentication
@@ -114,7 +116,7 @@ export async function POST(
     const { organizationId, repositoryId, version } = validation.data;
 
     // Get template
-    const template = POLICY_TEMPLATES[params.templateId];
+    const template = POLICY_TEMPLATES[templateId];
     if (!template) {
       return errorResponse('NOT_FOUND', 'Template not found', 404);
     }
@@ -208,14 +210,14 @@ export async function POST(
       policyPackId: policyPack.id,
       organizationId,
       repositoryId,
-      templateId: params.templateId,
+      templateId: templateId,
     }, 'Template applied');
 
     return successResponse({
       id: policyPack.id,
       version: policyPack.version,
       checksum: policyPack.checksum,
-      appliedFromTemplate: params.templateId,
+      appliedFromTemplate: templateId,
     }, 201);
   } catch (error) {
     log.error(error, 'Failed to apply template');

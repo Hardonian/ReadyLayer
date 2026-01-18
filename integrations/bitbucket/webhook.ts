@@ -9,9 +9,9 @@
  * but some properties may be undefined or have unexpected types.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+ 
+ 
+ 
 
 import { createHmac } from 'crypto';
 import { prisma } from '../../lib/prisma';

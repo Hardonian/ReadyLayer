@@ -238,7 +238,7 @@ export class GovernanceRunOrchestrator {
    * Build governance analysis prompt
    */
   private buildGovernancePrompt(diff: string, intent?: string): string {
-    let prompt = `You are a code governance analyzer. Analyze the following diff for security, quality, and compliance issues.
+    const prompt = `You are a code governance analyzer. Analyze the following diff for security, quality, and compliance issues.
 
 Intent (if provided):
 ${intent || 'None'}

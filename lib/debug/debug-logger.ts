@@ -122,7 +122,7 @@ export function createDebugLogger(
 
       // Parse back to object if it was originally an object
       return typeof data === 'string' ? safeString : JSON.parse(safeString);
-    } catch (err) {
+    } catch (_err) {
       // If JSON parsing fails, return as-is (already redacted as string)
       return data;
     }

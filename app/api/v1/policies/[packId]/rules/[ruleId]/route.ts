@@ -26,10 +26,12 @@ const updateRuleSchema = z.object({
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { packId: string; ruleId: string } }
+  { params }: { params: Promise<{ packId: string; ruleId: string }> }
 ) {
+  const { packId, ruleId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, packId: params.packId, ruleId: params.ruleId });
+  const log = logger.child({ requestId, packId: packId, ruleId: ruleId });
 
   try {
     const user = await requireAuth(request);
@@ -45,8 +47,8 @@ export async function PUT(
     const rule = await prisma.policyRule.findUnique({
       where: {
         policyPackId_ruleId: {
-          policyPackId: params.packId,
-          ruleId: params.ruleId,
+          policyPackId: packId,
+          ruleId: ruleId,
         },
       },
       include: {
@@ -99,8 +101,8 @@ export async function PUT(
     const updated = await prisma.policyRule.update({
       where: {
         policyPackId_ruleId: {
-          policyPackId: params.packId,
-          ruleId: params.ruleId,
+          policyPackId: packId,
+          ruleId: ruleId,
         },
       },
       data: {
@@ -157,10 +159,12 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { packId: string; ruleId: string } }
+  { params }: { params: Promise<{ packId: string; ruleId: string }> }
 ) {
+  const { packId, ruleId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, packId: params.packId, ruleId: params.ruleId });
+  const log = logger.child({ requestId, packId: packId, ruleId: ruleId });
 
   try {
     const user = await requireAuth(request);
@@ -176,8 +180,8 @@ export async function DELETE(
     const rule = await prisma.policyRule.findUnique({
       where: {
         policyPackId_ruleId: {
-          policyPackId: params.packId,
-          ruleId: params.ruleId,
+          policyPackId: packId,
+          ruleId: ruleId,
         },
       },
       include: {
@@ -223,13 +227,13 @@ export async function DELETE(
     await prisma.policyRule.delete({
       where: {
         policyPackId_ruleId: {
-          policyPackId: params.packId,
-          ruleId: params.ruleId,
+          policyPackId: packId,
+          ruleId: ruleId,
         },
       },
     });
 
-    log.info({ ruleId: params.ruleId }, 'Policy rule deleted');
+    log.info({ ruleId: ruleId }, 'Policy rule deleted');
 
     return NextResponse.json(
       {

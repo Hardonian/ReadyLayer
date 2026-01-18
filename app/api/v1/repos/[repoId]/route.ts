@@ -12,10 +12,11 @@ import { parseJsonBody } from '../../../../../lib/api-route-helpers';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { repoId: string } }
+  { params }: { params: Promise<{ repoId: string }> }
 ) {
+  const { repoId } = await params;
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, repoId: params.repoId });
+  const log = logger.child({ requestId, repoId });
 
   try {
     // Require authentication
@@ -31,7 +32,7 @@ export async function GET(
 
     // Get repository with tenant isolation check
     const repo = await prisma.repository.findUnique({
-      where: { id: params.repoId },
+      where: { id: repoId },
       include: {
         organization: {
           select: {
@@ -49,7 +50,7 @@ export async function GET(
         {
           error: {
             code: 'NOT_FOUND',
-            message: `Repository ${params.repoId} not found`,
+            message: `Repository ${repoId} not found`,
           },
         },
         { status: 404 }
@@ -109,10 +110,11 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { repoId: string } }
+  { params }: { params: Promise<{ repoId: string }> }
 ) {
+  const { repoId } = await params;
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, repoId: params.repoId });
+  const log = logger.child({ requestId, repoId });
 
   try {
     // Require authentication
@@ -175,7 +177,7 @@ export async function PATCH(
 
     // Get repository and verify tenant isolation
     const repo = await prisma.repository.findUnique({
-      where: { id: params.repoId },
+      where: { id: repoId },
       select: { organizationId: true },
     });
 
@@ -184,7 +186,7 @@ export async function PATCH(
         {
           error: {
             code: 'NOT_FOUND',
-            message: `Repository ${params.repoId} not found`,
+            message: `Repository ${repoId} not found`,
           },
         },
         { status: 404 }
@@ -216,7 +218,7 @@ export async function PATCH(
     // Update repository enabled status if provided
     if (enabled !== undefined) {
       await prisma.repository.update({
-        where: { id: params.repoId },
+        where: { id: repoId },
         data: { enabled },
       });
     }
@@ -224,13 +226,13 @@ export async function PATCH(
     // Update config if provided
     if (config !== undefined) {
       await prisma.repositoryConfig.upsert({
-        where: { repositoryId: params.repoId },
+        where: { repositoryId: repoId },
         update: {
           config: config as Prisma.InputJsonValue,
           version: { increment: 1 },
         },
         create: {
-          repositoryId: params.repoId,
+          repositoryId: repoId,
           config: config as Prisma.InputJsonValue,
         },
       });
@@ -238,13 +240,13 @@ export async function PATCH(
 
     // Fetch updated repository
     const updatedRepo = await prisma.repository.findUnique({
-      where: { id: params.repoId },
+      where: { id: repoId },
       include: {
         configs: true,
       },
     });
 
-    log.info({ repoId: params.repoId, enabled }, 'Repository updated');
+    log.info({ repoId: repoId, enabled }, 'Repository updated');
 
     return NextResponse.json({
       id: updatedRepo!.id,

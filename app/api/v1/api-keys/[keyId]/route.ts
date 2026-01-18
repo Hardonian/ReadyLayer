@@ -9,10 +9,12 @@ import { logger } from '../../../../../observability/logging';
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { keyId: string } }
+  { params }: { params: Promise<{ keyId: string }> }
 ) {
+  const { keyId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, keyId: params.keyId });
+  const log = logger.child({ requestId, keyId: keyId });
 
   try {
     // Require authentication
@@ -20,7 +22,7 @@ export async function DELETE(
 
     // Verify ownership
     const apiKey = await prisma.apiKey.findUnique({
-      where: { id: params.keyId },
+      where: { id: keyId },
     });
 
     if (!apiKey) {
@@ -49,11 +51,11 @@ export async function DELETE(
 
     // Revoke key
     await prisma.apiKey.update({
-      where: { id: params.keyId },
+      where: { id: keyId },
       data: { isActive: false },
     });
 
-    log.info({ keyId: params.keyId }, 'API key revoked');
+    log.info({ keyId: keyId }, 'API key revoked');
 
     return NextResponse.json({ revoked: true });
   } catch (error) {

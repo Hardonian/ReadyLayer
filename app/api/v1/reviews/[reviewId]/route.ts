@@ -10,10 +10,12 @@ import { createAuthzMiddleware } from '../../../../../lib/authz';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { reviewId: string } }
+  { params }: { params: Promise<{ reviewId: string }> }
 ) {
+  const { reviewId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, reviewId: params.reviewId });
+  const log = logger.child({ requestId, reviewId: reviewId });
 
   try {
     // Require authentication
@@ -28,7 +30,7 @@ export async function GET(
     }
 
     const review = await prisma.review.findUnique({
-      where: { id: params.reviewId },
+      where: { id: reviewId },
       include: {
         repository: {
           select: {
@@ -46,7 +48,7 @@ export async function GET(
         {
           error: {
             code: 'NOT_FOUND',
-            message: `Review ${params.reviewId} not found`,
+            message: `Review ${reviewId} not found`,
           },
         },
         { status: 404 }

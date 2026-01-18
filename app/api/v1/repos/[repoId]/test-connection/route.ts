@@ -20,10 +20,12 @@ import { getGitProviderPRAdapter } from '../../../../../../integrations/git-prov
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { repoId: string } }
+  { params }: { params: Promise<{ repoId: string }> }
 ) {
+  const { repoId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, repoId: params.repoId });
+  const log = logger.child({ requestId, repoId: repoId });
 
   try {
     // Require authentication
@@ -39,7 +41,7 @@ export async function POST(
 
     // Get repository
     const repo = await prisma.repository.findUnique({
-      where: { id: params.repoId },
+      where: { id: repoId },
       select: {
         id: true,
         fullName: true,
@@ -54,7 +56,7 @@ export async function POST(
         {
           error: {
             code: 'NOT_FOUND',
-            message: `Repository ${params.repoId} not found`,
+            message: `Repository ${repoId} not found`,
           },
         },
         { status: 404 }

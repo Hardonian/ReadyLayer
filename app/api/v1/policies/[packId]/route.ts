@@ -33,10 +33,12 @@ const updatePolicyPackSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { packId: string } }
+  { params }: { params: Promise<{ packId: string }> }
 ) {
+  const { packId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, packId: params.packId });
+  const log = logger.child({ requestId, packId: packId });
 
   try {
     const user = await requireAuth(request);
@@ -49,7 +51,7 @@ export async function GET(
     }
 
     const policyPack = await prisma.policyPack.findUnique({
-      where: { id: params.packId },
+      where: { id: packId },
       include: {
         rules: true,
         organization: {
@@ -136,10 +138,12 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { packId: string } }
+  { params }: { params: Promise<{ packId: string }> }
 ) {
+  const { packId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, packId: params.packId });
+  const log = logger.child({ requestId, packId: packId });
 
   try {
     const user = await requireAuth(request);
@@ -153,7 +157,7 @@ export async function PUT(
 
     // Get existing policy pack
     const existing = await prisma.policyPack.findUnique({
-      where: { id: params.packId },
+      where: { id: packId },
       include: { rules: true },
     });
 
@@ -204,7 +208,7 @@ export async function PUT(
 
     // Update policy pack
     const policyPack = await prisma.policyPack.update({
-      where: { id: params.packId },
+      where: { id: packId },
       data: {
         version: validated.version || existing.version,
         source,
@@ -271,10 +275,12 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { packId: string } }
+  { params }: { params: Promise<{ packId: string }> }
 ) {
+  const { packId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, packId: params.packId });
+  const log = logger.child({ requestId, packId: packId });
 
   try {
     const user = await requireAuth(request);
@@ -288,7 +294,7 @@ export async function DELETE(
 
     // Get existing policy pack
     const existing = await prisma.policyPack.findUnique({
-      where: { id: params.packId },
+      where: { id: packId },
     });
 
     if (!existing) {
@@ -327,10 +333,10 @@ export async function DELETE(
 
     // Delete policy pack (cascade deletes rules)
     await prisma.policyPack.delete({
-      where: { id: params.packId },
+      where: { id: packId },
     });
 
-    log.info({ policyPackId: params.packId }, 'Policy pack deleted');
+    log.info({ policyPackId: packId }, 'Policy pack deleted');
 
     return NextResponse.json(
       {

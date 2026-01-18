@@ -13,10 +13,12 @@ import { createAuthzMiddleware } from '../../../../../../lib/authz';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { repositoryId: string } }
+  { params }: { params: Promise<{ repositoryId: string }> }
 ) {
+  const { repositoryId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, repositoryId: params.repositoryId });
+  const log = logger.child({ requestId, repositoryId: repositoryId });
 
   try {
     const user = await requireAuth(request);
@@ -28,7 +30,6 @@ export async function GET(
       return authzResponse;
     }
 
-    const repositoryId = params.repositoryId;
 
     // Verify access
     const repo = await prisma.repository.findUnique({

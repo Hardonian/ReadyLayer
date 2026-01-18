@@ -192,7 +192,7 @@ export function buildLayeredPrompt(
   analysisPromptFn: (...args: unknown[]) => string,
   ...args: unknown[]
 ): { system: string; user: string } {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const { getSystemPrompt } = require('./system');
 
   return {

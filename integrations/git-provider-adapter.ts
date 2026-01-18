@@ -120,7 +120,7 @@ class GitHubAdapter implements GitProviderAdapter {
         const arrayBuffer = await githubAPIClient.downloadArtifact(repo, artifact.id, token);
         return new Blob([arrayBuffer]);
       }
-    } catch (error) {
+    } catch (_error) {
       // Return null if artifacts not found
     }
     return null;
@@ -180,7 +180,7 @@ class GitLabAdapter implements GitProviderAdapter {
           // Try next job name
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Return null if artifacts not found
     }
     return null;
@@ -238,7 +238,7 @@ class BitbucketAdapter implements GitProviderAdapter {
     try {
       const { workspace, repoSlug } = this.parseRepo(repo);
       return await bitbucketAPIClient.getPipelineArtifacts(workspace, repoSlug, runId, token);
-    } catch (error) {
+    } catch (_error) {
       // Return null if artifacts not found
     }
     return null;

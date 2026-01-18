@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useOrganizationId } from '@/lib/hooks'
 import { Container } from '@/components/ui/container'
 import { Card, CardContent, CardHeader, CardTitle, ErrorState, Skeleton } from '@/components/ui'

@@ -121,7 +121,7 @@ export class HealthChecker {
     try {
       await prisma.$queryRaw`SELECT 1`;
       return 'healthy';
-    } catch (error) {
+    } catch (_error) {
       return 'unhealthy';
     }
   }
@@ -137,7 +137,7 @@ export class HealthChecker {
       // Check if we can perform a simple query
       await prisma.$queryRaw`SELECT 1`;
       return 'ready';
-    } catch (error) {
+    } catch (_error) {
       return 'not_ready';
     }
   }
@@ -152,7 +152,7 @@ export class HealthChecker {
       await redis.ping();
       await redis.quit();
       return 'healthy';
-    } catch (error) {
+    } catch (_error) {
       return 'unhealthy';
     }
   }
@@ -167,7 +167,7 @@ export class HealthChecker {
       await redis.ping();
       await redis.quit();
       return 'ready';
-    } catch (error) {
+    } catch (_error) {
       return 'not_ready';
     }
   }
@@ -251,7 +251,7 @@ export class HealthChecker {
       }
 
       return { status: 'healthy' };
-    } catch (error) {
+    } catch (_error) {
       // If schema check fails, don't fail health check - just log
       return { status: 'degraded' };
     }

@@ -134,7 +134,7 @@ async function reviewCode(code: string, config: TabnineConfig): Promise<{
       return { isBlocked: false, issues: [] };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const result = await response.json() as {
       data?: {
         isBlocked?: boolean;

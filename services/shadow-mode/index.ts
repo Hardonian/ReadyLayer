@@ -81,7 +81,7 @@ export class ShadowModeService {
     let reviewResult: ReviewResult | undefined;
     try {
       reviewResult = await reviewGuardService.review(reviewRequest);
-    } catch (error) {
+    } catch (_error) {
       // In shadow mode, errors don't block - just report
       reviewResult = {
         id: 'shadow-error',
@@ -163,7 +163,7 @@ export class ShadowModeService {
         if (parseResult.functions.length > 5 && !hasTestFile) {
           issues.push(`File has ${parseResult.functions.length} functions but no tests`);
         }
-      } catch (error) {
+      } catch (_error) {
         // Skip if can't parse
       }
 

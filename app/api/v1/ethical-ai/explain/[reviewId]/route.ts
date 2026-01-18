@@ -38,10 +38,12 @@ function coerceIssues(value: unknown): ReviewIssue[] {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { reviewId: string } }
+  { params }: { params: Promise<{ reviewId: string }> }
 ) {
+  const { reviewId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, reviewId: params.reviewId });
+  const log = logger.child({ requestId, reviewId: reviewId });
 
   try {
     const user = await requireAuth(request);
@@ -53,7 +55,6 @@ export async function GET(
       return authzResponse;
     }
 
-    const reviewId = params.reviewId;
     const { searchParams } = new URL(request.url);
     const findingId = searchParams.get('findingId');
 

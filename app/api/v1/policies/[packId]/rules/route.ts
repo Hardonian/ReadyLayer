@@ -27,10 +27,12 @@ const createRuleSchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { packId: string } }
+  { params }: { params: Promise<{ packId: string }> }
 ) {
+  const { packId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, packId: params.packId });
+  const log = logger.child({ requestId, packId: packId });
 
   try {
     const user = await requireAuth(request);
@@ -44,7 +46,7 @@ export async function POST(
 
     // Get policy pack and verify access
     const policyPack = await prisma.policyPack.findUnique({
-      where: { id: params.packId },
+      where: { id: packId },
     });
 
     if (!policyPack) {
@@ -92,7 +94,7 @@ export async function POST(
     const existing = await prisma.policyRule.findUnique({
       where: {
         policyPackId_ruleId: {
-          policyPackId: params.packId,
+          policyPackId: packId,
           ruleId: validated.ruleId,
         },
       },
@@ -113,7 +115,7 @@ export async function POST(
     // Create rule
     const rule = await prisma.policyRule.create({
       data: {
-        policyPackId: params.packId,
+        policyPackId: packId,
         ruleId: validated.ruleId,
         severityMapping: validated.severityMapping as Prisma.InputJsonValue,
         enabled: validated.enabled,
@@ -121,7 +123,7 @@ export async function POST(
       },
     });
 
-    log.info({ ruleId: rule.id, packId: params.packId }, 'Policy rule created');
+    log.info({ ruleId: rule.id, packId: packId }, 'Policy rule created');
 
     return NextResponse.json(
       {
@@ -169,10 +171,12 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { packId: string } }
+  { params }: { params: Promise<{ packId: string }> }
 ) {
+  const { packId } = await params;
+
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId, packId: params.packId });
+  const log = logger.child({ requestId, packId: packId });
 
   try {
     const user = await requireAuth(request);
@@ -186,7 +190,7 @@ export async function GET(
 
     // Get policy pack and verify access
     const policyPack = await prisma.policyPack.findUnique({
-      where: { id: params.packId },
+      where: { id: packId },
     });
 
     if (!policyPack) {
@@ -224,7 +228,7 @@ export async function GET(
     }
 
     const rules = await prisma.policyRule.findMany({
-      where: { policyPackId: params.packId },
+      where: { policyPackId: packId },
       orderBy: { ruleId: 'asc' },
     });
 
