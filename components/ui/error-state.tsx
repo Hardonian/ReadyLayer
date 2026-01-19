@@ -13,6 +13,10 @@ export interface ErrorStateProps {
     label: string
     onClick: () => void
   }
+  secondaryAction?: {
+    label: string
+    onClick: () => void
+  }
   className?: string
   showDetails?: boolean
   details?: string
