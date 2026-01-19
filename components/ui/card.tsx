@@ -35,6 +35,14 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
         variants={fadeIn}
         initial="hidden"
         animate="visible"
+        whileHover={
+          elevation !== 'flat'
+            ? {
+                y: -2,
+                transition: { duration: 0.2 },
+              }
+            : undefined
+        }
         {...props}
       />
     )
