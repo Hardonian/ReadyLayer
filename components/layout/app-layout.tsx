@@ -16,7 +16,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { MobileNav } from './mobile-nav'
 import { NavLink } from './nav-link'
 import { RuntimeTopNotice } from '@/components/layout/runtime-top-notice'
-import { NAV_ITEMS } from '@/lib/navigation'
+import { NAV_ITEMS, PUBLIC_NAV_ITEMS } from '@/lib/navigation'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
