@@ -35,6 +35,7 @@ export function ErrorState({
   title = 'Something went wrong',
   message,
   action,
+  secondaryAction,
   className,
   showDetails = false,
   details,
@@ -50,26 +51,35 @@ export function ErrorState({
       animate="visible"
     >
       <motion.div
-        className="mb-4 text-danger"
+        className="mb-6 p-4 rounded-full bg-danger-muted"
         variants={slideUp}
+        whileHover={{ scale: 1.1 }}
+        transition={{ duration: 0.2 }}
       >
-        <AlertCircle className="h-12 w-12" strokeWidth={1.5} />
+        <AlertCircle className="h-8 w-8 text-danger" strokeWidth={1.5} />
       </motion.div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-sm text-text-muted max-w-md mb-6">
+      <h3 className="text-xl font-semibold mb-2 text-text-primary">{title}</h3>
+      <p className="text-sm text-text-muted max-w-md mb-8">
         {message}
       </p>
       {showDetails && details && (
-        <div className="mb-6 p-4 bg-surface-muted rounded-md text-left max-w-md">
-          <p className="text-xs font-mono text-text-muted break-all">
-            {details}
-          </p>
+        <div className="mb-8 p-4 bg-surface-muted rounded-lg border border-border-subtle text-left max-w-md">
+          <p className="text-xs font-mono text-text-muted break-all">{details}</p>
         </div>
       )}
-      {action && (
-        <Button onClick={action.onClick} variant="default">
-          {action.label}
-        </Button>
+      {(action || secondaryAction) && (
+        <div className="flex gap-3 flex-wrap justify-center">
+          {action && (
+            <Button onClick={action.onClick} variant="default">
+              {action.label}
+            </Button>
+          )}
+          {secondaryAction && (
+            <Button onClick={secondaryAction.onClick} variant="outline">
+              {secondaryAction.label}
+            </Button>
+          )}
+        </div>
       )}
     </motion.div>
   )
