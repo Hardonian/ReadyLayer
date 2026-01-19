@@ -281,6 +281,22 @@ export function HeroProof({ user }: HeroProofProps) {
           </motion.div>
         </div>
       </Container>
+
+      {/* Scroll Indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <button
+          onClick={scrollToDemo}
+          className="flex flex-col items-center gap-1 text-text-muted hover:text-text-primary transition-colors"
+          aria-label="Scroll to demo"
+        >
+          <span className="text-xs uppercase tracking-widest font-medium">Scroll</span>
+          <ChevronDown className="h-5 w-5" />
+        </button>
+      </motion.div>
     </section>
   )
 }
