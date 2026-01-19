@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/container'
 import { Badge } from '@/components/ui/badge'
 import { fadeIn, slideUp } from '@/lib/design/motion'
-import { GitBranch, Shield, TestTube, FileText, CheckCircle2, ArrowRight, Bot, BarChart3, Eye } from 'lucide-react'
+import { GitBranch, Shield, TestTube, FileText, CheckCircle2, ArrowRight, Bot, BarChart3, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface PipelineNode {
   id: string
@@ -50,6 +50,45 @@ export function PipelineStrip() {
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []
   )
+
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+  const [showLeftArrow, setShowLeftArrow] = React.useState(false)
+  const [showRightArrow, setShowRightArrow] = React.useState(true)
+
+  const checkScroll = () => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    setShowLeftArrow(container.scrollLeft > 0)
+    setShowRightArrow(container.scrollLeft < container.scrollWidth - container.clientWidth - 10)
+  }
+
+  React.useEffect(() => {
+    checkScroll()
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    container.addEventListener('scroll', checkScroll)
+    window.addEventListener('resize', checkScroll)
+
+    return () => {
+      container.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
+    }
+  }, [])
+
+  const scroll = (direction: 'left' | 'right') => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const scrollAmount = 300
+    const newScroll = direction === 'left' ? container.scrollLeft - scrollAmount : container.scrollLeft + scrollAmount
+
+    container.scrollTo({
+      left: newScroll,
+      behavior: 'smooth',
+    })
+  }
 
   return (
     <section className="py-16 bg-surface-muted/50">
