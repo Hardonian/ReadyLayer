@@ -157,6 +157,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </motion.nav>
       )}
       <main className="flex-1">{children}</main>
+      <Footer />
     </div>
   )
 }
