@@ -270,10 +270,30 @@
    */
   .shadow-surface-raised {
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    transition: box-shadow 300ms ease-in-out;
   }
 
   .dark .shadow-surface-raised {
     box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.2);
+  }
+
+  /**
+   * Consistent transition utilities
+   */
+  .transition-smooth {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .transition-smooth-colors {
+    @apply transition-colors duration-200 ease-in-out;
+  }
+
+  .transition-smooth-transform {
+    @apply transition-transform duration-200 ease-in-out;
+  }
+
+  .transition-smooth-opacity {
+    @apply transition-opacity duration-200 ease-in-out;
   }
 }
 
