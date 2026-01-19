@@ -194,18 +194,38 @@ export function MobileNav({ navItems }: MobileNavProps) {
 
               {/* Menu Items */}
               <div className="flex-1 overflow-y-auto py-4">
-                <ul className="space-y-1 px-2 list-none">
+                <motion.ul
+                  className="space-y-1 px-2 list-none"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: {
+                      opacity: 1,
+                      transition: {
+                        staggerChildren: 0.05,
+                        delayChildren: 0.1,
+                      },
+                    },
+                  }}
+                  initial="hidden"
+                  animate="visible"
+                >
                   {navItems.map((item) => (
-                    <li key={item.href}>
+                    <motion.li
+                      key={item.href}
+                      variants={{
+                        hidden: { opacity: 0, x: -10 },
+                        visible: { opacity: 1, x: 0 },
+                      }}
+                    >
                       <NavLink
                         href={item.href}
                         label={item.label}
                         onClick={closeMenu}
                         variant="mobile"
                       />
-                    </li>
+                    </motion.li>
                   ))}
-                </ul>
+                </motion.ul>
               </div>
             </motion.nav>
           </>
