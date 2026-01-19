@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils'
 import { fadeIn } from '@/lib/design/motion'
 
 const cardVariants = cva(
-  'rounded-lg border bg-surface-raised text-text-primary',
+  'rounded-lg border bg-surface-raised text-text-primary transition-smooth-transform',
   {
     variants: {
       elevation: {
         flat: 'border-border-subtle shadow-surface-flat',
-        raised: 'border-border-subtle shadow-surface-raised',
-        overlay: 'border-border-strong shadow-surface-overlay bg-surface-overlay',
+        raised: 'border-border-subtle shadow-surface-raised hover:shadow-surface-overlay',
+        overlay: 'border-border-strong shadow-surface-overlay bg-surface-overlay hover:shadow-lg',
       },
     },
     defaultVariants: {
