@@ -75,9 +75,9 @@ export function Logo({
       )}
       {variant === 'word' && (
         <>
-          <source srcSet="/logo-word.webp" type="image/webp" />
+          <source srcSet="/logo-header.webp" type="image/webp" />
           <Image
-            src="/logo-word.png"
+            src="/logo-header.png"
             alt="ReadyLayer"
             width={dimensions.w}
             height={dimensions.h}
