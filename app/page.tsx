@@ -81,6 +81,9 @@ export default function Home() {
       {/* Proof Grid */}
       <ProofGrid />
 
+      {/* Trust Section */}
+      <TrustSection />
+
       {/* Value Drivers */}
       <ValueDrivers />
 
