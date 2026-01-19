@@ -23,6 +23,9 @@ const CulturalArtifacts = dynamic(() => import('@/components/landing/CulturalArt
 const FeatureShowcase = dynamic(() => import('@/components/feature-showcase').then(mod => ({ default: mod.FeatureShowcase })), {
   loading: () => <div className="h-96" />,
 })
+const TrustSection = dynamic(() => import('@/components/landing/TrustSection').then(mod => ({ default: mod.TrustSection })), {
+  loading: () => <div className="h-96" />,
+})
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null)
