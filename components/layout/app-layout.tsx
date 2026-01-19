@@ -111,7 +111,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
                 {/* Desktop Navigation */}
                 <ul className="hidden md:flex items-center gap-1 list-none">
-                  {NAV_ITEMS.map((item) => (
+                  {(user ? NAV_ITEMS : PUBLIC_NAV_ITEMS).map((item) => (
                     <li key={item.href}>
                       <NavLink href={item.href} label={item.label} variant="desktop" />
                     </li>
@@ -119,7 +119,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </ul>
 
                 {/* Mobile Menu Toggle */}
-                <MobileNav navItems={NAV_ITEMS} />
+                <MobileNav navItems={user ? NAV_ITEMS : PUBLIC_NAV_ITEMS} />
               </div>
 
               {/* Right Actions */}
