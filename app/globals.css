@@ -84,11 +84,11 @@
     --surface-raised: 217.2 32.6% 12%;      /* Cards - elevated */
     --surface-overlay: 217.2 32.6% 15%;     /* Modals - highest elevation */
     --surface-hover: 217.2 32.6% 18%;      /* Hover state */
-    
-    /* TEXT - Clear hierarchy in dark mode */
+
+    /* TEXT - Clear hierarchy in dark mode (improved contrast for WCAG AA) */
     --text: 210 40% 98%;                    /* Primary - near white */
-    --text-muted: 215 20.2% 65.1%;         /* Secondary - medium gray */
-    --text-subtle: 215 20.2% 50%;          /* Tertiary - darker gray */
+    --text-muted: 215 20.2% 71%;           /* Secondary - improved contrast (from 65.1%) */
+    --text-subtle: 215 20.2% 54%;          /* Tertiary - darker gray (from 50%) */
     --text-inverse: 222.2 84% 4.9%;        /* Text on accent */
     
     /* BORDERS - More visible in dark mode */
