@@ -14,6 +14,10 @@ export interface EmptyStateProps {
     label: string
     onClick: () => void
   }
+  secondaryAction?: {
+    label: string
+    onClick: () => void
+  }
   className?: string
 }
 
