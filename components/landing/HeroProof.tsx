@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Container } from '@/components/ui/container'
 import { fadeIn, slideUp, staggerContainer, staggerItem } from '@/lib/design/motion'
-import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
 import { InteractivePRDemo } from './InteractivePRDemo'
 import { cn } from '@/lib/utils'
 
