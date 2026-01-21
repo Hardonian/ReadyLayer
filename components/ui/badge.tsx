@@ -1,7 +1,6 @@
 'use client'
 
-import * as React from 'react'
-import { motion } from 'framer-motion'
+import { motion, type HTMLMotionProps } from 'framer-motion'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
@@ -32,7 +31,7 @@ const badgeVariants = cva(
 )
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<HTMLMotionProps<'div'>, 'animate'>,
     VariantProps<typeof badgeVariants> {
   animate?: boolean
 }
