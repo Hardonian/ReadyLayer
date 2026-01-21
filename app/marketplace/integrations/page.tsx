@@ -303,13 +303,13 @@ export default function IntegrationsMarketplacePage() {
               Use our comprehensive API and webhook system to build custom integrations for your unique
               workflow.
             </p>
-            <a
+            <Link
               href="/docs/api-reference"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-accent text-accent-foreground font-medium hover:bg-accent-hover transition-colors"
             >
               View API Documentation
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </motion.div>
         </Container>
       </section>
