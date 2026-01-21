@@ -3,21 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { edgeLogger } from './lib/middleware/edge-logging'
 import { getEdgeAuthUser, extractApiKeyFromHeader } from './lib/middleware/edge-auth'
 import { edgeRateLimit } from './lib/middleware/edge-rate-limit'
-
-/**
- * Public routes that should always be accessible
- * These routes bypass authentication checks
- */
-const PUBLIC_ROUTES = [
-  '/',
-  '/auth/signin',
-  '/auth/signout',
-  '/auth/callback',
-  '/auth/error',
-  '/api/health',
-  '/api/ready',
-  '/api/v1/runs/sandbox', // Public sandbox demo endpoint
-]
+import { isPublicApiRoute, isPublicRoute } from './lib/access-control'
 
 /**
  * Static asset patterns that should never be processed by middleware
@@ -33,14 +19,6 @@ const STATIC_ASSET_PATTERNS = [
 /**
  * Check if a path is a public route
  */
-function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => {
-    if (route === pathname) return true
-    if (pathname.startsWith('/auth/')) return true
-    return false
-  })
-}
-
 /**
  * Check if a path is a static asset
  */
@@ -194,7 +172,7 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
   }
 
   // Health, ready, and sandbox endpoints - always public
-  if (pathname === '/api/health' || pathname === '/api/ready' || pathname === '/api/v1/runs/sandbox') {
+  if (isPublicApiRoute(pathname)) {
     return NextResponse.next()
   }
 

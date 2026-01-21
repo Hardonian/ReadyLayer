@@ -12,9 +12,10 @@ import type { NavItem } from '@/lib/navigation'
 
 interface MobileNavProps {
   navItems: NavItem[]
+  homeHref?: string
 }
 
-export function MobileNav({ navItems }: MobileNavProps) {
+export function MobileNav({ navItems, homeHref = '/dashboard' }: MobileNavProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const pathname = usePathname()
   const menuRef = React.useRef<HTMLDivElement>(null)
@@ -165,7 +166,7 @@ export function MobileNav({ navItems }: MobileNavProps) {
               {/* Menu Header */}
               <div className="flex items-center justify-between p-4 border-b border-border-subtle">
                 <Link
-                  href="/dashboard"
+                  href={homeHref}
                   className="flex items-center"
                   aria-label="ReadyLayer Home"
                   onClick={closeMenu}
