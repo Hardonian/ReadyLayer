@@ -18,6 +18,7 @@ import { NavLink } from './nav-link'
 import { RuntimeTopNotice } from '@/components/layout/runtime-top-notice'
 import { Footer } from '@/components/layout/footer'
 import { NAV_ITEMS, PUBLIC_NAV_ITEMS } from '@/lib/navigation'
+import { isPublicRoute } from '@/lib/access-control'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -70,6 +71,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const logoHref = user ? '/dashboard' : isPublicRoute(pathname ?? '/') ? '/' : '/dashboard'
+
   // Don't show nav on auth pages or landing page
   const showNav = !pathname?.startsWith('/auth') && pathname !== '/'
 
@@ -93,7 +96,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               {/* Logo and Desktop Nav */}
               <div className="flex items-center gap-8 flex-1 min-w-0">
                 <Link
-                  href="/dashboard"
+                  href={logoHref}
                   className="flex items-center flex-shrink-0"
                   aria-label="ReadyLayer Home"
                 >
@@ -120,7 +123,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 </ul>
 
                 {/* Mobile Menu Toggle */}
-                <MobileNav navItems={user ? NAV_ITEMS : PUBLIC_NAV_ITEMS} />
+                <MobileNav navItems={user ? NAV_ITEMS : PUBLIC_NAV_ITEMS} homeHref={logoHref} />
               </div>
 
               {/* Right Actions */}
