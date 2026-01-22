@@ -157,7 +157,7 @@ export function useOnboardingProgress() {
  */
 function trackOnboardingEvent(
   eventName: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ) {
   // Would send to analytics service
   // For now, just log to console in development

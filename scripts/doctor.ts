@@ -13,6 +13,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
+import { console } from './logger';
 
 interface CheckResult {
   name: string;

@@ -10,6 +10,7 @@
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
+import { console } from './logger';
 
 // Import all types/schemas
 import { FindingSchema } from '../lib/types/review';
@@ -34,11 +35,11 @@ interface OpenAPISpec {
     url: string;
     description: string;
   }>;
-  paths: Record<string, any>;
+  paths: Record<string, Record<string, unknown>>;
   components: {
-    schemas: Record<string, any>;
-    responses: Record<string, any>;
-    securitySchemes: Record<string, any>;
+    schemas: Record<string, Record<string, unknown>>;
+    responses: Record<string, Record<string, unknown>>;
+    securitySchemes: Record<string, Record<string, unknown>>;
   };
   tags: Array<{
     name: string;
@@ -47,7 +48,7 @@ interface OpenAPISpec {
 }
 
 // Zod to OpenAPI schema converter
-function zodToOpenAPI(schema: z.ZodType<any>): any {
+function zodToOpenAPI(schema: z.ZodTypeAny): Record<string, unknown> {
   if (schema instanceof z.ZodString) {
     return {
       type: 'string',
@@ -70,14 +71,14 @@ function zodToOpenAPI(schema: z.ZodType<any>): any {
   }
 
   if (schema instanceof z.ZodObject) {
-    const shape = schema.shape;
-    const properties: Record<string, any> = {};
+    const shape = schema.shape as Record<string, z.ZodTypeAny>;
+    const properties: Record<string, Record<string, unknown>> = {};
     const required: string[] = [];
 
     for (const [key, fieldSchema] of Object.entries(shape)) {
-      properties[key] = zodToOpenAPI(fieldSchema as z.ZodType);
+      properties[key] = zodToOpenAPI(fieldSchema);
 
-      if (!(fieldSchema as any).isOptional) {
+      if (!fieldSchema.isOptional()) {
         required.push(key);
       }
     }
@@ -101,20 +102,20 @@ function zodToOpenAPI(schema: z.ZodType<any>): any {
   if (schema instanceof z.ZodArray) {
     return {
       type: 'array',
-      items: zodToOpenAPI(schema.element as any),
+      items: zodToOpenAPI(schema.element),
       description: schema.description,
     };
   }
 
   if (schema instanceof z.ZodUnion) {
     return {
-      oneOf: schema.options.map((opt: any) => zodToOpenAPI(opt)),
+      oneOf: schema.options.map((opt) => zodToOpenAPI(opt)),
       description: schema.description,
     };
   }
 
   if (schema instanceof z.ZodOptional) {
-    return zodToOpenAPI(schema.unwrap() as any);
+    return zodToOpenAPI(schema.unwrap());
   }
 
   // Default fallback

@@ -16,6 +16,7 @@ import { prisma } from '../lib/prisma';
 import fs from 'fs';
 import path from 'path';
 import type { Prisma } from '@prisma/client';
+import { console } from './logger';
 
 interface QueryMetric {
   query: string;

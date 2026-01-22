@@ -11,7 +11,7 @@
  */
 
 import { queueService } from '../queue';
-import { processLLMEnrichment } from '../services/review-guard/async-processor';
+import { processLLMEnrichment, type LLMEnrichmentResult, type ReviewIssue } from '../services/review-guard/async-processor';
 import { prisma } from '../lib/prisma';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
@@ -26,15 +26,24 @@ const QUEUE_NAME = 'llm-enrichment';
 export async function startLLMProcessorWorker(): Promise<void> {
   logger.info('Starting LLM Processor Worker');
 
-  await queueService.processQueue(QUEUE_NAME, async (payload: any) => {
-    return processLLMJob(payload);
+  await queueService.processQueue(QUEUE_NAME, async (payload) => {
+    return processLLMJob(payload as LLMJobPayload);
   });
+}
+
+interface LLMJobPayload {
+  reviewId: string;
+  repositoryId: string;
+  organizationId: string;
+  filePath: string;
+  fileContent: string;
+  staticIssues: ReviewIssue[];
 }
 
 /**
  * Process a single LLM enrichment job
  */
-async function processLLMJob(payload: any): Promise<void> {
+async function processLLMJob(payload: LLMJobPayload): Promise<void> {
   const {
     reviewId,
     repositoryId,
@@ -99,7 +108,7 @@ async function processLLMJob(payload: any): Promise<void> {
  */
 async function updateReviewWithEnrichment(
   reviewId: string,
-  enrichmentResult: any
+  enrichmentResult: LLMEnrichmentResult
 ): Promise<void> {
   // Get current review
   const review = await prisma.review.findUnique({
@@ -116,7 +125,7 @@ async function updateReviewWithEnrichment(
   }
 
   // Store enrichment data in the result JSON field
-  const currentResult = (review.result as any) || {};
+  const currentResult = (review.result as Record<string, unknown> | null) || {};
   const enrichedFiles = (currentResult.enrichedFiles || 0) + 1;
   const totalFiles = currentResult.totalFiles || 0;
 
@@ -149,7 +158,7 @@ export async function enqueueLLMEnrichment(
   organizationId: string,
   filePath: string,
   fileContent: string,
-  staticIssues: any[]
+  staticIssues: ReviewIssue[]
 ): Promise<string> {
   const jobId = await queueService.enqueue(QUEUE_NAME, {
     type: 'llm-enrichment',

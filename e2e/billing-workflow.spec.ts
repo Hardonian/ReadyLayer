@@ -21,6 +21,7 @@ import {
 import {
   handleSubscriptionUpdated,
   handlePaymentSucceeded,
+  type StripeWebhookEvent,
 } from '../services/billing/stripe-webhook-handler';
 
 test.describe('Billing and Subscription Workflow', () => {
@@ -117,7 +118,7 @@ test.describe('Billing and Subscription Workflow', () => {
   });
 
   test('should handle subscription updates from Stripe', async () => {
-    const event = {
+    const event: StripeWebhookEvent = {
       id: 'evt_test_123',
       object: 'event',
       type: 'customer.subscription.updated',
@@ -146,11 +147,11 @@ test.describe('Billing and Subscription Workflow', () => {
     };
 
     // Should process without throwing
-    await expect(handleSubscriptionUpdated(event as any)).resolves.not.toThrow();
+    await expect(handleSubscriptionUpdated(event)).resolves.not.toThrow();
   });
 
   test('should record successful payments', async () => {
-    const event = {
+    const event: StripeWebhookEvent = {
       id: 'evt_invoice_123',
       object: 'event',
       type: 'invoice.payment_succeeded',
@@ -170,11 +171,11 @@ test.describe('Billing and Subscription Workflow', () => {
     };
 
     // Should process without throwing
-    await expect(handlePaymentSucceeded(event as any)).resolves.not.toThrow();
+    await expect(handlePaymentSucceeded(event)).resolves.not.toThrow();
   });
 
   test('should handle plan upgrades', async () => {
-    const upgradeEvent = {
+    const upgradeEvent: StripeWebhookEvent = {
       id: 'evt_upgrade_123',
       object: 'event',
       type: 'customer.subscription.updated',
@@ -211,7 +212,7 @@ test.describe('Billing and Subscription Workflow', () => {
     };
 
     // Should handle upgrade
-    await expect(handleSubscriptionUpdated(upgradeEvent as any)).resolves.not.toThrow();
+    await expect(handleSubscriptionUpdated(upgradeEvent)).resolves.not.toThrow();
   });
 
   test('should detect free tier usage limits', async () => {
@@ -312,7 +313,7 @@ test.describe('Billing and Subscription Workflow', () => {
   });
 
   test('should handle subscription cancellation', async () => {
-    const cancelEvent = {
+    const cancelEvent: StripeWebhookEvent = {
       id: 'evt_cancel_123',
       object: 'event',
       type: 'customer.subscription.updated',
@@ -332,6 +333,6 @@ test.describe('Billing and Subscription Workflow', () => {
     };
 
     // Should handle cancellation
-    await expect(handleSubscriptionUpdated(cancelEvent as any)).resolves.not.toThrow();
+    await expect(handleSubscriptionUpdated(cancelEvent)).resolves.not.toThrow();
   });
 });

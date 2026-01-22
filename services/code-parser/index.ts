@@ -6,10 +6,11 @@
  */
 
 import * as babel from '@babel/parser';
+import * as t from '@babel/types';
 
 export interface ParseResult {
   language: string;
-  ast: any;
+  ast: unknown;
   functions: FunctionInfo[];
   classes: ClassInfo[];
   imports: ImportInfo[];
@@ -175,36 +176,55 @@ export class CodeParserService {
         ],
       });
 
+      if (!ast) {
+        throw new Error('Failed to parse AST');
+      }
+
       const functions: FunctionInfo[] = [];
       const classes: ClassInfo[] = [];
       const imports: ImportInfo[] = [];
       const exports: ExportInfo[] = [];
 
       this.traverseAST(ast, {
-        FunctionDeclaration: (node: any) => {
+        FunctionDeclaration: (node: t.Node) => {
+          if (!t.isFunctionDeclaration(node)) {
+            return;
+          }
           functions.push({
             name: node.id?.name || 'anonymous',
             line: node.loc?.start.line || 0,
             column: node.loc?.start.column || 0,
-            parameters: node.params.map((p: any) => p.name || p.left?.name || ''),
+            parameters: node.params.map((param) => {
+              if (t.isIdentifier(param)) {
+                return param.name;
+              }
+              if (t.isAssignmentPattern(param) && t.isIdentifier(param.left)) {
+                return param.left.name;
+              }
+              return '';
+            }),
             returnType: node.returnType?.typeAnnotation?.typeName?.name,
             isAsync: node.async || false,
             isExported: false, // Would check parent
           });
         },
-        ClassDeclaration: (node: any) => {
+        ClassDeclaration: (node: t.Node) => {
+          if (!t.isClassDeclaration(node)) {
+            return;
+          }
           const methods: FunctionInfo[] = [];
-          node.body.body.forEach((member: any) => {
-            if (member.type === 'MethodDefinition' || member.type === 'ClassMethod') {
-              methods.push({
-                name: member.key?.name || 'anonymous',
-                line: member.loc?.start.line || 0,
-                column: member.loc?.start.column || 0,
-                parameters: member.value?.params?.map((p: any) => p.name || '') || [],
-                isAsync: member.value?.async || false,
-                isExported: false,
-              });
+          node.body.body.forEach((member) => {
+            if (!t.isClassMethod(member) && !t.isClassPrivateMethod(member)) {
+              return;
             }
+            methods.push({
+              name: t.isIdentifier(member.key) ? member.key.name : 'anonymous',
+              line: member.loc?.start.line || 0,
+              column: member.loc?.start.column || 0,
+              parameters: member.params.map((param) => (t.isIdentifier(param) ? param.name : '')),
+              isAsync: member.async || false,
+              isExported: false,
+            });
           });
 
           classes.push({
@@ -212,18 +232,32 @@ export class CodeParserService {
             line: node.loc?.start.line || 0,
             column: node.loc?.start.column || 0,
             methods,
-            extends: node.superClass?.name,
+            extends: t.isIdentifier(node.superClass) ? node.superClass.name : undefined,
           });
         },
-        ImportDeclaration: (node: any) => {
+        ImportDeclaration: (node: t.Node) => {
+          if (!t.isImportDeclaration(node)) {
+            return;
+          }
           imports.push({
             source: node.source.value,
-            specifiers: node.specifiers.map((s: any) => s.imported?.name || s.local?.name || ''),
+            specifiers: node.specifiers.map((specifier) => {
+              if (t.isImportSpecifier(specifier)) {
+                return specifier.imported.name;
+              }
+              if (t.isImportDefaultSpecifier(specifier) || t.isImportNamespaceSpecifier(specifier)) {
+                return specifier.local.name;
+              }
+              return '';
+            }),
             line: node.loc?.start.line || 0,
           });
         },
-        ExportNamedDeclaration: (node: any) => {
-          if (node.declaration) {
+        ExportNamedDeclaration: (node: t.Node) => {
+          if (!t.isExportNamedDeclaration(node)) {
+            return;
+          }
+          if (node.declaration && (t.isFunctionDeclaration(node.declaration) || t.isClassDeclaration(node.declaration))) {
             exports.push({
               name: node.declaration.id?.name || 'default',
               type: 'named',
@@ -231,9 +265,15 @@ export class CodeParserService {
             });
           }
         },
-        ExportDefaultDeclaration: (node: any) => {
+        ExportDefaultDeclaration: (node: t.Node) => {
+          if (!t.isExportDefaultDeclaration(node)) {
+            return;
+          }
           exports.push({
-            name: node.declaration?.id?.name || 'default',
+            name:
+              t.isFunctionDeclaration(node.declaration) || t.isClassDeclaration(node.declaration)
+                ? node.declaration.id?.name || 'default'
+                : 'default',
             type: 'default',
             line: node.loc?.start.line || 0,
           });
@@ -352,8 +392,8 @@ export class CodeParserService {
   /**
    * Traverse AST with visitor pattern
    */
-  private traverseAST(ast: any, visitors: Record<string, (node: any) => void>): void {
-    const traverse = (node: any): void => {
+  private traverseAST(ast: babel.ParseResult<t.File>, visitors: Record<string, (node: t.Node) => void>): void {
+    const traverse = (node: t.Node): void => {
       if (!node || typeof node !== 'object') {
         return;
       }
@@ -367,16 +407,20 @@ export class CodeParserService {
           continue;
         }
 
-        const value = node[key];
+        const value = (node as Record<string, unknown>)[key];
         if (Array.isArray(value)) {
-          value.forEach(traverse);
-        } else if (value && typeof value === 'object') {
-          traverse(value);
+          value.forEach((item) => {
+            if (item && typeof item === 'object' && 'type' in item) {
+              traverse(item as t.Node);
+            }
+          });
+        } else if (value && typeof value === 'object' && 'type' in value) {
+          traverse(value as t.Node);
         }
       }
     };
 
-    traverse(ast);
+    traverse(ast.program);
   }
 }
 

@@ -137,7 +137,7 @@ class RedisRateLimiter {
             remaining: result.remainingPoints,
             resetAt: Date.now() + (result.msBeforeNext || 0),
           };
-        } catch (rejRes: any) {
+        } catch (rejRes) {
           if (rejRes.remainingPoints !== undefined) {
             // Rate limited (not an error, just exceeded)
             this.rateLimitMetrics.redisChecks++;
@@ -176,7 +176,7 @@ class RedisRateLimiter {
           remaining: result.remainingPoints,
           resetAt: Date.now() + (result.msBeforeNext || 0),
         };
-      } catch (rejRes: any) {
+      } catch (rejRes) {
         this.rateLimitMetrics.memoryChecks++;
         this.rateLimitMetrics.blocked++;
         metrics.increment('rate_limit_memory_blocked');

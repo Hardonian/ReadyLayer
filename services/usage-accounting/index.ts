@@ -21,7 +21,7 @@ export interface TokenUsageRecord {
   cost: number;
   contextSize?: number;
   wastePercentage?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -95,7 +95,7 @@ export class UsageAccountingService {
       cost: Number(u.cost),
       contextSize: u.contextSize || undefined,
       wastePercentage: u.wastePercentage ? Number(u.wastePercentage) : undefined,
-      metadata: u.metadata as any,
+      metadata: u.metadata as Record<string, unknown> | null,
     }));
   }
 
@@ -107,7 +107,10 @@ export class UsageAccountingService {
     startDate?: Date,
     endDate?: Date
   ): Promise<{ totalTokens: number; totalCost: number; byService: Record<string, number> }> {
-    const where: any = { organizationId };
+    const where: {
+      organizationId: string;
+      createdAt?: { gte?: Date; lte?: Date };
+    } = { organizationId };
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;

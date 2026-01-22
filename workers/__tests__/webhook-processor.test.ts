@@ -162,7 +162,7 @@ describe('Webhook Processor', () => {
   describe('Error Handling', () => {
     it('should handle malformed JSON', async () => {
       try {
-        const result = await processWebhook('pull_request', 'invalid json' as any);
+        const result = await processWebhook('pull_request', 'invalid json' as unknown as Record<string, unknown>);
         expect(result).toBeDefined();
       } catch (error) {
         expect(error).toBeDefined();

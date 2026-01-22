@@ -3,9 +3,42 @@ import { githubWebhookHandler, GitHubWebhookEvent } from '../../../../integratio
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
 import { UsageLimitExceededError } from '../../../../lib/usage-enforcement';
+import { z } from 'zod';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
+
+export const GitHubWebhookEventSchema = z.object({
+  action: z.string(),
+  repository: z
+    .object({
+      id: z.number().optional(),
+      full_name: z.string(),
+    })
+    .optional(),
+  pull_request: z
+    .object({
+      number: z.number(),
+      title: z.string(),
+      head: z.object({
+        sha: z.string(),
+        ref: z.string(),
+      }),
+      base: z.object({
+        ref: z.string(),
+      }),
+      merged: z.boolean().optional(),
+      merge_commit_sha: z.string().nullable().optional(),
+    })
+    .optional(),
+  check_run: z.unknown().optional(),
+  workflow_run: z.unknown().optional(),
+  installation: z
+    .object({
+      id: z.number(),
+    })
+    .optional(),
+}).passthrough();
 
 /**
  * POST /api/webhooks/github
@@ -66,40 +99,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!event || typeof event !== 'object') {
+    const parsed = GitHubWebhookEventSchema.safeParse(event);
+    if (!parsed.success) {
       return NextResponse.json(
         {
           error: {
             code: 'INVALID_EVENT',
-            message: 'Webhook event must be an object',
+            message: 'Webhook event payload validation failed',
+            details: parsed.error.issues,
           },
         },
         { status: 400 }
       );
     }
-
-    // Validate event structure
-    const eventObj = event as Record<string, unknown>;
-    if (typeof eventObj.action !== 'string') {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'INVALID_EVENT',
-            message: 'Webhook event must have an action property',
-          },
-        },
-        { status: 400 }
-      );
-    }
+    const eventData = parsed.data as GitHubWebhookEvent;
 
     log.info({
       eventType,
       installationId,
-      action: eventObj.action,
+      action: eventData.action,
     }, 'Received GitHub webhook');
 
     // Handle event
-    await githubWebhookHandler.handleEvent(event as GitHubWebhookEvent, installationId, signature);
+    await githubWebhookHandler.handleEvent(eventData, installationId, signature);
 
     metrics.increment('webhooks.received', { provider: 'github', event: eventType });
 

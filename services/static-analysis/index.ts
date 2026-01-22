@@ -1066,7 +1066,7 @@ export class StaticAnalysisService {
   /**
    * Get function content from file
    */
-  private getFunctionContent(content: string, func: any): string {
+  private getFunctionContent(content: string, func: { line: number }): string {
     const lines = content.split('\n');
     const startLine = func.line - 1;
     

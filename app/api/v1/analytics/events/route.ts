@@ -15,7 +15,7 @@ interface AnalyticsEvent {
   eventName: string;
   userId?: string;
   organizationId?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   timestamp: string;
 }
 

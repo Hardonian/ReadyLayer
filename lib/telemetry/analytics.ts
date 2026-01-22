@@ -22,7 +22,7 @@ export interface AnalyticsEvent {
   eventName: string;
   userId?: string;
   organizationId?: string;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -38,7 +38,7 @@ const MAX_QUEUE_SIZE = 100;
 export function trackEvent(
   category: EventCategory,
   eventName: string,
-  properties?: Record<string, any>
+  properties?: Record<string, unknown>
 ): void {
   const event: AnalyticsEvent = {
     eventId: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
@@ -85,7 +85,7 @@ export function trackEvent(
 export function trackUpgradePromptEvent(
   action: 'shown' | 'dismissed' | 'clicked' | 'clicked-upgrade',
   context: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): void {
   trackEvent('upgrade-prompt', action, {
     context,
@@ -99,7 +99,7 @@ export function trackUpgradePromptEvent(
 export function trackOnboardingEvent(
   action: 'started' | 'step-completed' | 'step-skipped' | 'completed' | 'abandoned',
   stepName?: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): void {
   trackEvent('onboarding', action, {
     stepName,
@@ -113,7 +113,7 @@ export function trackOnboardingEvent(
 export function trackBlockedPREvent(
   action: 'shown' | 'clicked' | 'dismissed',
   prNumber?: number,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): void {
   trackEvent('blocked-pr-alert', action, {
     prNumber,
@@ -127,7 +127,7 @@ export function trackBlockedPREvent(
 export function trackEngagementEvent(
   action: string,
   feature: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): void {
   trackEvent('user-engagement', action, {
     feature,
@@ -141,7 +141,7 @@ export function trackEngagementEvent(
 export function trackFeatureAdoption(
   featureName: string,
   action: 'enabled' | 'disabled' | 'used',
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): void {
   trackEvent('feature-adoption', action, {
     featureName,
@@ -155,7 +155,7 @@ export function trackFeatureAdoption(
 export function trackErrorRecovery(
   errorType: string,
   recoveryMethod: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): void {
   trackEvent('error-recovery', recoveryMethod, {
     errorType,
@@ -226,7 +226,7 @@ export function setupEventFlushing(intervalMs: number = 30000): () => void {
  */
 export function trackPageView(
   pageName: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ): void {
   if (typeof window === 'undefined') return; // Only in browser
 

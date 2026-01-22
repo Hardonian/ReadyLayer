@@ -18,6 +18,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { createClient } from '@supabase/supabase-js';
+import { console } from './logger';
 
 interface SmokeTestResult {
   name: string;

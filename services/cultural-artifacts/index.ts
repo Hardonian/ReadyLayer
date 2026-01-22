@@ -65,6 +65,19 @@ export interface AIRiskExposureIndex {
   lastUpdated: Date;
 }
 
+interface ReviewSummary {
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+interface ReviewRecord {
+  id: string;
+  summary: ReviewSummary | null;
+}
+
 /**
  * Cultural Lock-In Artifacts Service
  * 
@@ -503,7 +516,7 @@ export class CulturalArtifactsService {
   /**
    * Calculate confidence score from review
    */
-  private calculateConfidenceScore(review: any): number {
+  private calculateConfidenceScore(review: ReviewRecord): number {
     const summary = review.summary as
       | { total: number; critical: number; high: number; medium: number; low: number }
       | null;

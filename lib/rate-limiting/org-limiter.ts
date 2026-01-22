@@ -6,6 +6,7 @@
  */
 
 import { logger } from '../../observability/logging';
+import type { RedisClientType } from 'redis';
 
 export interface RateLimitConfig {
   points: number; // Number of requests allowed
@@ -103,7 +104,7 @@ class InMemoryRateLimiter {
  * Redis-backed rate limiter for production
  */
 class RedisRateLimiter {
-  private redisClient: any = null;
+  private redisClient: RedisClientType | null = null;
 
   async getClient() {
     if (this.redisClient) {

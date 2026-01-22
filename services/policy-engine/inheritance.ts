@@ -16,7 +16,7 @@ export interface PolicyLevel {
     enabled: boolean;
     severity?: 'critical' | 'high' | 'medium' | 'low';
   }>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface InheritedPolicy {

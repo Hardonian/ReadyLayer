@@ -2,9 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { gitlabWebhookHandler, GitLabWebhookEvent } from '../../../../integrations/gitlab/webhook';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
+import { z } from 'zod';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
+
+export const GitLabWebhookEventSchema = z.object({
+  object_kind: z.string(),
+  project: z
+    .object({
+      path_with_namespace: z.string().optional(),
+    })
+    .optional(),
+  object_attributes: z.record(z.string(), z.unknown()).optional(),
+  merge_request: z.record(z.string(), z.unknown()).optional(),
+  pipeline: z.record(z.string(), z.unknown()).optional(),
+}).passthrough();
 
 /**
  * POST /api/webhooks/gitlab
@@ -65,26 +78,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!event || typeof event !== 'object') {
+    const parsed = GitLabWebhookEventSchema.safeParse(event);
+    if (!parsed.success) {
       return NextResponse.json(
         {
           error: {
             code: 'INVALID_EVENT',
-            message: 'Webhook event must be an object',
+            message: 'Webhook event payload validation failed',
+            details: parsed.error.issues,
           },
         },
         { status: 400 }
       );
     }
+    const eventData = parsed.data as GitLabWebhookEvent;
 
     log.info({
       eventType,
       installationId,
-      objectKind: typeof event === 'object' && event !== null && 'object_kind' in event ? String((event as { object_kind?: string }).object_kind) : undefined,
+      objectKind: eventData.object_kind,
     }, 'Received GitLab webhook');
 
     // Handle event
-    await gitlabWebhookHandler.handleEvent(event as GitLabWebhookEvent, installationId, token);
+    await gitlabWebhookHandler.handleEvent(eventData, installationId, token);
 
     metrics.increment('webhooks.received', { provider: 'gitlab', event: eventType });
 

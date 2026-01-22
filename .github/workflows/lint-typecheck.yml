@@ -39,8 +39,7 @@ jobs:
         continue-on-error: true
 
       - name: Check for unused dependencies
-        run: npx depcheck --ignores=tslib,next-themes --ignore-dirs=node_modules,dist,build
-        continue-on-error: true
+        run: pnpm tsx scripts/depcheck-audit.ts
 
   build:
     name: Build Check

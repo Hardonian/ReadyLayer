@@ -7,6 +7,7 @@
 import { staticAnalysisService } from '../services/static-analysis';
 import { schemaReconciliationService } from '../services/schema-reconciliation';
 import { shadowModeService } from '../services/shadow-mode';
+import { console } from './logger';
 
 async function validateFounderSafeguards() {
   console.log('🔍 Validating Founder-Specific Safeguards...\n');

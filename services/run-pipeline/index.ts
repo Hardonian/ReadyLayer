@@ -12,6 +12,7 @@
  * - Sandbox runs (demo mode with sample repo)
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest } from '../review-guard';
 import { testEngineService, TestGenerationRequest } from '../test-engine';
@@ -215,7 +216,7 @@ export class RunPipelineService {
               reviewId: reviewResult.id,
               reviewGuardStatus,
               reviewGuardCompletedAt,
-              reviewGuardResult: reviewGuardResult as any,
+              reviewGuardResult: reviewGuardResult as Prisma.InputJsonValue,
             },
           });
 
@@ -322,7 +323,7 @@ export class RunPipelineService {
             where: { id: run.id },
             data: {
               aiTouchedDetected: aiTouchedFiles.length > 0,
-              aiTouchedFiles: aiTouchedFiles as any,
+              aiTouchedFiles: aiTouchedFiles as Prisma.InputJsonValue,
             },
           });
 
@@ -362,7 +363,7 @@ export class RunPipelineService {
             data: {
               testEngineStatus,
               testEngineCompletedAt,
-              testEngineResult: testEngineResult as any,
+              testEngineResult: testEngineResult as Prisma.InputJsonValue,
             },
           });
 
@@ -479,7 +480,7 @@ export class RunPipelineService {
             data: {
               docSyncStatus,
               docSyncCompletedAt,
-              docSyncResult: docSyncResult as any,
+              docSyncResult: docSyncResult as Prisma.InputJsonValue,
             },
           });
 
@@ -572,7 +573,7 @@ export class RunPipelineService {
           status: 'completed',
           conclusion,
           gatesPassed,
-          gatesFailed: gatesFailed.length > 0 ? gatesFailed as any : null,
+          gatesFailed: gatesFailed.length > 0 ? (gatesFailed as Prisma.InputJsonValue) : null,
           completedAt,
         },
       });
@@ -644,7 +645,7 @@ export class RunPipelineService {
         testEngineResult,
         docSyncResult,
         aiTouchedDetected: run.aiTouchedDetected,
-        aiTouchedFiles: run.aiTouchedFiles as any,
+        aiTouchedFiles: run.aiTouchedFiles as Prisma.InputJsonValue,
         gatesPassed,
         gatesFailed: gatesFailed.length > 0 ? gatesFailed : undefined,
         startedAt,

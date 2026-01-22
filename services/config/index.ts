@@ -5,6 +5,7 @@
  */
 
 import yaml from 'js-yaml';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 
 export interface ReviewConfig {
@@ -152,7 +153,7 @@ export class ConfigService {
     const repoConfigData = repoConfig?.config as ReadyLayerConfig | undefined;
 
     // Merge: repo config overrides org config (as partial, defaults will be applied)
-    const merged: any = {
+    const merged: Partial<ReadyLayerConfig> = {
       review: {
         ...orgConfig?.review,
         ...(repoConfigData?.review || {}),
@@ -273,13 +274,13 @@ docs:
     await prisma.repositoryConfig.upsert({
       where: { repositoryId },
       update: {
-        config: defaultConfig as any,
+        config: defaultConfig as Prisma.InputJsonValue,
         rawConfig: defaultYaml,
         version: { increment: 1 },
       },
       create: {
         repositoryId,
-        config: defaultConfig as any,
+        config: defaultConfig as Prisma.InputJsonValue,
         rawConfig: defaultYaml,
       },
     });
@@ -307,13 +308,13 @@ docs:
     await prisma.repositoryConfig.upsert({
       where: { repositoryId },
       update: {
-        config: finalConfig as any, // Prisma Json type
+        config: finalConfig as Prisma.InputJsonValue, // Prisma Json type
         rawConfig,
         version: { increment: 1 },
       },
       create: {
         repositoryId,
-        config: finalConfig as any, // Prisma Json type
+        config: finalConfig as Prisma.InputJsonValue, // Prisma Json type
         rawConfig,
       },
     });

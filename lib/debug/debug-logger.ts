@@ -115,9 +115,7 @@ export function createDebugLogger(
 
       // Redact secrets if enabled
       const safeString = shouldRedact
-        ? (typeof redactSecrets(stringified) === 'string'
-            ? redactSecrets(stringified)
-            : (redactSecrets(stringified) as any).redacted)
+        ? redactSecrets(stringified).redacted
         : stringified;
 
       // Parse back to object if it was originally an object

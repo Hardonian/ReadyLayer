@@ -21,13 +21,25 @@ export interface LLMEnrichmentRequest {
   organizationId: string;
   filePath: string;
   fileContent: string;
-  staticIssues: any[]; // Issues from static analysis
+  staticIssues: ReviewIssue[]; // Issues from static analysis
+}
+
+export interface ReviewIssue {
+  ruleId: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  file?: string;
+  line?: number;
+  message: string;
+  title?: string;
+  fix?: string;
+  confidence?: number;
+  detectedBy?: string;
 }
 
 export interface LLMEnrichmentResult {
   reviewId: string;
   filePath: string;
-  aiIssues: any[];
+  aiIssues: ReviewIssue[];
   status: 'completed' | 'failed' | 'timeout';
   completedAt: Date;
   durationMs: number;
@@ -212,7 +224,7 @@ Return a JSON array with objects containing: ruleId, title, severity (critical/h
 /**
  * Parse LLM response into issues
  */
-function parseLLMResponse(response: string, filePath: string): any[] {
+function parseLLMResponse(response: string, filePath: string): ReviewIssue[] {
   try {
     // Attempt to extract JSON from response
     const jsonMatch = response.match(/\[[\s\S]*\]/);
@@ -221,7 +233,7 @@ function parseLLMResponse(response: string, filePath: string): any[] {
       return [];
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(parsed)) {
       logger.warn({ filePath }, 'LLM response is not an array');
       return [];
@@ -229,15 +241,18 @@ function parseLLMResponse(response: string, filePath: string): any[] {
 
     // Validate and normalize issues
     return parsed
-      .filter((issue: any) => issue.ruleId && issue.severity && issue.message)
-      .map((issue: any) => ({
-        ruleId: `ai.${issue.ruleId}`,
-        severity: issue.severity,
+      .filter((issue): issue is Record<string, unknown> => {
+        return typeof issue === 'object' && issue !== null;
+      })
+      .filter((issue) => typeof issue.ruleId === 'string' && typeof issue.severity === 'string' && typeof issue.message === 'string')
+      .map((issue) => ({
+        ruleId: `ai.${String(issue.ruleId)}`,
+        severity: issue.severity as ReviewIssue['severity'],
         file: filePath,
-        line: issue.line || 1,
-        message: issue.message,
-        fix: issue.fix,
-        confidence: issue.confidence || 0.7,
+        line: typeof issue.line === 'number' ? issue.line : 1,
+        message: String(issue.message),
+        fix: typeof issue.fix === 'string' ? issue.fix : undefined,
+        confidence: typeof issue.confidence === 'number' ? issue.confidence : 0.7,
         detectedBy: 'ai',
       }));
   } catch (error) {
@@ -296,7 +311,7 @@ export async function enqueueLLMEnrichment(
   _organizationId: string,
   _filePath: string,
   _fileContent: string,
-  _staticIssues: any[]
+  _staticIssues: ReviewIssue[]
 ): Promise<string> {
   // TODO: Queue job in Redis/Bull and return job ID
   // For now, return a placeholder job ID

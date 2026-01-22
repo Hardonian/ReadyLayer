@@ -5,6 +5,7 @@
  * Builds trust and confidence scores that improve experientially
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { privacyComplianceService, ComplianceConfig } from '../privacy-compliance';
 
@@ -148,7 +149,7 @@ export class SelfLearningService {
         responseTimeMs: metrics.responseTime,
         tokensUsed: metrics.tokensUsed,
         cost: metrics.cost,
-        metadata: dataToStore as any,
+        metadata: dataToStore as Prisma.InputJsonValue,
       },
     });
 
@@ -164,7 +165,7 @@ export class SelfLearningService {
       data: {
         predictionId: feedback.predictionId,
         wasCorrect: feedback.wasCorrect,
-        actualOutcome: feedback.actualOutcome as any,
+        actualOutcome: feedback.actualOutcome as Prisma.InputJsonValue,
         feedbackType: feedback.feedbackType,
         confidenceAtPrediction: feedback.confidenceAtPrediction,
         userId: feedback.userId,
@@ -332,7 +333,7 @@ export class SelfLearningService {
             firstSeen: insight.firstSeen,
             lastSeen: insight.lastSeen,
             trend: insight.trend,
-            metadata: insight.metadata as any,
+            metadata: insight.metadata as Prisma.InputJsonValue,
           })),
           skipDuplicates: true,
         });
@@ -352,7 +353,7 @@ export class SelfLearningService {
                 dataPoints: insight.dataPoints,
                 lastSeen: insight.lastSeen,
                 trend: insight.trend,
-                metadata: insight.metadata as any,
+                metadata: insight.metadata as Prisma.InputJsonValue,
               },
             })
           )

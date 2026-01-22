@@ -9,12 +9,13 @@ import { usageEnforcementService, LimitType } from '../lib/usage-enforcement';
 import { billingService } from '../billing';
 import { llmService } from '../services/llm';
 import { queueService } from '../queue';
+import { console } from './logger';
 
 interface TestResult {
   name: string;
   passed: boolean;
   error?: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 const results: TestResult[] = [];
@@ -434,8 +435,13 @@ async function main() {
         throw new Error('Audit log details should be an object');
       }
 
-      const details = auditLog.details as any;
-      if (!details.limitType || !details.current || !details.limit) {
+      const details = auditLog.details as Record<string, unknown> | null;
+      const detailRecord = details ?? {};
+      if (
+        typeof detailRecord.limitType !== 'string' ||
+        typeof detailRecord.current !== 'number' ||
+        typeof detailRecord.limit !== 'number'
+      ) {
         throw new Error('Audit log missing required fields');
       }
     });
@@ -508,7 +514,7 @@ async function main() {
           throw new Error('Expected UsageLimitExceededError with httpStatus');
         }
 
-        const limitError = error as any;
+        const limitError = error as { limitType?: string; httpStatus?: number };
         if (limitError.httpStatus !== 429 && limitError.httpStatus !== 402) {
           throw new Error(`Expected HTTP status 429 or 402, got ${limitError.httpStatus}`);
         }

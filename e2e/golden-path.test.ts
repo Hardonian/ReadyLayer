@@ -115,7 +115,7 @@ describe('Golden Path: ReadyLayer Activation Flow', () => {
       expect(run.reviewGuardResult).toBeDefined();
       
       if (run.reviewGuardResult) {
-        const result = run.reviewGuardResult as any;
+        const result = run.reviewGuardResult as { issuesFound?: number };
         expect(result.issuesFound).toBeDefined();
         expect(typeof result.issuesFound).toBe('number');
       }
@@ -176,13 +176,13 @@ describe('Golden Path: ReadyLayer Activation Flow', () => {
       reviewGuardStatus: run.reviewGuardStatus,
       testEngineStatus: run.testEngineStatus,
       docSyncStatus: run.docSyncStatus,
-      reviewGuardResult: run.reviewGuardResult as any,
-      testEngineResult: run.testEngineResult as any,
-      docSyncResult: run.docSyncResult as any,
+      reviewGuardResult: run.reviewGuardResult as Record<string, unknown> | null,
+      testEngineResult: run.testEngineResult as Record<string, unknown> | null,
+      docSyncResult: run.docSyncResult as Record<string, unknown> | null,
       aiTouchedDetected: run.aiTouchedDetected,
-      aiTouchedFiles: run.aiTouchedFiles as any,
+      aiTouchedFiles: run.aiTouchedFiles as Array<Record<string, unknown>> | null,
       gatesPassed: run.gatesPassed,
-      gatesFailed: run.gatesFailed as any,
+      gatesFailed: run.gatesFailed as Array<string> | null,
       startedAt: run.startedAt.toISOString(),
       completedAt: run.completedAt?.toISOString(),
       reviewGuardStartedAt: run.reviewGuardStartedAt?.toISOString(),

@@ -17,7 +17,7 @@ export interface InstallationWithToken {
   tokenEncrypted: boolean;
   organizationId: string | null;
   repositoryId: string | null;
-  permissions: any;
+  permissions: Record<string, unknown>;
   selectedRepos: string[];
   webhookSecret: string | null;
   isActive: boolean;
@@ -34,7 +34,7 @@ export async function createInstallation(params: {
   provider: string;
   providerId: string;
   accessToken: string;
-  permissions: any;
+  permissions: Record<string, unknown>;
   selectedRepos?: string[];
   webhookSecret?: string;
 }): Promise<InstallationWithToken> {

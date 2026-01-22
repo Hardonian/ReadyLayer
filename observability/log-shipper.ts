@@ -21,7 +21,7 @@ export interface LogEntry {
   timestamp: Date;
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   requestId?: string;
   userId?: string;
   organizationId?: string;
@@ -37,7 +37,7 @@ class LogShipper {
   constructor(config?: Partial<LogShipperConfig>) {
     this.config = {
       enabled: process.env.LOG_SHIPPING_ENABLED === 'true',
-      provider: (process.env.LOG_PROVIDER || 'http') as any,
+      provider: resolveLogProvider(process.env.LOG_PROVIDER),
       endpoint: process.env.LOG_ENDPOINT,
       apiKey: process.env.LOG_API_KEY,
       batchSize: parseInt(process.env.LOG_BATCH_SIZE || '50'),
@@ -259,7 +259,7 @@ class LogShipper {
   /**
    * Create a log entry from error
    */
-  static fromError(error: Error, context?: Record<string, any>): LogEntry {
+  static fromError(error: Error, context?: Record<string, unknown>): LogEntry {
     return {
       timestamp: new Date(),
       level: 'error',
@@ -293,11 +293,18 @@ class LogShipper {
   }
 }
 
+function resolveLogProvider(provider?: string): LogShipperConfig['provider'] {
+  if (provider === 'cloudwatch' || provider === 'datadog' || provider === 'http' || provider === 'supabase') {
+    return provider;
+  }
+  return 'http';
+}
+
 // Singleton instance
 export const logShipper = new LogShipper();
 
 // Export helper to manually ship logs
-export async function shipError(error: Error, context?: Record<string, any>): Promise<void> {
+export async function shipError(error: Error, context?: Record<string, unknown>): Promise<void> {
   const entry = LogShipper.fromError(error, context);
   logShipper.addLog(entry);
   // Force flush for critical errors

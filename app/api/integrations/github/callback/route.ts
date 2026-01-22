@@ -100,12 +100,30 @@ export async function GET(req: NextRequest) {
 
     // Get installation access token
     const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10));
-    const { data: installation } = await (installationOctokit as any).rest.apps.getInstallation({
+
+    const octokit = installationOctokit as {
+      rest: {
+        apps: {
+          getInstallation: (args: { installation_id: number }) => Promise<{
+            data: {
+              permissions?: Record<string, unknown>;
+              repository_selection?: string;
+              repositories?: Array<{ id: number }>;
+            };
+          }>;
+          createInstallationAccessToken: (args: { installation_id: number }) => Promise<{
+            data: { token: string };
+          }>;
+        };
+      };
+    };
+
+    const { data: installation } = await octokit.rest.apps.getInstallation({
       installation_id: parseInt(installationId, 10),
     });
 
     // Get installation access token
-    const { data: tokenResponse } = await (installationOctokit as any).rest.apps.createInstallationAccessToken({
+    const { data: tokenResponse } = await octokit.rest.apps.createInstallationAccessToken({
       installation_id: parseInt(installationId, 10),
     });
 
@@ -120,7 +138,7 @@ export async function GET(req: NextRequest) {
       permissions: installation.permissions || {},
       selectedRepos: installation.repository_selection === 'all'
         ? []
-        : (installation.repositories || []).map((r: any) => String(r.id)),
+        : (installation.repositories || []).map((r) => String(r.id)),
       webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || null,
       isActive: true,
     });

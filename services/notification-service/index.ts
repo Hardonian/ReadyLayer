@@ -35,7 +35,7 @@ export interface NotificationMessage {
     label: string;
     url: string;
   };
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   timestamp: Date;
 }
 

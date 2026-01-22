@@ -221,7 +221,7 @@ export function withErrorContext<T>(
       // Attach context to error if it's an Error object
       if (error instanceof Error) {
         const context = captureErrorContext(error, custom);
-        (error as any).context = context;
+        (error as Error & { context?: ErrorContext }).context = context;
       }
       throw error;
     }
