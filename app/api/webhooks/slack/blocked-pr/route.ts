@@ -7,23 +7,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
-export interface BlockedPRNotification {
-  prNumber: number;
-  prTitle: string;
-  repositoryName: string;
-  author: string;
-  issueCount: number;
-  criticalCount: number;
-  highCount: number;
-  slackChannelId: string;
-  issues: Array<{
-    severity: 'critical' | 'high' | 'medium';
-    rule: string;
-    message: string;
-    file?: string;
+export const BlockedPRNotificationSchema = z.object({
+  prNumber: z.number(),
+  prTitle: z.string(),
+  repositoryName: z.string(),
+  author: z.string(),
+  issueCount: z.number(),
+  criticalCount: z.number(),
+  highCount: z.number(),
+  slackChannelId: z.string(),
+  issues: z.array(
+    z.object({
+      severity: z.enum(['critical', 'high', 'medium']),
+      rule: z.string(),
+      message: z.string(),
+      file: z.string().optional(),
+    })
+  ),
+});
+
+type BlockedPRNotification = z.infer<typeof BlockedPRNotificationSchema>;
+
+interface SlackMessage {
+  attachments: Array<{
+    color: 'danger' | 'warning';
+    title: string;
+    title_link: string;
+    fields: Array<{
+      title: string;
+      value: string;
+      short: boolean;
+    }>;
+    actions: Array<{
+      type: 'button';
+      text: string;
+      url: string;
+    }>;
+    footer: string;
+    ts: number;
   }>;
 }
 
@@ -32,7 +57,13 @@ export interface BlockedPRNotification {
  */
 export async function POST(request: NextRequest) {
   try {
-    const notification: BlockedPRNotification = await request.json();
+    const payload = await request.json();
+    const parsed = BlockedPRNotificationSchema.safeParse(payload);
+    if (!parsed.success) {
+      logger.warn({ issues: parsed.error.issues }, 'Invalid blocked PR Slack payload');
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+    const notification = parsed.data;
 
     logger.info(
       {
@@ -81,7 +112,7 @@ export async function POST(request: NextRequest) {
 /**
  * Build Slack message for blocked PR
  */
-function buildBlockedPRMessage(notification: BlockedPRNotification): any {
+function buildBlockedPRMessage(notification: BlockedPRNotification): SlackMessage {
   const color = notification.criticalCount > 0 ? 'danger' : 'warning';
   const severity =
     notification.criticalCount > 0
@@ -146,7 +177,7 @@ function buildBlockedPRMessage(notification: BlockedPRNotification): any {
 /**
  * Send message to Slack
  */
-async function sendToSlack(_channelId: string, message: any): Promise<void> {
+async function sendToSlack(_channelId: string, message: SlackMessage): Promise<void> {
   try {
     const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 

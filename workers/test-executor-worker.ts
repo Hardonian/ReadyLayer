@@ -117,7 +117,10 @@ export async function executeTestJob(
 
     const avgCoverage =
       results.length > 0
-        ? results.reduce((sum, r) => sum + ((r as any).coverage?.percentage || 0), 0) /
+        ? results.reduce((sum, r) => {
+            const coverage = (r as { coverage?: { percentage?: number } }).coverage;
+            return sum + (coverage?.percentage ?? 0);
+          }, 0) /
           results.length
         : 0;
 
@@ -141,7 +144,10 @@ export async function executeTestJob(
       status: 'success',
     });
 
-    (metrics as any).timing('test_execution_duration_ms', duration, {
+    const metricsWithTiming = metrics as {
+      timing?: (name: string, value: number, tags?: Record<string, string>) => void;
+    };
+    metricsWithTiming.timing?.('test_execution_duration_ms', duration, {
       organizationId: job.organizationId,
     });
 
@@ -281,18 +287,37 @@ export async function executeBatchTestJobs(
 /**
  * Validate test job structure
  */
-export function validateTestJob(job: any): job is TestExecutionJob {
+export function validateTestJob(job: unknown): job is TestExecutionJob {
+  if (!job || typeof job !== 'object') {
+    return false;
+  }
+
+  const record = job as {
+    id?: unknown;
+    testRunId?: unknown;
+    organizationId?: unknown;
+    projectId?: unknown;
+    generatedTests?: unknown;
+  };
+
   return (
-    job &&
-    typeof job === 'object' &&
-    typeof job.id === 'string' &&
-    typeof job.testRunId === 'string' &&
-    typeof job.organizationId === 'string' &&
-    typeof job.projectId === 'string' &&
-    Array.isArray(job.generatedTests) &&
-    job.generatedTests.every((test: any) =>
-      test.id && test.framework && test.code && test.targetFile
-    )
+    typeof record.id === 'string' &&
+    typeof record.testRunId === 'string' &&
+    typeof record.organizationId === 'string' &&
+    typeof record.projectId === 'string' &&
+    Array.isArray(record.generatedTests) &&
+    record.generatedTests.every((test) => {
+      if (!test || typeof test !== 'object') {
+        return false;
+      }
+      const testRecord = test as { id?: unknown; framework?: unknown; code?: unknown; targetFile?: unknown };
+      return (
+        typeof testRecord.id === 'string' &&
+        typeof testRecord.framework === 'string' &&
+        typeof testRecord.code === 'string' &&
+        typeof testRecord.targetFile === 'string'
+      );
+    })
   );
 }
 

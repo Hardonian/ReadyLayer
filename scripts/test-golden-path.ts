@@ -12,6 +12,7 @@ import { PrismaClient } from '@prisma/client';
 import { runPipelineService } from '../services/run-pipeline';
 import { outboxService } from '../services/outbox';
 import { validateResponse, runResponseSchema } from '../lib/contracts/schemas';
+import { console } from './logger';
 
 const prisma = new PrismaClient();
 
@@ -212,7 +213,9 @@ async function main() {
       const validation = validateResponse(apiResponse, runResponseSchema);
       
       if (!validation.success) {
-        const errors = validation.errors.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+        const errors = validation.errors.issues
+          .map((e) => `${e.path.join('.')}: ${e.message}`)
+          .join(', ');
         throw new Error(`Contract validation failed: ${errors}`);
       }
 

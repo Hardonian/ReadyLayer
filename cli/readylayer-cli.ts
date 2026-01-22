@@ -14,8 +14,11 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
+import { createConsoleAdapter, createLogger } from '../lib/cli/logger';
 
 const program = new Command();
+const log = createLogger('cli');
+const console = createConsoleAdapter(log);
 
 interface LLMProvider {
   name: string;

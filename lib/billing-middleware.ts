@@ -234,7 +234,7 @@ export async function trackLLMCostForBilling(
   modelName: string,
   inputTokens: number,
   outputTokens: number,
-  _metadata?: Record<string, any>
+  _metadata?: Record<string, unknown>
 ): Promise<void> {
   try {
     const { trackLLMCost, calculateLLMCost } = await import('@/lib/telemetry/llm-costs');
@@ -285,7 +285,8 @@ export async function getOrganizationSpendingStatus(
     );
 
     const tier = await billingService.getOrganizationTier(organizationId);
-    const monthlyBudget = (tier.features as any).llmBudget || 500;
+    const features = tier.features as { llmBudget?: number };
+    const monthlyBudget = features.llmBudget || 500;
 
     const monthlySpend = await getOrganizationMonthlySpend(organizationId);
     const percentageUsed = await getBudgetUtilization(organizationId, monthlyBudget);

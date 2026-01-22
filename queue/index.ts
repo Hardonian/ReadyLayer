@@ -26,6 +26,8 @@ export interface JobResult {
   error?: string;
 }
 
+type QueueHandler = (payload: unknown) => Promise<unknown>;
+
 export class QueueService {
   private redis: ReturnType<typeof createClient> | null = null;
   private isConnected = false;
@@ -129,7 +131,7 @@ export class QueueService {
   /**
    * Process jobs from queue
    */
-  async processQueue(queueName: string, handler: (payload: any) => Promise<any>): Promise<void> {
+  async processQueue(queueName: string, handler: QueueHandler): Promise<void> {
     await this.ensureRedisInitialized();
     if (!this.isConnected || !this.redis) {
       // Fallback: process from database
@@ -160,7 +162,7 @@ export class QueueService {
    */
   private async processJob(
     jobId: string,
-    handler: (payload: any) => Promise<any>
+    handler: QueueHandler
   ): Promise<void> {
     const job = await prisma.job.findUnique({
       where: { id: jobId },
@@ -249,7 +251,7 @@ export class QueueService {
    */
   private async processFromDatabase(
     queueName: string,
-    handler: (payload: any) => Promise<any>
+    handler: QueueHandler
   ): Promise<void> {
     while (true) {
       try {
@@ -280,7 +282,7 @@ export class QueueService {
   /**
    * Get job by idempotency key
    */
-  private async getJobByIdempotencyKey(_key: string): Promise<any> {
+  private async getJobByIdempotencyKey(_key: string): Promise<{ id: string } | null> {
     // Would check Redis cache first, then database
     return null; // Simplified
   }

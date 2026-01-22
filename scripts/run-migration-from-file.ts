@@ -6,6 +6,7 @@
 
 import { prisma } from '../lib/prisma';
 import { readFileSync } from 'fs';
+import { console } from './logger';
 
 async function runMigrationFromFile(migrationFilePath: string) {
   console.log(`🚀 Running migration from: ${migrationFilePath}\n`);
@@ -47,7 +48,7 @@ async function runMigrationFromFile(migrationFilePath: string) {
         if ((i + 1) % 10 === 0) {
           console.log(`   Progress: ${i + 1}/${statements.length} statements executed...`);
         }
-      } catch (error: any) {
+      } catch (error) {
         // Some statements may fail if objects already exist (idempotent)
         // This is expected and OK
         const errorMessage = error?.message || '';

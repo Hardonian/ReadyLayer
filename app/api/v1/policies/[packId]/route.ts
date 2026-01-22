@@ -23,7 +23,7 @@ const updatePolicyPackSchema = z.object({
     ruleId: z.string(),
     severityMapping: z.record(z.string(), z.enum(['block', 'warn', 'allow'])),
     enabled: z.boolean().default(true),
-    params: z.record(z.string(), z.any()).optional(),
+    params: z.record(z.string(), z.unknown()).optional(),
   })).optional(),
 });
 

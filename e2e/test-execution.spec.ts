@@ -10,7 +10,7 @@
 
 import { test, expect } from '@playwright/test';
 import { executeTests } from '../services/test-engine/executor';
-import { testEngineService } from '../services/test-engine';
+import { testEngineService, type TestConfig, type TestGenerationRequest } from '../services/test-engine';
 import { calculateLLMCost } from '../lib/telemetry/llm-costs';
 
 test.describe('Test Generation and Execution', () => {
@@ -179,14 +179,14 @@ function test(condition) {
   });
 
   test('should track multiple test frameworks', async () => {
-    const frameworks = ['jest', 'mocha', 'pytest', 'vitest'];
+    const frameworks: Array<TestGenerationRequest['framework']> = ['jest', 'mocha', 'pytest', 'vitest'];
 
     for (const framework of frameworks) {
       const result = await testEngineService.generateTests({
         repositoryId: 'test-repo-123',
         filePath: `src/test.${framework === 'pytest' ? 'py' : 'js'}`,
         fileContent: 'export function test() { return true; }',
-        framework: framework as any,
+        framework: framework,
       });
 
       expect(result).toBeDefined();
@@ -271,7 +271,7 @@ describe('Invalid syntax', () => {
   });
 
   test('should respect test placement strategy', async () => {
-    const placements = ['co-located', 'separate', 'mirror'];
+    const placements: Array<TestConfig['placement']> = ['co-located', 'separate', 'mirror'];
 
     for (const placement of placements) {
       const result = await testEngineService.generateTests({
@@ -284,7 +284,7 @@ describe('Invalid syntax', () => {
           failOnBelow: true,
           metric: 'lines',
           enforceOn: 'pr',
-          placement: placement as any,
+          placement: placement,
         },
       });
 

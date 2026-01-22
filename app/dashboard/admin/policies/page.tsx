@@ -5,8 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Plus, Edit2, Copy, Trash2 } from 'lucide-react'
 
+interface PolicySummary {
+  id: string
+  name: string
+  description: string
+}
+
 export default function PoliciesPage() {
-  const [policies] = useState<any[]>([])
+  const [policies] = useState<PolicySummary[]>([])
   const [showBuilder, setShowBuilder] = useState(false)
 
   return (

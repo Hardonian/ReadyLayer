@@ -91,7 +91,7 @@ export function issuesToViolations(issues: Issue[]): ViolationForAnnotation[] {
   return issues.map((issue) => ({
     file: issue.file,
     line: issue.line,
-    endLine: (issue as any).endLine, // endLine is optional on Issue type
+    endLine: (issue as { endLine?: number }).endLine, // endLine is optional on Issue type
     severity: issue.severity,
     message: issue.message,
     ruleId: issue.ruleId,

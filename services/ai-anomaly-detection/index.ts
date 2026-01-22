@@ -7,16 +7,16 @@
  */
 
 import { prisma } from '../../lib/prisma';
-import { selfLearningService } from '../self-learning';
-import { predictiveDetectionService } from '../predictive-detection';
+import { selfLearningService, type AggregatedInsight } from '../self-learning';
+import { predictiveDetectionService, type PredictiveAlert } from '../predictive-detection';
 
 export interface AnomalyDetectionResult {
   anomalies: Anomaly[];
   tokenWaste: TokenWasteAnalysis;
   repeatedMistakes: RepeatedMistake[];
   suggestions: OptimizationSuggestion[];
-  predictiveAlerts?: unknown[];
-  aggregatedInsights?: unknown[];
+  predictiveAlerts?: PredictiveAlert[];
+  aggregatedInsights?: AggregatedInsight[];
   summary: {
     totalAnomalies: number;
     totalTokenWaste: number;
@@ -92,6 +92,21 @@ export interface DeveloperProfile {
   preferredModel?: string;
 }
 
+interface ReviewSummary {
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+interface ReviewSnapshot {
+  id: string;
+  createdAt: Date;
+  summary: ReviewSummary | null;
+  isBlocked: boolean;
+}
+
 export class AIAnomalyDetectionService {
   /**
    * Analyze repository for AI anomalies
@@ -155,7 +170,7 @@ export class AIAnomalyDetectionService {
     );
 
     // Get predictive alerts with confidence scores
-    let predictiveAlerts: any[] = [];
+    let predictiveAlerts: PredictiveAlert[] = [];
     try {
       predictiveAlerts = await predictiveDetectionService.predictIssues({
         repositoryId,
@@ -172,7 +187,7 @@ export class AIAnomalyDetectionService {
     }
 
     // Get aggregated insights from self-learning
-    let aggregatedInsights: any[] = [];
+    let aggregatedInsights: AggregatedInsight[] = [];
     try {
       aggregatedInsights = await selfLearningService.generateInsights(
         organizationId
@@ -203,7 +218,7 @@ export class AIAnomalyDetectionService {
    * Detect various types of anomalies
    */
   private async detectAnomalies(
-    reviews: Array<{ id: string; createdAt: Date; summary: any; isBlocked: boolean }>,
+    reviews: ReviewSnapshot[],
     violations: Array<{ ruleId: string; detectedAt: Date; file: string; severity: string }>
   ): Promise<Anomaly[]> {
     const anomalies: Anomaly[] = [];
@@ -318,7 +333,7 @@ export class AIAnomalyDetectionService {
    * Detect token waste anomalies
    */
   private detectTokenWasteAnomalies(
-    reviews: Array<{ id: string; createdAt: Date; summary: any }>
+    reviews: Array<{ id: string; createdAt: Date; summary: ReviewSummary | null }>
   ): Anomaly[] {
     const anomalies: Anomaly[] = [];
 
@@ -345,7 +360,7 @@ export class AIAnomalyDetectionService {
    * Analyze token waste
    */
   private async analyzeTokenWaste(
-    costTracking: Array<{ date: Date; units: number; metadata: any }>,
+    costTracking: Array<{ date: Date; units: number; metadata: Record<string, unknown> | null }>,
     reviews: Array<{ id: string; createdAt: Date }>
   ): Promise<TokenWasteAnalysis> {
     const totalTokensUsed = costTracking.reduce((sum, ct) => sum + ct.units, 0);

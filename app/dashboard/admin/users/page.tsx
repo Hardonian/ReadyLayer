@@ -5,8 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Plus, Trash2, User } from 'lucide-react'
 
+interface AdminUser {
+  id: string
+  name: string
+  email: string
+  role: string
+}
+
 export default function UsersPage() {
-  const [users] = useState<any[]>([])
+  const [users] = useState<AdminUser[]>([])
   const [showInviteForm, setShowInviteForm] = useState(false)
 
   return (

@@ -6,6 +6,7 @@
 
 import { prisma } from '../lib/prisma';
 import { billingService } from '../billing';
+import { console } from './logger';
 
 async function testBillingEnforcement() {
   console.log('💰 Testing Billing Enforcement...\n');

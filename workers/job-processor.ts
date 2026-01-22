@@ -11,7 +11,7 @@ import { metrics } from '../observability/metrics';
 /**
  * Process background job
  */
-async function processJob(payload: any): Promise<any> {
+async function processJob(payload: { type: string; data: unknown }): Promise<unknown> {
   const { type, data } = payload;
   const requestId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   const log = logger.child({ requestId, jobType: type });

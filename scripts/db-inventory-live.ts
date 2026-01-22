@@ -17,6 +17,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { console } from './logger';
 
 interface TableColumn {
   tableName: string;

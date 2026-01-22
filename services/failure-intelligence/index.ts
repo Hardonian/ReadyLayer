@@ -11,6 +11,7 @@
  * - Transparent controls
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { Issue } from '../static-analysis';
 
@@ -97,8 +98,10 @@ export class FailureIntelligenceService {
           framework: context.framework,
           aiTool: context.aiTool,
           confidence: finding.confidence || 0.5,
-          frequency: existingPattern ? ((existingPattern.metadata as any)?.frequency || 0) + 1 : 1,
-        } as any,
+          frequency: existingPattern
+            ? getNumber((existingPattern.metadata as Record<string, unknown> | null)?.frequency) + 1
+            : 1,
+        } as Prisma.InputJsonValue,
       },
     });
 
@@ -216,7 +219,7 @@ export class FailureIntelligenceService {
   /**
    * Calculate correlation strength from similar patterns
    */
-  private calculateCorrelationStrength(patterns: any[]): number {
+  private calculateCorrelationStrength(patterns: Array<{ detectedAt: Date }>): number {
     if (patterns.length === 0) return 0;
 
     // More patterns = higher correlation
@@ -254,7 +257,7 @@ export class FailureIntelligenceService {
         metadata: {
           path: ['ruleId'],
           equals: ruleId,
-        } as any,
+        } as Prisma.JsonFilter,
       },
     });
 
@@ -283,7 +286,7 @@ export class FailureIntelligenceService {
         metadata: {
           path: ['ruleId'],
           equals: ruleId,
-        } as any,
+        } as Prisma.JsonFilter,
       },
     });
 
@@ -313,7 +316,7 @@ export class FailureIntelligenceService {
           metadata: {
             ruleId,
             patternType: this.classifyPatternType(ruleId),
-          } as any,
+          } as Prisma.InputJsonValue,
         },
       });
     }
@@ -321,3 +324,7 @@ export class FailureIntelligenceService {
 }
 
 export const failureIntelligenceService = new FailureIntelligenceService();
+
+function getNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}

@@ -16,6 +16,7 @@
 import { execSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { console } from './logger';
 
 interface VerificationResult {
   passed: boolean;
@@ -37,6 +38,32 @@ interface DiffReport {
   extraTables: string[];
 }
 
+interface ExpectedTable {
+  name: string;
+  rlsRequired?: boolean;
+  policies: Array<{ name: string }>;
+  indexes: Array<{ name: string }>;
+}
+
+interface LiveTable {
+  name: string;
+  rlsEnabled?: boolean;
+  policies: Array<{ policyName: string }>;
+  indexes: Array<{ indexName: string }>;
+}
+
+interface DatabaseInventory {
+  tables: LiveTable[];
+  functions: Array<{ functionName: string }>;
+  extensions: Array<{ name: string }>;
+}
+
+interface ExpectedContract {
+  tables: ExpectedTable[];
+  functions: Array<{ name: string }>;
+  extensions: string[];
+}
+
 async function verifyDatabase(): Promise<VerificationResult> {
   const result: VerificationResult = {
     passed: true,
@@ -49,7 +76,7 @@ async function verifyDatabase(): Promise<VerificationResult> {
 
   // Step 1: Get live inventory
   console.log('📊 Step 1: Inventorying live database...');
-  let liveInventory: any;
+  let liveInventory: DatabaseInventory;
   try {
     const liveOutput = execSync('tsx scripts/db-inventory-live.ts', {
       encoding: 'utf-8',
@@ -64,7 +91,7 @@ async function verifyDatabase(): Promise<VerificationResult> {
 
   // Step 2: Get expected contract
   console.log('📋 Step 2: Loading expected contract...');
-  let expectedContract: any;
+  let expectedContract: ExpectedContract;
   try {
     const expectedOutput = execSync('tsx scripts/db-inventory-expected.ts', {
       encoding: 'utf-8',
@@ -79,16 +106,16 @@ async function verifyDatabase(): Promise<VerificationResult> {
 
   // Step 3: Compare tables
   console.log('🔎 Step 3: Comparing tables...');
-  const liveTableNames = new Set(liveInventory.tables.map((t: any) => t.name));
-  const expectedTableNames = new Set(expectedContract.tables.map((t: any) => t.name));
+  const liveTableNames = new Set(liveInventory.tables.map((t) => t.name));
+  const expectedTableNames = new Set(expectedContract.tables.map((t) => t.name));
 
   const missingTables = expectedContract.tables
-    .filter((t: any) => !liveTableNames.has(t.name))
-    .map((t: any) => t.name);
+    .filter((t) => !liveTableNames.has(t.name))
+    .map((t) => t.name);
 
   const extraTables = liveInventory.tables
-    .filter((t: any) => !expectedTableNames.has(t.name))
-    .map((t: any) => t.name);
+    .filter((t) => !expectedTableNames.has(t.name))
+    .map((t) => t.name);
 
   if (missingTables.length > 0) {
     result.critical.push(`Missing tables: ${missingTables.join(', ')}`);
@@ -105,7 +132,7 @@ async function verifyDatabase(): Promise<VerificationResult> {
   for (const expectedTable of expectedContract.tables) {
     if (!expectedTable.rlsRequired) continue;
 
-    const liveTable = liveInventory.tables.find((t: any) => t.name === expectedTable.name);
+    const liveTable = liveInventory.tables.find((t) => t.name === expectedTable.name);
     if (!liveTable) continue;
 
     if (!liveTable.rlsEnabled) {
@@ -119,10 +146,10 @@ async function verifyDatabase(): Promise<VerificationResult> {
   console.log('🛡️  Step 5: Checking RLS policies...');
   const missingPolicies: Array<{ table: string; policy: string }> = [];
   for (const expectedTable of expectedContract.tables) {
-    const liveTable = liveInventory.tables.find((t: any) => t.name === expectedTable.name);
+    const liveTable = liveInventory.tables.find((t) => t.name === expectedTable.name);
     if (!liveTable) continue;
 
-    const livePolicyNames = new Set(liveTable.policies.map((p: any) => p.policyName));
+    const livePolicyNames = new Set(liveTable.policies.map((p) => p.policyName));
     for (const expectedPolicy of expectedTable.policies) {
       if (!livePolicyNames.has(expectedPolicy.name)) {
         missingPolicies.push({ table: expectedTable.name, policy: expectedPolicy.name });
@@ -135,10 +162,10 @@ async function verifyDatabase(): Promise<VerificationResult> {
   console.log('📇 Step 6: Checking indexes...');
   const missingIndexes: Array<{ table: string; index: string }> = [];
   for (const expectedTable of expectedContract.tables) {
-    const liveTable = liveInventory.tables.find((t: any) => t.name === expectedTable.name);
+    const liveTable = liveInventory.tables.find((t) => t.name === expectedTable.name);
     if (!liveTable) continue;
 
-    const liveIndexNames = new Set(liveTable.indexes.map((i: any) => i.indexName));
+    const liveIndexNames = new Set(liveTable.indexes.map((i) => i.indexName));
     for (const expectedIndex of expectedTable.indexes) {
       if (!liveIndexNames.has(expectedIndex.name)) {
         missingIndexes.push({ table: expectedTable.name, index: expectedIndex.name });
@@ -149,10 +176,10 @@ async function verifyDatabase(): Promise<VerificationResult> {
 
   // Step 7: Check functions
   console.log('⚙️  Step 7: Checking functions...');
-  const liveFunctionNames = new Set(liveInventory.functions.map((f: any) => f.functionName));
+  const liveFunctionNames = new Set(liveInventory.functions.map((f) => f.functionName));
   const missingFunctions = expectedContract.functions
-    .filter((f: any) => !liveFunctionNames.has(f.name))
-    .map((f: any) => f.name);
+    .filter((f) => !liveFunctionNames.has(f.name))
+    .map((f) => f.name);
 
   if (missingFunctions.length > 0) {
     result.warnings.push(`Missing functions: ${missingFunctions.join(', ')}`);
@@ -160,7 +187,7 @@ async function verifyDatabase(): Promise<VerificationResult> {
 
   // Step 8: Check extensions
   console.log('🔌 Step 8: Checking extensions...');
-  const liveExtensionNames = new Set(liveInventory.extensions.map((e: any) => e.name));
+  const liveExtensionNames = new Set(liveInventory.extensions.map((e) => e.name));
   const missingExtensions = expectedContract.extensions.filter(
     (ext: string) => !liveExtensionNames.has(ext)
   );

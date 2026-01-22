@@ -12,6 +12,7 @@
  * No black-box decisions allowed.
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { Issue } from '../static-analysis';
 
@@ -145,7 +146,7 @@ export class EthicalAIGatesService {
           reason: request.reason,
           justification: request.justification,
           overrideType: 'ai_decision',
-        } as any,
+        } as Prisma.InputJsonValue,
         runId: request.reviewId, // Link to review
       },
     });
@@ -217,7 +218,7 @@ export class EthicalAIGatesService {
         details: {
           findingId,
           reason,
-        } as any,
+        } as Prisma.InputJsonValue,
       },
     });
 
