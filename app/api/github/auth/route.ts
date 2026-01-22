@@ -107,6 +107,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (redirect_uri) {
+      let providedRedirectUrl: URL;
+      let allowedRedirectUrl: URL;
+
+      try {
+        providedRedirectUrl = new URL(redirect_uri);
+        allowedRedirectUrl = new URL(configuredRedirectUri);
+      } catch {
+        logger.warn(
+          {
+            redirectUri: redirect_uri,
+          },
+          'Invalid redirect URI provided for GitHub OAuth'
+        );
+
+        return NextResponse.json(
+          {
+            error: {
+              code: 'INVALID_REDIRECT_URI',
+              message: 'Invalid redirect URI',
+            },
+          },
+          { status: 400 }
+        );
+      }
+
+      if (
+        providedRedirectUrl.origin !== allowedRedirectUrl.origin ||
+        providedRedirectUrl.pathname !== allowedRedirectUrl.pathname
+      ) {
+        logger.warn(
+          {
+            redirectUri: redirect_uri,
+          },
+          'Disallowed redirect URI provided for GitHub OAuth'
+        );
+
+        return NextResponse.json(
+          {
+            error: {
+              code: 'DISALLOWED_REDIRECT_URI',
+              message: 'Redirect URI is not allowed',
+            },
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Generate GitHub authorization URL
     const authUrl = generateGitHubOAuthURL(
       clientId,
