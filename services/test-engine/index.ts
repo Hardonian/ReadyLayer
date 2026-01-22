@@ -533,8 +533,10 @@ export class TestEngineService {
         return filePath.replace(/\.(ts|js|tsx|jsx)$/, '.test.$1');
       case 'separate':
         // Place in test directory
-        const fileName = filePath.split('/').pop() || '';
-        return `${testDir || 'tests'}/${fileName.replace(/\.(ts|js|tsx|jsx)$/, '.test.$1')}`;
+        {
+          const fileName = filePath.split('/').pop() || '';
+          return `${testDir || 'tests'}/${fileName.replace(/\.(ts|js|tsx|jsx)$/, '.test.$1')}`;
+        }
       case 'mirror':
         // Mirror directory structure
         return filePath.replace(/^src\//, 'tests/').replace(/\.(ts|js|tsx|jsx)$/, '.test.$1');

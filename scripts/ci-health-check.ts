@@ -47,6 +47,14 @@ const DEFAULT_CONFIG: HealthCheckConfig = {
   retryDelay: 2000,
 };
 
+const writeLine = (line: string): void => {
+  process.stdout.write(`${line}\n`);
+};
+
+const writeError = (line: string): void => {
+  process.stderr.write(`${line}\n`);
+};
+
 async function makeRequest(
   url: string,
   method: string = 'GET',
@@ -98,30 +106,30 @@ async function checkEndpoint(
   const url = `${config.baseUrl}${endpoint.path}`;
 
   try {
-    console.log(
+    writeLine(
       `[${attempt}/${config.maxRetries}] Checking ${endpoint.method} ${url}...`
     );
 
     const { status } = await makeRequest(url, endpoint.method, endpoint.timeout);
 
     if (status >= 200 && status < 300) {
-      console.log(`✓ ${endpoint.method} ${endpoint.path} - Status ${status}`);
+      writeLine(`✓ ${endpoint.method} ${endpoint.path} - Status ${status}`);
       return true;
     }
 
-    console.log(`✗ ${endpoint.method} ${endpoint.path} - Status ${status}`);
+    writeLine(`✗ ${endpoint.method} ${endpoint.path} - Status ${status}`);
     if (attempt < (config.maxRetries || 3)) {
-      console.log(`  Retrying in ${config.retryDelay}ms...`);
+      writeLine(`  Retrying in ${config.retryDelay}ms...`);
       await new Promise((resolve) => setTimeout(resolve, config.retryDelay || 2000));
       return checkEndpoint(config, endpoint, attempt + 1);
     }
 
     return false;
   } catch (error) {
-    console.log(`✗ ${endpoint.method} ${endpoint.path} - Error: ${error}`);
+    writeLine(`✗ ${endpoint.method} ${endpoint.path} - Error: ${error}`);
 
     if (attempt < (config.maxRetries || 3)) {
-      console.log(`  Retrying in ${config.retryDelay}ms...`);
+      writeLine(`  Retrying in ${config.retryDelay}ms...`);
       await new Promise((resolve) => setTimeout(resolve, config.retryDelay || 2000));
       return checkEndpoint(config, endpoint, attempt + 1);
     }
@@ -131,10 +139,10 @@ async function checkEndpoint(
 }
 
 async function runHealthChecks(): Promise<boolean> {
-  console.log(`\n🏥 Running Health Checks`);
-  console.log(`URL: ${DEFAULT_CONFIG.baseUrl}`);
-  console.log(`Endpoints: ${DEFAULT_CONFIG.endpoints.length}`);
-  console.log('---\n');
+  writeLine(`\n🏥 Running Health Checks`);
+  writeLine(`URL: ${DEFAULT_CONFIG.baseUrl}`);
+  writeLine(`Endpoints: ${DEFAULT_CONFIG.endpoints.length}`);
+  writeLine('---\n');
 
   const results: Array<{
     path: string;
@@ -151,7 +159,7 @@ async function runHealthChecks(): Promise<boolean> {
     });
   }
 
-  console.log('\n---\n');
+  writeLine('\n---\n');
 
   // Summary
   const criticalFailed = results.filter(
@@ -160,15 +168,15 @@ async function runHealthChecks(): Promise<boolean> {
   const allHealthy = results.every((r) => r.healthy);
 
   if (allHealthy) {
-    console.log('✅ All health checks passed!');
+    writeLine('✅ All health checks passed!');
     return true;
   } else if (criticalFailed.length === 0) {
-    console.log('⚠️  Some non-critical checks failed, but all critical endpoints are healthy');
+    writeLine('⚠️  Some non-critical checks failed, but all critical endpoints are healthy');
     return true;
   } else {
-    console.log(`❌ Critical health checks failed:`);
+    writeLine('❌ Critical health checks failed:');
     for (const failed of criticalFailed) {
-      console.log(`  - ${failed.path}`);
+      writeLine(`  - ${failed.path}`);
     }
     return false;
   }
@@ -180,6 +188,6 @@ runHealthChecks()
     process.exit(success ? 0 : 1);
   })
   .catch((error) => {
-    console.error('Health check error:', error);
+    writeError(`Health check error: ${String(error)}`);
     process.exit(1);
   });

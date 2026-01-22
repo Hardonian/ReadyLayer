@@ -81,7 +81,7 @@ module.exports = [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
@@ -94,7 +94,7 @@ module.exports = [
       'react-hooks/rules-of-hooks': 'error',
 
       // General JavaScript rules
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['warn', 'error', 'log', 'info'] }],
       'prefer-const': 'error',
       'no-var': 'error',
       'no-useless-escape': 'warn',

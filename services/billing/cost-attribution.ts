@@ -273,39 +273,49 @@ class CostAttributionService {
     for (const event of events) {
       switch (event.type) {
         case 'llm':
-          const llmMeta = event.metadata as any;
-          costs.llm.totalCost += event.totalCost;
-          costs.llm.inputTokens += llmMeta?.inputTokens || 0;
-          costs.llm.outputTokens += llmMeta?.outputTokens || 0;
-          break;
+          {
+            const llmMeta = event.metadata as any;
+            costs.llm.totalCost += event.totalCost;
+            costs.llm.inputTokens += llmMeta?.inputTokens || 0;
+            costs.llm.outputTokens += llmMeta?.outputTokens || 0;
+            break;
+          }
 
         case 'embedding':
-          const embMeta = event.metadata as any;
-          costs.embedding.totalCost += event.totalCost;
-          costs.embedding.tokens += embMeta?.tokens || 0;
-          break;
+          {
+            const embMeta = event.metadata as any;
+            costs.embedding.totalCost += event.totalCost;
+            costs.embedding.tokens += embMeta?.tokens || 0;
+            break;
+          }
 
         case 'database':
-          const dbMeta = event.metadata as any;
-          costs.database.totalCost += event.totalCost;
-          if (dbMeta?.operation === 'read') {
-            costs.database.reads += dbMeta?.count || 0;
-          } else {
-            costs.database.writes += dbMeta?.count || 0;
+          {
+            const dbMeta = event.metadata as any;
+            costs.database.totalCost += event.totalCost;
+            if (dbMeta?.operation === 'read') {
+              costs.database.reads += dbMeta?.count || 0;
+            } else {
+              costs.database.writes += dbMeta?.count || 0;
+            }
+            break;
           }
-          break;
 
         case 'storage':
-          const storageMeta = event.metadata as any;
-          costs.storage.totalCost += event.totalCost;
-          costs.storage.usage += storageMeta?.usage || 0;
-          break;
+          {
+            const storageMeta = event.metadata as any;
+            costs.storage.totalCost += event.totalCost;
+            costs.storage.usage += storageMeta?.usage || 0;
+            break;
+          }
 
         case 'api':
-          const apiMeta = event.metadata as any;
-          costs.api.totalCost += event.totalCost;
-          costs.api.requests += apiMeta?.requests || 0;
-          break;
+          {
+            const apiMeta = event.metadata as any;
+            costs.api.totalCost += event.totalCost;
+            costs.api.requests += apiMeta?.requests || 0;
+            break;
+          }
       }
     }
 

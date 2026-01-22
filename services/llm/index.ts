@@ -546,16 +546,11 @@ export class LLMService {
     const estimatedTokens = Math.ceil((request.prompt.length / 4) + (request.maxTokens || 2000));
 
     // Check usage limits before making API call
-    try {
-      await usageEnforcementService.checkLLMRequest(
-        request.organizationId,
-        request.userId || null,
-        estimatedTokens
-      );
-    } catch (_error) {
-      // Re-throw usage limit errors as-is (they have proper HTTP status codes)
-      throw _error;
-    }
+    await usageEnforcementService.checkLLMRequest(
+      request.organizationId,
+      request.userId || null,
+      estimatedTokens
+    );
 
     // Get provider
     let providerName = this.defaultProvider;

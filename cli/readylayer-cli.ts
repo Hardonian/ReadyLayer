@@ -84,7 +84,6 @@ async function reviewFile(filePath: string, options: ReviewOptions) {
     process.exit(1);
   }
 
-  // eslint-disable-next-line no-console
   console.log(`Reviewing ${filePath}...`);
 
   try {
@@ -126,36 +125,26 @@ async function reviewFile(filePath: string, options: ReviewOptions) {
         isBlocked?: boolean;
       };
     };
-    // eslint-disable-next-line no-console
     console.log('\nReview Results:');
-    // eslint-disable-next-line no-console
     console.log(`Status: ${result.data?.status ?? 'unknown'}`);
-    // eslint-disable-next-line no-console
     console.log(`Issues Found: ${result.data?.issuesCount ?? 0}`);
     
     if (result.data?.issues && result.data.issues.length > 0) {
-      // eslint-disable-next-line no-console
       console.log('\nIssues:');
       result.data.issues.forEach((issue, index) => {
-        // eslint-disable-next-line no-console
         console.log(`\n${index + 1}. ${issue.severity.toUpperCase()}: ${issue.ruleId}`);
-        // eslint-disable-next-line no-console
         console.log(`   File: ${issue.file}:${issue.line}`);
-        // eslint-disable-next-line no-console
         console.log(`   Message: ${issue.message}`);
         if (issue.fix) {
-          // eslint-disable-next-line no-console
           console.log(`   Fix: ${issue.fix}`);
         }
       });
     }
 
     if (result.data?.isBlocked) {
-      // eslint-disable-next-line no-console
       console.log('\n⚠️  PR would be blocked due to policy violations');
       process.exit(1);
     } else {
-      // eslint-disable-next-line no-console
       console.log('\n✅ Review passed');
     }
   } catch (error) {
@@ -195,7 +184,6 @@ async function generateTests(filePath: string, options: TestOptions) {
     process.exit(1);
   }
 
-  // eslint-disable-next-line no-console
   console.log(`Generating tests for ${filePath}...`);
 
   try {
@@ -233,14 +221,10 @@ async function generateTests(filePath: string, options: TestOptions) {
     if (result.data?.testContent) {
       const outputPath = options.output ?? result.data.placement ?? `${filePath}.test.ts`;
       fs.writeFileSync(outputPath, result.data.testContent);
-      // eslint-disable-next-line no-console
       console.log(`\n✅ Tests generated: ${outputPath}`);
-      // eslint-disable-next-line no-console
       console.log(`Framework: ${result.data.framework ?? 'unknown'}`);
-      // eslint-disable-next-line no-console
       console.log(`Placement: ${result.data.placement ?? 'unknown'}`);
     } else {
-      // eslint-disable-next-line no-console
       console.log('\n⚠️  No tests generated');
     }
   } catch (error) {
@@ -254,7 +238,6 @@ function initConfig() {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   
   if (fs.existsSync(configPath)) {
-    // eslint-disable-next-line no-console
     console.log('.readylayer.json already exists');
     return;
   }
@@ -315,7 +298,6 @@ function initConfig() {
 function finishConfig(config: ReadyLayerConfig, rl: readline.Interface) {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  // eslint-disable-next-line no-console
   console.log(`\n✅ Configuration saved to ${configPath}`);
   rl.close();
 }
@@ -351,7 +333,6 @@ program
   .description('Show current configuration')
   .action(() => {
     const config = loadConfig();
-    // eslint-disable-next-line no-console
     console.log(JSON.stringify(config, null, 2));
   });
 
@@ -362,7 +343,6 @@ program
   .command('install')
   .description('Install Cursor integration')
   .action(() => {
-    // eslint-disable-next-line no-console
     console.log('Installing Cursor integration...');
     // Create Cursor config file
     const cursorConfig = {
@@ -374,7 +354,6 @@ program
     const cursorConfigPath = path.join(process.cwd(), '.cursor', 'readylayer.json');
     fs.mkdirSync(path.dirname(cursorConfigPath), { recursive: true });
     fs.writeFileSync(cursorConfigPath, JSON.stringify(cursorConfig, null, 2));
-    // eslint-disable-next-line no-console
     console.log('✅ Cursor integration installed');
   });
 
@@ -385,7 +364,6 @@ program
   .command('install')
   .description('Install Tabnine agent integration')
   .action(() => {
-    // eslint-disable-next-line no-console
     console.log('Installing Tabnine agent integration...');
     // Create Tabnine config
     const tabnineConfig = {
@@ -398,7 +376,6 @@ program
     const tabnineConfigPath = path.join(process.cwd(), '.tabnine', 'readylayer.json');
     fs.mkdirSync(path.dirname(tabnineConfigPath), { recursive: true });
     fs.writeFileSync(tabnineConfigPath, JSON.stringify(tabnineConfig, null, 2));
-    // eslint-disable-next-line no-console
     console.log('✅ Tabnine agent integration installed');
   });
 

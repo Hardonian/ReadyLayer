@@ -88,16 +88,11 @@ export class QueueService {
 
     // Check usage limits before enqueueing (if organizationId provided)
     if (payload.organizationId) {
-      try {
-        await usageEnforcementService.checkJobEnqueue(
-          payload.organizationId,
-          payload.userId || null,
-          payload.type
-        );
-      } catch (error) {
-        // Re-throw usage limit errors as-is (they have proper HTTP status codes)
-        throw error;
-      }
+      await usageEnforcementService.checkJobEnqueue(
+        payload.organizationId,
+        payload.userId || null,
+        payload.type
+      );
     }
 
     // Get repositoryId from payload.data if available (for job record)

@@ -100,61 +100,57 @@ export class EmailService {
     message: EmailMessage,
     id: string
   ): Promise<EmailResult> {
-    try {
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personalizations: [
-            {
-              to: Array.isArray(message.to)
-                ? message.to.map(email => ({ email }))
-                : [{ email: message.to }],
-            },
-          ],
-          from: {
-            email: message.from || 'noreply@readylayer.io',
-            name: 'ReadyLayer',
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: Array.isArray(message.to)
+              ? message.to.map(email => ({ email }))
+              : [{ email: message.to }],
           },
-          subject: message.subject,
-          content: [
-            {
-              type: 'text/html',
-              value: message.html,
-            },
-          ],
-          reply_to: message.replyTo
-            ? { email: message.replyTo }
-            : undefined,
-          custom_args: message.metadata,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`SendGrid error: ${response.statusText}`);
-      }
-
-      logger.info(
-        {
-          id,
-          to: message.to,
+        ],
+        from: {
+          email: message.from || 'noreply@readylayer.io',
+          name: 'ReadyLayer',
         },
-        'Email sent via SendGrid'
-      );
+        subject: message.subject,
+        content: [
+          {
+            type: 'text/html',
+            value: message.html,
+          },
+        ],
+        reply_to: message.replyTo
+          ? { email: message.replyTo }
+          : undefined,
+        custom_args: message.metadata,
+      }),
+    });
 
-      metrics.increment('email_sent', { provider: 'sendgrid' });
-
-      return {
-        id,
-        status: 'sent',
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      throw new Error(`SendGrid error: ${response.statusText}`);
     }
+
+    logger.info(
+      {
+        id,
+        to: message.to,
+      },
+      'Email sent via SendGrid'
+    );
+
+    metrics.increment('email_sent', { provider: 'sendgrid' });
+
+    return {
+      id,
+      status: 'sent',
+      timestamp: new Date(),
+    };
   }
 
   /**
@@ -164,47 +160,43 @@ export class EmailService {
     message: EmailMessage,
     id: string
   ): Promise<EmailResult> {
-    try {
-      const response = await fetch('https://api.postmarkapp.com/email', {
-        method: 'POST',
-        headers: {
-          'X-Postmark-Server-Token': this.apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          From: message.from || 'noreply@readylayer.io',
-          To: Array.isArray(message.to) ? message.to.join(',') : message.to,
-          Subject: message.subject,
-          HtmlBody: message.html,
-          TextBody: message.text,
-          ReplyTo: message.replyTo,
-          Tag: message.tags?.join(','),
-          Metadata: message.metadata,
-        }),
-      });
+    const response = await fetch('https://api.postmarkapp.com/email', {
+      method: 'POST',
+      headers: {
+        'X-Postmark-Server-Token': this.apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        From: message.from || 'noreply@readylayer.io',
+        To: Array.isArray(message.to) ? message.to.join(',') : message.to,
+        Subject: message.subject,
+        HtmlBody: message.html,
+        TextBody: message.text,
+        ReplyTo: message.replyTo,
+        Tag: message.tags?.join(','),
+        Metadata: message.metadata,
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error(`Postmark error: ${response.statusText}`);
-      }
-
-      logger.info(
-        {
-          id,
-          to: message.to,
-        },
-        'Email sent via Postmark'
-      );
-
-      metrics.increment('email_sent', { provider: 'postmark' });
-
-      return {
-        id,
-        status: 'sent',
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      throw error;
+    if (!response.ok) {
+      throw new Error(`Postmark error: ${response.statusText}`);
     }
+
+    logger.info(
+      {
+        id,
+        to: message.to,
+      },
+      'Email sent via Postmark'
+    );
+
+    metrics.increment('email_sent', { provider: 'postmark' });
+
+    return {
+      id,
+      status: 'sent',
+      timestamp: new Date(),
+    };
   }
 
   /**
@@ -214,26 +206,22 @@ export class EmailService {
     message: EmailMessage,
     id: string
   ): Promise<EmailResult> {
-    try {
-      // TODO: Implement SMTP using nodemailer
-      logger.info(
-        {
-          id,
-          to: message.to,
-        },
-        'Email sent via SMTP'
-      );
-
-      metrics.increment('email_sent', { provider: 'smtp' });
-
-      return {
+    // TODO: Implement SMTP using nodemailer
+    logger.info(
+      {
         id,
-        status: 'sent',
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      throw error;
-    }
+        to: message.to,
+      },
+      'Email sent via SMTP'
+    );
+
+    metrics.increment('email_sent', { provider: 'smtp' });
+
+    return {
+      id,
+      status: 'sent',
+      timestamp: new Date(),
+    };
   }
 
   /**
