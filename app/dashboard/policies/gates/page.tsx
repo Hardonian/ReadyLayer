@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@/components/ui'
 import { Container } from '@/components/ui/container'
@@ -158,9 +159,9 @@ export default function PolicyGatesPage() {
               </ul>
               <p className="pt-2">
                 Policy gates are currently implemented via Policy Packs. Use the{' '}
-                <a href="/dashboard/policies" className="text-primary hover:underline">
+                <Link href="/dashboard/policies" className="text-primary hover:underline">
                   Policy Packs
-                </a>{' '}
+                </Link>{' '}
                 page to configure enforcement rules.
               </p>
             </div>

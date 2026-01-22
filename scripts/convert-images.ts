@@ -2,6 +2,14 @@ import sharp from 'sharp'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 
+const writeLine = (line: string): void => {
+  process.stdout.write(`${line}\n`)
+}
+
+const writeError = (line: string): void => {
+  process.stderr.write(`${line}\n`)
+}
+
 async function convertImages() {
   const rootDir = process.cwd()
   
@@ -13,7 +21,7 @@ async function convertImages() {
   // Output directory
   const publicDir = join(rootDir, 'public')
   
-  console.log('Converting images to WebP...')
+  writeLine('Converting images to WebP...')
   
   try {
     // Convert header logo to WebP
@@ -22,11 +30,11 @@ async function convertImages() {
       .webp({ quality: 90, effort: 6 })
       .toBuffer()
     writeFileSync(join(publicDir, 'logo-header.webp'), headerWebP)
-    console.log('✓ Created logo-header.webp')
+    writeLine('✓ Created logo-header.webp')
     
     // Also copy PNG version for fallback
     writeFileSync(join(publicDir, 'logo-header.png'), headerBuffer)
-    console.log('✓ Copied logo-header.png')
+    writeLine('✓ Copied logo-header.png')
     
     // Convert SEO logo to WebP
     const seoBuffer = readFileSync(logoSEO)
@@ -34,11 +42,11 @@ async function convertImages() {
       .webp({ quality: 90, effort: 6 })
       .toBuffer()
     writeFileSync(join(publicDir, 'logo-seo.webp'), seoWebP)
-    console.log('✓ Created logo-seo.webp')
+    writeLine('✓ Created logo-seo.webp')
     
     // Also copy PNG version for fallback
     writeFileSync(join(publicDir, 'logo-seo.png'), seoBuffer)
-    console.log('✓ Copied logo-seo.png')
+    writeLine('✓ Copied logo-seo.png')
     
     // Create favicon.ico (32x32 size)
     const faviconBuffer = readFileSync(faviconPNG)
@@ -52,7 +60,7 @@ async function convertImages() {
     // For now, use PNG as favicon (Next.js will handle .ico conversion)
     writeFileSync(join(publicDir, 'favicon.png'), favicon32)
     writeFileSync(join(publicDir, 'favicon.ico'), favicon32) // Using PNG as fallback
-    console.log('✓ Created favicon.ico')
+    writeLine('✓ Created favicon.ico')
     
     // Create apple-touch-icon.png (180x180)
     const appleTouchIcon = await sharp(faviconBuffer)
@@ -60,7 +68,7 @@ async function convertImages() {
       .png()
       .toBuffer()
     writeFileSync(join(publicDir, 'apple-touch-icon.png'), appleTouchIcon)
-    console.log('✓ Created apple-touch-icon.png')
+    writeLine('✓ Created apple-touch-icon.png')
     
     // Create WebP version of favicon
     const faviconWebP = await sharp(faviconBuffer)
@@ -68,7 +76,7 @@ async function convertImages() {
       .webp({ quality: 90 })
       .toBuffer()
     writeFileSync(join(publicDir, 'favicon.webp'), faviconWebP)
-    console.log('✓ Created favicon.webp')
+    writeLine('✓ Created favicon.webp')
     
     // Create various sizes for different use cases
     // 192x192 for Android
@@ -77,7 +85,7 @@ async function convertImages() {
       .png()
       .toBuffer()
     writeFileSync(join(publicDir, 'icon-192x192.png'), icon192)
-    console.log('✓ Created icon-192x192.png')
+    writeLine('✓ Created icon-192x192.png')
     
     // 512x512 for PWA
     const icon512 = await sharp(faviconBuffer)
@@ -85,11 +93,11 @@ async function convertImages() {
       .png()
       .toBuffer()
     writeFileSync(join(publicDir, 'icon-512x512.png'), icon512)
-    console.log('✓ Created icon-512x512.png')
+    writeLine('✓ Created icon-512x512.png')
     
-    console.log('\n✅ All images converted successfully!')
+    writeLine('\n✅ All images converted successfully!')
   } catch (error) {
-    console.error('Error converting images:', error)
+    writeError(`Error converting images: ${String(error)}`)
     process.exit(1)
   }
 }

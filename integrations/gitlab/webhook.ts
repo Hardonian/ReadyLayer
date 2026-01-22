@@ -9,7 +9,6 @@
  * but some properties may be undefined or have unexpected types.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
  
  
 

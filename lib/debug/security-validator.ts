@@ -430,7 +430,7 @@ export async function validateFile(filePath: string): Promise<void> {
     filePath,
   });
 
-  console.log(generateSecurityReport(issues));
+  process.stdout.write(`${generateSecurityReport(issues)}\n`);
 
   // Exit with error if critical or high issues found
   const hasCriticalIssues = issues.some(

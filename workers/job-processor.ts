@@ -26,13 +26,17 @@ async function processJob(payload: any): Promise<any> {
 
       case 'test_generation':
         // Test generation jobs
-        const { testEngineService } = await import('../services/test-engine');
-        return await testEngineService.generateTests(data);
+        {
+          const { testEngineService } = await import('../services/test-engine');
+          return await testEngineService.generateTests(data);
+        }
 
       case 'doc_sync':
         // Doc sync jobs
-        const { docSyncService } = await import('../services/doc-sync');
-        return await docSyncService.generateDocs(data);
+        {
+          const { docSyncService } = await import('../services/doc-sync');
+          return await docSyncService.generateDocs(data);
+        }
 
       default:
         throw new Error(`Unknown job type: ${type}`);
