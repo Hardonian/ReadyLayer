@@ -33,6 +33,7 @@ export const BlockedPRNotificationSchema = z.object({
 type BlockedPRNotification = z.infer<typeof BlockedPRNotificationSchema>;
 
 interface SlackMessage {
+  channel?: string;
   attachments: Array<{
     color: 'danger' | 'warning';
     title: string;
@@ -57,6 +58,15 @@ interface SlackMessage {
  */
 export async function POST(request: NextRequest) {
   try {
+    const token = process.env.SLACK_BLOCKED_PR_WEBHOOK_TOKEN;
+    if (token) {
+      const providedToken = request.headers.get('x-readylayer-webhook-token');
+      if (!providedToken || providedToken !== token) {
+        logger.warn('Blocked PR Slack webhook unauthorized');
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
+
     const payload = await request.json();
     const parsed = BlockedPRNotificationSchema.safeParse(payload);
     if (!parsed.success) {
@@ -80,8 +90,6 @@ export async function POST(request: NextRequest) {
 
     // Build Slack message
     const slackMessage = buildBlockedPRMessage(notification);
-
-    // TODO: Send to Slack using webhook or API
     await sendToSlack(notification.slackChannelId, slackMessage);
 
     logger.info(
@@ -177,29 +185,26 @@ function buildBlockedPRMessage(notification: BlockedPRNotification): SlackMessag
 /**
  * Send message to Slack
  */
-async function sendToSlack(_channelId: string, message: SlackMessage): Promise<void> {
+async function sendToSlack(channelId: string, message: SlackMessage): Promise<void> {
   try {
     const webhookUrl = process.env.SLACK_WEBHOOK_URL;
 
     if (!webhookUrl) {
-      logger.warn('Slack webhook URL not configured');
-      return;
+      throw new Error('Slack webhook URL not configured');
     }
+
+    const payload: SlackMessage = channelId
+      ? { ...message, channel: channelId }
+      : message;
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      logger.error(
-        {
-          status: response.status,
-          statusText: response.statusText,
-        },
-        'Failed to send message to Slack'
-      );
+      throw new Error(`Slack webhook failed with status ${response.status}`);
     }
   } catch (error) {
     logger.error(
@@ -208,5 +213,6 @@ async function sendToSlack(_channelId: string, message: SlackMessage): Promise<v
       },
       'Error sending to Slack'
     );
+    throw error;
   }
 }

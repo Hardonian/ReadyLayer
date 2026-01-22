@@ -27,7 +27,6 @@ export const SlackEventPayloadSchema = z.object({
   event: SlackEventDataSchema.optional(),
 }).passthrough();
 
-type SlackEventPayload = z.infer<typeof SlackEventPayloadSchema>;
 type SlackEventData = z.infer<typeof SlackEventDataSchema>;
 
 /**
