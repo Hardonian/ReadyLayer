@@ -45,6 +45,17 @@ interface EnvConfig {
   RAG_CHUNK_SIZE?: number;
   RAG_CHUNK_OVERLAP?: number;
   RAG_MAX_CONTEXT_TOKENS?: number;
+
+  // Encryption Keys (at least one required for production)
+  READY_LAYER_KMS_KEY?: string;
+  READY_LAYER_MASTER_KEY?: string;
+  READY_LAYER_KEYS?: string;
+
+  // Stripe (optional - required for billing features)
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_PRICE_ID_GROWTH?: string;
+  STRIPE_PRICE_ID_SCALE?: string;
 }
 
 class EnvValidator {
@@ -104,12 +115,30 @@ class EnvValidator {
       ? parseInt(process.env.RAG_MAX_CONTEXT_TOKENS, 10)
       : 4000;
 
+    // Encryption Keys (optional for development, required for production)
+    this.config.READY_LAYER_KMS_KEY = process.env.READY_LAYER_KMS_KEY;
+    this.config.READY_LAYER_MASTER_KEY = process.env.READY_LAYER_MASTER_KEY;
+    this.config.READY_LAYER_KEYS = process.env.READY_LAYER_KEYS;
+
+    // Stripe Configuration (optional - required for billing features)
+    this.config.STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+    this.config.STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+    this.config.STRIPE_PRICE_ID_GROWTH = process.env.STRIPE_PRICE_ID_GROWTH;
+    this.config.STRIPE_PRICE_ID_SCALE = process.env.STRIPE_PRICE_ID_SCALE;
+
     // Validate at least one LLM provider (skip during build)
-    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' ||
                         process.env.NEXT_PHASE === 'phase-development-build' ||
                         process.env.NEXT_PUBLIC_SKIP_ENV_VALIDATION === 'true';
     if (!isBuildTime && !this.config.OPENAI_API_KEY && !this.config.ANTHROPIC_API_KEY) {
       this.errors.push('At least one LLM provider API key is required (OPENAI_API_KEY or ANTHROPIC_API_KEY)');
+    }
+
+    // Validate encryption keys in production
+    if (this.config.NODE_ENV === 'production' && !isBuildTime) {
+      if (!this.config.READY_LAYER_KMS_KEY && !this.config.READY_LAYER_MASTER_KEY && !this.config.READY_LAYER_KEYS) {
+        this.errors.push('At least one encryption key is required in production (READY_LAYER_KMS_KEY, READY_LAYER_MASTER_KEY, or READY_LAYER_KEYS)');
+      }
     }
 
     // Validate NODE_ENV

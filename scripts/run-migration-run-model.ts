@@ -29,13 +29,13 @@ async function main() {
       try {
         await prisma.$executeRawUnsafe(statement);
         console.log('✓ Executed statement');
-      } catch (err) {
+      } catch (error) {
         // Ignore "already exists" errors
-        const error = err as Error & { code?: string };
-        if (error.message?.includes('already exists') || error.code === '42P07' || error.code === '42710') {
+        const errorObj = error as { message?: string; code?: string };
+        if (errorObj.message?.includes('already exists') || errorObj.code === '42P07' || errorObj.code === '42710') {
           console.log('⚠ Statement already applied (skipping)');
         } else {
-          console.error('✗ Error executing statement:', error.message);
+          console.error('✗ Error executing statement:', errorObj.message);
           throw error;
         }
       }

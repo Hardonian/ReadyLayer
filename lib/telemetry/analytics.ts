@@ -44,8 +44,8 @@ export function trackEvent(
     eventId: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     category,
     eventName,
-    userId: properties?.userId as string | undefined,
-    organizationId: properties?.organizationId as string | undefined,
+    userId: typeof properties?.userId === 'string' ? properties.userId : undefined,
+    organizationId: typeof properties?.organizationId === 'string' ? properties.organizationId : undefined,
     properties: {
       ...properties,
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
@@ -70,7 +70,7 @@ export function trackEvent(
 
   // Record metric
   metrics.increment(`analytics_${category}_${eventName}`, {
-    userId: (properties?.userId as string) || 'unknown',
+    userId: (typeof properties?.userId === 'string' ? properties.userId : 'unknown'),
   });
 
   // Flush if queue is full

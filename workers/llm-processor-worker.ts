@@ -13,9 +13,9 @@
 import { queueService } from '../queue';
 import { processLLMEnrichment, type LLMEnrichmentResult, type ReviewIssue } from '../services/review-guard/async-processor';
 import { prisma } from '../lib/prisma';
-import { Prisma } from '@prisma/client';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
+import { toJsonValue } from '../lib/prisma-json';
 
 const LLM_TIMEOUT_MS = 60000; // 60 seconds
 const MAX_RETRIES = 3;
@@ -127,20 +127,20 @@ async function updateReviewWithEnrichment(
 
   // Store enrichment data in the result JSON field
   const currentResult = (review.result as Record<string, unknown> | null) || {};
-  const enrichedFiles = (typeof currentResult.enrichedFiles === 'number' ? currentResult.enrichedFiles : 0) + 1;
-  const totalFiles = typeof currentResult.totalFiles === 'number' ? currentResult.totalFiles : 0;
+  const enrichedFiles = ((currentResult.enrichedFiles as number | undefined) || 0) + 1;
+  const totalFiles = (currentResult.totalFiles as number | undefined) || 0;
 
   await prisma.review.update({
     where: { id: reviewId },
     data: {
-      result: {
+      result: toJsonValue({
         ...currentResult,
         enrichedFiles,
         enrichmentResult: enrichmentResult,
         lastEnrichedFile: enrichmentResult.filePath,
         lastEnrichedAt: new Date().toISOString(),
         status: enrichedFiles >= totalFiles ? 'enrichment_complete' : 'enriching',
-      } as unknown as Prisma.InputJsonValue,
+      }),
     },
   });
 

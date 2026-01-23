@@ -7,11 +7,11 @@
  * Purpose: Validate ReadyLayer usefulness before enforcement
  */
 
-import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest, ReviewResult } from '../review-guard';
 import { testEngineService } from '../test-engine';
 import { codeParserService } from '../code-parser';
+import { toJsonValue } from '../../lib/prisma-json';
 
 export interface ShadowModeRequest {
   repositoryId: string;
@@ -266,12 +266,12 @@ export class ShadowModeService {
       data: {
         type: 'shadow_mode',
         status: 'completed',
-        payload: {
+        payload: toJsonValue({
           repositoryId,
           prNumber,
           result,
-        } as unknown as Prisma.InputJsonValue,
-        result: result as unknown as Prisma.InputJsonValue,
+        }),
+        result: toJsonValue(result),
       },
     });
   }

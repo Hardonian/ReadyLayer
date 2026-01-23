@@ -5,11 +5,12 @@
  */
 
 import { prisma } from '../lib/prisma';
-import type { Prisma } from '@prisma/client';
+
 import { createClient } from 'redis';
 import { logger } from '../observability/logging';
 import { usageEnforcementService } from '../lib/usage-enforcement';
 
+import { toJsonValue } from '../lib/prisma-json';
 export interface JobPayload {
   type: string;
   data: unknown;
@@ -107,7 +108,7 @@ export class QueueService {
         id: jobId,
         type: payload.type,
         status: 'pending',
-        payload: payload.data as unknown as Prisma.InputJsonValue,
+        payload: toJsonValue(payload.data),
         maxRetries: payload.maxRetries || 3,
         scheduledAt: new Date(),
         repositoryId,
@@ -190,7 +191,7 @@ export class QueueService {
         where: { id: jobId },
         data: {
           status: 'completed',
-          result: result as unknown as Prisma.InputJsonValue,
+          result: toJsonValue(result),
           completedAt: new Date(),
         },
       });
