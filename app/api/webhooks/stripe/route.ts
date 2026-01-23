@@ -572,4 +572,3 @@ function mapStripeStatus(stripeStatus: Stripe.Subscription.Status): 'active' | '
       return 'active'; // Default to active for unknown statuses
   }
 }
-/* eslint-disable @typescript-eslint/no-explicit-any */
