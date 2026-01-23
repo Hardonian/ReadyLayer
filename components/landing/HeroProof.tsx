@@ -41,14 +41,14 @@ export function HeroProof({ user }: HeroProofProps) {
     <section className="relative py-24 lg:py-32 overflow-hidden">
       {/* Header with Logo and Minimalist Menu */}
       <motion.header
-        className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8 pt-2 pb-6"
+        className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8 pt-2 pb-6 overflow-visible"
         variants={prefersReducedMotion ? fadeIn : fadeIn}
         initial="hidden"
         animate="visible"
       >
-        <div className="flex items-center justify-between max-w-full">
+        <div className="flex items-center justify-between w-full overflow-visible">
           {/* Minimalist Menu */}
-          <nav className="hidden sm:flex items-center gap-4 lg:gap-6 flex-1">
+          <nav className="hidden sm:flex items-center gap-4 lg:gap-6 flex-1 overflow-visible">
             {PUBLIC_NAV_ITEMS.slice(0, 4).map((item) => (
               <Link
                 key={item.href}
@@ -60,9 +60,9 @@ export function HeroProof({ user }: HeroProofProps) {
             ))}
           </nav>
 
-          {/* Logo - More centered */}
-          <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
-            <div className="scale-50 origin-center">
+          {/* Logo - Always fully visible */}
+          <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity overflow-visible" aria-label="ReadyLayer Home">
+            <div className="scale-50 origin-center overflow-visible will-change-transform" style={{ height: 'auto', minHeight: 'auto' }}>
               <Logo variant="full" size="sm" />
             </div>
           </Link>
