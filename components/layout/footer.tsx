@@ -9,16 +9,14 @@ export function Footer() {
   return (
     <footer className="border-t border-border-subtle bg-surface-muted/50">
       <Container size="lg">
-        <div className="py-12 grid grid-cols-1 md:grid-cols-5 gap-8">
-          {/* Brand & Legal */}
-          <div className="md:col-span-1">
-            <div className="mb-4">
-              <LogoWord size="sm" />
-            </div>
-            <p className="text-sm text-text-muted mb-4 leading-relaxed">
+        {/* Logo Section - Top Block */}
+        <div className="py-12 border-b border-border-subtle/50">
+          <div className="flex flex-col gap-4 max-w-sm">
+            <LogoWord size="sm" />
+            <p className="text-sm text-text-muted leading-relaxed">
               The default authority for AI-generated code safety.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-3 w-fit">
               <a
                 href="https://github.com/Hardonian/ReadyLayer"
                 target="_blank"
@@ -46,7 +44,10 @@ export function Footer() {
               </a>
             </div>
           </div>
+        </div>
 
+        {/* Menu Section - Bottom Block */}
+        <div className="py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Product */}
           <div>
             <h4 className="font-semibold text-sm mb-4">Product</h4>
