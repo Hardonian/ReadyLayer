@@ -107,7 +107,7 @@ export class CulturalArtifactsService {
     }
 
     // Calculate confidence score
-    const confidenceScore = this.calculateConfidenceScore(review);
+    const confidenceScore = this.calculateConfidenceScore({ id: review.id, summary: review.summary as ReviewSummary | null });
 
     // Determine readiness level
     const readinessLevel =
@@ -211,7 +211,7 @@ export class CulturalArtifactsService {
 
     const averageConfidence = reviews.length > 0
       ? reviews.reduce((sum, r) => {
-          const score = this.calculateConfidenceScore(r);
+          const score = this.calculateConfidenceScore({ id: r.id, summary: r.summary as ReviewSummary | null });
           return sum + score;
         }, 0) / reviews.length / 100
       : 1;
@@ -382,7 +382,7 @@ export class CulturalArtifactsService {
     const averageConfidence =
       allReviews.length > 0
         ? allReviews.reduce((sum, r) => {
-            const score = this.calculateConfidenceScore(r);
+            const score = this.calculateConfidenceScore({ id: r.id, summary: r.summary as ReviewSummary | null });
             return sum + score / 100;
           }, 0) / allReviews.length
         : 0;

@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleSubscriptionChange(subscriptionParsed.data as Stripe.Subscription);
+          await handleSubscriptionChange(subscriptionParsed.data as unknown as Stripe.Subscription);
         }
         break;
 
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleSubscriptionDeleted(subscriptionParsed.data as Stripe.Subscription);
+          await handleSubscriptionDeleted(subscriptionParsed.data as unknown as Stripe.Subscription);
         }
         break;
 
@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleInvoicePaymentSucceeded(invoiceParsed.data as Stripe.Invoice);
+          await handleInvoicePaymentSucceeded(invoiceParsed.data as unknown as Stripe.Invoice);
         }
         break;
 
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleInvoicePaymentFailed(invoiceParsed.data as Stripe.Invoice);
+          await handleInvoicePaymentFailed(invoiceParsed.data as unknown as Stripe.Invoice);
         }
         break;
 
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleCheckoutCompleted(sessionParsed.data as Stripe.Checkout.Session);
+          await handleCheckoutCompleted(sessionParsed.data as unknown as Stripe.Checkout.Session);
         }
         break;
 
@@ -308,8 +308,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           plan,
           status: mapStripeStatus(subscription.status),
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           updatedAt: new Date(),
         },
@@ -336,8 +336,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           status: mapStripeStatus(subscription.status),
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         },
       });
@@ -434,8 +434,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: {
-            currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+            currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
+            currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
             status: 'active',
             updatedAt: new Date(),
           },

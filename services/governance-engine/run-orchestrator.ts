@@ -278,6 +278,11 @@ Focus on:
    * Parse governance findings from LLM output
    */
   private parseGovernanceFindings(content: string): Finding[] {
+    // Helper to validate severity
+    const isValidSeverity = (s: string): s is 'info' | 'low' | 'medium' | 'high' | 'critical' => {
+      return ['info', 'low', 'medium', 'high', 'critical'].includes(s);
+    };
+
     try {
       // Try to parse JSON response
       const parsed: unknown = JSON.parse(content);
@@ -286,21 +291,25 @@ Focus on:
         if (Array.isArray(rawFindings)) {
           return rawFindings
             .filter((finding): finding is Record<string, unknown> => typeof finding === 'object' && finding !== null)
-            .map((finding) => ({
-              id: typeof finding.id === 'string' ? finding.id : `finding-${Math.random()}`,
-              ruleId: typeof finding.ruleId === 'string' ? finding.ruleId : 'unknown',
-              title: typeof finding.title === 'string' ? finding.title : 'Governance Finding',
-              description: typeof finding.description === 'string' ? finding.description : '',
-              severity: typeof finding.severity === 'string' ? finding.severity : 'medium',
-              status: 'open' as const,
-              file: typeof finding.file === 'string' ? finding.file : undefined,
-              line: typeof finding.line === 'number' ? finding.line : undefined,
-              confidence: typeof finding.confidence === 'number' ? finding.confidence : 0.5,
-              detectedBy: 'ai' as const,
-              remediation: typeof finding.remediation === 'string' ? finding.remediation : undefined,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            }));
+            .map((finding) => {
+              const severityStr = typeof finding.severity === 'string' ? finding.severity : 'medium';
+              const severity = isValidSeverity(severityStr) ? severityStr : 'medium';
+              return {
+                id: typeof finding.id === 'string' ? finding.id : `finding-${Math.random()}`,
+                ruleId: typeof finding.ruleId === 'string' ? finding.ruleId : 'unknown',
+                title: typeof finding.title === 'string' ? finding.title : 'Governance Finding',
+                description: typeof finding.description === 'string' ? finding.description : '',
+                severity,
+                status: 'open' as const,
+                file: typeof finding.file === 'string' ? finding.file : undefined,
+                line: typeof finding.line === 'number' ? finding.line : undefined,
+                confidence: typeof finding.confidence === 'number' ? finding.confidence : 0.5,
+                detectedBy: 'ai' as const,
+                remediation: typeof finding.remediation === 'string' ? finding.remediation : undefined,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              };
+            });
         }
       }
     } catch {

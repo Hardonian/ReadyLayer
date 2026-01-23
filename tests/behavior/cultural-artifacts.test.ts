@@ -5,7 +5,7 @@
  * Reference: TEST_QUALITY_AUDIT.md - Test behavior, not just structure
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, it as test, expect } from 'vitest';
 
 describe('Merge Confidence Certificate - Behavior Tests', () => {
   test('confidence score decreases with more issues', () => {

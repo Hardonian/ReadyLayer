@@ -285,8 +285,8 @@ export class ReviewGuardService {
             reviewIdSignature, // Include signature in result
             policyVersion: policy.pack.version,
             policyChecksum: policy.pack.checksum,
-          } as Prisma.InputJsonValue, // Prisma Json type
-          issuesFound: evaluationResult.nonWaivedFindings as Prisma.InputJsonValue, // Prisma Json type
+          } as unknown as Prisma.InputJsonValue, // Prisma Json type
+          issuesFound: evaluationResult.nonWaivedFindings as unknown as Prisma.InputJsonValue, // Prisma Json type
           summary: summary as Prisma.InputJsonValue, // Prisma Json type
           isBlocked,
           blockedReason,

@@ -190,7 +190,7 @@ export async function handleSubscriptionUpdated(
       'Subscription status changed'
     );
     metrics.increment('billing_status_changed', {
-      from: previousAttributes.status,
+      from: previousAttributes.status as string,
       to: subscription.status,
     });
   }
@@ -446,10 +446,15 @@ async function handleUsageRecordCreated(
   };
 }
 
-function isUsageRecord(object: Stripe.Event.Data.Object): object is Stripe.UsageRecord {
+interface UsageRecord {
+  subscription_item: string;
+  quantity: number;
+}
+
+function isUsageRecord(object: Stripe.Event.Data.Object): object is UsageRecord {
   return (
-    typeof (object as Stripe.UsageRecord).subscription_item === 'string' &&
-    typeof (object as Stripe.UsageRecord).quantity === 'number'
+    typeof (object as any).subscription_item === 'string' &&
+    typeof (object as any).quantity === 'number'
   );
 }
 

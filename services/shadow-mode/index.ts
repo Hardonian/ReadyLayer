@@ -270,8 +270,8 @@ export class ShadowModeService {
           repositoryId,
           prNumber,
           result,
-        } as Prisma.InputJsonValue,
-        result: result as Prisma.InputJsonValue,
+        } as unknown as Prisma.InputJsonValue,
+        result: result as unknown as Prisma.InputJsonValue,
       },
     });
   }

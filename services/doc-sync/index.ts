@@ -272,7 +272,7 @@ export class DocSyncService {
           ref: request.ref,
           format: request.format,
           content,
-          spec: spec || undefined,
+          spec: (spec || undefined) as Prisma.InputJsonValue,
           status: isBlocked ? 'blocked' : 'generated',
           driftDetected: driftResult.driftDetected,
           driftDetails: {
@@ -396,7 +396,7 @@ export class DocSyncService {
     const currentEndpoints = await this.extractEndpoints(repositoryId, ref, framework);
 
     // Compare with documented endpoints
-    const documentedEndpoints = this.extractEndpointsFromOpenAPI(latestDoc.spec);
+    const documentedEndpoints = this.extractEndpointsFromOpenAPI(latestDoc.spec as OpenApiSpec);
 
     const missingEndpoints: DriftCheckResult['missingEndpoints'] = [];
     const extraEndpoints: DriftCheckResult['extraEndpoints'] = [];
