@@ -152,8 +152,8 @@ class RedisRateLimiter {
       multi.ttl(key);
 
       const results = await multi.exec();
-      const count = parseInt(results[2] as string, 10);
-      const ttl = parseInt(results[3] as string, 10);
+      const count = parseInt(results[2] as unknown as string, 10);
+      const ttl = parseInt(results[3] as unknown as string, 10);
 
       const resetAt = new Date(now + ttl * 1000);
       const remaining = Math.max(0, config.points - count);

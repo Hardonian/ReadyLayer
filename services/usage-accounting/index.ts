@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '../../observability/logging';
 
 export interface TokenUsageRecord {
@@ -49,7 +50,7 @@ export class UsageAccountingService {
           cost: usage.cost,
           contextSize: usage.contextSize || null,
           wastePercentage: usage.wastePercentage || null,
-          metadata: usage.metadata || null,
+          metadata: (usage.metadata || null) as Prisma.InputJsonValue,
         },
       });
 
@@ -95,7 +96,7 @@ export class UsageAccountingService {
       cost: Number(u.cost),
       contextSize: u.contextSize || undefined,
       wastePercentage: u.wastePercentage ? Number(u.wastePercentage) : undefined,
-      metadata: u.metadata as Record<string, unknown> | null,
+      metadata: u.metadata ? (u.metadata as Record<string, unknown>) : undefined,
     }));
   }
 

@@ -47,6 +47,8 @@ const StripeInvoiceSchema = z.object({
   subscription: z.union([z.string(), z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
 }).passthrough();
 
+type ValidatedStripeInvoice = z.infer<typeof StripeInvoiceSchema>;
+
 const StripeCheckoutSessionSchema = z.object({
   id: z.string(),
 }).passthrough();
@@ -174,7 +176,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleSubscriptionChange(subscriptionParsed.data as Stripe.Subscription);
+          await handleSubscriptionChange(subscriptionParsed.data as unknown as Stripe.Subscription);
         }
         break;
 
@@ -188,7 +190,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleSubscriptionDeleted(subscriptionParsed.data as Stripe.Subscription);
+          await handleSubscriptionDeleted(subscriptionParsed.data as unknown as Stripe.Subscription);
         }
         break;
 
@@ -202,7 +204,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleInvoicePaymentSucceeded(invoiceParsed.data as Stripe.Invoice);
+          await handleInvoicePaymentSucceeded(invoiceParsed.data);
         }
         break;
 
@@ -216,7 +218,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleInvoicePaymentFailed(invoiceParsed.data as Stripe.Invoice);
+          await handleInvoicePaymentFailed(invoiceParsed.data as unknown as Stripe.Invoice);
         }
         break;
 
@@ -230,7 +232,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleCheckoutCompleted(sessionParsed.data as Stripe.Checkout.Session);
+          await handleCheckoutCompleted(sessionParsed.data as unknown as Stripe.Checkout.Session);
         }
         break;
 
@@ -308,8 +310,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           plan,
           status: mapStripeStatus(subscription.status),
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           updatedAt: new Date(),
         },
@@ -336,8 +338,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           status: mapStripeStatus(subscription.status),
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         },
       });
@@ -408,7 +410,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
 /**
  * Handle invoice payment succeeded
  */
-async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
+async function handleInvoicePaymentSucceeded(invoice: ValidatedStripeInvoice): Promise<void> {
   const log = logger.child({ invoiceId: invoice.id });
 
   try {
@@ -429,8 +431,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
 
     if (subscription) {
       // Update subscription period if needed
-    if (invoice.subscription && typeof invoice.subscription !== 'string') {
-      const stripeSubscription = invoice.subscription as Stripe.Subscription;
+    if (invoice.subscription && typeof invoice.subscription !== 'string' && invoice.subscription !== null) {
+      const stripeSubscription = invoice.subscription as unknown as { current_period_start: number; current_period_end: number };
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: {

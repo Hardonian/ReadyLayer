@@ -13,6 +13,7 @@
 import { queueService } from '../queue';
 import { processLLMEnrichment, type LLMEnrichmentResult, type ReviewIssue } from '../services/review-guard/async-processor';
 import { prisma } from '../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '../observability/logging';
 import { metrics } from '../observability/metrics';
 
@@ -126,8 +127,8 @@ async function updateReviewWithEnrichment(
 
   // Store enrichment data in the result JSON field
   const currentResult = (review.result as Record<string, unknown> | null) || {};
-  const enrichedFiles = (currentResult.enrichedFiles || 0) + 1;
-  const totalFiles = currentResult.totalFiles || 0;
+  const enrichedFiles = (typeof currentResult.enrichedFiles === 'number' ? currentResult.enrichedFiles : 0) + 1;
+  const totalFiles = typeof currentResult.totalFiles === 'number' ? currentResult.totalFiles : 0;
 
   await prisma.review.update({
     where: { id: reviewId },
@@ -139,7 +140,7 @@ async function updateReviewWithEnrichment(
         lastEnrichedFile: enrichmentResult.filePath,
         lastEnrichedAt: new Date().toISOString(),
         status: enrichedFiles >= totalFiles ? 'enrichment_complete' : 'enriching',
-      },
+      } as unknown as Prisma.InputJsonValue,
     },
   });
 

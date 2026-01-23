@@ -573,7 +573,7 @@ export class RunPipelineService {
           status: 'completed',
           conclusion,
           gatesPassed,
-          gatesFailed: gatesFailed.length > 0 ? (gatesFailed as Prisma.InputJsonValue) : null,
+          gatesFailed: gatesFailed.length > 0 ? (gatesFailed as Prisma.InputJsonValue) : undefined,
           completedAt,
         },
       });
@@ -645,7 +645,7 @@ export class RunPipelineService {
         testEngineResult,
         docSyncResult,
         aiTouchedDetected: run.aiTouchedDetected,
-        aiTouchedFiles: run.aiTouchedFiles as Prisma.InputJsonValue,
+        aiTouchedFiles: run.aiTouchedFiles as unknown as { path: string; confidence: number; methods: string[]; }[] | undefined,
         gatesPassed,
         gatesFailed: gatesFailed.length > 0 ? gatesFailed : undefined,
         startedAt,

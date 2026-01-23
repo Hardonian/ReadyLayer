@@ -130,6 +130,12 @@ async function handleAppMention(event: SlackEventData, teamId?: string): Promise
   // Parse command from text
   const command = text?.toLowerCase().split(/\s+/)[1];
 
+  // Ensure channel and teamId are defined
+  if (!channel || !teamId) {
+    logger.warn('Missing channel or teamId for app_mention');
+    return;
+  }
+
   switch (command) {
     case 'status':
       await sendStatus(channel, teamId);
@@ -178,7 +184,7 @@ async function handleReaction(event: SlackEventData, teamId?: string): Promise<v
   );
 
   metrics.increment('slack_reaction_event', {
-    reaction: event.reaction,
+    reaction: event.reaction || 'unknown',
   });
 }
 

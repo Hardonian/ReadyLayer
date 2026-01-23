@@ -31,15 +31,13 @@ export class TestDataSeeder {
    * Create a test user
    */
   async createUser(
-    organizationId: string,
+    _organizationId: string,
     overrides?: Partial<User>
   ): Promise<User> {
     return prisma.user.create({
       data: {
         id: uuid(),
         email: `test-${Date.now()}@example.com`,
-        organizationId,
-        role: 'admin',
         ...overrides,
       },
     });

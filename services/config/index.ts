@@ -153,7 +153,11 @@ export class ConfigService {
     const repoConfigData = repoConfig?.config as ReadyLayerConfig | undefined;
 
     // Merge: repo config overrides org config (as partial, defaults will be applied)
-    const merged: Partial<ReadyLayerConfig> = {
+    const merged: {
+      review?: Partial<ReviewConfig>;
+      test?: Partial<TestConfig>;
+      docs?: Partial<DocSyncConfig>;
+    } = {
       review: {
         ...orgConfig?.review,
         ...(repoConfigData?.review || {}),
@@ -169,7 +173,7 @@ export class ConfigService {
     };
 
     // Apply defaults (enforcement-first) - this ensures all required properties are present
-    return this.applyDefaults(merged);
+    return this.applyDefaults(merged as Partial<ReadyLayerConfig>);
   }
 
   /**

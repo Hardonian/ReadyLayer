@@ -57,7 +57,7 @@ export class OutboxService {
           repositoryId: payload.repositoryId || null,
           sandboxId: payload.sandboxId || null,
           intentType: 'status_update',
-          payload: update as Prisma.InputJsonValue,
+          payload: update as unknown as Prisma.InputJsonValue,
           status: 'pending',
         },
       });

@@ -71,11 +71,23 @@ export interface NormalizedEvent {
 
 export class GitLabWebhookHandler {
   /**
-   * Validate webhook token
+   * Validate webhook token (timing-attack resistant)
    */
   validateToken(_payload: string, token: string, secret: string): boolean {
     // GitLab uses token-based validation
-    return token === secret;
+    // Use timing-safe comparison to prevent timing attacks
+    const { timingSafeEqual } = require('crypto');
+
+    // Ensure both strings are the same length before comparison
+    if (token.length !== secret.length) {
+      return false;
+    }
+
+    try {
+      return timingSafeEqual(Buffer.from(token, 'utf8'), Buffer.from(secret, 'utf8'));
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -131,7 +143,7 @@ export class GitLabWebhookHandler {
     const fullName = project.path_with_namespace ?? '';
 
     // Find or create repository
-    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId);
+    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId || null);
 
     if (event.object_kind === 'merge_request') {
       const mr = (event.object_attributes ?? event.merge_request ?? {}) as GitLabMergeRequest;

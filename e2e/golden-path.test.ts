@@ -13,7 +13,7 @@
  * 6. Verify idempotency (rerun same trigger)
  */
 
-import { describe, test, expect, beforeAll, afterAll } from '@playwright/test';
+import { describe, it as test, expect, beforeAll, afterAll } from 'vitest';
 import { PrismaClient } from '@prisma/client';
 import { runPipelineService } from '../services/run-pipeline';
 import { outboxService } from '../services/outbox';

@@ -4,7 +4,7 @@
  * Tests for security and policy enforcement invariants from INVARIANTS.md
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, it as test, expect } from 'vitest';
 import {
   assertNoSecretsInText,
   InvariantViolationError,
