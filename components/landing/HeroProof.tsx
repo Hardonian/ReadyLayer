@@ -41,7 +41,7 @@ export function HeroProof({ user }: HeroProofProps) {
     <section className="relative py-24 lg:py-32 overflow-hidden">
       {/* Header with Logo and Minimalist Menu */}
       <motion.header
-        className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8 py-3"
+        className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8 pt-2 pb-6"
         variants={prefersReducedMotion ? fadeIn : fadeIn}
         initial="hidden"
         animate="visible"
@@ -60,9 +60,9 @@ export function HeroProof({ user }: HeroProofProps) {
             ))}
           </nav>
 
-          {/* Logo - Right aligned */}
-          <Link href="/" className="flex-shrink-0 ml-auto hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
-            <div className="scale-50 origin-right">
+          {/* Logo - More centered */}
+          <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
+            <div className="scale-50 origin-center">
               <Logo variant="full" size="sm" />
             </div>
           </Link>
