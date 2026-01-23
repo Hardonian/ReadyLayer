@@ -47,13 +47,6 @@ export function HeroProof({ user }: HeroProofProps) {
         animate="visible"
       >
         <div className="flex items-center justify-between max-w-full">
-          {/* Logo */}
-          <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
-            <div className="scale-[0.6] origin-left">
-              <Logo variant="full" size="sm" />
-            </div>
-          </Link>
-
           {/* Minimalist Menu */}
           <nav className="hidden md:flex items-center gap-6">
             {PUBLIC_NAV_ITEMS.map((item) => (
@@ -66,6 +59,13 @@ export function HeroProof({ user }: HeroProofProps) {
               </Link>
             ))}
           </nav>
+
+          {/* Logo */}
+          <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
+            <div className="scale-[0.6] origin-right">
+              <Logo variant="full" size="sm" />
+            </div>
+          </Link>
         </div>
       </motion.header>
 
