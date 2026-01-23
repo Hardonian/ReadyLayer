@@ -50,19 +50,19 @@ export function HeroProof({ user }: HeroProofProps) {
       <div className="relative z-10">
         {/* Header with Logo and Minimalist Menu */}
         <motion.header
-          className="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-8 sm:pb-10 bg-gradient-to-b from-blue-50 via-indigo-50/80 to-transparent dark:from-gray-900 dark:via-gray-800/80 dark:to-transparent overflow-visible"
+          className="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 bg-gradient-to-b from-blue-50 via-indigo-50/80 to-transparent dark:from-gray-900 dark:via-gray-800/80 dark:to-transparent overflow-visible"
           variants={prefersReducedMotion ? fadeIn : fadeIn}
           initial="hidden"
           animate="visible"
         >
-          <div className="flex items-center justify-between w-full overflow-visible flex-wrap gap-4">
+          <div className="flex items-center justify-between w-full overflow-visible gap-6">
             {/* Minimalist Menu */}
             <nav className="hidden sm:flex items-center gap-3 md:gap-4 lg:gap-6 flex-1 overflow-visible min-w-0">
               {PUBLIC_NAV_ITEMS.slice(0, 4).map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-xs md:text-sm text-text-muted hover:text-text-primary transition-colors font-bold whitespace-nowrap"
+                  className="text-xs md:text-sm text-text-muted hover:text-text-primary transition-colors font-bold whitespace-nowrap leading-none"
                 >
                   {item.label}
                 </Link>
@@ -70,7 +70,7 @@ export function HeroProof({ user }: HeroProofProps) {
             </nav>
 
             {/* Logo - Always fully visible */}
-            <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity overflow-visible" aria-label="ReadyLayer Home">
+            <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity overflow-visible flex items-center" aria-label="ReadyLayer Home">
               <div className="scale-50 origin-center overflow-visible will-change-transform" style={{ height: 'auto', minHeight: 'auto' }}>
                 <Logo variant="full" size="sm" />
               </div>
