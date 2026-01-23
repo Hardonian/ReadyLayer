@@ -11,6 +11,7 @@ import { fadeIn, slideUp, staggerContainer, staggerItem } from '@/lib/design/mot
 import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
 import { InteractivePRDemo } from './InteractivePRDemo'
 import { cn } from '@/lib/utils'
+import { PUBLIC_NAV_ITEMS } from '@/lib/navigation'
 
 interface HeroProofProps {
   user?: { email?: string; user_metadata?: { full_name?: string } } | null
