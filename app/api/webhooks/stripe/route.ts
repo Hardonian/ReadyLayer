@@ -41,8 +41,6 @@ const StripeSubscriptionSchema = z.object({
   cancel_at_period_end: z.boolean().optional(),
 }).passthrough();
 
-type ValidatedStripeSubscription = z.infer<typeof StripeSubscriptionSchema>;
-
 const StripeInvoiceSchema = z.object({
   id: z.string(),
   customer: z.union([z.string(), z.object({ id: z.string() })]),
@@ -264,7 +262,7 @@ export async function POST(request: NextRequest) {
 /**
  * Handle subscription created/updated
  */
-async function handleSubscriptionChange(subscription: ValidatedStripeSubscription): Promise<void> {
+async function handleSubscriptionChange(subscription: Stripe.Subscription): Promise<void> {
   const log = logger.child({ subscriptionId: subscription.id });
 
   try {
@@ -312,8 +310,8 @@ async function handleSubscriptionChange(subscription: ValidatedStripeSubscriptio
           plan,
           status: mapStripeStatus(subscription.status),
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           updatedAt: new Date(),
         },
@@ -340,8 +338,8 @@ async function handleSubscriptionChange(subscription: ValidatedStripeSubscriptio
           status: mapStripeStatus(subscription.status),
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         },
       });
@@ -434,7 +432,7 @@ async function handleInvoicePaymentSucceeded(invoice: ValidatedStripeInvoice): P
     if (subscription) {
       // Update subscription period if needed
     if (invoice.subscription && typeof invoice.subscription !== 'string' && invoice.subscription !== null) {
-      const stripeSubscription = invoice.subscription as unknown as ValidatedStripeSubscription;
+      const stripeSubscription = invoice.subscription as unknown as { current_period_start: number; current_period_end: number };
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: {

@@ -28,14 +28,16 @@ async function processJob(payload: { type: string; data: unknown }): Promise<unk
         // Test generation jobs
         {
           const { testEngineService } = await import('../services/test-engine');
-          return await testEngineService.generateTests(data);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await testEngineService.generateTests(data as any);
         }
 
       case 'doc_sync':
         // Doc sync jobs
         {
           const { docSyncService } = await import('../services/doc-sync');
-          return await docSyncService.generateDocs(data);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await docSyncService.generateDocs(data as any);
         }
 
       default:
