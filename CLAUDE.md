@@ -75,6 +75,10 @@ npm run type-check          # TypeScript compilation check
 npm run lint                # ESLint on app/, components/, lib/
 npm run lint:fix            # Auto-fix linting issues
 
+# Clean & Verify (Post-Hardening Additions)
+npm run clean               # Remove build artifacts (.next, node_modules/.cache, dist)
+npm run verify              # Run full quality pipeline (lint + type-check + test)
+
 # Build
 npm run build               # Full production build (includes lint + type-check)
 npm run start               # Start production server
@@ -155,11 +159,13 @@ ReadyLayer/
 │
 ├── lib/                          # Shared utilities
 │   ├── middleware/               # Edge-safe middleware (rate limiting, auth)
+│   ├── errors/                   # Error normalization & HTTP error utilities
 │   ├── secrets/                  # Encryption & secret redaction
 │   ├── cache/                    # Caching strategies
 │   ├── rate-limiting/            # Rate limit enforcement
 │   ├── audit/                    # Audit logging
 │   ├── prisma/                   # Database client
+│   ├── prisma-json.ts            # Type-safe JSON utilities for Prisma
 │   └── [12+ more modules]
 │
 ├── prisma/                       # Database schema & migrations

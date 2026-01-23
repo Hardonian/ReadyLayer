@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GitHub App Installation Callback
  *
@@ -7,9 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { logger } from '@/observability/logging';
 import { createInstallationWithEncryptedToken } from '@/lib/secrets/installation-helpers';
+import { toJsonValue } from '@/lib/prisma-json';
 
 const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
 const GITHUB_APP_PRIVATE_KEY = process.env.GITHUB_APP_PRIVATE_KEY;
@@ -102,31 +103,19 @@ export async function GET(req: NextRequest) {
     // Get installation access token
     const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10));
 
-    const octokit = installationOctokit as unknown as {
-      rest: {
-        apps: {
-          getInstallation: (args: { installation_id: number }) => Promise<{
-            data: {
-              permissions?: Record<string, unknown>;
-              repository_selection?: string;
-              repositories?: Array<{ id: number }>;
-            };
-          }>;
-          createInstallationAccessToken: (args: { installation_id: number }) => Promise<{
-            data: { token: string };
-          }>;
-        };
-      };
-    };
-
-    const { data: installation } = await octokit.rest.apps.getInstallation({
+    // Get installation details - use unknown cast to work with Octokit's dynamic types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const installationData = await (installationOctokit as any).rest.apps.getInstallation({
       installation_id: parseInt(installationId, 10),
     });
 
     // Get installation access token
-    const { data: tokenResponse } = await octokit.rest.apps.createInstallationAccessToken({
+    const tokenData = await (installationOctokit as any).rest.apps.createInstallationAccessToken({
       installation_id: parseInt(installationId, 10),
     });
+
+    const installation = installationData.data;
+    const tokenResponse = tokenData.data;
 
     // Store installation with encrypted token
     const savedInstallation = await createInstallationWithEncryptedToken({
@@ -136,10 +125,10 @@ export async function GET(req: NextRequest) {
       provider: 'github',
       providerId: installationId,
       accessToken: tokenResponse.token,
-      permissions: (installation.permissions || {}) as unknown as Prisma.InputJsonValue,
+      permissions: toJsonValue((installation.permissions as Record<string, unknown>) || {}),
       selectedRepos: installation.repository_selection === 'all'
         ? []
-        : (installation.repositories || []).map((r) => String(r.id)),
+        : ((installation.repositories as Array<{ id: number }>) || []).map((r) => String(r.id)),
       webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || null,
       isActive: true,
     });
