@@ -46,14 +46,7 @@ export function HeroProof({ user }: HeroProofProps) {
         animate="visible"
       >
         <Link href="/" className="block hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
-          <Image
-            src="/logo-header-new.png"
-            alt="ReadyLayer"
-            width={200}
-            height={40}
-            priority
-            className="h-10 sm:h-12 w-auto dark:invert"
-          />
+          <Logo variant="full" size="sm" />
         </Link>
       </motion.div>
 
