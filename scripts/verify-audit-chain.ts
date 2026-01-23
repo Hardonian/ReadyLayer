@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { createAuditLog, AuditActions } from '../lib/audit';
+import { console } from './logger';
 
 async function main() {
   console.log('🔒 Verifying Audit Chain Integrity...');

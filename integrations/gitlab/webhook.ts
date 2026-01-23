@@ -9,7 +9,6 @@
  * but some properties may be undefined or have unexpected types.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
  
  
 
@@ -18,11 +17,39 @@ import { queueService } from '../../queue';
 
 export interface GitLabWebhookEvent {
   object_kind: string;
-  object_attributes?: any;
-  merge_request?: any;
-  pipeline?: any;
-  project?: any;
-  user?: any;
+  object_attributes?: Record<string, unknown>;
+  merge_request?: GitLabMergeRequest;
+  pipeline?: GitLabPipeline;
+  project?: GitLabProject;
+  user?: Record<string, unknown>;
+}
+
+interface GitLabProject {
+  path_with_namespace?: string;
+}
+
+interface GitLabMergeRequest {
+  iid?: number;
+  id?: number;
+  title?: string;
+  action?: string;
+  state?: string;
+  sha?: string;
+  last_commit?: { id?: string };
+  target_branch?: string;
+  source_branch?: string;
+  merge_commit_sha?: string;
+}
+
+interface GitLabPipeline {
+  status?: string;
+}
+
+interface InstallationRecord {
+  id: string;
+  organizationId?: string | null;
+  repositoryId?: string | null;
+  webhookSecret?: string | null;
 }
 
 export interface NormalizedEvent {
@@ -44,11 +71,23 @@ export interface NormalizedEvent {
 
 export class GitLabWebhookHandler {
   /**
-   * Validate webhook token
+   * Validate webhook token (timing-attack resistant)
    */
   validateToken(_payload: string, token: string, secret: string): boolean {
     // GitLab uses token-based validation
-    return token === secret;
+    // Use timing-safe comparison to prevent timing attacks
+    const { timingSafeEqual } = require('crypto');
+
+    // Ensure both strings are the same length before comparison
+    if (token.length !== secret.length) {
+      return false;
+    }
+
+    try {
+      return timingSafeEqual(Buffer.from(token, 'utf8'), Buffer.from(secret, 'utf8'));
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -98,17 +137,17 @@ export class GitLabWebhookHandler {
    */
   private async normalizeEvent(
     event: GitLabWebhookEvent,
-    installation: any
+    installation: InstallationRecord
   ): Promise<NormalizedEvent> {
-    const project = event.project || {};
-    const fullName = project.path_with_namespace || '';
+    const project = event.project ?? {};
+    const fullName = project.path_with_namespace ?? '';
 
     // Find or create repository
-    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId);
+    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId || null);
 
     if (event.object_kind === 'merge_request') {
-      const mr = event.object_attributes || event.merge_request || {};
-      const action = mr.action || mr.state || '';
+      const mr = (event.object_attributes ?? event.merge_request ?? {}) as GitLabMergeRequest;
+      const action = mr.action ?? mr.state ?? '';
 
       if (action === 'open' || action === 'opened') {
         return {
@@ -119,7 +158,7 @@ export class GitLabWebhookHandler {
             provider: 'gitlab',
           },
           pr: {
-            number: mr.iid || mr.id,
+            number: mr.iid || mr.id || 0,
             sha: mr.last_commit?.id || mr.sha || '',
             title: mr.title || '',
             baseBranch: mr.target_branch || '',
@@ -138,7 +177,7 @@ export class GitLabWebhookHandler {
             provider: 'gitlab',
           },
           pr: {
-            number: mr.iid || mr.id,
+            number: mr.iid || mr.id || 0,
             sha: mr.last_commit?.id || mr.sha || '',
             title: mr.title || '',
             baseBranch: mr.target_branch || '',
@@ -157,7 +196,7 @@ export class GitLabWebhookHandler {
             provider: 'gitlab',
           },
           pr: {
-            number: mr.iid || mr.id,
+            number: mr.iid || mr.id || 0,
             sha: mr.merge_commit_sha || mr.last_commit?.id || '',
             title: mr.title || '',
             baseBranch: mr.target_branch || '',
@@ -176,7 +215,7 @@ export class GitLabWebhookHandler {
             provider: 'gitlab',
           },
           pr: {
-            number: mr.iid || mr.id,
+            number: mr.iid || mr.id || 0,
             sha: mr.last_commit?.id || mr.sha || '',
             title: mr.title || '',
             baseBranch: mr.target_branch || '',
@@ -188,8 +227,8 @@ export class GitLabWebhookHandler {
     }
 
     if (event.object_kind === 'pipeline') {
-      const pipeline = event.object_attributes || event.pipeline || {};
-      const status = pipeline.status || '';
+      const pipeline = (event.object_attributes ?? event.pipeline ?? {}) as GitLabPipeline;
+      const status = pipeline.status ?? '';
 
       if (status === 'success' || status === 'failed' || status === 'canceled') {
         return {

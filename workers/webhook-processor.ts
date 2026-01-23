@@ -273,17 +273,20 @@ async function processPREvent(
         });
 
         if (review) {
+          const reviewResult = review.result as { policyScore?: number; rulesFired?: string[] } | null;
+          const issuesFound = (review.issuesFound as Array<Record<string, unknown>> | null) ?? [];
+
           const commentBody = formatPolicyComment(
             {
               blocked: runResult.reviewGuardResult.isBlocked,
-              score: (review as any)?.policyScore || 100,
-              rulesFired: (review as any)?.rulesFired || [],
-              nonWaivedFindings: (review.issuesFound as any[] || []).map((issue: any) => ({
-                ruleId: issue.ruleId,
-                severity: issue.severity,
-                message: issue.message,
-                file: issue.file,
-                line: issue.line || 0,
+              score: reviewResult?.policyScore ?? 100,
+              rulesFired: reviewResult?.rulesFired ?? [],
+              nonWaivedFindings: issuesFound.map((issue) => ({
+                ruleId: typeof issue.ruleId === 'string' ? issue.ruleId : 'unknown',
+                severity: typeof issue.severity === 'string' ? issue.severity : 'medium',
+                message: typeof issue.message === 'string' ? issue.message : '',
+                file: typeof issue.file === 'string' ? issue.file : undefined,
+                line: typeof issue.line === 'number' ? issue.line : 0,
               })),
             },
             {
@@ -579,12 +582,13 @@ async function processCIEvent(
   log: ReturnType<typeof logger.child>
 ): Promise<void> {
   const { repository } = event;
-  const ciRun = (event as any).ciRun; // TODO: Update WebhookCICompleted type to include ciRun
-  log.info({ repositoryId: String(repository.id), ciRunName: ciRun?.name }, 'Processing CI event');
+  const ciRun = (event as { ciRun?: unknown }).ciRun; // TODO: Update WebhookCICompleted type to include ciRun
+  const ciRunTyped = ciRun as { name?: string; headSha?: string } | undefined;
+  log.info({ repositoryId: String(repository.id), ciRunName: ciRunTyped?.name }, 'Processing CI event');
 
   // Check coverage when CI workflow completes
   // This integrates with GitHub Actions coverage reports
-  if (ciRun.headSha && repository.id) {
+  if (ciRunTyped?.headSha && repository.id) {
     try {
       // Get repository to find organization
       const repo = await prisma.repository.findUnique({
@@ -604,7 +608,7 @@ async function processCIEvent(
       // 3. Call testEngineService.checkCoverage()
       // 4. Create GitHub check run if coverage below threshold
 
-      log.info({ repositoryId: String(repository.id), headSha: ciRun.headSha }, 'CI event processed (coverage check placeholder)');
+      log.info({ repositoryId: String(repository.id), headSha: ciRunTyped?.headSha }, 'CI event processed (coverage check placeholder)');
     } catch (error) {
       log.error({ err: error, repositoryId: String(repository.id) }, 'Failed to process CI event');
       // Don't throw - CI event processing is non-blocking

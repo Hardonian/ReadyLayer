@@ -6,6 +6,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { console } from './logger';
 
 interface ValidationResult {
   name: string;

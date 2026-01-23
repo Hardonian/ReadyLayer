@@ -5,6 +5,7 @@
  * Ensures status updates are recorded before posting and can be retried safely.
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../observability/logging';
 import { providerStatusService, StageStatusUpdate } from '../provider-status';
@@ -56,7 +57,7 @@ export class OutboxService {
           repositoryId: payload.repositoryId || null,
           sandboxId: payload.sandboxId || null,
           intentType: 'status_update',
-          payload: update as any,
+          payload: update as unknown as Prisma.InputJsonValue,
           status: 'pending',
         },
       });

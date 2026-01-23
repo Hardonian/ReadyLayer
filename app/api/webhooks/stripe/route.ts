@@ -10,9 +10,48 @@ import { prisma } from '../../../../lib/prisma';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
 import Stripe from 'stripe';
+import { z } from 'zod';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
+
+export const StripeEventSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  data: z.object({
+    object: z.unknown(),
+  }),
+}).passthrough();
+
+const StripeSubscriptionSchema = z.object({
+  id: z.string(),
+  customer: z.union([z.string(), z.object({ id: z.string() })]),
+  status: z.string(),
+  items: z.object({
+    data: z.array(
+      z.object({
+        price: z.object({
+          metadata: z.record(z.string(), z.string()).optional(),
+        }),
+      }).passthrough()
+    ),
+  }),
+  current_period_start: z.number(),
+  current_period_end: z.number(),
+  cancel_at_period_end: z.boolean().optional(),
+}).passthrough();
+
+const StripeInvoiceSchema = z.object({
+  id: z.string(),
+  customer: z.union([z.string(), z.object({ id: z.string() })]),
+  subscription: z.union([z.string(), z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
+}).passthrough();
+
+type ValidatedStripeInvoice = z.infer<typeof StripeInvoiceSchema>;
+
+const StripeCheckoutSessionSchema = z.object({
+  id: z.string(),
+}).passthrough();
 
 // Initialize Stripe client
 let stripe: Stripe | null = null;
@@ -108,6 +147,19 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const parsedEvent = StripeEventSchema.safeParse(event);
+    if (!parsedEvent.success) {
+      log.warn({ issues: parsedEvent.error.issues }, 'Stripe webhook payload validation failed');
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_EVENT',
+            message: 'Webhook payload validation failed',
+          },
+        },
+        { status: 400 }
+      );
+    }
 
     log.info({ eventType: event.type }, 'Received Stripe webhook');
 
@@ -115,23 +167,73 @@ export async function POST(request: NextRequest) {
     switch (event.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-        await handleSubscriptionChange(event.data.object as Stripe.Subscription);
+        {
+          const subscriptionParsed = StripeSubscriptionSchema.safeParse(event.data.object);
+          if (!subscriptionParsed.success) {
+            log.warn({ issues: subscriptionParsed.error.issues }, 'Invalid subscription payload');
+            return NextResponse.json(
+              { error: { code: 'INVALID_SUBSCRIPTION', message: 'Invalid subscription payload' } },
+              { status: 400 }
+            );
+          }
+          await handleSubscriptionChange(subscriptionParsed.data as unknown as Stripe.Subscription);
+        }
         break;
 
       case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        {
+          const subscriptionParsed = StripeSubscriptionSchema.safeParse(event.data.object);
+          if (!subscriptionParsed.success) {
+            log.warn({ issues: subscriptionParsed.error.issues }, 'Invalid subscription payload');
+            return NextResponse.json(
+              { error: { code: 'INVALID_SUBSCRIPTION', message: 'Invalid subscription payload' } },
+              { status: 400 }
+            );
+          }
+          await handleSubscriptionDeleted(subscriptionParsed.data as unknown as Stripe.Subscription);
+        }
         break;
 
       case 'invoice.payment_succeeded':
-        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
+        {
+          const invoiceParsed = StripeInvoiceSchema.safeParse(event.data.object);
+          if (!invoiceParsed.success) {
+            log.warn({ issues: invoiceParsed.error.issues }, 'Invalid invoice payload');
+            return NextResponse.json(
+              { error: { code: 'INVALID_INVOICE', message: 'Invalid invoice payload' } },
+              { status: 400 }
+            );
+          }
+          await handleInvoicePaymentSucceeded(invoiceParsed.data);
+        }
         break;
 
       case 'invoice.payment_failed':
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        {
+          const invoiceParsed = StripeInvoiceSchema.safeParse(event.data.object);
+          if (!invoiceParsed.success) {
+            log.warn({ issues: invoiceParsed.error.issues }, 'Invalid invoice payload');
+            return NextResponse.json(
+              { error: { code: 'INVALID_INVOICE', message: 'Invalid invoice payload' } },
+              { status: 400 }
+            );
+          }
+          await handleInvoicePaymentFailed(invoiceParsed.data as unknown as Stripe.Invoice);
+        }
         break;
 
       case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        {
+          const sessionParsed = StripeCheckoutSessionSchema.safeParse(event.data.object);
+          if (!sessionParsed.success) {
+            log.warn({ issues: sessionParsed.error.issues }, 'Invalid checkout session payload');
+            return NextResponse.json(
+              { error: { code: 'INVALID_SESSION', message: 'Invalid checkout session payload' } },
+              { status: 400 }
+            );
+          }
+          await handleCheckoutCompleted(sessionParsed.data as unknown as Stripe.Checkout.Session);
+        }
         break;
 
       default:
@@ -208,8 +310,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           plan,
           status: mapStripeStatus(subscription.status),
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           updatedAt: new Date(),
         },
@@ -236,8 +338,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           status: mapStripeStatus(subscription.status),
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+          currentPeriodStart: new Date((subscription as unknown as { current_period_start: number }).current_period_start * 1000),
+          currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         },
       });
@@ -308,7 +410,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
 /**
  * Handle invoice payment succeeded
  */
-async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
+async function handleInvoicePaymentSucceeded(invoice: ValidatedStripeInvoice): Promise<void> {
   const log = logger.child({ invoiceId: invoice.id });
 
   try {
@@ -329,13 +431,13 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
 
     if (subscription) {
       // Update subscription period if needed
-      if ((invoice as any).subscription && typeof (invoice as any).subscription !== 'string') {
-        const stripeSubscription = (invoice as any).subscription as Stripe.Subscription;
+    if (invoice.subscription && typeof invoice.subscription !== 'string' && invoice.subscription !== null) {
+      const stripeSubscription = invoice.subscription as unknown as { current_period_start: number; current_period_end: number };
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: {
-            currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
-            currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
+            currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
             status: 'active',
             updatedAt: new Date(),
           },

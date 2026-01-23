@@ -13,6 +13,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { console } from './logger';
 
 interface ExpectedTable {
   name: string;

@@ -95,7 +95,7 @@ describe('Review Guard - Async LLM Processing', () => {
         prNumber: -1,
         prSha: '',
         files: [],
-      } as any;
+      } as unknown as ReviewRequest;
 
       // Should either throw or return error
       try {

@@ -41,7 +41,7 @@ export interface GitLabMR {
 export interface GitLabAPIClient {
   getMR(repo: string, mrIid: number, token: string): Promise<GitLabMR>;
   getMRDiff(repo: string, mrIid: number, token: string): Promise<string>;
-  postMRComment(repo: string, mrIid: number, body: string, token: string): Promise<any>;
+  postMRComment(repo: string, mrIid: number, body: string, token: string): Promise<Record<string, unknown>>;
   updateCommitStatus(
     repo: string,
     sha: string,
@@ -49,7 +49,7 @@ export interface GitLabAPIClient {
     description: string,
     name: string,
     token: string
-  ): Promise<any>;
+  ): Promise<Record<string, unknown>>;
   getFileContent(repo: string, path: string, ref: string, token: string): Promise<string>;
   triggerPipeline(
     repo: string,
@@ -127,9 +127,9 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
     mrIid: number,
     body: string,
     token: string
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const url = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/merge_requests/${mrIid}/notes`;
-    return this.request(url, token, {
+    return this.request<Record<string, unknown>>(url, token, {
       method: 'POST',
       body: JSON.stringify({ body }),
     });
@@ -145,9 +145,9 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
     description: string,
     name: string,
     token: string
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const url = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/statuses/${sha}`;
-    return this.request(url, token, {
+    return this.request<Record<string, unknown>>(url, token, {
       method: 'POST',
       body: JSON.stringify({
         state,

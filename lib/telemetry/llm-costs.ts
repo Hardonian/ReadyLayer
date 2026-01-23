@@ -125,7 +125,10 @@ export function trackLLMCall(
       amount: metrics_.outputTokens.toString(),
     });
 
-    (metrics as any).timing?.('llm_request_duration_ms', metrics_.requestDurationMs, {
+    const metricsWithTiming = metrics as {
+      timing?: (name: string, value: number, tags?: Record<string, string>) => void;
+    };
+    metricsWithTiming.timing?.('llm_request_duration_ms', metrics_.requestDurationMs, {
       provider: metrics_.provider,
     });
 
@@ -364,14 +367,21 @@ export async function exportCostsData(
 /**
  * Get model usage statistics
  */
-export function getModelUsageStats(organizationId: string): Record<string, any> {
+export interface ModelUsageStats {
+  calls: number;
+  totalTokens: number;
+  totalCost: number;
+  successRate: number;
+}
+
+export function getModelUsageStats(organizationId: string): Record<string, ModelUsageStats> {
   const entry = costTracker.get(organizationId);
 
   if (!entry) {
     return {};
   }
 
-  const stats: Record<string, any> = {};
+  const stats: Record<string, ModelUsageStats> = {};
 
   for (const call of entry.calls) {
     if (!stats[call.model]) {

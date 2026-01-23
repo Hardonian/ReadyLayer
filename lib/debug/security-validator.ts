@@ -73,9 +73,9 @@ export async function validateSecurity(
   const lines = code.split('\n');
 
   // Determine which checks to run
-  const runCheck = (checkName: string): boolean => {
+  const runCheck = (checkName: NonNullable<ValidationOptions['checks']>[number]): boolean => {
     if (enableAllChecks) return true;
-    return checks.includes(checkName as any);
+    return checks.includes(checkName);
   };
 
   // Check 1: Tenant Isolation
@@ -430,7 +430,7 @@ export async function validateFile(filePath: string): Promise<void> {
     filePath,
   });
 
-  console.log(generateSecurityReport(issues));
+  process.stdout.write(`${generateSecurityReport(issues)}\n`);
 
   // Exit with error if critical or high issues found
   const hasCriticalIssues = issues.some(

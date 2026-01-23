@@ -5,6 +5,7 @@
  * Governs Review Guard / Test Engine / Doc Sync decisions
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
@@ -24,7 +25,7 @@ export interface PolicyRule {
   ruleId: string;
   severityMapping: Record<string, 'block' | 'warn' | 'allow'>;
   enabled: boolean;
-  params?: Record<string, any>;
+  params?: Record<string, unknown>;
 }
 
 export interface EffectivePolicy {
@@ -56,13 +57,13 @@ export interface EvidenceInputs {
   commitSha?: string;
   branch?: string;
   prNumber?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface EvidenceOutputs {
   findings: Issue[];
   evaluationResult: EvaluationResult;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface EvidenceBundle {
@@ -271,13 +272,13 @@ export class PolicyEngineService {
         reviewId: resourceId?.reviewId,
         testId: resourceId?.testId,
         docId: resourceId?.docId,
-        inputsMetadata: inputsMetadata as any,
-        rulesFired: outputs.evaluationResult.rulesFired as any,
+        inputsMetadata: inputsMetadata as Prisma.InputJsonValue,
+        rulesFired: outputs.evaluationResult.rulesFired as Prisma.InputJsonValue,
         deterministicScore: outputs.evaluationResult.score,
-        artifacts: outputs.artifacts as any,
+        artifacts: outputs.artifacts as Prisma.InputJsonValue,
         policyChecksum: policy.pack.checksum,
-        toolVersions: toolVersions as any,
-        timings: timings as any,
+        toolVersions: toolVersions as Prisma.InputJsonValue,
+        timings: timings as Prisma.InputJsonValue,
       },
     });
 
@@ -354,7 +355,7 @@ export class PolicyEngineService {
         ruleId: r.ruleId,
         severityMapping: r.severityMapping as Record<string, 'block' | 'warn' | 'allow'>,
         enabled: r.enabled,
-        params: r.params as Record<string, any> | undefined,
+        params: r.params as Record<string, unknown> | undefined,
       })),
     };
   }

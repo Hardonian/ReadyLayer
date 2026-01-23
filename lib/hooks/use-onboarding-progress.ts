@@ -157,12 +157,12 @@ export function useOnboardingProgress() {
  */
 function trackOnboardingEvent(
   eventName: string,
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 ) {
   // Would send to analytics service
   // For now, just log to console in development
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[Onboarding] ${eventName}`, data)
+    console.warn(`[Onboarding] ${eventName}`, data)
   }
 
   // TODO: Integrate with actual analytics (Mixpanel, Segment, etc.)

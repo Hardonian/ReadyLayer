@@ -65,6 +65,19 @@ export interface AIRiskExposureIndex {
   lastUpdated: Date;
 }
 
+interface ReviewSummary {
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+}
+
+interface ReviewRecord {
+  id: string;
+  summary: ReviewSummary | null;
+}
+
 /**
  * Cultural Lock-In Artifacts Service
  * 
@@ -94,7 +107,7 @@ export class CulturalArtifactsService {
     }
 
     // Calculate confidence score
-    const confidenceScore = this.calculateConfidenceScore(review);
+    const confidenceScore = this.calculateConfidenceScore({ id: review.id, summary: review.summary as ReviewSummary | null });
 
     // Determine readiness level
     const readinessLevel =
@@ -198,7 +211,7 @@ export class CulturalArtifactsService {
 
     const averageConfidence = reviews.length > 0
       ? reviews.reduce((sum, r) => {
-          const score = this.calculateConfidenceScore(r);
+          const score = this.calculateConfidenceScore({ id: r.id, summary: r.summary as ReviewSummary | null });
           return sum + score;
         }, 0) / reviews.length / 100
       : 1;
@@ -369,7 +382,7 @@ export class CulturalArtifactsService {
     const averageConfidence =
       allReviews.length > 0
         ? allReviews.reduce((sum, r) => {
-            const score = this.calculateConfidenceScore(r);
+            const score = this.calculateConfidenceScore({ id: r.id, summary: r.summary as ReviewSummary | null });
             return sum + score / 100;
           }, 0) / allReviews.length
         : 0;
@@ -503,7 +516,7 @@ export class CulturalArtifactsService {
   /**
    * Calculate confidence score from review
    */
-  private calculateConfidenceScore(review: any): number {
+  private calculateConfidenceScore(review: ReviewRecord): number {
     const summary = review.summary as
       | { total: number; critical: number; high: number; medium: number; low: number }
       | null;

@@ -282,7 +282,7 @@ describe('Queue Service - Integration Tests', () => {
     it('should handle malformed jobs', async () => {
       const payload: JobPayload = {
         type: 'test:job',
-        data: null as any, // Invalid
+        data: null as unknown as Record<string, unknown>, // Invalid
       };
 
       // Should handle gracefully

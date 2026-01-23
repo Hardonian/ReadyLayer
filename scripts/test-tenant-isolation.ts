@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '../lib/prisma';
+import { console } from './logger';
 
 async function testTenantIsolation() {
   console.log('🔒 Testing Tenant Isolation...\n');

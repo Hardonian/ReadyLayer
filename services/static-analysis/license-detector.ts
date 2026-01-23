@@ -178,7 +178,7 @@ export function scanImportsForLicenseConflicts(
 
   for (const { name, license } of restrictivePackages) {
     // Simple regex to find imports
-    const importPattern = new RegExp(`import.*from\\s+['\"]${name}['\"]`, 'g');
+    const importPattern = new RegExp(`import.*from\\s+['"]${name}['"]`, 'g');
     if (importPattern.test(content)) {
       const match = content.match(importPattern);
       if (match) {

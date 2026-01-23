@@ -5,6 +5,7 @@
  * Enforces drift prevention (blocks by default)
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
@@ -45,9 +46,9 @@ export interface DocGenerationResult {
   status: 'generated' | 'failed' | 'blocked';
   format: string;
   content: string;
-  spec?: any; // Parsed OpenAPI spec
+  spec?: OpenApiSpec; // Parsed OpenAPI spec
   driftDetected: boolean;
-  driftDetails?: any;
+  driftDetails?: DriftCheckResult;
   startedAt: Date;
   completedAt: Date;
 }
@@ -64,6 +65,42 @@ export interface DriftCheckResult {
     line: number;
   }>;
   isBlocked: boolean;
+}
+
+interface EndpointParam {
+  name?: string;
+  in?: string;
+  required?: boolean;
+  schema?: Record<string, unknown>;
+}
+
+interface EndpointDefinition {
+  method: string;
+  path: string;
+  file: string;
+  line: number;
+  params: EndpointParam[];
+}
+
+interface OpenApiSpec {
+  openapi: string;
+  info: {
+    title: string;
+    version: string;
+    description?: string;
+  };
+  paths: Record<string, Record<string, OpenApiOperation>>;
+  components?: {
+    schemas?: Record<string, unknown>;
+  };
+  [key: string]: unknown;
+}
+
+interface OpenApiOperation {
+  summary?: string;
+  description?: string;
+  responses?: Record<string, unknown>;
+  parameters?: Array<Record<string, unknown>>;
 }
 
 /**
@@ -154,7 +191,7 @@ export class DocSyncService {
       const endpoints = await this.extractEndpoints(request.repositoryId, request.ref, framework);
 
       let content: string;
-      let spec: any;
+      let spec: OpenApiSpec | undefined;
 
       if (request.format === 'openapi') {
         // Generate OpenAPI spec
@@ -235,14 +272,14 @@ export class DocSyncService {
           ref: request.ref,
           format: request.format,
           content,
-          spec: spec || undefined,
+          spec: (spec || undefined) as Prisma.InputJsonValue,
           status: isBlocked ? 'blocked' : 'generated',
           driftDetected: driftResult.driftDetected,
           driftDetails: {
             missingEndpoints: driftResult.missingEndpoints,
             extraEndpoints: driftResult.extraEndpoints,
             changedEndpoints: driftResult.changedEndpoints,
-          } as any,
+          } as Prisma.InputJsonValue,
           publishedAt: config.updateStrategy === 'commit' && !isBlocked ? completedAt : null,
           createdAt: startedAt,
           updatedAt: completedAt,
@@ -359,7 +396,7 @@ export class DocSyncService {
     const currentEndpoints = await this.extractEndpoints(repositoryId, ref, framework);
 
     // Compare with documented endpoints
-    const documentedEndpoints = this.extractEndpointsFromOpenAPI(latestDoc.spec);
+    const documentedEndpoints = this.extractEndpointsFromOpenAPI(latestDoc.spec as OpenApiSpec);
 
     const missingEndpoints: DriftCheckResult['missingEndpoints'] = [];
     const extraEndpoints: DriftCheckResult['extraEndpoints'] = [];
@@ -479,9 +516,9 @@ export class DocSyncService {
     _repositoryId: string,
     _ref: string,
     _framework: string
-  ): Promise<Array<{ method: string; path: string; file: string; line: number; params: any }>> {
+  ): Promise<EndpointDefinition[]> {
     // Simplified extraction (would fetch actual code from repo in production)
-    const endpoints: Array<{ method: string; path: string; file: string; line: number; params: any }> = [];
+    const endpoints: EndpointDefinition[] = [];
 
     // Would parse code files and extract route definitions
     // For Express: app.get('/path', ...)
@@ -494,13 +531,12 @@ export class DocSyncService {
   /**
    * Extract endpoints from OpenAPI spec
    */
-  private extractEndpointsFromOpenAPI(spec: any): Array<{ method: string; path: string }> {
+  private extractEndpointsFromOpenAPI(spec: OpenApiSpec): Array<{ method: string; path: string }> {
     const endpoints: Array<{ method: string; path: string }> = [];
 
     if (spec.paths) {
       for (const [path, methods] of Object.entries(spec.paths)) {
-        const pathMethods = methods as Record<string, any>;
-        for (const method of Object.keys(pathMethods)) {
+        for (const method of Object.keys(methods)) {
           if (['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) {
             endpoints.push({
               method: method.toUpperCase(),
@@ -518,12 +554,12 @@ export class DocSyncService {
    * Generate OpenAPI spec
    */
   private async generateOpenAPI(
-    endpoints: any[],
+    endpoints: EndpointDefinition[],
     version: '3.0' | '3.1',
     enhanceWithLLM: boolean,
     organizationId: string
-  ): Promise<{ content: string; spec: any }> {
-    let spec: any = {
+  ): Promise<{ content: string; spec: OpenApiSpec }> {
+    let spec: OpenApiSpec = {
       openapi: version,
       info: {
         title: 'API',
@@ -618,7 +654,7 @@ Return the enhanced OpenAPI spec as JSON.`;
 
       try {
         const response = await llmService.complete(llmRequest);
-        spec = JSON.parse(response.content);
+        spec = JSON.parse(response.content) as OpenApiSpec;
       } catch {
         // LLM enhancement failed, use basic spec
         // Error is handled gracefully, basic spec is used
@@ -634,7 +670,7 @@ Return the enhanced OpenAPI spec as JSON.`;
   /**
    * Generate Markdown documentation
    */
-  private async generateMarkdown(endpoints: any[], _organizationId: string): Promise<string> {
+  private async generateMarkdown(endpoints: EndpointDefinition[], _organizationId: string): Promise<string> {
     let markdown = '# API Documentation\n\n';
 
     for (const endpoint of endpoints) {
@@ -651,7 +687,7 @@ Return the enhanced OpenAPI spec as JSON.`;
   private async validateDocs(content: string, format: string): Promise<void> {
     if (format === 'openapi') {
       try {
-        const spec = JSON.parse(content);
+        const spec = JSON.parse(content) as OpenApiSpec;
         if (!spec.openapi || !spec.info || !spec.paths) {
           throw new Error('Invalid OpenAPI spec: missing required fields');
         }

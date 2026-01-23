@@ -8,6 +8,7 @@
 import { prisma } from '../lib/prisma';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { console } from './logger';
 
 async function runMigration() {
   console.log('🚀 Running ReadyLayer migration via Prisma...\n');
@@ -50,9 +51,10 @@ async function runMigration() {
         if ((i + 1) % 10 === 0) {
           console.log(`   Progress: ${i + 1}/${statements.length} statements executed...`);
         }
-      } catch (error: any) {
+      } catch (err) {
         // Some statements may fail if objects already exist (idempotent)
         // This is expected and OK
+        const error = err as Error;
         const errorMessage = error?.message || '';
         if (
           errorMessage.includes('already exists') ||

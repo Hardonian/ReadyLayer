@@ -63,7 +63,7 @@ const SECRET_PATTERNS: RedactionPattern[] = [
   },
   {
     type: 'oauth-token',
-    pattern: /[Tt]oken[\s:=]+['"]?[A-Za-z0-9_\-\.]{20,}['"]?/g,
+    pattern: /[Tt]oken[\s:=]+['"]?[A-Za-z0-9_.-]{20,}['"]?/g,
     example: 'token=XXX',
   },
   {
@@ -78,12 +78,12 @@ const SECRET_PATTERNS: RedactionPattern[] = [
   },
   {
     type: 'api-key-generic',
-    pattern: /api[_-]?key[\s:=]+['"]?[A-Za-z0-9_\-\.]{20,}['"]?/gi,
+    pattern: /api[_-]?key[\s:=]+['"]?[A-Za-z0-9_.-]{20,}['"]?/gi,
     example: 'api_key=XXX',
   },
   {
     type: 'aws-secret',
-    pattern: /aws_secret_access_key[\s:=]+['"]?[A-Za-z0-9\/+]{40}['"]?/gi,
+    pattern: /aws_secret_access_key[\s:=]+['"]?[A-Za-z0-9/+]{40}['"]?/gi,
     example: 'aws_secret_access_key=XXX',
   },
   {

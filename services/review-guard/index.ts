@@ -5,12 +5,13 @@
  * Enforces blocking by default for critical/high issues
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest, LLMResponse } from '../llm';
 import { staticAnalysisService, Issue } from '../static-analysis';
 import { schemaReconciliationService } from '../schema-reconciliation';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
-import { policyEngineService } from '../policy-engine';
+import { policyEngineService, type EvaluationResult } from '../policy-engine';
 import { createHash } from 'crypto';
 import { UsageLimitExceededError } from '../../lib/usage-enforcement';
 // import { aiAnomalyDetectionService } from '../ai-anomaly-detection'; // Reserved for future use
@@ -284,9 +285,9 @@ export class ReviewGuardService {
             reviewIdSignature, // Include signature in result
             policyVersion: policy.pack.version,
             policyChecksum: policy.pack.checksum,
-          } as any, // Prisma Json type
-          issuesFound: evaluationResult.nonWaivedFindings as any, // Prisma Json type
-          summary: summary as any, // Prisma Json type
+          } as unknown as Prisma.InputJsonValue, // Prisma Json type
+          issuesFound: evaluationResult.nonWaivedFindings as unknown as Prisma.InputJsonValue, // Prisma Json type
+          summary: summary as Prisma.InputJsonValue, // Prisma Json type
           isBlocked,
           blockedReason,
           startedAt,
@@ -482,8 +483,8 @@ export class ReviewGuardService {
           status: 'failed',
           isBlocked: true,
           blockedReason: errorMessage,
-          issuesFound: [] as any, // Empty array for failed reviews
-          summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0 } as any,
+          issuesFound: [] as Prisma.InputJsonValue, // Empty array for failed reviews
+          summary: { total: 0, critical: 0, high: 0, medium: 0, low: 0 } as Prisma.InputJsonValue,
           startedAt,
         },
       });
@@ -706,7 +707,7 @@ export class ReviewGuardService {
     organizationId: string,
     _repositoryId: string,
     reviewId: string,
-    evaluationResult: any,
+    evaluationResult: EvaluationResult,
     durationMs: number
   ): Promise<void> {
     try {

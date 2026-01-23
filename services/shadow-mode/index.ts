@@ -7,6 +7,7 @@
  * Purpose: Validate ReadyLayer usefulness before enforcement
  */
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest, ReviewResult } from '../review-guard';
 import { testEngineService } from '../test-engine';
@@ -269,8 +270,8 @@ export class ShadowModeService {
           repositoryId,
           prNumber,
           result,
-        } as any,
-        result: result as any,
+        } as unknown as Prisma.InputJsonValue,
+        result: result as unknown as Prisma.InputJsonValue,
       },
     });
   }

@@ -7,8 +7,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+export const SlackEventDataSchema = z.object({
+  type: z.string(),
+  user: z.string().optional(),
+  channel: z.string().optional(),
+  text: z.string().optional(),
+  reaction: z.string().optional(),
+  bot_id: z.string().optional(),
+});
+
+export const SlackEventPayloadSchema = z.object({
+  type: z.enum(['url_verification', 'event_callback']),
+  challenge: z.string().optional(),
+  team_id: z.string().optional(),
+  event: SlackEventDataSchema.optional(),
+}).passthrough();
+
+type SlackEventData = z.infer<typeof SlackEventDataSchema>;
 
 /**
  * POST /integrations/slack/events
@@ -16,18 +35,27 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
+    const parsed = SlackEventPayloadSchema.safeParse(payload);
+    if (!parsed.success) {
+      logger.warn({ issues: parsed.error.issues }, 'Invalid Slack event payload');
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+    const data = parsed.data;
 
     // Handle URL verification challenge
-    if (payload.type === 'url_verification') {
+    if (data.type === 'url_verification') {
       logger.info('Slack URL verification challenge');
       return NextResponse.json({
-        challenge: payload.challenge,
+        challenge: data.challenge,
       });
     }
 
     // Handle events
-    if (payload.type === 'event_callback') {
-      const event = payload.event;
+    if (data.type === 'event_callback') {
+      const event = data.event;
+      if (!event) {
+        return NextResponse.json({ error: 'Missing event data' }, { status: 400 });
+      }
 
       logger.info(
         {
@@ -44,17 +72,17 @@ export async function POST(request: NextRequest) {
 
       // Handle app mention
       if (event.type === 'app_mention') {
-        await handleAppMention(event, payload.team_id);
+        await handleAppMention(event, data.team_id);
       }
 
       // Handle message
       if (event.type === 'message' && !event.bot_id) {
-        await handleMessage(event, payload.team_id);
+        await handleMessage(event, data.team_id);
       }
 
       // Handle reaction
       if (event.type === 'reaction_added') {
-        await handleReaction(event, payload.team_id);
+        await handleReaction(event, data.team_id);
       }
 
       return NextResponse.json({ ok: true });
@@ -81,7 +109,11 @@ export async function POST(request: NextRequest) {
 /**
  * Handle app mention events
  */
-async function handleAppMention(event: any, teamId: string): Promise<void> {
+async function handleAppMention(event: SlackEventData, teamId?: string): Promise<void> {
+  if (!teamId) {
+    logger.warn('Missing Slack team ID for app mention');
+    return;
+  }
   const { user, channel, text } = event;
 
   logger.info(
@@ -96,7 +128,13 @@ async function handleAppMention(event: any, teamId: string): Promise<void> {
   metrics.increment('slack_app_mention');
 
   // Parse command from text
-  const command = text.toLowerCase().split(/\s+/)[1];
+  const command = text?.toLowerCase().split(/\s+/)[1];
+
+  // Ensure channel and teamId are defined
+  if (!channel || !teamId) {
+    logger.warn('Missing channel or teamId for app_mention');
+    return;
+  }
 
   switch (command) {
     case 'status':
@@ -113,7 +151,11 @@ async function handleAppMention(event: any, teamId: string): Promise<void> {
 /**
  * Handle message events
  */
-async function handleMessage(event: any, teamId: string): Promise<void> {
+async function handleMessage(event: SlackEventData, teamId?: string): Promise<void> {
+  if (!teamId) {
+    logger.warn('Missing Slack team ID for message event');
+    return;
+  }
   logger.info(
     {
       channel: event.channel,
@@ -128,7 +170,11 @@ async function handleMessage(event: any, teamId: string): Promise<void> {
 /**
  * Handle reaction events
  */
-async function handleReaction(event: any, teamId: string): Promise<void> {
+async function handleReaction(event: SlackEventData, teamId?: string): Promise<void> {
+  if (!teamId) {
+    logger.warn('Missing Slack team ID for reaction event');
+    return;
+  }
   logger.info(
     {
       reaction: event.reaction,
@@ -138,7 +184,7 @@ async function handleReaction(event: any, teamId: string): Promise<void> {
   );
 
   metrics.increment('slack_reaction_event', {
-    reaction: event.reaction,
+    reaction: event.reaction || 'unknown',
   });
 }
 

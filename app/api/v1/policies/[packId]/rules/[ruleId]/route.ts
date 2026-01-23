@@ -17,7 +17,7 @@ import { parseJsonBody } from '../../../../../../../lib/api-route-helpers';
 const updateRuleSchema = z.object({
   severityMapping: z.record(z.string(), z.enum(['block', 'warn', 'allow'])).optional(),
   enabled: z.boolean().optional(),
-  params: z.record(z.string(), z.any()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

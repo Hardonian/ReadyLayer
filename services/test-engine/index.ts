@@ -404,7 +404,7 @@ export class TestEngineService {
     repositoryId: string,
     prNumber: number,
     prSha: string,
-    coverageData: any, // lcov or coverage JSON
+    coverageData: unknown, // lcov or coverage JSON
     config?: TestConfig
   ): Promise<CoverageResult> {
     const testConfig = config || this.getDefaultConfig();
@@ -469,7 +469,7 @@ export class TestEngineService {
   private async buildTestPrompt(
     filePath: string,
     content: string,
-    _parseResult: any,
+    _parseResult: unknown,
     framework: string,
     _repositoryId: string,
     _organizationId: string
@@ -533,8 +533,10 @@ export class TestEngineService {
         return filePath.replace(/\.(ts|js|tsx|jsx)$/, '.test.$1');
       case 'separate':
         // Place in test directory
-        const fileName = filePath.split('/').pop() || '';
-        return `${testDir || 'tests'}/${fileName.replace(/\.(ts|js|tsx|jsx)$/, '.test.$1')}`;
+        {
+          const fileName = filePath.split('/').pop() || '';
+          return `${testDir || 'tests'}/${fileName.replace(/\.(ts|js|tsx|jsx)$/, '.test.$1')}`;
+        }
       case 'mirror':
         // Mirror directory structure
         return filePath.replace(/^src\//, 'tests/').replace(/\.(ts|js|tsx|jsx)$/, '.test.$1');
@@ -555,24 +557,29 @@ export class TestEngineService {
   /**
    * Parse coverage data (lcov or JSON)
    */
-  private parseCoverage(coverageData: any): CoverageResult['coverage'] {
+  private parseCoverage(coverageData: unknown): CoverageResult['coverage'] {
     // Simplified parsing (would use proper lcov parser in production)
-    if (typeof coverageData === 'object' && coverageData.lines) {
+    if (coverageData && typeof coverageData === 'object' && 'lines' in coverageData) {
+      const data = coverageData as {
+        lines?: { total?: number; covered?: number; percentage?: number };
+        branches?: { total?: number; covered?: number; percentage?: number };
+        functions?: { total?: number; covered?: number; percentage?: number };
+      };
       return {
         lines: {
-          total: coverageData.lines.total || 0,
-          covered: coverageData.lines.covered || 0,
-          percentage: coverageData.lines.percentage || 0,
+          total: data.lines?.total || 0,
+          covered: data.lines?.covered || 0,
+          percentage: data.lines?.percentage || 0,
         },
         branches: {
-          total: coverageData.branches?.total || 0,
-          covered: coverageData.branches?.covered || 0,
-          percentage: coverageData.branches?.percentage || 0,
+          total: data.branches?.total || 0,
+          covered: data.branches?.covered || 0,
+          percentage: data.branches?.percentage || 0,
         },
         functions: {
-          total: coverageData.functions?.total || 0,
-          covered: coverageData.functions?.covered || 0,
-          percentage: coverageData.functions?.percentage || 0,
+          total: data.functions?.total || 0,
+          covered: data.functions?.covered || 0,
+          percentage: data.functions?.percentage || 0,
         },
       };
     }

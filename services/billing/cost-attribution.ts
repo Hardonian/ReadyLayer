@@ -74,6 +74,12 @@ export interface APICosts {
   totalCost: number;
 }
 
+interface CostEvent {
+  type: 'llm' | 'embedding' | 'database' | 'storage' | 'api';
+  totalCost: number;
+  metadata?: Record<string, unknown>;
+}
+
 // Pricing tiers (can be configured per organization)
 const DEFAULT_PRICING = {
   llm: {
@@ -260,7 +266,7 @@ class CostAttributionService {
     //     },
     //   },
     // });
-    const events: any[] = [];
+    const events: CostEvent[] = [];
 
     const costs = {
       llm: { model: 'aggregate', inputTokens: 0, outputTokens: 0, costPerInputMillion: 0, costPerOutputMillion: 0, totalCost: 0 },
@@ -273,39 +279,49 @@ class CostAttributionService {
     for (const event of events) {
       switch (event.type) {
         case 'llm':
-          const llmMeta = event.metadata as any;
-          costs.llm.totalCost += event.totalCost;
-          costs.llm.inputTokens += llmMeta?.inputTokens || 0;
-          costs.llm.outputTokens += llmMeta?.outputTokens || 0;
-          break;
+          {
+            const llmMeta = event.metadata;
+            costs.llm.totalCost += event.totalCost;
+            costs.llm.inputTokens += getNumber(llmMeta?.inputTokens);
+            costs.llm.outputTokens += getNumber(llmMeta?.outputTokens);
+            break;
+          }
 
         case 'embedding':
-          const embMeta = event.metadata as any;
-          costs.embedding.totalCost += event.totalCost;
-          costs.embedding.tokens += embMeta?.tokens || 0;
-          break;
+          {
+            const embMeta = event.metadata;
+            costs.embedding.totalCost += event.totalCost;
+            costs.embedding.tokens += getNumber(embMeta?.tokens);
+            break;
+          }
 
         case 'database':
-          const dbMeta = event.metadata as any;
-          costs.database.totalCost += event.totalCost;
-          if (dbMeta?.operation === 'read') {
-            costs.database.reads += dbMeta?.count || 0;
-          } else {
-            costs.database.writes += dbMeta?.count || 0;
+          {
+            const dbMeta = event.metadata;
+            costs.database.totalCost += event.totalCost;
+            if (dbMeta?.operation === 'read') {
+              costs.database.reads += getNumber(dbMeta?.count);
+            } else {
+              costs.database.writes += getNumber(dbMeta?.count);
+            }
+            break;
           }
-          break;
 
         case 'storage':
-          const storageMeta = event.metadata as any;
-          costs.storage.totalCost += event.totalCost;
-          costs.storage.usage += storageMeta?.usage || 0;
-          break;
+          {
+            const storageMeta = event.metadata;
+            costs.storage.totalCost += event.totalCost;
+            costs.storage.usage += getNumber(storageMeta?.usage);
+            break;
+          }
 
         case 'api':
-          const apiMeta = event.metadata as any;
-          costs.api.totalCost += event.totalCost;
-          costs.api.requests += apiMeta?.requests || 0;
-          break;
+          {
+            const apiMeta = event.metadata;
+            costs.api.totalCost += event.totalCost;
+            costs.api.requests += getNumber(apiMeta?.requests);
+            break;
+          }
       }
     }
 
@@ -463,6 +479,10 @@ class CostAttributionService {
       ? recommendations
       : ['Usage is optimized. No immediate recommendations.'];
   }
+}
+
+function getNumber(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
 
 export const costAttributionService = new CostAttributionService();

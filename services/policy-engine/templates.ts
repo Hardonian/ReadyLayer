@@ -60,7 +60,7 @@ export const owaspTop10Template: PolicyTemplate = {
       name: 'Sensitive Data Exposure',
       description: 'Protect sensitive data in transit and at rest',
       severity: 'critical',
-      pattern: '(password|api_key|secret|token)\\s*=\\s*[\'"][^\'\"]*[\'"]',
+      pattern: '(password|api_key|secret|token)\\s*=\\s*[\'"][^\'"]*[\'"]',
       remediation:
         'Encrypt sensitive data, use HTTPS, implement proper access controls.',
     },
@@ -192,7 +192,7 @@ export const hipaaTemplate: PolicyTemplate = {
       name: 'PHI Protection',
       description: 'Protect Protected Health Information',
       severity: 'critical',
-      pattern: '(ssn|social.*security|health.*record)\\s*=\\s*[\'"][^\'\"]*[\'"]',
+      pattern: '(ssn|social.*security|health.*record)\\s*=\\s*[\'"][^\'"]*[\'"]',
       remediation:
         'Encrypt PHI at rest and in transit. Implement access controls.',
     },

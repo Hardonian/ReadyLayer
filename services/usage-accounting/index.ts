@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '../../observability/logging';
 
 export interface TokenUsageRecord {
@@ -21,7 +22,7 @@ export interface TokenUsageRecord {
   cost: number;
   contextSize?: number;
   wastePercentage?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -49,7 +50,7 @@ export class UsageAccountingService {
           cost: usage.cost,
           contextSize: usage.contextSize || null,
           wastePercentage: usage.wastePercentage || null,
-          metadata: usage.metadata || null,
+          metadata: (usage.metadata || null) as Prisma.InputJsonValue,
         },
       });
 
@@ -95,7 +96,7 @@ export class UsageAccountingService {
       cost: Number(u.cost),
       contextSize: u.contextSize || undefined,
       wastePercentage: u.wastePercentage ? Number(u.wastePercentage) : undefined,
-      metadata: u.metadata as any,
+      metadata: u.metadata ? (u.metadata as Record<string, unknown>) : undefined,
     }));
   }
 
@@ -107,7 +108,10 @@ export class UsageAccountingService {
     startDate?: Date,
     endDate?: Date
   ): Promise<{ totalTokens: number; totalCost: number; byService: Record<string, number> }> {
-    const where: any = { organizationId };
+    const where: {
+      organizationId: string;
+      createdAt?: { gte?: Date; lte?: Date };
+    } = { organizationId };
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) where.createdAt.gte = startDate;

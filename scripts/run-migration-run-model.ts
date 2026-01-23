@@ -8,6 +8,7 @@
 import { PrismaClient } from '@prisma/client';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { console } from './logger';
 
 const prisma = new PrismaClient();
 
@@ -28,8 +29,9 @@ async function main() {
       try {
         await prisma.$executeRawUnsafe(statement);
         console.log('✓ Executed statement');
-      } catch (error: any) {
+      } catch (err) {
         // Ignore "already exists" errors
+        const error = err as Error & { code?: string };
         if (error.message?.includes('already exists') || error.code === '42P07' || error.code === '42710') {
           console.log('⚠ Statement already applied (skipping)');
         } else {

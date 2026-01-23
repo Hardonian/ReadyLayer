@@ -34,11 +34,11 @@ export interface Span {
   endTime?: Date;
   duration?: number;
   status: 'unset' | 'ok' | 'error';
-  attributes: Record<string, any>;
+  attributes: Record<string, unknown>;
   events: Array<{
     name: string;
     timestamp: Date;
-    attributes?: Record<string, any>;
+    attributes?: Record<string, unknown>;
   }>;
 }
 
@@ -147,7 +147,7 @@ class TraceContextManager {
   /**
    * Add attribute to current span
    */
-  setSpanAttribute(spanId: string, key: string, value: any): void {
+  setSpanAttribute(spanId: string, key: string, value: unknown): void {
     const span = this.spans.get(spanId);
     if (span) {
       span.attributes[key] = value;
@@ -157,7 +157,7 @@ class TraceContextManager {
   /**
    * Add event to current span
    */
-  recordSpanEvent(spanId: string, name: string, attributes?: Record<string, any>): void {
+  recordSpanEvent(spanId: string, name: string, attributes?: Record<string, unknown>): void {
     const span = this.spans.get(spanId);
     if (span) {
       span.events.push({
@@ -185,7 +185,7 @@ class TraceContextManager {
   /**
    * Export trace in OpenTelemetry format
    */
-  exportTrace(traceId: string): any {
+  exportTrace(traceId: string): Record<string, unknown> {
     const spans = this.getTraceSpans(traceId);
 
     return {
@@ -284,7 +284,7 @@ export const traceContextManager = new TraceContextManager();
  */
 export function traceMiddleware(
   req: { headers?: Record<string, string> },
-  _res?: any
+  _res?: unknown
 ): (next: () => Promise<void>) => Promise<void> {
   return async (next: () => Promise<void>) => {
     const headers = req.headers || {};
@@ -292,7 +292,8 @@ export function traceMiddleware(
 
     // Store in a way that can be accessed throughout the request
     // (Implementation depends on framework - Next.js, Express, etc.)
-    (global as any).__trace_context = context;
+    const globalWithTrace = globalThis as typeof globalThis & { __trace_context?: TraceContext };
+    globalWithTrace.__trace_context = context;
 
     const spanId = traceContextManager.startSpan('request', 'server');
 
@@ -329,7 +330,7 @@ export function getCurrentSpanId(): string | null {
 /**
  * Helper to record timing
  */
-export function recordTiming(name: string, duration: number, attributes?: Record<string, any>): void {
+export function recordTiming(name: string, duration: number, attributes?: Record<string, unknown>): void {
   const context = traceContextManager.getContext();
   if (context) {
     const spanId = traceContextManager.startSpan(`timing:${name}`, 'internal');

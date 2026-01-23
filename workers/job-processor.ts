@@ -11,7 +11,7 @@ import { metrics } from '../observability/metrics';
 /**
  * Process background job
  */
-async function processJob(payload: any): Promise<any> {
+async function processJob(payload: { type: string; data: unknown }): Promise<unknown> {
   const { type, data } = payload;
   const requestId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
   const log = logger.child({ requestId, jobType: type });
@@ -26,13 +26,19 @@ async function processJob(payload: any): Promise<any> {
 
       case 'test_generation':
         // Test generation jobs
-        const { testEngineService } = await import('../services/test-engine');
-        return await testEngineService.generateTests(data);
+        {
+          const { testEngineService } = await import('../services/test-engine');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await testEngineService.generateTests(data as any);
+        }
 
       case 'doc_sync':
         // Doc sync jobs
-        const { docSyncService } = await import('../services/doc-sync');
-        return await docSyncService.generateDocs(data);
+        {
+          const { docSyncService } = await import('../services/doc-sync');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return await docSyncService.generateDocs(data as any);
+        }
 
       default:
         throw new Error(`Unknown job type: ${type}`);
@@ -51,7 +57,7 @@ export async function startJobProcessor(): Promise<void> {
   logger.info('Starting job processor worker');
 
   await queueService.processQueue('job', async (payload) => {
-    await processJob(payload);
+    await processJob(payload as { type: string; data: unknown });
   });
 }
 

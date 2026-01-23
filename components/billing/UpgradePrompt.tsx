@@ -30,7 +30,17 @@ interface UpgradePromptProps {
   }
 }
 
-const contextConfig: Record<UpgradeContext, any> = {
+interface UpgradeContextConfig {
+  icon: typeof AlertCircle
+  color: 'warning' | 'destructive' | 'info' | 'secondary'
+  title: string
+  description: string
+  cta: string
+  details: string
+  badgeText: string
+}
+
+const contextConfig: Record<UpgradeContext, UpgradeContextConfig> = {
   'usage-limit-approaching': {
     icon: AlertCircle,
     color: 'warning',

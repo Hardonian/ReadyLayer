@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '@/observability/logging';
 import { createInstallationWithEncryptedToken } from '@/lib/secrets/installation-helpers';
 
@@ -100,12 +101,30 @@ export async function GET(req: NextRequest) {
 
     // Get installation access token
     const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10));
-    const { data: installation } = await (installationOctokit as any).rest.apps.getInstallation({
+
+    const octokit = installationOctokit as unknown as {
+      rest: {
+        apps: {
+          getInstallation: (args: { installation_id: number }) => Promise<{
+            data: {
+              permissions?: Record<string, unknown>;
+              repository_selection?: string;
+              repositories?: Array<{ id: number }>;
+            };
+          }>;
+          createInstallationAccessToken: (args: { installation_id: number }) => Promise<{
+            data: { token: string };
+          }>;
+        };
+      };
+    };
+
+    const { data: installation } = await octokit.rest.apps.getInstallation({
       installation_id: parseInt(installationId, 10),
     });
 
     // Get installation access token
-    const { data: tokenResponse } = await (installationOctokit as any).rest.apps.createInstallationAccessToken({
+    const { data: tokenResponse } = await octokit.rest.apps.createInstallationAccessToken({
       installation_id: parseInt(installationId, 10),
     });
 
@@ -117,10 +136,10 @@ export async function GET(req: NextRequest) {
       provider: 'github',
       providerId: installationId,
       accessToken: tokenResponse.token,
-      permissions: installation.permissions || {},
+      permissions: (installation.permissions || {}) as unknown as Prisma.InputJsonValue,
       selectedRepos: installation.repository_selection === 'all'
         ? []
-        : (installation.repositories || []).map((r: any) => String(r.id)),
+        : (installation.repositories || []).map((r) => String(r.id)),
       webhookSecret: process.env.GITHUB_WEBHOOK_SECRET || null,
       isActive: true,
     });

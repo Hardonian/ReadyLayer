@@ -12,7 +12,7 @@
 
 import { logger } from './logging';
 import { metrics } from './metrics';
-import { productionReadinessService } from './production-readiness';
+import { productionReadinessService, type SLAStatus } from './production-readiness';
 
 export interface ExportConfig {
   type: 'pushgateway' | 'statsd' | 'http';
@@ -24,7 +24,7 @@ export interface ExportConfig {
 
 class PrometheusExporter {
   private config: ExportConfig;
-  private exportInterval: NodeJS.Timer | null = null;
+  private exportInterval: ReturnType<typeof setInterval> | null = null;
   private lastExportTime = 0;
 
   constructor(config?: Partial<ExportConfig>) {
@@ -71,7 +71,7 @@ class PrometheusExporter {
    */
   stop(): void {
     if (this.exportInterval) {
-      clearInterval(this.exportInterval as any);
+      clearInterval(this.exportInterval);
       this.exportInterval = null;
       logger.info('Prometheus exporter stopped');
     }
@@ -133,7 +133,7 @@ class PrometheusExporter {
   /**
    * Format SLA metrics in Prometheus format
    */
-  private formatSLAMetrics(slaStatus: any): string {
+  private formatSLAMetrics(slaStatus: SLAStatus): string {
     const lines: string[] = [
       `# HELP readylayer_uptime_percent System uptime percentage`,
       `# TYPE readylayer_uptime_percent gauge`,

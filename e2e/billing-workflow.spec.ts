@@ -21,6 +21,7 @@ import {
 import {
   handleSubscriptionUpdated,
   handlePaymentSucceeded,
+  type StripeWebhookEvent,
 } from '../services/billing/stripe-webhook-handler';
 
 test.describe('Billing and Subscription Workflow', () => {
@@ -117,11 +118,9 @@ test.describe('Billing and Subscription Workflow', () => {
   });
 
   test('should handle subscription updates from Stripe', async () => {
-    const event = {
+    const event: StripeWebhookEvent = {
       id: 'evt_test_123',
-      object: 'event',
       type: 'customer.subscription.updated',
-      created: Math.floor(Date.now() / 1000),
       data: {
         object: {
           id: 'sub_test_123',
@@ -141,20 +140,16 @@ test.describe('Billing and Subscription Workflow', () => {
           status: 'past_due',
         },
       },
-      livemode: false,
-      pending_webhooks: 0,
-    };
+    } as any;
 
     // Should process without throwing
-    await expect(handleSubscriptionUpdated(event as any)).resolves.not.toThrow();
+    await expect(handleSubscriptionUpdated(event)).resolves.not.toThrow();
   });
 
   test('should record successful payments', async () => {
-    const event = {
+    const event: StripeWebhookEvent = {
       id: 'evt_invoice_123',
-      object: 'event',
       type: 'invoice.payment_succeeded',
-      created: Math.floor(Date.now() / 1000),
       data: {
         object: {
           id: 'in_test_123',
@@ -163,22 +158,18 @@ test.describe('Billing and Subscription Workflow', () => {
           status: 'paid',
           paid_at: Math.floor(Date.now() / 1000),
           number: 'INV-0001',
-        },
+        } as any,
       },
-      livemode: false,
-      pending_webhooks: 0,
-    };
+    } as any;
 
     // Should process without throwing
-    await expect(handlePaymentSucceeded(event as any)).resolves.not.toThrow();
+    await expect(handlePaymentSucceeded(event)).resolves.not.toThrow();
   });
 
   test('should handle plan upgrades', async () => {
-    const upgradeEvent = {
+    const upgradeEvent: StripeWebhookEvent = {
       id: 'evt_upgrade_123',
-      object: 'event',
       type: 'customer.subscription.updated',
-      created: Math.floor(Date.now() / 1000),
       data: {
         object: {
           id: 'sub_upgrade_123',
@@ -204,14 +195,12 @@ test.describe('Billing and Subscription Workflow', () => {
               },
             ],
           },
-        },
+        } as any,
       },
-      livemode: false,
-      pending_webhooks: 0,
-    };
+    } as any;
 
     // Should handle upgrade
-    await expect(handleSubscriptionUpdated(upgradeEvent as any)).resolves.not.toThrow();
+    await expect(handleSubscriptionUpdated(upgradeEvent)).resolves.not.toThrow();
   });
 
   test('should detect free tier usage limits', async () => {
@@ -312,26 +301,22 @@ test.describe('Billing and Subscription Workflow', () => {
   });
 
   test('should handle subscription cancellation', async () => {
-    const cancelEvent = {
+    const cancelEvent: StripeWebhookEvent = {
       id: 'evt_cancel_123',
-      object: 'event',
       type: 'customer.subscription.updated',
-      created: Math.floor(Date.now() / 1000),
       data: {
         object: {
           id: 'sub_cancel_123',
           customer: 'cus_test_123',
           status: 'canceled',
-        },
+        } as any,
         previous_attributes: {
           status: 'active',
         },
       },
-      livemode: false,
-      pending_webhooks: 0,
-    };
+    } as any;
 
     // Should handle cancellation
-    await expect(handleSubscriptionUpdated(cancelEvent as any)).resolves.not.toThrow();
+    await expect(handleSubscriptionUpdated(cancelEvent)).resolves.not.toThrow();
   });
 });

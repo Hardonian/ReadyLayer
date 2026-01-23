@@ -8,6 +8,7 @@
 
 import { spawn } from 'child_process';
 import * as http from 'http';
+import { console } from './logger';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

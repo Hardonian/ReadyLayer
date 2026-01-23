@@ -15,7 +15,7 @@ export class InvariantViolationError extends Error {
   constructor(
     public readonly invariantId: string,
     message: string,
-    public readonly context?: Record<string, any>
+    public readonly context?: Record<string, unknown>
   ) {
     super(`[${invariantId}] Invariant violation: ${message}`);
     this.name = 'InvariantViolationError';
@@ -31,7 +31,7 @@ export function invariant(
   condition: boolean,
   invariantId: string,
   message: string,
-  context?: Record<string, any>,
+  context?: Record<string, unknown>,
   throwInProduction = false
 ): asserts condition {
   if (!condition) {
@@ -83,7 +83,7 @@ export function assertReviewStatusConsistency(review: {
 export function assertConfidenceBounds(
   score: number,
   scale: '0-1' | '0-100',
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   const min = 0;
   const max = scale === '0-1' ? 1 : 100;
@@ -108,7 +108,7 @@ export function assertConfidenceBounds(
 export function assertNoSecretsInText(
   text: string,
   secretPatterns: RegExp[],
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   for (const pattern of secretPatterns) {
     const match = text.match(pattern);
@@ -156,7 +156,7 @@ export function assertEnrichmentPreservesBlockingDecision(
  */
 export function assertWeightsSumToOne(
   weights: Record<string, number>,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   const sum = Object.values(weights).reduce((a, b) => a + b, 0);
   const tolerance = 0.0001; // Allow for floating point precision
@@ -180,7 +180,7 @@ export function assertWeightsSumToOne(
  */
 export function assertMonotonicThresholds(
   thresholds: Record<string, number>,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   const values = Object.values(thresholds);
   const sorted = [...values].sort((a, b) => b - a); // Descending

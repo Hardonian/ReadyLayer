@@ -95,7 +95,7 @@ describe('Policy Engine - Rule Evaluation', () => {
         ],
       };
 
-      const valid = policyEngineService.validatePolicy(policy as any);
+      const valid = policyEngineService.validatePolicy(policy as unknown as Record<string, unknown>);
       expect(valid.valid).toBe(true);
     });
   });

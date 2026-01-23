@@ -5,7 +5,7 @@
  * Reference: TEST_QUALITY_AUDIT.md - Shift from coverage to invariant testing
  */
 
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it as test, expect, vi as jest, beforeEach } from 'vitest';
 import {
   assertEnrichmentPreservesBlockingDecision,
   InvariantViolationError,

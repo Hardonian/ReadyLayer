@@ -20,8 +20,8 @@ export interface StripeWebhookEvent {
   id: string;
   type: string;
   data: {
-    object: Record<string, any>;
-    previous_attributes?: Record<string, any>;
+    object: Stripe.Event.Data.Object;
+    previous_attributes?: Record<string, unknown>;
   };
   account?: string;
 }
@@ -190,7 +190,7 @@ export async function handleSubscriptionUpdated(
       'Subscription status changed'
     );
     metrics.increment('billing_status_changed', {
-      from: previousAttributes.status,
+      from: previousAttributes.status as string,
       to: subscription.status,
     });
   }
@@ -421,7 +421,10 @@ async function handleBillingPortalSessionCreated(
 async function handleUsageRecordCreated(
   event: StripeWebhookEvent
 ): Promise<BillingEventResult> {
-  const usageRecord = event.data.object as any;
+  const usageRecord = event.data.object;
+  if (!isUsageRecord(usageRecord)) {
+    throw new Error('Invalid usage record payload');
+  }
 
   logger.info(
     {
@@ -441,6 +444,19 @@ async function handleUsageRecordCreated(
     eventType: event.type,
     action: 'usage_recorded',
   };
+}
+
+interface UsageRecord {
+  subscription_item: string;
+  quantity: number;
+}
+
+function isUsageRecord(object: Stripe.Event.Data.Object): object is UsageRecord {
+  const obj = object as unknown as Record<string, unknown>;
+  return (
+    typeof obj.subscription_item === 'string' &&
+    typeof obj.quantity === 'number'
+  );
 }
 
 /**

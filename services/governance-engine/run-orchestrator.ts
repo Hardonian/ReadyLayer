@@ -184,7 +184,7 @@ export class GovernanceRunOrchestrator {
       await prisma.governanceRunResult.create({
         data: {
           governanceRunId: runId,
-          findings: findings as any, // JSON type
+          findings: findings as Prisma.InputJsonValue, // JSON type
           varianceScore: null,
           intentDrift: governanceSignals.intent_drift === null ? Prisma.JsonNull : governanceSignals.intent_drift,
           temporalFragility: governanceSignals.temporal_fragility === null ? Prisma.JsonNull : governanceSignals.temporal_fragility,
@@ -278,25 +278,39 @@ Focus on:
    * Parse governance findings from LLM output
    */
   private parseGovernanceFindings(content: string): Finding[] {
+    // Helper to validate severity
+    const isValidSeverity = (s: string): s is 'info' | 'low' | 'medium' | 'high' | 'critical' => {
+      return ['info', 'low', 'medium', 'high', 'critical'].includes(s);
+    };
+
     try {
       // Try to parse JSON response
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed.findings)) {
-        return parsed.findings.map((f: any) => ({
-          id: f.id || `finding-${Math.random()}`,
-          ruleId: f.ruleId || 'unknown',
-          title: f.title || 'Governance Finding',
-          description: f.description || '',
-          severity: f.severity || 'medium',
-          status: 'open' as const,
-          file: f.file,
-          line: f.line,
-          confidence: typeof f.confidence === 'number' ? f.confidence : 0.5,
-          detectedBy: 'ai' as const,
-          remediation: f.remediation,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }));
+      const parsed: unknown = JSON.parse(content);
+      if (parsed && typeof parsed === 'object' && 'findings' in parsed) {
+        const rawFindings = (parsed as { findings?: unknown }).findings;
+        if (Array.isArray(rawFindings)) {
+          return rawFindings
+            .filter((finding): finding is Record<string, unknown> => typeof finding === 'object' && finding !== null)
+            .map((finding) => {
+              const severityStr = typeof finding.severity === 'string' ? finding.severity : 'medium';
+              const severity = isValidSeverity(severityStr) ? severityStr : 'medium';
+              return {
+                id: typeof finding.id === 'string' ? finding.id : `finding-${Math.random()}`,
+                ruleId: typeof finding.ruleId === 'string' ? finding.ruleId : 'unknown',
+                title: typeof finding.title === 'string' ? finding.title : 'Governance Finding',
+                description: typeof finding.description === 'string' ? finding.description : '',
+                severity,
+                status: 'open' as const,
+                file: typeof finding.file === 'string' ? finding.file : undefined,
+                line: typeof finding.line === 'number' ? finding.line : undefined,
+                confidence: typeof finding.confidence === 'number' ? finding.confidence : 0.5,
+                detectedBy: 'ai' as const,
+                remediation: typeof finding.remediation === 'string' ? finding.remediation : undefined,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              };
+            });
+        }
       }
     } catch {
       // If JSON parsing fails, return empty
@@ -405,7 +419,7 @@ Focus on:
 
       return {
         id: run.id,
-        status: run.status as any,
+        status: run.status as GovernanceRunStatus['status'],
         error: run.error || undefined,
       };
     } catch (error) {

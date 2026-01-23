@@ -137,8 +137,9 @@ class RedisRateLimiter {
             remaining: result.remainingPoints,
             resetAt: Date.now() + (result.msBeforeNext || 0),
           };
-        } catch (rejRes: any) {
-          if (rejRes.remainingPoints !== undefined) {
+        } catch (rejRes) {
+          const rejection = rejRes as { remainingPoints?: number; msBeforeNext?: number };
+          if (rejection.remainingPoints !== undefined) {
             // Rate limited (not an error, just exceeded)
             this.rateLimitMetrics.redisChecks++;
             this.rateLimitMetrics.blocked++;
@@ -147,7 +148,7 @@ class RedisRateLimiter {
             return {
               allowed: false,
               remaining: 0,
-              resetAt: Date.now() + (rejRes.msBeforeNext || 0),
+              resetAt: Date.now() + (rejection.msBeforeNext || 0),
             };
           }
           // Actual error, fall through to in-memory
@@ -176,7 +177,8 @@ class RedisRateLimiter {
           remaining: result.remainingPoints,
           resetAt: Date.now() + (result.msBeforeNext || 0),
         };
-      } catch (rejRes: any) {
+      } catch (rejRes) {
+        const rejection = rejRes as { msBeforeNext?: number };
         this.rateLimitMetrics.memoryChecks++;
         this.rateLimitMetrics.blocked++;
         metrics.increment('rate_limit_memory_blocked');
@@ -184,7 +186,7 @@ class RedisRateLimiter {
         return {
           allowed: false,
           remaining: 0,
-          resetAt: Date.now() + (rejRes.msBeforeNext || 0),
+          resetAt: Date.now() + (rejection.msBeforeNext || 0),
         };
       }
     } catch (error) {

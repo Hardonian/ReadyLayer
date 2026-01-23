@@ -6,6 +6,7 @@
  */
 
 import { logger } from '../../observability/logging';
+import type { RedisClientType } from 'redis';
 
 export interface RateLimitConfig {
   points: number; // Number of requests allowed
@@ -103,7 +104,7 @@ class InMemoryRateLimiter {
  * Redis-backed rate limiter for production
  */
 class RedisRateLimiter {
-  private redisClient: any = null;
+  private redisClient: RedisClientType | null = null;
 
   async getClient() {
     if (this.redisClient) {
@@ -151,8 +152,8 @@ class RedisRateLimiter {
       multi.ttl(key);
 
       const results = await multi.exec();
-      const count = parseInt(results[2] as string, 10);
-      const ttl = parseInt(results[3] as string, 10);
+      const count = parseInt(results[2] as unknown as string, 10);
+      const ttl = parseInt(results[3] as unknown as string, 10);
 
       const resetAt = new Date(now + ttl * 1000);
       const remaining = Math.max(0, config.points - count);

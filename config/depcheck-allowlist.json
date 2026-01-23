@@ -1,0 +1,7 @@
+{
+  "ignoreUnused": [
+    "tslib",
+    "next-themes"
+  ],
+  "ignoreMissing": []
+}
