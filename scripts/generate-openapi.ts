@@ -102,6 +102,7 @@ function zodToOpenAPI(schema: z.ZodTypeAny): Record<string, unknown> {
   if (schema instanceof z.ZodArray) {
     return {
       type: 'array',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       items: zodToOpenAPI(schema.element as any),
       description: schema.description,
     };
@@ -109,12 +110,14 @@ function zodToOpenAPI(schema: z.ZodTypeAny): Record<string, unknown> {
 
   if (schema instanceof z.ZodUnion) {
     return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       oneOf: schema.options.map((opt: any) => zodToOpenAPI(opt)),
       description: schema.description,
     };
   }
 
   if (schema instanceof z.ZodOptional) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return zodToOpenAPI(schema.unwrap() as any);
   }
 
