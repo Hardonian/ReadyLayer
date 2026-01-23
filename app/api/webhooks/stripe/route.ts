@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
               { status: 400 }
             );
           }
-          await handleInvoicePaymentSucceeded(invoiceParsed.data as unknown as Stripe.Invoice);
+          await handleInvoicePaymentSucceeded(invoiceParsed.data);
         }
         break;
 

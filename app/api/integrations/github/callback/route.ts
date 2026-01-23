@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { logger } from '@/observability/logging';
 import { createInstallationWithEncryptedToken } from '@/lib/secrets/installation-helpers';
 
@@ -135,7 +136,7 @@ export async function GET(req: NextRequest) {
       provider: 'github',
       providerId: installationId,
       accessToken: tokenResponse.token,
-      permissions: (installation.permissions || {}) as Record<string, unknown>,
+      permissions: (installation.permissions || {}) as unknown as Prisma.InputJsonValue,
       selectedRepos: installation.repository_selection === 'all'
         ? []
         : (installation.repositories || []).map((r) => String(r.id)),

@@ -426,7 +426,7 @@ export class PredictiveDetectionService {
           dataPoints: alert.dataPoints,
           metadata: {
             confidence: alert.confidence,
-          } as Prisma.InputJsonValue,
+          } as unknown as Prisma.InputJsonValue,
         },
       });
     }

@@ -190,7 +190,7 @@ export class QueueService {
         where: { id: jobId },
         data: {
           status: 'completed',
-          result,
+          result: result as unknown as Prisma.InputJsonValue,
           completedAt: new Date(),
         },
       });
