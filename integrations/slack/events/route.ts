@@ -116,6 +116,11 @@ async function handleAppMention(event: SlackEventData, teamId?: string): Promise
   }
   const { user, channel, text } = event;
 
+  if (!channel) {
+    logger.warn('Missing channel for app mention');
+    return;
+  }
+
   logger.info(
     {
       userId: user,
@@ -177,9 +182,11 @@ async function handleReaction(event: SlackEventData, teamId?: string): Promise<v
     'Handling reaction event'
   );
 
-  metrics.increment('slack_reaction_event', {
-    reaction: event.reaction,
-  });
+  if (event.reaction) {
+    metrics.increment('slack_reaction_event', {
+      reaction: event.reaction,
+    });
+  }
 }
 
 /**

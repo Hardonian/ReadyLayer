@@ -54,7 +54,9 @@ async function runMigration() {
       } catch (error) {
         // Some statements may fail if objects already exist (idempotent)
         // This is expected and OK
-        const errorMessage = error?.message || '';
+        const errorMessage = (error && typeof error === 'object' && 'message' in error)
+          ? String(error.message)
+          : '';
         if (
           errorMessage.includes('already exists') ||
           errorMessage.includes('duplicate') ||

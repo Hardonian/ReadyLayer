@@ -138,7 +138,7 @@ class RedisRateLimiter {
             resetAt: Date.now() + (result.msBeforeNext || 0),
           };
         } catch (rejRes) {
-          if (rejRes.remainingPoints !== undefined) {
+          if (rejRes && typeof rejRes === 'object' && 'remainingPoints' in rejRes && rejRes.remainingPoints !== undefined) {
             // Rate limited (not an error, just exceeded)
             this.rateLimitMetrics.redisChecks++;
             this.rateLimitMetrics.blocked++;
@@ -147,7 +147,7 @@ class RedisRateLimiter {
             return {
               allowed: false,
               remaining: 0,
-              resetAt: Date.now() + (rejRes.msBeforeNext || 0),
+              resetAt: Date.now() + ((rejRes as { msBeforeNext?: number }).msBeforeNext || 0),
             };
           }
           // Actual error, fall through to in-memory
@@ -184,7 +184,7 @@ class RedisRateLimiter {
         return {
           allowed: false,
           remaining: 0,
-          resetAt: Date.now() + (rejRes.msBeforeNext || 0),
+          resetAt: Date.now() + ((rejRes && typeof rejRes === 'object' && 'msBeforeNext' in rejRes ? (rejRes as { msBeforeNext?: number }).msBeforeNext : undefined) || 0),
         };
       }
     } catch (error) {

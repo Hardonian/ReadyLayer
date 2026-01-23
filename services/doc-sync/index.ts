@@ -5,7 +5,6 @@
  * Enforces drift prevention (blocks by default)
  */
 
-import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { llmService, LLMRequest } from '../llm';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
@@ -13,6 +12,7 @@ import { policyEngineService } from '../policy-engine';
 import { createHash } from 'crypto';
 import { Issue } from '../static-analysis';
 import { redactSecrets } from '../../lib/secrets/redaction';
+import { toJsonValue } from '../../lib/prisma-json';
 
 export interface DocGenerationRequest {
   repositoryId: string;
@@ -272,14 +272,14 @@ export class DocSyncService {
           ref: request.ref,
           format: request.format,
           content,
-          spec: spec || undefined,
+          spec: spec ? toJsonValue(spec) : undefined,
           status: isBlocked ? 'blocked' : 'generated',
           driftDetected: driftResult.driftDetected,
-          driftDetails: {
+          driftDetails: toJsonValue({
             missingEndpoints: driftResult.missingEndpoints,
             extraEndpoints: driftResult.extraEndpoints,
             changedEndpoints: driftResult.changedEndpoints,
-          } as Prisma.InputJsonValue,
+          }),
           publishedAt: config.updateStrategy === 'commit' && !isBlocked ? completedAt : null,
           createdAt: startedAt,
           updatedAt: completedAt,

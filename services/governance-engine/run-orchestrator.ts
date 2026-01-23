@@ -11,6 +11,7 @@ import { llmService } from '@/services/llm';
 import { logger } from '@/observability/logging';
 import { createHash } from 'crypto';
 import type { Finding } from '@/lib/types/review';
+import { toJsonValue } from '@/lib/prisma-json';
 
 export interface CreateGovernanceRunInput {
   organizationId: string;
@@ -184,7 +185,7 @@ export class GovernanceRunOrchestrator {
       await prisma.governanceRunResult.create({
         data: {
           governanceRunId: runId,
-          findings: findings as Prisma.InputJsonValue, // JSON type
+          findings: toJsonValue(findings), // JSON type
           varianceScore: null,
           intentDrift: governanceSignals.intent_drift === null ? Prisma.JsonNull : governanceSignals.intent_drift,
           temporalFragility: governanceSignals.temporal_fragility === null ? Prisma.JsonNull : governanceSignals.temporal_fragility,
@@ -291,7 +292,7 @@ Focus on:
               ruleId: typeof finding.ruleId === 'string' ? finding.ruleId : 'unknown',
               title: typeof finding.title === 'string' ? finding.title : 'Governance Finding',
               description: typeof finding.description === 'string' ? finding.description : '',
-              severity: typeof finding.severity === 'string' ? finding.severity : 'medium',
+              severity: (typeof finding.severity === 'string' ? finding.severity : 'medium') as 'info' | 'low' | 'medium' | 'high' | 'critical',
               status: 'open' as const,
               file: typeof finding.file === 'string' ? finding.file : undefined,
               line: typeof finding.line === 'number' ? finding.line : undefined,

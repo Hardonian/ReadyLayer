@@ -203,7 +203,7 @@ export class CodeParserService {
               }
               return '';
             }),
-            returnType: node.returnType?.typeAnnotation?.typeName?.name,
+            returnType: (node.returnType && 'typeAnnotation' in node.returnType && node.returnType.typeAnnotation && typeof node.returnType.typeAnnotation === 'object' && 'typeName' in node.returnType.typeAnnotation && node.returnType.typeAnnotation.typeName && typeof node.returnType.typeAnnotation.typeName === 'object' && 'name' in node.returnType.typeAnnotation.typeName) ? (node.returnType.typeAnnotation.typeName as { name?: string }).name : undefined,
             isAsync: node.async || false,
             isExported: false, // Would check parent
           });
@@ -243,7 +243,7 @@ export class CodeParserService {
             source: node.source.value,
             specifiers: node.specifiers.map((specifier) => {
               if (t.isImportSpecifier(specifier)) {
-                return specifier.imported.name;
+                return t.isIdentifier(specifier.imported) ? specifier.imported.name : (specifier.imported as { value: string }).value;
               }
               if (t.isImportDefaultSpecifier(specifier) || t.isImportNamespaceSpecifier(specifier)) {
                 return specifier.local.name;
@@ -407,7 +407,7 @@ export class CodeParserService {
           continue;
         }
 
-        const value = (node as Record<string, unknown>)[key];
+        const value = (node as unknown as Record<string, unknown>)[key];
         if (Array.isArray(value)) {
           value.forEach((item) => {
             if (item && typeof item === 'object' && 'type' in item) {

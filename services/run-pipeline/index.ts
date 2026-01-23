@@ -12,7 +12,6 @@
  * - Sandbox runs (demo mode with sample repo)
  */
 
-import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest } from '../review-guard';
 import { testEngineService, TestGenerationRequest } from '../test-engine';
@@ -22,6 +21,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
 import { createAuditLog, AuditActions } from '../../lib/audit';
+import { toJsonValue, toNullableJsonValue } from '../../lib/prisma-json';
 
 export interface RunRequest {
   repositoryId?: string;
@@ -216,7 +216,7 @@ export class RunPipelineService {
               reviewId: reviewResult.id,
               reviewGuardStatus,
               reviewGuardCompletedAt,
-              reviewGuardResult: reviewGuardResult as Prisma.InputJsonValue,
+              reviewGuardResult: toJsonValue(reviewGuardResult),
             },
           });
 
@@ -323,7 +323,7 @@ export class RunPipelineService {
             where: { id: run.id },
             data: {
               aiTouchedDetected: aiTouchedFiles.length > 0,
-              aiTouchedFiles: aiTouchedFiles as Prisma.InputJsonValue,
+              aiTouchedFiles: toJsonValue(aiTouchedFiles),
             },
           });
 
@@ -363,7 +363,7 @@ export class RunPipelineService {
             data: {
               testEngineStatus,
               testEngineCompletedAt,
-              testEngineResult: testEngineResult as Prisma.InputJsonValue,
+              testEngineResult: toJsonValue(testEngineResult),
             },
           });
 
@@ -480,7 +480,7 @@ export class RunPipelineService {
             data: {
               docSyncStatus,
               docSyncCompletedAt,
-              docSyncResult: docSyncResult as Prisma.InputJsonValue,
+              docSyncResult: toJsonValue(docSyncResult),
             },
           });
 
@@ -573,7 +573,7 @@ export class RunPipelineService {
           status: 'completed',
           conclusion,
           gatesPassed,
-          gatesFailed: gatesFailed.length > 0 ? (gatesFailed as Prisma.InputJsonValue) : null,
+          gatesFailed: toNullableJsonValue(gatesFailed.length > 0 ? gatesFailed : null),
           completedAt,
         },
       });
@@ -645,7 +645,7 @@ export class RunPipelineService {
         testEngineResult,
         docSyncResult,
         aiTouchedDetected: run.aiTouchedDetected,
-        aiTouchedFiles: run.aiTouchedFiles as Prisma.InputJsonValue,
+        aiTouchedFiles: run.aiTouchedFiles as Array<{ path: string; confidence: number; methods: string[] }> | undefined,
         gatesPassed,
         gatesFailed: gatesFailed.length > 0 ? gatesFailed : undefined,
         startedAt,

@@ -6,8 +6,8 @@
  */
 
 import { selfLearningService, ConfidenceScore } from '../self-learning';
-import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
+import { toJsonValue } from '../../lib/prisma-json';
 
 export interface PredictiveAlert {
   id: string;
@@ -424,9 +424,9 @@ export class PredictiveDetectionService {
           estimatedLikelihood: alert.estimatedLikelihood,
           historicalAccuracy: alert.historicalAccuracy || null,
           dataPoints: alert.dataPoints,
-          metadata: {
+          metadata: toJsonValue({
             confidence: alert.confidence,
-          } as Prisma.InputJsonValue,
+          }),
         },
       });
     }

@@ -8,6 +8,7 @@
 import { encrypt, decrypt, isEncrypted } from './secrets/encrypt';
 import { prisma } from './prisma';
 import { logger } from '../observability/logging';
+import { toJsonValue } from './prisma-json';
 
 export interface InstallationWithToken {
   id: string;
@@ -49,7 +50,7 @@ export async function createInstallation(params: {
       providerId: params.providerId,
       accessToken: encryptedToken, // Encrypted
       tokenEncrypted: true,
-      permissions: params.permissions,
+      permissions: toJsonValue(params.permissions),
       selectedRepos: params.selectedRepos || [],
       webhookSecret: params.webhookSecret || null,
       isActive: true,
@@ -68,6 +69,7 @@ export async function createInstallation(params: {
   return {
     ...installation,
     accessToken: params.accessToken, // Return plaintext for immediate use
+    permissions: installation.permissions as Record<string, unknown>,
   };
 }
 

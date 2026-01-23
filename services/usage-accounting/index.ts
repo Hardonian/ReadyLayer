@@ -6,6 +6,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../observability/logging';
+import { toNullableJsonValue } from '../../lib/prisma-json';
 
 export interface TokenUsageRecord {
   runId: string;
@@ -49,7 +50,7 @@ export class UsageAccountingService {
           cost: usage.cost,
           contextSize: usage.contextSize || null,
           wastePercentage: usage.wastePercentage || null,
-          metadata: usage.metadata || null,
+          metadata: toNullableJsonValue(usage.metadata),
         },
       });
 
@@ -95,7 +96,7 @@ export class UsageAccountingService {
       cost: Number(u.cost),
       contextSize: u.contextSize || undefined,
       wastePercentage: u.wastePercentage ? Number(u.wastePercentage) : undefined,
-      metadata: u.metadata as Record<string, unknown> | null,
+      metadata: (u.metadata as Record<string, unknown> | null) || undefined,
     }));
   }
 

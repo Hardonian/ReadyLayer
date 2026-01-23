@@ -23,6 +23,7 @@ import { logger } from '../../observability/logging';
 import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
 import { assertReviewStatusConsistency } from '../../lib/invariants/assertions';
 import { reviewGuardPromptBuilder, combinedPrompt } from '../../lib/prompts/builder';
+import { toJsonValue } from '../../lib/prisma-json';
 
 export interface ReviewRequest {
   repositoryId: string;
@@ -276,7 +277,7 @@ export class ReviewGuardService {
           prSha: request.prSha,
           prTitle: request.prTitle,
           status: isBlocked ? 'blocked' : reviewStatus,
-          result: {
+          result: toJsonValue({
             issues: evaluationResult.nonWaivedFindings,
             waivedIssues: evaluationResult.waivedFindings,
             summary,
@@ -285,9 +286,9 @@ export class ReviewGuardService {
             reviewIdSignature, // Include signature in result
             policyVersion: policy.pack.version,
             policyChecksum: policy.pack.checksum,
-          } as Prisma.InputJsonValue, // Prisma Json type
-          issuesFound: evaluationResult.nonWaivedFindings as Prisma.InputJsonValue, // Prisma Json type
-          summary: summary as Prisma.InputJsonValue, // Prisma Json type
+          }),
+          issuesFound: toJsonValue(evaluationResult.nonWaivedFindings),
+          summary: toJsonValue(summary),
           isBlocked,
           blockedReason,
           startedAt,

@@ -582,12 +582,12 @@ async function processCIEvent(
   log: ReturnType<typeof logger.child>
 ): Promise<void> {
   const { repository } = event;
-  const ciRun = (event as { ciRun?: unknown }).ciRun; // TODO: Update WebhookCICompleted type to include ciRun
+  const ciRun = event.run;
   log.info({ repositoryId: String(repository.id), ciRunName: ciRun?.name }, 'Processing CI event');
 
   // Check coverage when CI workflow completes
   // This integrates with GitHub Actions coverage reports
-  if (ciRun.headSha && repository.id) {
+  if (ciRun?.headSha && repository.id) {
     try {
       // Get repository to find organization
       const repo = await prisma.repository.findUnique({
@@ -607,7 +607,7 @@ async function processCIEvent(
       // 3. Call testEngineService.checkCoverage()
       // 4. Create GitHub check run if coverage below threshold
 
-      log.info({ repositoryId: String(repository.id), headSha: ciRun.headSha }, 'CI event processed (coverage check placeholder)');
+      log.info({ repositoryId: String(repository.id), headSha: ciRun?.headSha }, 'CI event processed (coverage check placeholder)');
     } catch (error) {
       log.error({ err: error, repositoryId: String(repository.id) }, 'Failed to process CI event');
       // Don't throw - CI event processing is non-blocking
