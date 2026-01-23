@@ -102,20 +102,20 @@ function zodToOpenAPI(schema: z.ZodTypeAny): Record<string, unknown> {
   if (schema instanceof z.ZodArray) {
     return {
       type: 'array',
-      items: zodToOpenAPI(schema.element),
+      items: zodToOpenAPI(schema.element as any),
       description: schema.description,
     };
   }
 
   if (schema instanceof z.ZodUnion) {
     return {
-      oneOf: schema.options.map((opt) => zodToOpenAPI(opt)),
+      oneOf: schema.options.map((opt: any) => zodToOpenAPI(opt)),
       description: schema.description,
     };
   }
 
   if (schema instanceof z.ZodOptional) {
-    return zodToOpenAPI(schema.unwrap());
+    return zodToOpenAPI(schema.unwrap() as any);
   }
 
   // Default fallback
