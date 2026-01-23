@@ -31,7 +31,7 @@ async function main() {
         console.log('✓ Executed statement');
       } catch (err) {
         // Ignore "already exists" errors
-        const error = err as any;
+        const error = err as Error & { code?: string };
         if (error.message?.includes('already exists') || error.code === '42P07' || error.code === '42710') {
           console.log('⚠ Statement already applied (skipping)');
         } else {

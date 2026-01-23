@@ -41,11 +41,15 @@ const StripeSubscriptionSchema = z.object({
   cancel_at_period_end: z.boolean().optional(),
 }).passthrough();
 
+type ValidatedStripeSubscription = z.infer<typeof StripeSubscriptionSchema>;
+
 const StripeInvoiceSchema = z.object({
   id: z.string(),
   customer: z.union([z.string(), z.object({ id: z.string() })]),
   subscription: z.union([z.string(), z.object({ id: z.string() }).passthrough(), z.null()]).optional(),
 }).passthrough();
+
+type ValidatedStripeInvoice = z.infer<typeof StripeInvoiceSchema>;
 
 const StripeCheckoutSessionSchema = z.object({
   id: z.string(),
@@ -260,7 +264,7 @@ export async function POST(request: NextRequest) {
 /**
  * Handle subscription created/updated
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription): Promise<void> {
+async function handleSubscriptionChange(subscription: ValidatedStripeSubscription): Promise<void> {
   const log = logger.child({ subscriptionId: subscription.id });
 
   try {
@@ -308,8 +312,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           plan,
           status: mapStripeStatus(subscription.status),
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           updatedAt: new Date(),
         },
@@ -336,8 +340,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription): Prom
           status: mapStripeStatus(subscription.status),
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-          currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         },
       });
@@ -408,7 +412,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
 /**
  * Handle invoice payment succeeded
  */
-async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
+async function handleInvoicePaymentSucceeded(invoice: ValidatedStripeInvoice): Promise<void> {
   const log = logger.child({ invoiceId: invoice.id });
 
   try {
@@ -429,13 +433,13 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
 
     if (subscription) {
       // Update subscription period if needed
-    if (invoice.subscription && typeof invoice.subscription !== 'string') {
-      const stripeSubscription = invoice.subscription as Stripe.Subscription;
+    if (invoice.subscription && typeof invoice.subscription !== 'string' && invoice.subscription !== null) {
+      const stripeSubscription = invoice.subscription as unknown as ValidatedStripeSubscription;
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: {
-            currentPeriodStart: new Date((stripeSubscription as any).current_period_start * 1000),
-            currentPeriodEnd: new Date((stripeSubscription as any).current_period_end * 1000),
+            currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
             status: 'active',
             updatedAt: new Date(),
           },

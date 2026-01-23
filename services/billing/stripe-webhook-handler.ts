@@ -452,9 +452,10 @@ interface UsageRecord {
 }
 
 function isUsageRecord(object: Stripe.Event.Data.Object): object is UsageRecord {
+  const obj = object as unknown as Record<string, unknown>;
   return (
-    typeof (object as any).subscription_item === 'string' &&
-    typeof (object as any).quantity === 'number'
+    typeof obj.subscription_item === 'string' &&
+    typeof obj.quantity === 'number'
   );
 }
 

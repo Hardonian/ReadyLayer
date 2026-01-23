@@ -203,7 +203,7 @@ export class CodeParserService {
               }
               return '';
             }),
-            returnType: (node.returnType as any)?.typeAnnotation?.typeName?.name,
+            returnType: (node.returnType as unknown as { typeAnnotation?: { typeName?: { name?: string } } } | undefined)?.typeAnnotation?.typeName?.name,
             isAsync: node.async || false,
             isExported: false, // Would check parent
           });

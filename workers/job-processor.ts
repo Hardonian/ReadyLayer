@@ -27,15 +27,15 @@ async function processJob(payload: { type: string; data: unknown }): Promise<unk
       case 'test_generation':
         // Test generation jobs
         {
-          const { testEngineService, TestGenerationRequest } = await import('../services/test-engine');
-          return await testEngineService.generateTests(data as typeof TestGenerationRequest);
+          const { testEngineService } = await import('../services/test-engine');
+          return await testEngineService.generateTests(data);
         }
 
       case 'doc_sync':
         // Doc sync jobs
         {
-          const { docSyncService, DocGenerationRequest } = await import('../services/doc-sync');
-          return await docSyncService.generateDocs(data as typeof DocGenerationRequest);
+          const { docSyncService } = await import('../services/doc-sync');
+          return await docSyncService.generateDocs(data);
         }
 
       default:
