@@ -47,7 +47,7 @@ export function Footer() {
         </div>
 
         {/* Menu Section - Bottom Block */}
-        <div className="py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Product */}
           <div>
             <h4 className="font-semibold text-sm mb-4">Product</h4>
