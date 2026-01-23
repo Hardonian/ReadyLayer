@@ -157,15 +157,15 @@ export class ConfigService {
       review: {
         ...orgConfig?.review,
         ...(repoConfigData?.review || {}),
-      },
+      } as Partial<ReviewConfig>,
       test: {
         ...orgConfig?.test,
         ...(repoConfigData?.test || {}),
-      },
+      } as Partial<TestConfig>,
       docs: {
         ...orgConfig?.docs,
         ...(repoConfigData?.docs || {}),
-      },
+      } as Partial<DocSyncConfig>,
     };
 
     // Apply defaults (enforcement-first) - this ensures all required properties are present

@@ -38,7 +38,6 @@ export class TestDataSeeder {
       data: {
         id: uuid(),
         email: `test-${Date.now()}@example.com`,
-        organizationId,
         role: 'admin',
         ...overrides,
       },
