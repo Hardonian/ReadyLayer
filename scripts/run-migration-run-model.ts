@@ -29,8 +29,9 @@ async function main() {
       try {
         await prisma.$executeRawUnsafe(statement);
         console.log('✓ Executed statement');
-      } catch (error) {
+      } catch (err) {
         // Ignore "already exists" errors
+        const error = err as any;
         if (error.message?.includes('already exists') || error.code === '42P07' || error.code === '42710') {
           console.log('⚠ Statement already applied (skipping)');
         } else {
