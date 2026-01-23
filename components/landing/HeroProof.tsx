@@ -2,11 +2,11 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Container } from '@/components/ui/container'
+import { Logo } from '@/components/ui/logo'
 import { fadeIn, slideUp, staggerContainer, staggerItem } from '@/lib/design/motion'
 import { Shield, TestTube, FileText, Github, Gitlab, Code, Play, Bot, BarChart3, Eye, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
 import { InteractivePRDemo } from './InteractivePRDemo'
