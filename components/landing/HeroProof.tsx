@@ -39,17 +39,35 @@ export function HeroProof({ user }: HeroProofProps) {
 
   return (
     <section className="relative py-24 lg:py-32 overflow-hidden">
-      {/* Logo in top-right corner */}
-      <motion.div
-        className="absolute top-6 right-6 z-20 sm:top-8 sm:right-8"
+      {/* Header with Logo and Minimalist Menu */}
+      <motion.header
+        className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 lg:px-8 py-4 sm:py-6"
         variants={prefersReducedMotion ? fadeIn : fadeIn}
         initial="hidden"
         animate="visible"
       >
-        <Link href="/" className="block hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
-          <Logo variant="full" size="sm" />
-        </Link>
-      </motion.div>
+        <div className="flex items-center justify-between max-w-full">
+          {/* Logo */}
+          <Link href="/" className="flex-shrink-0 hover:opacity-80 transition-opacity" aria-label="ReadyLayer Home">
+            <div className="scale-[0.6] origin-left">
+              <Logo variant="full" size="sm" />
+            </div>
+          </Link>
+
+          {/* Minimalist Menu */}
+          <nav className="hidden md:flex items-center gap-6">
+            {PUBLIC_NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-sm text-text-muted hover:text-text-primary transition-colors font-medium"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </motion.header>
 
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
