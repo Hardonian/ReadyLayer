@@ -1,6 +1,6 @@
 # ReadyLayer
 
-**An open-source framework for governing AI-generated code in your existing developer workflow.**
+**Governance infrastructure for AI-generated code.**
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
@@ -8,24 +8,25 @@
 
 ---
 
-## What ReadyLayer Is
+## What This Is
 
-ReadyLayer is an **open-source governance framework** that enforces security, test coverage, and documentation standards for AI-generated code. It integrates directly into your existing CI/CD pipelines, GitHub workflows, and development tools—no new UI required, no data custody, no lock-in.
+ReadyLayer is **governance infrastructure** for AI-generated code. It provides deterministic policy enforcement, immutable audit trails, and continuous validation that operates at the velocity of AI code generation.
 
-It exists because **AI-generated code ships faster than humans can review it safely.** ReadyLayer automates the boring parts of code governance so teams can ship quickly without sacrificing quality.
+It exists because AI-generated code introduces a new risk class that existing tooling (linters, tests, security scanners, code review) was not designed to handle.
 
----
+### The Core Problem
 
-## The Problem
+When code is AI-generated:
+- **Authorship is non-human** — no one fully understands what was generated
+- **Velocity exceeds review capacity** — code ships faster than humans can validate
+- **Accountability is unclear** — who is responsible when generated code fails?
+- **Audit trails are missing** — no record of generation context or decisions
 
-AI coding assistants (GitHub Copilot, Cursor, Claude, GPT) accelerate development, but they create a dangerous gap:
+This is not a problem that will diminish. As AI adoption increases, the gap between generation velocity and governance capacity widens.
 
-- **Code generation**: Instant
-- **Security review**: Manual, slow
-- **Test coverage**: Often forgotten
-- **Documentation**: Lags behind reality
+**ReadyLayer is purpose-built infrastructure to close that gap.**
 
-Teams face a choice: ship fast and break things, or slow down and lose velocity. ReadyLayer eliminates that tradeoff.
+For a detailed analysis of why this problem requires new infrastructure, see [Problem Statement](./docs/PROBLEM_STATEMENT.md).
 
 ---
 
@@ -248,34 +249,58 @@ See [Policy Templates](./docs/policies/) for pre-built configurations.
 
 ---
 
-## Explicit Non-Goals
+## What ReadyLayer Is Not
 
-ReadyLayer **intentionally does not**:
+ReadyLayer is **not** a replacement for existing development tools. It is governance infrastructure that complements them.
 
-- ❌ **Host your code**: Everything runs in your infrastructure
-- ❌ **Require accounts**: Self-hosted mode needs zero external services
-- ❌ **Send telemetry**: No tracking, analytics, or phone-home
-- ❌ **Lock you in**: Standard YAML configs, portable everywhere
-- ❌ **Replace human judgment**: Governance aids decisions, doesn't make them
+**ReadyLayer does not**:
+- Replace linters (use ESLint, Prettier, etc.)
+- Replace testing frameworks (use Jest, pytest, etc.)
+- Replace security scanners (use Snyk, Dependabot, etc.)
+- Replace code review (humans still approve)
+- Generate code (use AI assistants)
+- Require vendor lock-in (works with all git providers, CI systems, AI models)
+
+**ReadyLayer does**:
+- Enforce governance policies on code (regardless of authorship)
+- Create immutable audit trails for compliance
+- Validate that security scans, tests, and documentation meet standards
+- Operate at the velocity of AI generation (async, non-blocking)
+- Provide deterministic, reproducible governance decisions
+
+See [Non-Goals](./docs/NON_GOALS.md) for detailed boundaries and [Ecosystem Map](./docs/ECOSYSTEM_MAP.md) for positioning relative to other tools.
 
 ---
 
-## Who Should Use ReadyLayer
+## Who Needs ReadyLayer
 
-### You should use ReadyLayer if you:
+### You need governance infrastructure if:
 
-- ✅ Use AI coding assistants (Copilot, Cursor, Claude, etc.)
-- ✅ Ship code faster than you can manually review it
-- ✅ Need audit trails for compliance (SOC 2, ISO 27001, etc.)
-- ✅ Want deterministic, reproducible governance decisions
-- ✅ Prefer self-hosted tools over SaaS
+**You are already using AI code generation:**
+- Your team uses GitHub Copilot, Cursor, Claude, or similar tools
+- Code velocity has increased but review capacity has not
+- You need audit trails for compliance (SOC 2, ISO 27001, PCI-DSS)
+- You cannot answer "who is accountable for this generated code?"
 
-### You probably don't need ReadyLayer if you:
+**You are planning to adopt AI code generation:**
+- You want governance in place before velocity outpaces review capacity
+- You need to satisfy security/compliance teams before rollout
+- You want deterministic, auditable decisions from day one
 
-- ❌ Don't use AI assistants in your workflow
-- ❌ Have < 3 developers (manual review works fine)
-- ❌ Ship code infrequently (< 10 PRs/week)
-- ❌ Have dedicated security team reviewing every line
+**You have compliance requirements:**
+- Auditors require immutable records of code review decisions
+- You need cryptographically verifiable audit trails
+- You must demonstrate consistent policy enforcement
+- You need evidence that security scans were reviewed
+
+### You probably don't need ReadyLayer if:
+
+- ❌ No AI assistance is used (pure human-written code)
+- ❌ Team size < 3 developers (manual review scales)
+- ❌ Deployment frequency < 1/week (episodic review works)
+- ❌ No compliance requirements (governance is optional)
+
+**However:** If you plan to adopt AI assistance in the future, implementing governance infrastructure **before** velocity increases is significantly easier than retrofitting it later.
 
 ---
 
@@ -318,6 +343,39 @@ ReadyLayer is built as a **modular monorepo**:
 - **Portability**: No vendor-specific dependencies
 
 See [Architecture Documentation](./docs/architecture/) for deep dives.
+
+---
+
+## Why ReadyLayer Is Trustworthy
+
+Governance infrastructure requires trust. ReadyLayer provides it through binding commitments:
+
+### Invariants (Never Change)
+
+1. **Deterministic Evaluation** — Same inputs + same policy = same outputs (always)
+2. **Human-in-the-Loop** — ReadyLayer can block, but never auto-approves
+3. **Audit Trail Immutability** — Decisions are cryptographically hashed and permanent
+4. **Open Source Core** — Evaluation logic is publicly auditable (MIT license)
+5. **Model Agnosticism** — Works with any AI provider (no vendor lock-in)
+6. **Fail-Safe Defaults** — When in doubt, block (never fail open)
+
+### Neutrality Guarantees
+
+- **No data monetization** — Your code and decisions are never sold
+- **No exclusive integrations** — All git providers, CI systems, and AI models supported equally
+- **No forced upgrades** — Security patches backported to LTS versions
+- **Human-readable audit logs** — Always exportable in standard formats (JSON, CSV)
+
+### Resistance to Capture
+
+- **Open governance model** — Community input required for major changes
+- **Fork-friendly architecture** — No hidden dependencies or vendor lock-in
+- **Self-hosting viability** — Full functionality without managed service
+- **Financial transparency** — No hidden fees, predictable pricing
+
+These commitments are binding. Violating them would destroy ReadyLayer's reason to exist.
+
+See [Long-Term Governance](./docs/LONG_TERM_GOVERNANCE.md) for full commitments and accountability mechanisms.
 
 ---
 
@@ -381,6 +439,17 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guide.
 
 ## Documentation
 
+### Strategic Context
+
+| Topic | Link |
+|-------|------|
+| **Problem Definition** | [Problem Statement](./docs/PROBLEM_STATEMENT.md) — Why AI code governance requires new infrastructure |
+| **Positioning** | [Non-Goals](./docs/NON_GOALS.md) — What ReadyLayer intentionally does not do |
+| **Ecosystem Fit** | [Ecosystem Map](./docs/ECOSYSTEM_MAP.md) — Where ReadyLayer sits relative to other tools |
+| **Trust & Commitments** | [Long-Term Governance](./docs/LONG_TERM_GOVERNANCE.md) — Binding invariants and guarantees |
+
+### Technical Documentation
+
 | Topic | Link |
 |-------|------|
 | **Getting Started** | [Quick Start Guide](./docs/QUICK-START.md) |
@@ -390,8 +459,6 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guide.
 | **API Reference** | [API Documentation](./docs/API-ENDPOINTS-SUMMARY.md) |
 | **Security** | [Security Model](./SECURITY.md) |
 | **Contributing** | [Contribution Guide](./CONTRIBUTING.md) |
-| **Governance** | [Project Governance](./docs/GOVERNANCE.md) |
-| **Philosophy** | [Why Open Source](./docs/WHY_OPEN_SOURCE.md) |
 
 ---
 
@@ -493,28 +560,66 @@ Special thanks to contributors, early adopters, and everyone who has filed issue
 
 ---
 
-## Get Started
+## Getting Started
+
+### Evaluate Locally (5 minutes)
 
 ```bash
-# Try it locally (5 minutes)
 git clone https://github.com/Hardonian/ReadyLayer.git
 cd ReadyLayer
 npm install
 npm run dev
-
-# Or deploy to production
-docker run -p 3000:3000 readylayer/readylayer:latest
+# Open http://localhost:3000
 ```
 
-**Questions?** Open a [GitHub Discussion](https://github.com/Hardonian/ReadyLayer/discussions).
+No database required for local sandbox mode.
+
+### Deploy to Production
+
+```bash
+docker run -p 3000:3000 \
+  -e DATABASE_URL=postgresql://... \
+  readylayer/readylayer:latest
+```
+
+See [Deployment Guide](./docs/DEPLOYMENT-GUIDE.md) for production setup.
+
+### Integrate with CI/CD
+
+```yaml
+# .github/workflows/readylayer.yml
+- uses: readylayer/readylayer-action@v1
+  with:
+    policy: .readylayer/policy.yml
+```
+
+### Questions?
+
+- [GitHub Discussions](https://github.com/Hardonian/ReadyLayer/discussions) — Ask questions
+- [GitHub Issues](https://github.com/Hardonian/ReadyLayer/issues) — Report bugs
+- [Documentation](./docs/) — Read guides
+
+---
+
+## The Bottom Line
+
+AI-generated code requires governance infrastructure. You can:
+
+1. **Build it yourself** — Significant engineering effort, ongoing maintenance
+2. **Ignore the problem** — Accumulate unaudited risk until compliance/security forces action
+3. **Use ReadyLayer** — Purpose-built infrastructure, open source, proven
+
+The problem is not hypothetical. Every organization using AI code assistance faces it.
+
+The question is not whether to implement governance. The question is when, and at what cost.
 
 ---
 
 <div align="center">
 
-**ReadyLayer is open source, composable, and workflow-native.**
+**ReadyLayer: Governance infrastructure for AI-generated code**
 
-No lock-in. No telemetry. No data custody.
+Open source • Self-hostable • Neutral • Auditable
 
 [Documentation](./docs/) • [Contributing](./CONTRIBUTING.md) • [License](./LICENSE)
 
