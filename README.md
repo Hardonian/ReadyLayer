@@ -1,83 +1,71 @@
 # ReadyLayer
 
-> **The default authority for AI-generated code safety.**
->
-> Deterministic governance gates. Every decision is hashed, traceable, and defendable in audits.
+**An open-source framework for governing AI-generated code in your existing developer workflow.**
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/readylayer/readylayer)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
-[![Test Coverage](https://img.shields.io/badge/Coverage-82%25-brightgreen)](./docs/testing)
-[![Security Score](https://img.shields.io/badge/Security-9.5%2F10-success)](./docs/security)
-
-## 🚀 Live Demo
-
-**[Visit ReadyLayer →](https://ready-layer.vercel.app)** | **[Watch Demo (2 min)](https://www.youtube.com/watch?v=demo)** | **[Read the Blog](https://readylayer.io/blog)**
+[![Next.js](https://img.shields.io/badge/Next.js-16+-black)](https://nextjs.org/)
 
 ---
 
-## What is ReadyLayer?
+## What ReadyLayer Is
 
-ReadyLayer is an **AI-aware code governance platform** that enforces security, test coverage, and documentation standards automatically. It blocks risky pull requests *before they ship* with cryptographically hashed, auditable decisions.
+ReadyLayer is an **open-source governance framework** that enforces security, test coverage, and documentation standards for AI-generated code. It integrates directly into your existing CI/CD pipelines, GitHub workflows, and development tools—no new UI required, no data custody, no lock-in.
 
-### Built for modern teams shipping AI-assisted code:
-- ✅ **Review Guard** — Security & policy scanning with deterministic verdicts
-- ✅ **Test Engine** — AI-powered test generation + coverage enforcement  
-- ✅ **Doc Sync** — Catch documentation drift in APIs and schemas
-- ✅ **Hashed Decisions** — Every gate decision includes policy hash for audit trails
-- ✅ **Zero dependency on AI** — Works perfectly with just deterministic rules
+It exists because **AI-generated code ships faster than humans can review it safely.** ReadyLayer automates the boring parts of code governance so teams can ship quickly without sacrificing quality.
 
 ---
 
-## ✨ Key Features
+## The Problem
 
-### 🔐 Security That Auditors Love
-- OWASP Top 10 policy templates (pre-built + customizable)
-- PCI-DSS, HIPAA, SOC 2 compliance modes
-- Secrets detection & redaction before LLM queries
-- Rate limiting, CSRF protection, RLS policies
-- **9.5/10 Security Score** — Zero critical vulnerabilities
+AI coding assistants (GitHub Copilot, Cursor, Claude, GPT) accelerate development, but they create a dangerous gap:
 
-### 🧪 Test Coverage Enforcement
-- Automatic test generation for AI-touched files
-- Coverage thresholds enforced (80%+ default)
-- Framework auto-detection (Jest, pytest, Mocha, Vitest)
-- Coverage delta tracking (highlight regressions)
+- **Code generation**: Instant
+- **Security review**: Manual, slow
+- **Test coverage**: Often forgotten
+- **Documentation**: Lags behind reality
 
-### 📖 Documentation Governance
-- OpenAPI/schema drift detection
-- Automatic documentation updates from code
-- Markdown validation + link checking
-
-### 🔗 Integration Ready
-- **GitHub** — OAuth + App (CSRF protected)
-- **Slack** — Real-time notifications
-- **Stripe** — Billing & usage tracking  
-- **Email** — SendGrid/Postmark support
-- **CI/CD** — GitHub Actions, GitLab CI, Bitbucket Pipelines
-
-### 💼 Enterprise Features
-- Policy inheritance (org → team → repo)
-- Bulk user management & invitations
-- Admin dashboards & analytics
-- Audit logging & compliance reports
-- LLM cost tracking & forecasting
+Teams face a choice: ship fast and break things, or slow down and lose velocity. ReadyLayer eliminates that tradeoff.
 
 ---
 
-## 🏃 Quick Start
+## How ReadyLayer Works
 
-### Online Demo (30 seconds)
-1. Go to **[readylayer.io](https://ready-layer.vercel.app)**
-2. Click "Connect GitHub" 
-3. Select a repository to review
+ReadyLayer operates as a **composable middleware layer** in your existing workflow:
 
-### Local Development
+```
+Developer writes code (human or AI-assisted)
+    ↓
+Pull request created
+    ↓
+ReadyLayer runs (CI/CD or GitHub Action)
+    ↓
+Security scan + test coverage check + doc validation
+    ↓
+Deterministic pass/fail decision (auditable)
+    ↓
+PR approved or blocked with specific feedback
+```
+
+### Key Characteristics
+
+- **Workflow-native**: Runs in GitHub Actions, GitLab CI, or any CI/CD
+- **Deterministic**: Same input + same policy = same output (cryptographically hashed)
+- **Auditable**: Every decision includes policy version, input hash, and evidence bundle
+- **Composable**: Use only what you need (security only, tests only, or all three)
+- **Portable**: No vendor lock-in, runs anywhere Docker runs
+- **Privacy-preserving**: Your code never leaves your infrastructure (self-hosted mode)
+
+---
+
+## Installation
+
+### Local Development (5 minutes)
 
 ```bash
-# Clone the repo
-git clone https://github.com/readylayer/readylayer.git
-cd readylayer
+# Clone repository
+git clone https://github.com/Hardonian/ReadyLayer.git
+cd ReadyLayer
 
 # Install dependencies
 npm install
@@ -85,262 +73,449 @@ npm install
 # Set up environment
 cp .env.example .env
 
-# Start dev server
+# Start development server
 npm run dev
 
 # Open http://localhost:3000
 ```
 
-**No database required** — Uses in-memory SQLite by default for sandbox mode.
+No database required for local sandbox mode (uses in-memory SQLite).
 
-### Production Deployment
+### Self-Hosted Production (Docker)
 
 ```bash
-# One-click deploy to Vercel
-npx vercel deploy --prod
+# Pull image
+docker pull readylayer/readylayer:latest
 
-# Or use Docker
-docker build -t readylayer . && docker run -p 3000:3000 readylayer
-
-# Or traditional hosting
-npm run build && npm run start
+# Run with your database
+docker run -p 3000:3000 \
+  -e DATABASE_URL=postgresql://... \
+  -e GITHUB_CLIENT_ID=... \
+  -e GITHUB_CLIENT_SECRET=... \
+  readylayer/readylayer:latest
 ```
 
-See **[DEPLOYMENT-GUIDE.md](./docs/DEPLOYMENT-GUIDE.md)** for detailed instructions.
+See [Deployment Guide](./docs/DEPLOYMENT-GUIDE.md) for detailed setup.
 
----
+### GitHub Action (Recommended)
 
-## 🏗️ Architecture
+```yaml
+# .github/workflows/readylayer.yml
+name: ReadyLayer Governance
 
-ReadyLayer uses a **composable, open-core architecture:**
+on: [pull_request]
 
-```
-┌─────────────────────────────────────────────────────┐
-│  Frontend (Next.js + React)                         │
-│  • Dashboard, Admin, Analytics                      │
-│  • Real-time metrics & observability                │
-└──────────────────┬──────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────┐
-│  API Layer (Next.js Routes)                         │
-│  • REST endpoints (/api/v1/*)                       │
-│  • WebSocket for real-time                          │
-│  • Rate limiting & auth                             │
-└──────────────────┬──────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────┐
-│  Core Engines (Deterministic, Free)                │
-│  ├─ Review Guard (security scanning)               │
-│  ├─ Test Engine (coverage enforcement)             │
-│  └─ Doc Sync (documentation validation)            │
-└──────────────────┬──────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────┐
-│  AI Layer (Optional, Behind Flags)                 │
-│  ├─ LLM providers (OpenAI, Anthropic)             │
-│  ├─ Embeddings for RAG                             │
-│  └─ Async processing workers                       │
-└──────────────────┬──────────────────────────────────┘
-                   │
-┌──────────────────▼──────────────────────────────────┐
-│  Integrations & Adapters                           │
-│  ├─ Git: GitHub, GitLab, Bitbucket                │
-│  ├─ CI/CD: GitHub Actions, GitLab CI             │
-│  ├─ Notifications: Slack, Email, Webhooks         │
-│  └─ Payments: Stripe                               │
-└─────────────────────────────────────────────────────┘
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: readylayer/readylayer-action@v1
+        with:
+          policy: .readylayer/policy.yml
+          token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-For detailed architecture docs, see:
-- 📐 **[Architecture Overview](./docs/architecture/overview.md)**
-- 🔐 **[Security Model](./docs/architecture/security.md)**
-- 🚀 **[Scaling Guide](./docs/architecture/scaling.md)**
+---
+
+## Core Features
+
+### 1. Review Guard (Security Scanner)
+
+Detects security issues before they reach production:
+
+- **OWASP Top 10**: SQL injection, XSS, CSRF, etc.
+- **Secrets Detection**: API keys, private keys, credentials
+- **Dependency Scanning**: Known CVEs in npm/pip/cargo packages
+- **Policy Templates**: PCI-DSS, HIPAA, SOC 2 ready
+
+**Example output:**
+```
+❌ BLOCKED: Critical security issues detected
+
+Security Issues (2 blocking):
+1. [CRITICAL] SQL injection risk at src/api/users.ts:42
+   - User input directly in query string
+   - Recommendation: Use parameterized queries
+
+2. [HIGH] Exposed API key at config/env.ts:12
+   - Pattern: sk-proj-[redacted]
+   - Recommendation: Use environment variables
+```
+
+### 2. Test Engine (Coverage Enforcement)
+
+Ensures AI-generated code has tests:
+
+- **Framework Detection**: Auto-detects Jest, Vitest, pytest, Mocha
+- **Coverage Thresholds**: Configurable per-repo (default 80%)
+- **Delta Tracking**: Highlights coverage regressions
+- **Smart Targeting**: Only tests files touched by AI assistants
+
+**Example output:**
+```
+✅ PASSED: Test coverage meets requirements
+
+Test Coverage:
+- Overall: 85% (target: 80%)
+- New files: 92%
+- Changed files: 88%
+
+Files needing attention: 0
+```
+
+### 3. Doc Sync (Documentation Validator)
+
+Catches documentation drift:
+
+- **OpenAPI/Schema Validation**: Detects API contract changes
+- **Markdown Link Checking**: Finds broken links
+- **Code Comment Analysis**: Ensures public APIs are documented
+- **Changelog Generation**: Auto-generates from commits
+
+**Example output:**
+```
+⚠️  WARNING: Documentation drift detected (non-blocking)
+
+Documentation Issues:
+1. API endpoint POST /api/users added without OpenAPI spec update
+2. Public function createUser() missing JSDoc comments
+3. Broken link in README.md → docs/setup.md (404)
+```
 
 ---
 
-## 📊 Performance
+## Integration Options
 
-| Metric | Target | Actual | Status |
-|--------|--------|--------|--------|
-| API Response | 500ms | **185ms** | ✅ |
-| Page Load | 2.5s | **1.8s** | ✅ |
-| Test Execution | 120s | **85s avg** | ✅ |
-| Code Coverage | 80% | **82%** | ✅ |
+ReadyLayer integrates with your existing tools:
 
-See **[PERFORMANCE-PROFILING-GUIDE.md](./docs/PERFORMANCE-PROFILING-GUIDE.md)** for detailed metrics.
+### Git Providers
+- ✅ **GitHub**: OAuth app + GitHub Action
+- ✅ **GitLab**: CI/CD integration
+- ✅ **Bitbucket**: Pipelines integration
 
----
+### CI/CD Systems
+- ✅ **GitHub Actions** (first-class support)
+- ✅ **GitLab CI** (native integration)
+- ✅ **Bitbucket Pipelines**
+- ✅ **Jenkins** (Docker executor)
+- ✅ **CircleCI** (Docker executor)
 
-## 🔐 Security & Compliance
+### Notifications
+- ✅ **Slack**: Real-time PR feedback
+- ✅ **Email**: Digest reports
+- ✅ **Webhooks**: Custom integrations
 
-ReadyLayer takes security seriously:
-
-- ✅ **OWASP Top 10** — All 10 vulnerabilities protected
-- ✅ **PCI-DSS** — Payment data security compliance
-- ✅ **GDPR** — User data privacy & deletion
-- ✅ **SOC 2** — Audit logging & access controls
-- ✅ **Zero Critical CVEs** — Dependencies audited weekly
-- ✅ **Secrets Redacted** — No credentials in logs/errors
-
-**Report security issues:** See **[SECURITY.md](./SECURITY.md)**
-
----
-
-## 📦 What's Included
-
-### Free Tier (No credit card required)
-- ✅ Review Guard with security scans
-- ✅ Test Engine with coverage enforcement
-- ✅ Doc Sync for API documentation
-- ✅ Up to 3 repositories
-- ✅ Community support
-
-### Paid Tier (AI-assisted features)
-- 🤖 AI-powered test generation
-- 🤖 AI security recommendations
-- 📊 Advanced analytics & insights
-- 👥 Team collaboration features
-- 🎯 Unlimited repositories
-- 📞 Priority support
-
-[See Pricing →](https://readylayer.io/pricing)
+### IDE Extensions (planned)
+- 🔄 **VS Code**: Inline governance feedback
+- 🔄 **IntelliJ**: Live policy checking
+- 🔄 **Vim**: CLI integration
 
 ---
 
-## 🛠️ Installation Options
+## Configuration
 
-### GitHub App (Recommended)
-Install via **[GitHub Marketplace](https://github.com/apps/readylayer)**
+ReadyLayer uses a simple YAML policy file:
 
-### Self-Hosted
+```yaml
+# .readylayer/policy.yml
+version: "1.0"
+
+review_guard:
+  enabled: true
+  severity_threshold: "high"  # Block on high/critical
+  rules:
+    - owasp_top_10
+    - secrets_detection
+    - dependency_scan
+
+test_engine:
+  enabled: true
+  coverage_threshold: 80
+  frameworks:
+    - vitest
+    - jest
+
+doc_sync:
+  enabled: true
+  enforce: false  # Warn only, don't block
+  formats:
+    - openapi
+    - markdown
+```
+
+See [Policy Templates](./docs/policies/) for pre-built configurations.
+
+---
+
+## Explicit Non-Goals
+
+ReadyLayer **intentionally does not**:
+
+- ❌ **Host your code**: Everything runs in your infrastructure
+- ❌ **Require accounts**: Self-hosted mode needs zero external services
+- ❌ **Send telemetry**: No tracking, analytics, or phone-home
+- ❌ **Lock you in**: Standard YAML configs, portable everywhere
+- ❌ **Replace human judgment**: Governance aids decisions, doesn't make them
+
+---
+
+## Who Should Use ReadyLayer
+
+### You should use ReadyLayer if you:
+
+- ✅ Use AI coding assistants (Copilot, Cursor, Claude, etc.)
+- ✅ Ship code faster than you can manually review it
+- ✅ Need audit trails for compliance (SOC 2, ISO 27001, etc.)
+- ✅ Want deterministic, reproducible governance decisions
+- ✅ Prefer self-hosted tools over SaaS
+
+### You probably don't need ReadyLayer if you:
+
+- ❌ Don't use AI assistants in your workflow
+- ❌ Have < 3 developers (manual review works fine)
+- ❌ Ship code infrequently (< 10 PRs/week)
+- ❌ Have dedicated security team reviewing every line
+
+---
+
+## Architecture
+
+ReadyLayer is built as a **modular monorepo**:
+
+```
+┌─────────────────────────────────────────┐
+│  CLI / GitHub Action                    │
+│  (Stateless, runs in CI/CD)             │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  Core Engines (Pure Functions)          │
+│  ├─ Review Guard (security scanning)    │
+│  ├─ Test Engine (coverage analysis)     │
+│  └─ Doc Sync (validation)                │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  Policy Engine (Deterministic)          │
+│  • Same input → same output             │
+│  • Cryptographically hashed             │
+│  • Audit trail included                 │
+└──────────────┬──────────────────────────┘
+               │
+┌──────────────▼──────────────────────────┐
+│  Data Layer (Optional)                  │
+│  • PostgreSQL (for persistence)         │
+│  • Redis (for job queue)                │
+│  • SQLite (local dev mode)              │
+└─────────────────────────────────────────┘
+```
+
+**Key Design Principles:**
+- **Determinism**: Same inputs always produce same outputs
+- **Auditability**: Every decision is hashed and traceable
+- **Composability**: Use only what you need
+- **Portability**: No vendor-specific dependencies
+
+See [Architecture Documentation](./docs/architecture/) for deep dives.
+
+---
+
+## Technology Stack
+
+- **Framework**: Next.js 16 (App Router) + React 19
+- **Language**: TypeScript 5 (strict mode)
+- **Database**: PostgreSQL via Prisma ORM
+- **Queue**: Redis + Bull (optional for async jobs)
+- **Auth**: Supabase Auth + GitHub OAuth (self-hosted mode available)
+- **Testing**: Vitest (unit) + Playwright (E2E)
+- **CI/CD**: GitHub Actions (reference implementation)
+
+---
+
+## Development
+
+### Quick Start
+
 ```bash
-docker run -e DATABASE_URL=postgresql://... readylayer/readylayer:latest
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Run tests
+npm test
+
+# Type check
+npm run type-check
+
+# Lint
+npm run lint
+
+# Build
+npm run build
 ```
 
-### Cloud Platforms
-- ☁️ Vercel (1-click deploy)
-- ☁️ AWS, Google Cloud, Azure (see docs)
-- ☁️ Railway, Render, Fly.io
+### Common Commands
 
-See **[DEPLOYMENT-GUIDE.md](./docs/DEPLOYMENT-GUIDE.md)** for setup details.
-
----
-
-## 📚 Documentation
-
-| Section | Link |
-|---------|------|
-| **Getting Started** | [Quick Start](./docs/getting-started) |
-| **Features** | [Feature Guide](./docs/features) |
-| **API Reference** | [API Docs](./docs/api) |
-| **CI/CD Integration** | [CI/CD Setup](./docs/integrations/ci-setup.md) |
-| **Policy Templates** | [Templates Guide](./docs/policies/templates.md) |
-| **Security** | [Security Model](./docs/architecture/security.md) |
-| **Deployment** | [Deployment Guide](./DEPLOYMENT-GUIDE.md) |
-| **Architecture** | [Architecture Overview](./docs/architecture/overview.md) |
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Whether you're fixing a bug, adding a feature, or improving docs:
-
-1. **[Read CONTRIBUTING.md](./CONTRIBUTING.md)** — Development setup & guidelines
-2. **[Check Issues](https://github.com/readylayer/readylayer/issues)** — Pick something to work on
-3. **[Read CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** — Community standards
-4. **Submit a PR** — We review in 48 hours
-
-### Ways to Contribute
-- 🐛 **Report Bugs** — Found an issue? Open a GitHub issue
-- ✨ **New Features** — Have an idea? Discuss in an issue first
-- 📖 **Improve Docs** — Docs can always be better!
-- 🧪 **Write Tests** — Help us reach 90%+ coverage
-- 💬 **Give Feedback** — Try it and tell us what you think
-
-### Development Setup
 ```bash
-# Fork & clone
-git clone https://github.com/YOUR_USERNAME/readylayer.git
+# Database
+npm run prisma:generate  # Generate Prisma client
+npm run prisma:migrate   # Run migrations
+npm run prisma:studio    # Open DB UI
 
-# Create feature branch
-git checkout -b feature/my-feature
+# Testing
+npm test                 # Unit tests
+npm run test:e2e         # E2E tests
+npm run test:coverage    # Coverage report
 
-# Follow code standards
-npm run lint    # Lint check
-npm run type    # TypeScript check
-npm test        # Run tests
-
-# Push & open PR
-git push origin feature/my-feature
+# Quality
+npm run verify           # Lint + type-check + test
+npm run clean            # Remove build artifacts
 ```
 
-See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for detailed guidelines.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guide.
 
 ---
 
-## 🌟 Community
+## Documentation
 
-- 💬 **[GitHub Discussions](https://github.com/readylayer/readylayer/discussions)** — Ask questions
-- 🐛 **[GitHub Issues](https://github.com/readylayer/readylayer/issues)** — Report bugs
-- 🎯 **[Roadmap](./markdowns/private/ROADMAP.md)** — See what's coming
-- 🙋 **[Slack Community](https://readylayer.io/slack)** — Chat with us
-- 📧 **[Email](mailto:hello@readylayer.io)** — Contact the team
-
----
-
-## 📊 Project Stats
-
-- **130+** Features Implemented
-- **9.2/10** Code Quality Score
-- **82%** Test Coverage
-- **9.5/10** Security Score
-- **185ms** Average API Response
-- **0** Critical Vulnerabilities
+| Topic | Link |
+|-------|------|
+| **Getting Started** | [Quick Start Guide](./docs/QUICK-START.md) |
+| **Installation** | [Deployment Guide](./docs/DEPLOYMENT-GUIDE.md) |
+| **Configuration** | [Policy Templates](./docs/policies/) |
+| **Architecture** | [Architecture Docs](./docs/architecture/) |
+| **API Reference** | [API Documentation](./docs/API-ENDPOINTS-SUMMARY.md) |
+| **Security** | [Security Model](./SECURITY.md) |
+| **Contributing** | [Contribution Guide](./CONTRIBUTING.md) |
+| **Governance** | [Project Governance](./docs/GOVERNANCE.md) |
+| **Philosophy** | [Why Open Source](./docs/WHY_OPEN_SOURCE.md) |
 
 ---
 
-## 📄 License
+## Community & Support
 
-ReadyLayer is **MIT Licensed** — use it however you like.
-
-See **[LICENSE](./LICENSE)** for details.
-
----
-
-## 🚀 What's Next?
-
-Ready to get started?
-
-1. **[Try the Demo](https://ready-layer.vercel.app)** (2 min)
-2. **[Read the Docs](./docs)** (10 min)
-3. **[Install Locally](./docs/getting-started)** (5 min)
-4. **[Join the Community](https://readylayer.io/slack)** (ongoing)
-5. **[Contribute](./CONTRIBUTING.md)** (make an impact!)
+- 💬 **[GitHub Discussions](https://github.com/Hardonian/ReadyLayer/discussions)** — Ask questions, share ideas
+- 🐛 **[GitHub Issues](https://github.com/Hardonian/ReadyLayer/issues)** — Report bugs, request features
+- 📖 **[Documentation](./docs/)** — Guides, tutorials, references
+- 🔒 **[Security Reports](./SECURITY.md)** — Responsible disclosure
 
 ---
 
-## ✉️ Get in Touch
+## Contributing
 
-- 🌐 **Website:** [readylayer.io](https://readylayer.io)
-- 📧 **Email:** hello@readylayer.io
-- 🐦 **Twitter:** [@readylayer](https://twitter.com/readylayer)
-- 💼 **LinkedIn:** [ReadyLayer](https://linkedin.com/company/readylayer)
-- 🙌 **GitHub:** [readylayer/readylayer](https://github.com/readylayer/readylayer)
+We welcome contributions of all kinds:
+
+- 🐛 **Bug reports**: Found an issue? Open a GitHub issue
+- ✨ **Feature requests**: Have an idea? Start a discussion
+- 📖 **Documentation**: Improve guides, fix typos, add examples
+- 🧪 **Tests**: Help us reach 90%+ coverage
+- 💻 **Code**: Fix bugs, implement features
+
+**Before contributing:**
+1. Read [CONTRIBUTING.md](./CONTRIBUTING.md)
+2. Review [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+3. Check [Open Issues](https://github.com/Hardonian/ReadyLayer/issues)
+
+We review PRs within 48 hours.
 
 ---
 
-## 💝 Acknowledgments
+## Roadmap
 
-Built with ❤️ by the ReadyLayer team.
+**Current Focus (Q1 2026):**
+- ✅ Core governance engines (Review Guard, Test Engine, Doc Sync)
+- ✅ GitHub integration (OAuth + Actions)
+- ✅ Self-hosted deployment
+- 🔄 GitLab/Bitbucket parity
+- 🔄 VS Code extension
+- 🔄 Policy marketplace (community templates)
 
-Thanks to everyone who has contributed, reported bugs, and provided feedback. This project wouldn't exist without the amazing open-source community.
+See [ROADMAP.md](./docs/ROADMAP.md) for full roadmap.
+
+---
+
+## License
+
+ReadyLayer is licensed under **Apache License 2.0**.
+
+This means you can:
+- ✅ Use commercially
+- ✅ Modify freely
+- ✅ Distribute
+- ✅ Sublicense
+- ✅ Use privately
+
+See [LICENSE](./LICENSE) for full terms.
+
+---
+
+## Enterprise Cloud (Optional)
+
+For teams that prefer a managed service over self-hosting, we offer **ReadyLayer Enterprise Cloud**—a hosted implementation of this open-source framework with operational conveniences:
+
+- **Managed infrastructure**: No servers to maintain
+- **Automatic updates**: Always on latest stable version
+- **Support SLA**: Response time guarantees
+- **Advanced analytics**: Usage dashboards and insights
+- **SSO integration**: SAML, Okta, Azure AD
+- **Multi-region deployment**: Data residency compliance
+
+**Important:**
+- The OSS version remains **fully functional** and is not feature-gated
+- Enterprise Cloud is **operationally convenient**, not functionally superior
+- All core governance logic is identical between OSS and Enterprise
+
+See [docs/ENTERPRISE.md](./docs/ENTERPRISE.md) for details.
+
+**No pricing, no CTA, no pressure.** This is informational only.
+
+---
+
+## Project Status
+
+- **Current Version**: 1.0.0
+- **Stability**: Production-ready
+- **Test Coverage**: 82%
+- **Active Development**: Yes
+- **Maintainers**: 2 core + community
+- **Last Security Audit**: January 2026
+
+---
+
+## Recognition
+
+ReadyLayer is built by developers who believe AI-generated code should be governed transparently. We're grateful to the open-source community for making this possible.
+
+Special thanks to contributors, early adopters, and everyone who has filed issues, submitted PRs, and provided feedback.
+
+---
+
+## Get Started
+
+```bash
+# Try it locally (5 minutes)
+git clone https://github.com/Hardonian/ReadyLayer.git
+cd ReadyLayer
+npm install
+npm run dev
+
+# Or deploy to production
+docker run -p 3000:3000 readylayer/readylayer:latest
+```
+
+**Questions?** Open a [GitHub Discussion](https://github.com/Hardonian/ReadyLayer/discussions).
 
 ---
 
 <div align="center">
 
-**[🚀 Try ReadyLayer →](https://ready-layer.vercel.app)** | **[📖 Read Docs](./docs)** | **[🤝 Contribute](./CONTRIBUTING.md)**
+**ReadyLayer is open source, composable, and workflow-native.**
 
-Made with ❤️ for developers who care about code safety.
+No lock-in. No telemetry. No data custody.
+
+[Documentation](./docs/) • [Contributing](./CONTRIBUTING.md) • [License](./LICENSE)
 
 </div>
