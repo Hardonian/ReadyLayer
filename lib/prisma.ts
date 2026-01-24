@@ -1,34 +1,130 @@
 /**
  * Prisma Client Singleton
- * 
- * Connection pooling and singleton pattern for optimal performance
+ *
+ * Connection pooling, query timeouts, and singleton pattern for optimal performance.
+ * Configured for Postgres scaling per OpenAI playbook.
  */
 
 import { PrismaClient } from '@prisma/client'
+import { logger } from '../observability/logging'
+import { metrics } from '../observability/metrics'
 
 // Extend PrismaClient to add connection pool configuration
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+/**
+ * Determine log level for Prisma based on environment
+ */
+function getPrismaLogLevel() {
+  if (process.env.NODE_ENV === 'development') {
+    return ['query', 'error', 'warn'] as const
+  }
+
+  // Production: Log slow queries only
+  if (process.env.LOG_SLOW_QUERIES === 'true') {
+    return ['error', 'warn'] as const
+  }
+
+  return ['error'] as const
+}
+
+/**
+ * Create Prisma client with optimized configuration
+ */
+function createPrismaClient() {
+  const client = new PrismaClient({
+    log: getPrismaLogLevel(),
+
+    // Query logging in production (for slow query detection)
+    // @ts-ignore - Prisma types don't include this yet
+    ...(process.env.NODE_ENV === 'production' && {
+      // Log queries slower than 1s
+      log: [
+        { level: 'query', emit: 'event' },
+        { level: 'error', emit: 'event' },
+      ],
+    }),
   })
 
-// Connection pool configuration (via connection string)
-// PostgreSQL connection string format:
-// postgresql://user:password@host:port/database?connection_limit=20&pool_timeout=10
-// The connection_limit parameter controls pool size
+  // Hook query events for metrics and slow query logging
+  if (process.env.NODE_ENV === 'production' || process.env.LOG_SLOW_QUERIES === 'true') {
+    // @ts-ignore
+    client.$on('query', (e: { query: string; duration: number; params: string }) => {
+      const durationMs = e.duration
+
+      // Log slow queries (> 1s)
+      if (durationMs > 1000) {
+        logger.warn({
+          query: e.query.substring(0, 200), // Truncate long queries
+          durationMs,
+          params: e.params,
+        }, 'Slow query detected')
+
+        metrics.increment('prisma.slow_query', {
+          duration_bucket: durationMs > 5000 ? '5s+' : '1-5s',
+        })
+      }
+
+      // Histogram for all queries
+      metrics.histogram('prisma.query.duration', durationMs)
+    })
+
+    // @ts-ignore
+    client.$on('error', (e: { message: string }) => {
+      logger.error({ err: new Error(e.message) }, 'Prisma query error')
+      metrics.increment('prisma.query.error')
+    })
+  }
+
+  return client
+}
+
+export const prisma =
+  globalForPrisma.prisma ?? createPrismaClient()
+
+// Connection pool configuration notes:
+//
+// For Supabase with PgBouncer (RECOMMENDED):
+// DATABASE_URL="postgresql://user:password@xxx.pooler.supabase.com:6543/postgres?pgbouncer=true"
+// DIRECT_URL="postgresql://user:password@xxx.supabase.com:5432/postgres" (for migrations)
+//
+// Connection string parameters:
+// - connection_limit=10 (max connections per Prisma instance, default: num_cpus * 2 + 1)
+// - pool_timeout=10 (seconds to wait for connection from pool)
+// - connect_timeout=10 (seconds to wait for initial connection)
+// - statement_timeout=30000 (milliseconds, query execution timeout)
+// - lock_timeout=5000 (milliseconds, lock wait timeout)
+//
+// Example optimized connection string:
+// postgresql://user:password@host:6543/db?pgbouncer=true&connection_limit=10&pool_timeout=10&statement_timeout=30000&lock_timeout=5000
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }
 
-// Graceful shutdown
-process.on('beforeExit', async () => {
-  await prisma.$disconnect()
-})
+// Graceful shutdown with connection draining
+async function gracefulShutdown() {
+  logger.info('Disconnecting Prisma client...')
+
+  try {
+    await prisma.$disconnect()
+    logger.info('Prisma client disconnected successfully')
+  } catch (error) {
+    logger.error({
+      err: error instanceof Error ? error : new Error(String(error)),
+    }, 'Error disconnecting Prisma client')
+  }
+}
+
+process.on('beforeExit', gracefulShutdown)
+process.on('SIGTERM', gracefulShutdown)
+process.on('SIGINT', gracefulShutdown)
+
+// Export gateway helpers for use in application
+export { dbGateway } from './db/gateway'
+export { dbCircuitBreaker, withCircuitBreaker } from './db/circuit-breaker'
+export { cache, cacheInvalidation } from './db/cache'
 
 export default prisma
