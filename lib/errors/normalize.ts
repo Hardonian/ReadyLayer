@@ -124,12 +124,12 @@ export function normalizeError(
     error: {
       code,
       message,
-      ...(details && { details }),
-      ...(requestId && { requestId }),
+      ...(details ? { details } : {}),
+      ...(requestId ? { requestId } : {}),
     },
     meta: {
       timestamp: new Date().toISOString(),
-      ...(path && { path }),
+      ...(path ? { path } : {}),
     },
   };
 
@@ -141,7 +141,7 @@ export function normalizeError(
         code,
         message: redactSecrets(message),
         statusCode,
-        ...(details && { details: redactSecrets(JSON.stringify(details)) }),
+        ...(details ? { details: redactSecrets(JSON.stringify(details)) } : {}),
       },
       requestId,
       path,

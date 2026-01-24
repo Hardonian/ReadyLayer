@@ -1,0 +1,49 @@
+# Vercel Build Optimization
+# Exclude files and directories that don't need to be uploaded to Vercel
+
+# Tests
+**/__tests__/**
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+e2e/**
+playwright-report/**
+test-results/**
+coverage/**
+
+# Documentation
+docs/**
+*.md
+!README.md
+
+# Development files
+.vscode/**
+.idea/**
+*.log
+.DS_Store
+Thumbs.db
+
+# Git
+.git/**
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/**
+.gitlab-ci.yml
+
+# Scripts (except deployment scripts)
+scripts/**
+
+# Local environment files
+.env.local
+.env.*.local
+.env.test
+
+# Build artifacts (will be regenerated)
+.next/**
+node_modules/**
+
+# Workers (if deployed separately)
+workers/**
