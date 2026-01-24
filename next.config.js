@@ -27,6 +27,24 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Performance optimizations
+  poweredByHeader: false,
+  compress: true,
+  // Image optimization for Vercel
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60,
+  },
+  // Output configuration for Vercel
+  output: 'standalone',
+  // Logging
+  logging: {
+    fetches: {
+      fullUrl: process.env.NODE_ENV === 'development',
+    },
+  },
   // Security headers
   async headers() {
     return [

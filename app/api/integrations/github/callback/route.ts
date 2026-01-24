@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
     const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10));
 
     // Get installation details - use unknown cast to work with Octokit's dynamic types
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
     const installationData = await (installationOctokit as any).rest.apps.getInstallation({
       installation_id: parseInt(installationId, 10),
     });

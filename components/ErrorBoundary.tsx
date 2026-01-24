@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '@/observability/logging';
 
 interface Props {
