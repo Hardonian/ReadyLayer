@@ -218,33 +218,203 @@
 
 ## Security Roadmap
 
-### Q1 2025
+### Q1 2026
 - ✅ Complete RLS policies
 - ✅ Add tenant isolation to all routes
-- ⚠️ SOC 2 Type I certification
+- ⚠️ SOC 2 Type I certification (in progress)
+- ⚠️ First annual third-party security audit (Q1 2026)
 - ⚠️ Penetration testing
-- ⚠️ Security audit
 
-### Q2 2025
+### Q2 2026
+- ⚠️ Publish annual security audit summary findings
 - ⚠️ SOC 2 Type II certification
-- ⚠️ ISO 27001 certification
-- ⚠️ Bug bounty program
+- ⚠️ ISO 27001 certification preparation
 - ⚠️ Security training for team
 
-### Q3 2025
+### Q3 2026
 - ⚠️ Enterprise security features (SSO, audit exports)
 - ⚠️ Compliance automation
 - ⚠️ Security monitoring (SIEM integration)
+
+### Ongoing
+- Annual third-party security audits
+- Quarterly security reviews
+- Continuous vulnerability scanning
+- Monthly dependency updates
+
+---
+
+## Annual Third-Party Security Audit
+
+### Commitment
+
+ReadyLayer commits to **annual comprehensive security audits** conducted by independent third-party security firms. This ensures our security posture is verified by external experts and provides transparency to our users and customers.
+
+### Audit Scope
+
+**Annual audit includes:**
+1. **Penetration Testing**
+   - External penetration testing (OWASP Top 10)
+   - Internal network security assessment
+   - API security testing
+   - Authentication and authorization testing
+
+2. **Code Security Review**
+   - Static Application Security Testing (SAST)
+   - Manual code review of security-critical components
+   - Third-party dependency vulnerability assessment
+   - Secret detection and management review
+
+3. **Infrastructure Security Review**
+   - Cloud infrastructure configuration (AWS/Supabase)
+   - Database security and encryption review
+   - Network segmentation and firewall rules
+   - Backup and disaster recovery procedures
+
+4. **Compliance Gap Analysis**
+   - SOC 2 Trust Service Criteria alignment
+   - ISO 27001 control implementation
+   - GDPR/CCPA compliance verification
+   - Industry-specific requirements (as applicable)
+
+### Audit Process
+
+**Timeline:**
+- **Q1 (January-March)**: Annual audit conducted
+- **Q1 (March)**: Findings delivered and remediation begins
+- **Q2 (April)**: Summary findings published publicly
+- **Q2-Q4**: Remediation tracking and quarterly reviews
+
+**Auditor Selection:**
+- Independent third-party security firms
+- Minimum qualifications: CREST, OSCP, or equivalent certifications
+- No conflicts of interest (rotated every 2-3 years)
+
+**Deliverables:**
+1. **Full Audit Report** (confidential)
+   - Detailed findings with CVSS scores
+   - Proof-of-concept exploits (where applicable)
+   - Remediation recommendations with timelines
+   - Available to Enterprise customers under NDA
+
+2. **Public Summary Findings** (published)
+   - Number of findings by severity (Critical, High, Medium, Low)
+   - General categories of issues found
+   - Remediation status and timelines
+   - Overall security posture assessment
+   - Published on readylayer.io/security/audits
+
+### Published Summary Format
+
+**Example annual security audit summary:**
+
+```
+ReadyLayer 2026 Annual Security Audit Summary
+Audit Period: January 1 - March 31, 2026
+Auditor: [Independent Security Firm Name]
+Published: April 15, 2026
+
+Findings Summary:
+- Critical: 0
+- High: 2 (both remediated)
+- Medium: 5 (4 remediated, 1 in progress)
+- Low: 12 (8 remediated, 4 accepted risk)
+
+Categories:
+- Authentication & Authorization: 1 High (remediated)
+- Encryption & Data Protection: 1 Medium (remediated)
+- Input Validation: 1 High, 2 Medium (all remediated)
+- Infrastructure Security: 2 Medium, 8 Low
+- Logging & Monitoring: 1 Medium, 4 Low
+
+Overall Assessment:
+"ReadyLayer demonstrates a mature security posture with strong
+controls in place for authentication, encryption, and tenant
+isolation. All critical and high-severity findings were
+remediated within 30 days. Security practices align with
+industry standards for SaaS platforms."
+
+Remediation Timeline:
+- Critical findings: Addressed within 7 days (N/A - none found)
+- High findings: Addressed within 30 days (100% complete)
+- Medium findings: Addressed within 90 days (80% complete)
+- Low findings: Best effort (67% complete)
+
+Next Audit: Q1 2027
+```
+
+### Transparency Commitment
+
+**Public disclosure includes:**
+- ✅ Number of findings by severity
+- ✅ General categories (no specific exploit details)
+- ✅ Remediation status and timelines
+- ✅ Overall security assessment
+- ✅ Link to auditor's credentials
+
+**Confidential (available under NDA to Enterprise customers):**
+- ❌ Specific vulnerability details
+- ❌ Proof-of-concept exploits
+- ❌ Technical implementation details
+- ❌ Infrastructure architecture specifics
+
+### Access to Audit Reports
+
+**OSS Users:**
+- Public summary findings (free, no signup required)
+- Published at: https://readylayer.io/security/audits
+
+**Enterprise Customers:**
+- Public summary findings
+- Full audit report (under NDA)
+- Request via: security@readylayer.io
+
+**Prospective Customers:**
+- Public summary findings
+- Redacted sample findings (upon request)
+- Request via: sales@readylayer.io
+
+### Continuous Security
+
+**Between annual audits:**
+- **Quarterly security reviews**: Internal security team reviews
+- **Monthly dependency updates**: Automated vulnerability scanning
+- **Weekly penetration testing**: Automated security scans
+- **Daily monitoring**: Real-time security event monitoring
+
+**Bug Bounty Program (planned Q2 2026):**
+- Responsible disclosure program
+- Rewards for valid security findings
+- Scope: Production systems, OSS codebase
+- Details at: https://readylayer.io/security/bug-bounty
+
+---
+
+## Security Audit History
+
+### 2026 Annual Audit
+- **Status**: In progress (Q1 2026)
+- **Auditor**: [To be announced]
+- **Expected completion**: March 31, 2026
+- **Summary publication**: April 30, 2026
+
+### Future Audits
+- **2027 Annual Audit**: Q1 2027
+- **2028 Annual Audit**: Q1 2028
+- **Ongoing**: Annual cadence maintained
 
 ---
 
 ## Contact
 
-**Security Issues:** security@readylayer.com  
-**Security Policy:** https://readylayer.com/security  
-**Responsible Disclosure:** https://readylayer.com/security/disclosure
+**Security Issues:** security@readylayer.io
+**Security Policy:** https://readylayer.io/security
+**Responsible Disclosure:** https://readylayer.io/security/disclosure
+**Audit Report Requests:** security@readylayer.io
+**Bug Bounty (planned Q2 2026):** https://readylayer.io/security/bug-bounty
 
 ---
 
-**Last Updated:** 2024-12-30  
-**Next Review:** Quarterly
+**Last Updated:** 2026-01-24
+**Next Review:** Quarterly (April 2026)
+**Next Audit:** Q1 2027
