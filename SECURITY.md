@@ -1,5 +1,9 @@
 # Security Policy
 
+**ReadyLayer is open-source governance tooling for AI-generated code. Security is foundational to trust.**
+
+Because ReadyLayer makes security decisions about your code, the security of ReadyLayer itself must be inspectable, auditable, and trustworthy. This policy explains how we handle vulnerabilities and maintain security transparency.
+
 ## Reporting Security Vulnerabilities
 
 **Please do not file public GitHub issues for security vulnerabilities.** We take security very seriously and appreciate responsible disclosure.
@@ -39,40 +43,42 @@ We ask for **90 days** of responsible disclosure before public details are share
 
 ---
 
-## Security Features
+## Security Features in OSS
 
-ReadyLayer includes enterprise-grade security:
+ReadyLayer includes production-grade security in the open-source version:
 
-### Authentication
-- GitHub OAuth with CSRF protection
+### Authentication (OSS)
+- GitHub OAuth with CSRF protection (self-hosted mode)
 - Secure session management (httpOnly cookies)
 - JWT token validation
 - API key rotation support
 
-### Authorization
+### Authorization (OSS)
 - Role-based access control (RBAC)
 - Permission checks on every API endpoint
-- Row-level security (RLS) policies
+- Row-level security (RLS) policies via Supabase
 - Principle of least privilege
 
-### Data Protection
-- AES-256 encryption at rest
+### Data Protection (OSS)
+- AES-256 encryption at rest (when configured)
 - TLS 1.2+ encryption in transit
-- Secrets detection and redaction
+- Secrets detection and redaction (pre-LLM calls)
 - No hardcoded credentials
 - PII never logged
 
-### Scanning
-- Static code analysis
-- Dependency vulnerability scanning
-- SAST (Static Application Security Testing)
-- DAST (Dynamic Application Security Testing)
+### Code Scanning (OSS)
+- OWASP Top 10 detection rules (all in OSS codebase)
+- Dependency vulnerability scanning (via `npm audit`)
+- Static analysis for common security issues
+- Secrets detection before LLM processing
 
-### Compliance
+### Compliance Readiness (OSS)
 - ✅ OWASP Top 10 protected
-- ✅ PCI-DSS compliance ready
-- ✅ GDPR compliant
-- ✅ SOC 2 audit trail
+- ✅ GDPR compliant (no telemetry, privacy-preserving)
+- ✅ Audit logging (deterministic decisions with evidence bundles)
+- ✅ Inspectable security logic (all rules in `services/review-guard/`)
+
+**Note:** Enterprise Cloud adds operational conveniences (managed infrastructure, SOC 2 certification) but uses identical security logic.
 
 ---
 
@@ -224,16 +230,28 @@ We recognize and thank security researchers who responsibly disclose vulnerabili
 
 ---
 
+## Security Transparency (OSS Commitment)
+
+ReadyLayer's security model is **inspectable by design**:
+
+- **All security rules are open source**: See `services/review-guard/rules/`
+- **Deterministic scanning**: Same input + same policy = same output (auditable)
+- **No black-box decisions**: Policy engine logic is in `services/policy-engine/`
+- **Community auditable**: Anyone can review security detection logic
+
+**Why this matters:** Governance tools must be trustworthy. You can't verify a closed-source security scanner. With ReadyLayer OSS, you can read the code yourself.
+
 ## Security Resources
 
-### For ReadyLayer Users
+### For ReadyLayer OSS Users
 - 📖 [Security Documentation](./docs/architecture/security.md)
-- 🔒 [Privacy Policy](https://readylayer.io/privacy)
-- ⚖️ [Terms of Service](https://readylayer.io/terms)
+- 🔒 [Why Open Source](./docs/WHY_OPEN_SOURCE.md) (transparency rationale)
+- 🛡️ [OSS vs. Enterprise Boundary](./docs/OSS_VS_ENTERPRISE_BOUNDARY.md) (security parity)
 
 ### For Security Researchers
-- 🐛 [HackerOne Program](https://hackerone.com/readylayer) — Coming soon
-- 📋 [Bug Bounty Program](https://readylayer.io/bug-bounty) — Coming soon
+- 🐛 **Report vulnerabilities**: security@readylayer.io
+- 📋 **Responsible disclosure**: 90-day window before public disclosure
+- 🏆 **Recognition**: Security researchers credited in release notes (if desired)
 
 ### Industry Standards
 - 🌐 [OWASP Top 10](https://owasp.org/www-project-top-ten/)
@@ -247,9 +265,8 @@ We recognize and thank security researchers who responsibly disclose vulnerabili
 | Issue Type | Contact | Response Time |
 |-----------|---------|----------------|
 | Security Vulnerability | security@readylayer.io | 48 hours |
-| Security Question | hello@readylayer.io | 24 hours |
-| Compliance Question | compliance@readylayer.io | 48 hours |
-| Urgent Security Issue | Call +1-xxx-xxx-xxxx | Immediate |
+| Security Question (OSS) | opensource@readylayer.io | 72 hours |
+| Security Question (General) | security@readylayer.io | 48 hours |
 
 ---
 
@@ -272,11 +289,23 @@ We recognize and thank security researchers who responsibly disclose vulnerabili
 
 ---
 
+## OSS Security Philosophy
+
+ReadyLayer is open source because **governance tooling must be inspectable to be trustworthy.**
+
+You can't audit a closed-source security scanner. You can't verify proprietary governance logic. With ReadyLayer OSS, every security rule, every policy evaluation, every decision trace is readable in the codebase.
+
+**Open source is our security model, not just our license.**
+
+See [docs/WHY_OPEN_SOURCE.md](./docs/WHY_OPEN_SOURCE.md) for the full rationale.
+
+---
+
 ## Thank You
 
 We appreciate the security community's help in keeping ReadyLayer safe.
 
-**Together, we're building secure software.** 🛡️
+**Together, we're building transparent, auditable governance for AI-generated code.** 🛡️
 
 ---
 

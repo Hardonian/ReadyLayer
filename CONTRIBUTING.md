@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing to ReadyLayer! We welcome all kinds of contributions, from bug reports to feature implementations.
 
+**ReadyLayer is open source first.** The OSS codebase is the primary product, not a marketing funnel for Enterprise Cloud. Your contributions directly improve the framework that thousands of developers rely on.
+
 ## Code of Conduct
 
 Please read and follow our **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** — we're committed to providing a welcoming and inclusive environment for all contributors.
@@ -59,10 +61,12 @@ Ready to contribute code?
 ## Development Setup
 
 ### Prerequisites
-- **Node.js** 18+ ([Download](https://nodejs.org/))
-- **pnpm** 8+ (`npm install -g pnpm`)
-- **PostgreSQL** 14+ (for local DB)
+- **Node.js** 20+ ([Download](https://nodejs.org/))
+- **npm** or **pnpm** (comes with Node.js)
+- **PostgreSQL** 14+ (optional for local DB, SQLite works for dev)
 - **Git** ([Download](https://git-scm.com/))
+
+**Note:** ReadyLayer runs in dev mode without external databases (uses in-memory SQLite). You only need PostgreSQL for production-like testing.
 
 ### 1. Fork & Clone
 
@@ -80,6 +84,8 @@ git remote add upstream https://github.com/readylayer/readylayer.git
 ### 2. Install Dependencies
 
 ```bash
+npm install
+# or
 pnpm install
 ```
 
@@ -96,25 +102,27 @@ cp .env.example .env.local
 ### 4. Start Development Server
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 Open **http://localhost:3000** in your browser.
+
+**No external accounts required.** ReadyLayer runs entirely locally in dev mode.
 
 ### 5. Verify Everything Works
 
 ```bash
 # Run tests
-pnpm test
+npm test
 
 # Run linter
-pnpm lint
+npm run lint
 
 # Run type checker
-pnpm type
+npm run type-check
 
 # Build for production
-pnpm build
+npm run build
 ```
 
 ---
@@ -438,9 +446,20 @@ pnpm deploy:production
 
 ## Questions?
 
-- 💬 **[GitHub Discussions](https://github.com/readylayer/readylayer/discussions)** — Ask community
-- 🙌 **[Slack Community](https://readylayer.io/slack)** — Chat with maintainers
-- 📧 **[Email](mailto:hello@readylayer.io)** — Contact core team
+- 💬 **[GitHub Discussions](https://github.com/Hardonian/ReadyLayer/discussions)** — Ask community
+- 📧 **[Email](mailto:opensource@readylayer.io)** — Contact maintainers
+
+---
+
+## Project Governance
+
+ReadyLayer is an open-source project with community-driven development:
+
+- **Governance model**: See [docs/GOVERNANCE.md](./docs/GOVERNANCE.md)
+- **OSS/Enterprise boundaries**: See [docs/OSS_VS_ENTERPRISE_BOUNDARY.md](./docs/OSS_VS_ENTERPRISE_BOUNDARY.md)
+- **Why open source**: See [docs/WHY_OPEN_SOURCE.md](./docs/WHY_OPEN_SOURCE.md)
+
+Your contributions are Apache 2.0 licensed and belong to the community, not a single company.
 
 ---
 
@@ -459,6 +478,6 @@ Thank you for making ReadyLayer better! 🎉
 
 **Happy Contributing!** 🚀
 
-Questions? Ask in **[GitHub Discussions](https://github.com/readylayer/readylayer/discussions)**
+Questions? Ask in **[GitHub Discussions](https://github.com/Hardonian/ReadyLayer/discussions)**
 
 </div>
