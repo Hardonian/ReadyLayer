@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/Hardonian/ReadyLayer/discussions
+    about: Ask questions, share ideas, or get help from the community
+  - name: 📖 Documentation
+    url: https://github.com/Hardonian/ReadyLayer/tree/main/docs
+    about: Read guides, tutorials, and API references
+  - name: 🔒 Security Vulnerability
+    url: mailto:security@readylayer.io
+    about: Report security vulnerabilities privately (DO NOT file public issues)
+  - name: 📧 Contact Maintainers
+    url: mailto:opensource@readylayer.io
+    about: General questions or governance inquiries
