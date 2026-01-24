@@ -4,6 +4,20 @@
 
 
 
+## 🏷️ Type of Change
+
+<!-- Check all that apply -->
+
+- [ ] 🐛 Bug fix (non-breaking change that fixes an issue)
+- [ ] ✨ New feature (non-breaking change that adds functionality)
+- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📖 Documentation update
+- [ ] 🧪 Test improvement (new tests or better coverage)
+- [ ] ♻️ Refactor (code improvement without changing behavior)
+- [ ] ⚡ Performance improvement
+- [ ] 🔒 Security fix
+- [ ] 🎨 Style/formatting change
+
 ## 🔗 Related Issue
 
 <!-- Link to the issue this PR addresses -->
@@ -16,6 +30,18 @@ Fixes #<!-- issue number -->
 -
 -
 -
+
+## 💥 Breaking Changes
+
+<!-- If this introduces breaking changes, describe them -->
+
+- [ ] No breaking changes
+- [ ] Yes, breaking changes (describe below)
+
+<!-- If yes, provide migration path: -->
+**What breaks:**
+
+**Migration path:**
 
 ## 🧪 Testing
 
@@ -89,6 +115,20 @@ Fixes #<!-- issue number -->
 - [ ] README updated (if user-facing changes)
 - [ ] CHANGELOG.md updated (if applicable)
 - [ ] PROGRESS.md updated with fix/feature details
+
+## 🔓 OSS vs Enterprise Boundary
+
+<!-- See docs/OSS_VS_ENTERPRISE_BOUNDARY.md for guidance -->
+
+**Where does this feature belong?**
+
+- [ ] OSS (core governance logic, scanning, policy evaluation)
+- [ ] Enterprise (operational convenience: SSO, SLA, managed infra)
+- [ ] Both (core in OSS, convenience in Enterprise)
+- [ ] NA - This is a bug fix or maintenance change
+
+**Justification:**
+<!-- Explain why this belongs in OSS or Enterprise -->
 
 ## 🤖 AI Assistance
 

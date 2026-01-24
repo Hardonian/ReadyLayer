@@ -1,0 +1,341 @@
+name: RFC (Request for Comments)
+description: Propose a significant technical change, architectural decision, or policy change
+title: "[RFC]: "
+labels: ["rfc", "discussion"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Request for Comments (RFC)
+
+        **Use this template for:**
+        - Significant architectural changes
+        - Breaking API changes
+        - New core abstractions or patterns
+        - Major policy or governance decisions
+        - Changes affecting OSS/Enterprise boundary
+
+        **Don't use this for:**
+        - Small bug fixes (use Bug Report)
+        - Simple feature requests (use Feature Request)
+        - Questions (use Discussions)
+
+        ---
+
+        **RFC Process:**
+        1. **Draft**: You submit this RFC
+        2. **Review**: Maintainers and community provide feedback (7-14 days)
+        3. **Iterate**: Revise based on feedback
+        4. **Decision**: Accepted, rejected, or deferred with rationale
+        5. **Implementation**: Create implementation issues/PRs
+
+        **Before submitting:**
+        - Review existing [RFCs](https://github.com/Hardonian/ReadyLayer/labels/rfc)
+        - Read [GOVERNANCE.md](https://github.com/Hardonian/ReadyLayer/blob/main/docs/GOVERNANCE.md)
+        - Consider starting a Discussion first for early feedback
+
+  - type: input
+    id: title
+    attributes:
+      label: RFC Title
+      description: Short, descriptive title for this proposal
+      placeholder: "e.g., Add Plugin System for Custom Security Rules"
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph explanation of the proposal (for changelog/documentation)
+      placeholder: "This RFC proposes adding a plugin system that allows users to define custom security rules in JavaScript/TypeScript, extending ReadyLayer's built-in scanning capabilities without modifying core code."
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: |
+        **Why** are we doing this? What use cases does it support?
+        What problems does it solve? What is the expected outcome?
+      placeholder: |
+        **Problem**: Users frequently request custom security rules for org-specific patterns that aren't in OWASP Top 10.
+
+        **Current Limitations**: Today, adding new rules requires forking ReadyLayer or waiting for upstream changes.
+
+        **Desired Outcome**: Users can extend scanning with custom rules while maintaining upgrade compatibility.
+    validations:
+      required: true
+
+  - type: textarea
+    id: detailed-design
+    attributes:
+      label: Detailed Design
+      description: |
+        **How** will this work? Explain the technical design in detail.
+        Include APIs, data structures, algorithms, and integration points.
+      placeholder: |
+        ## Architecture
+
+        ### Plugin Interface
+        ```typescript
+        interface SecurityRule {
+          id: string;
+          name: string;
+          severity: 'low' | 'medium' | 'high' | 'critical';
+          check(code: string, context: ScanContext): Issue[];
+        }
+        ```
+
+        ### Plugin Loading
+        - Plugins discovered from `.readylayer/plugins/` directory
+        - Loaded at runtime via dynamic import
+        - Sandboxed execution with timeout
+        - Validation of rule schema
+
+        ### Integration Points
+        - Hooks into Review Guard engine before built-in rules
+        - Results merged with core scanning results
+        - Evidence bundles include plugin metadata
+
+        ### Example Plugin
+        ```typescript
+        // .readylayer/plugins/no-console-log.ts
+        export const rule: SecurityRule = {
+          id: 'custom-no-console-log',
+          name: 'Disallow console.log in production',
+          severity: 'medium',
+          check(code, context) {
+            if (context.branch === 'main' && code.includes('console.log')) {
+              return [{ line: /* ... */, message: 'Found console.log' }];
+            }
+            return [];
+          }
+        };
+        ```
+
+        ## Configuration
+        ```yaml
+        # .readylayer/policy.yml
+        review_guard:
+          custom_rules_enabled: true
+          plugin_timeout_ms: 5000
+        ```
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What other designs were considered? Why was this approach chosen?
+      placeholder: |
+        **Option A: Webhook-based rules**
+        - Pros: Language-agnostic, better sandboxing
+        - Cons: Requires external service, latency overhead
+        - Rejected: Too complex for simple rules
+
+        **Option B: YAML-based rule DSL**
+        - Pros: Safer than arbitrary code execution
+        - Cons: Limited expressiveness
+        - Rejected: Can't handle complex logic
+
+        **Selected Option: TypeScript plugins**
+        - Balance of safety (type checking) and flexibility
+        - Familiar to target audience
+        - Can be sandboxed with VM or workers
+    validations:
+      required: true
+
+  - type: textarea
+    id: drawbacks
+    attributes:
+      label: Drawbacks
+      description: Why should we **not** do this? What are the risks or downsides?
+      placeholder: |
+        - **Security Risk**: Arbitrary code execution (mitigated by sandboxing)
+        - **Maintenance**: Need to maintain stable plugin API
+        - **Performance**: Plugin loading/execution overhead
+        - **Complexity**: Increases surface area for bugs
+    validations:
+      required: true
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Backwards Compatibility
+      description: Is this a breaking change? How will existing users be affected?
+      placeholder: |
+        **Breaking Changes**: None - this is purely additive
+
+        **Migration Path**: N/A - new feature
+
+        **Deprecations**: None
+
+        **Versioning**: Will be released in v1.1.0 (minor version bump)
+    validations:
+      required: true
+
+  - type: textarea
+    id: security
+    attributes:
+      label: Security Implications
+      description: What security considerations does this introduce?
+      placeholder: |
+        **Attack Vectors:**
+        - Malicious plugins could exfiltrate code
+        - Infinite loops could DoS the scanner
+        - Plugins could access file system
+
+        **Mitigations:**
+        - Run plugins in VM sandbox (no network, limited fs access)
+        - Enforce timeout (default 5s)
+        - Validate plugin signatures (future enhancement)
+        - Document security model in plugin guide
+    validations:
+      required: true
+
+  - type: textarea
+    id: oss-enterprise
+    attributes:
+      label: OSS vs Enterprise Boundary
+      description: |
+        Does this affect the OSS/Enterprise boundary?
+        See [OSS_VS_ENTERPRISE_BOUNDARY.md](https://github.com/Hardonian/ReadyLayer/blob/main/docs/OSS_VS_ENTERPRISE_BOUNDARY.md)
+      placeholder: |
+        **OSS**: Core plugin system, local plugin loading, TypeScript plugins
+        **Enterprise**: Plugin marketplace, signed plugins, remote plugin updates (future)
+        **Rationale**: Core capability belongs in OSS; operational convenience in Enterprise
+    validations:
+      required: true
+
+  - type: textarea
+    id: unresolved
+    attributes:
+      label: Unresolved Questions
+      description: What parts of the design are still TBD or need community input?
+      placeholder: |
+        - Should plugins support async rules (for external API calls)?
+        - What level of sandboxing is sufficient (VM vs worker threads)?
+        - Should we support plugins written in other languages (WASM)?
+        - How do we version the plugin API for breaking changes?
+
+  - type: textarea
+    id: future
+    attributes:
+      label: Future Possibilities
+      description: What future work does this enable (but is out of scope for this RFC)?
+      placeholder: |
+        - Plugin marketplace (community-contributed rules)
+        - Plugin versioning and dependency management
+        - Plugins for Test Engine and Doc Sync (not just Review Guard)
+        - Plugin performance monitoring and profiling
+        - WASM-based plugins for language-agnostic rules
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Plan
+      description: |
+        If accepted, how would this be implemented?
+        Break down into phases, identify risks, estimate effort.
+      placeholder: |
+        **Phase 1: Core plugin system (2 weeks)**
+        - [ ] Define plugin interface and API
+        - [ ] Implement plugin discovery and loading
+        - [ ] Add VM sandboxing
+        - [ ] Write tests for plugin execution
+
+        **Phase 2: Integration (1 week)**
+        - [ ] Hook into Review Guard engine
+        - [ ] Merge plugin results with core results
+        - [ ] Update evidence bundles
+
+        **Phase 3: Documentation (1 week)**
+        - [ ] Plugin authoring guide
+        - [ ] Security best practices
+        - [ ] Example plugins
+        - [ ] API reference
+
+        **Total Estimate**: 4 weeks (1 maintainer)
+
+        **Risks**:
+        - Sandboxing may be complex (mitigate with early prototype)
+        - Performance overhead unknown (mitigate with benchmarks)
+
+  - type: dropdown
+    id: help-wanted
+    attributes:
+      label: Implementation Help
+      description: Can you help implement this if accepted?
+      options:
+        - "Yes, I can lead the implementation"
+        - "Yes, I can contribute (with guidance)"
+        - "Yes, I can review and test"
+        - "No, but I can provide detailed requirements"
+        - "No, I'm proposing for community/maintainers"
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: |
+        Links to related work, prior art, or relevant resources
+      placeholder: |
+        - [ESLint Plugin System](https://eslint.org/docs/latest/extend/plugins)
+        - [Webpack Loader API](https://webpack.js.org/api/loaders/)
+        - [Prior Discussion #123](https://github.com/Hardonian/ReadyLayer/discussions/123)
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these before submitting.
+      options:
+        - label: I have read existing RFCs to avoid duplicates
+          required: true
+        - label: This proposal aligns with ReadyLayer's mission (governance for AI code)
+          required: true
+        - label: I have considered security implications
+          required: true
+        - label: I have considered OSS/Enterprise boundary
+          required: true
+        - label: I am prepared to iterate on this design based on feedback
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ## RFC Review Process
+
+        **Timeline:**
+        - **Week 1**: Community feedback, questions, concerns
+        - **Week 2**: Author revisions, maintainer review
+        - **Week 3**: Final comments, decision
+
+        **Decision Criteria:**
+        - Alignment with project goals
+        - Technical soundness
+        - Community support
+        - Maintenance burden
+        - Security implications
+
+        **Outcomes:**
+        - ✅ **Accepted**: Move to implementation (create issues/PRs)
+        - 🔄 **Accepted with changes**: Revise and resubmit
+        - ⏸️ **Deferred**: Good idea, wrong timing (revisit later)
+        - ❌ **Rejected**: Doesn't align with project goals (with rationale)
+
+        **All decisions will include written rationale.**
+
+        ---
+
+        **Thank you for investing in ReadyLayer's technical direction!** 🏗️
