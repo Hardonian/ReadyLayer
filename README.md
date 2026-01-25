@@ -80,6 +80,13 @@ PR approved or blocked with specific feedback
 - **Portable**: No vendor lock-in, runs anywhere Docker runs
 - **Privacy-preserving**: Your code never leaves your infrastructure (self-hosted mode)
 
+### ReadyLayer Runner (OSS)
+
+ReadyLayer Runner is the optional, OSS-first execution engine that runs checks locally or in CI and emits verifiable JSON output for the UI to import. It has **no telemetry** and makes **no network calls**. Enterprise Cloud is optional and does not unlock OSS functionality.
+
+- Quickstart: [`docs/runner/QUICKSTART.md`](./docs/runner/QUICKSTART.md)
+- Contracts: [`docs/runner/CONTRACTS.md`](./docs/runner/CONTRACTS.md)
+
 ---
 
 ## Installation

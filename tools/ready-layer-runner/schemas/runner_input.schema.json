@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://readylayer.dev/schemas/runner_input.schema.json",
+  "title": "ReadyLayer Runner Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["repo_path", "checks", "output_dir", "mode"],
+  "properties": {
+    "repo_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "diff_base": {
+      "type": "string"
+    },
+    "diff_head": {
+      "type": "string"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "category", "command", "timeout_seconds"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "enum": ["review_guard", "test_engine", "doc_sync", "custom"]
+          },
+          "command": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timeout_seconds": {
+            "type": "number",
+            "minimum": 1
+          },
+          "allow_failure": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "output_dir": {
+      "type": "string",
+      "minLength": 1
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["local", "ci"]
+    }
+  }
+}
