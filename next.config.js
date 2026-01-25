@@ -45,6 +45,19 @@ const nextConfig = {
       fullUrl: process.env.NODE_ENV === 'development',
     },
   },
+  async redirects() {
+    return [
+      { source: '/pricing', destination: '/enterprise', permanent: false },
+      { source: '/features', destination: '/open-source', permanent: false },
+      { source: '/features/oss-maintainers', destination: '/open-source', permanent: false },
+      { source: '/features/startup-ctos', destination: '/open-source', permanent: false },
+      { source: '/marketplace', destination: '/integrations', permanent: false },
+      { source: '/marketplace/integrations', destination: '/integrations', permanent: false },
+      { source: '/marketplace/policies', destination: '/governance', permanent: false },
+      { source: '/help', destination: '/docs', permanent: false },
+      { source: '/help/:path*', destination: '/docs', permanent: false },
+    ];
+  },
   // Security headers
   async headers() {
     return [

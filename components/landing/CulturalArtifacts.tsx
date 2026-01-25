@@ -1,220 +1,87 @@
-/**
- * Cultural Lock-In Artifacts Section
- * 
- * Showcases Merge Confidence Certificates, Readiness Scores, and AI Risk Exposure Index
- */
+'use client'
 
-'use client';
+import * as React from 'react'
+import { motion } from 'framer-motion'
+import { Container } from '@/components/ui/container'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FileText, ShieldCheck, BookOpen, CheckCircle2 } from 'lucide-react'
+import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
 
-import * as React from 'react';
-import { motion } from 'framer-motion';
-import { Container } from '@/components/ui/container';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion';
-import {
-  Award,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Shield,
-  BarChart3,
-} from 'lucide-react';
+const artifacts = [
+  {
+    title: 'Policy decision record',
+    description: 'Every governed PR includes the policy version hash and deterministic outcome.',
+    icon: ShieldCheck,
+  },
+  {
+    title: 'Evidence bundle',
+    description: 'Artifacts capture test logs, diff context, and review metadata for audits.',
+    icon: FileText,
+  },
+  {
+    title: 'Documentation sync log',
+    description: 'Doc changes are tracked alongside code changes for review transparency.',
+    icon: BookOpen,
+  },
+  {
+    title: 'Merge readiness summary',
+    description: 'A single, human-readable summary of governance checks and their status.',
+    icon: CheckCircle2,
+  },
+]
 
 export function CulturalArtifacts() {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []
-  );
+  )
 
   return (
-    <section className="py-16 bg-gradient-to-br from-primary/5 via-purple-500/5 to-blue-500/5">
+    <section className="py-16">
       <Container size="lg">
         <motion.div
-          className="text-center mb-12"
-          variants={prefersReducedMotion ? fadeIn : staggerItem}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
-          <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
-            ReadyLayer Verified™
-          </Badge>
-          <h2 className="text-3xl font-bold mb-2">Cultural Lock-In Artifacts</h2>
-          <p className="text-lg text-text-muted max-w-3xl mx-auto">
-            Make ReadyLayer&apos;s absence visible. Every review generates artifacts that prove verification and create accountability.
-          </p>
-          <div className="mt-4 p-4 bg-background/50 rounded-lg border border-primary/20 max-w-2xl mx-auto">
-            <div className="text-sm font-semibold text-primary mb-2">The Inevitability Principle</div>
-            <div className="text-sm text-text-muted">
-              If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms. 
-              If ReadyLayer didn&apos;t review it, that absence is visible.
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          className="text-center mb-10"
           variants={prefersReducedMotion ? fadeIn : staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: '-100px' }}
         >
-          {/* Merge Confidence Certificate */}
-          <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-            <Card className="h-full border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-primary/20">
-                    <Award className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl">Merge Confidence Certificate</CardTitle>
-                </div>
-                <Badge variant="success" className="w-fit">
-                  ReadyLayer Verified™
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-background/50 rounded-lg border border-primary/20">
-                    <div className="text-xs text-text-muted mb-2">Certificate ID</div>
-                    <div className="font-mono text-sm">cert_rev_abc123_20240115</div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-xs text-text-muted mb-1">Confidence Score</div>
-                      <div className="text-2xl font-bold text-success">85/100</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-text-muted mb-1">Readiness</div>
-                      <Badge variant="success" className="text-xs">Ready</Badge>
-                    </div>
-                  </div>
-                  <div className="pt-3 border-t border-border">
-                    <div className="text-xs text-text-muted">
-                      <strong className="text-text-primary">Identified with:</strong> Policy version hash, review ID hash, immutable evidence bundle
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Readiness Score */}
-          <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-            <Card className="h-full border-accent/30 bg-gradient-to-br from-accent/5 to-transparent">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-accent-muted">
-                    <BarChart3 className="h-6 w-6 text-accent" />
-                  </div>
-                  <CardTitle className="text-xl">Readiness Score™</CardTitle>
-                </div>
-                <Badge variant="outline" className="w-fit border-accent/30 text-accent">
-                  Per Repository
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-5xl font-bold text-accent mb-2">87</div>
-                    <div className="text-sm text-text-muted">out of 100</div>
-                    <Badge variant="success" className="mt-2">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      Good
-                    </Badge>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Gate Pass Rate</span>
-                      <span className="font-semibold">92%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Policy Compliance</span>
-                      <span className="font-semibold">95%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Test Coverage</span>
-                      <span className="font-semibold">87%</span>
-                    </div>
-                  </div>
-                  <div className="pt-3 border-t border-border text-xs text-text-muted">
-                    Visible in PRs and dashboards. Creates competitive pressure for code quality.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* AI Risk Exposure Index */}
-          <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-            <Card className="h-full border-info/30 bg-gradient-to-br from-info/5 to-transparent">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-info-muted">
-                    <AlertTriangle className="h-6 w-6 text-info" />
-                  </div>
-                  <CardTitle className="text-xl">AI Risk Exposure Index™</CardTitle>
-                </div>
-                <Badge variant="outline" className="w-fit border-info/30 text-info">
-                  Per Organization
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-5xl font-bold text-info mb-2">32</div>
-                    <div className="text-sm text-text-muted">out of 100</div>
-                    <Badge variant="info" className="mt-2">
-                      <TrendingDown className="h-3 w-3 mr-1" />
-                      Low Risk
-                    </Badge>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">AI-Touched %</span>
-                      <span className="font-semibold">45%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Unreviewed Merges</span>
-                      <span className="font-semibold text-success">0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-muted">Critical Findings</span>
-                      <span className="font-semibold">2%</span>
-                    </div>
-                  </div>
-                  <div className="pt-3 border-t border-border text-xs text-text-muted">
-                    Organization-wide risk assessment. Track trends and improve over time.
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <motion.h2
+            variants={prefersReducedMotion ? fadeIn : staggerItem}
+            className="text-3xl font-bold mb-4"
+          >
+            Governance artifacts that travel with the PR
+          </motion.h2>
+          <motion.p variants={prefersReducedMotion ? fadeIn : staggerItem} className="text-text-muted">
+            ReadyLayer records the evidence you need for audits, reviews, and historical accountability.
+          </motion.p>
         </motion.div>
 
         <motion.div
-          className="mt-12 text-center"
-          variants={prefersReducedMotion ? fadeIn : staggerItem}
+          className="grid md:grid-cols-2 gap-6"
+          variants={prefersReducedMotion ? fadeIn : staggerContainer}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: '-100px' }}
         >
-          <Card className="bg-background/50 border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <Shield className="h-5 w-5 text-primary" />
-                <span className="font-semibold">Absence is Visible</span>
-              </div>
-              <p className="text-sm text-text-muted max-w-2xl mx-auto">
-                Every PR reviewed by ReadyLayer gets a Merge Confidence Certificate. 
-                PRs without certificates are immediately identifiable as unreviewed. 
-                This creates cultural lock-in through visible accountability.
-              </p>
-            </CardContent>
-          </Card>
+          {artifacts.map((artifact) => {
+            const Icon = artifact.icon
+            return (
+              <motion.div key={artifact.title} variants={prefersReducedMotion ? fadeIn : staggerItem}>
+                <Card className="h-full">
+                  <CardHeader className="space-y-3">
+                    <div className="h-10 w-10 rounded-lg bg-surface-muted flex items-center justify-center">
+                      <Icon className="h-5 w-5 text-accent" />
+                    </div>
+                    <CardTitle>{artifact.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm text-text-muted">{artifact.description}</CardContent>
+                </Card>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </Container>
     </section>
-  );
+  )
 }

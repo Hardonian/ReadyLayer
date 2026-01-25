@@ -14,18 +14,18 @@ interface FailureModesProps {
 
 const failureScenarios = [
   {
-    id: 'ai-unavailable',
-    title: 'AI service unavailable',
+    id: 'dependency-unavailable',
+    title: 'Dependency unavailable',
     icon: WifiOff,
-    description: 'What happens if the AI service is down or rate-limited',
-    fallback: 'Hard fallback to rule-based checks',
+    description: 'What happens if a required service is down or rate-limited',
+    fallback: 'Fail open with rule-based checks and clear warnings',
     prStatus: 'warn',
-    auditMessage: 'AI service unavailable, falling back to rule-based analysis',
+    auditMessage: 'Dependency unavailable, continuing with deterministic checks only',
     details: [
-      'Review Guard uses static analysis only',
-      'Test Engine skips generation, uses existing tests',
-      'Doc Sync uses template-based generation',
-      'PR is not blocked, but warnings are shown',
+      'Review Guard uses static rules only',
+      'Test Engine uses existing tests',
+      'Doc Sync uses repo templates',
+      'PR is not blocked, warnings are shown',
     ],
   },
   {
@@ -40,7 +40,7 @@ const failureScenarios = [
       'Completed checks are reported',
       'Incomplete checks show timeout status',
       'PR is not blocked (timeout is not a failure)',
-      'Admin can configure timeout thresholds',
+      'Admins can configure timeout thresholds',
     ],
   },
   {
@@ -70,7 +70,7 @@ const failureScenarios = [
       'Error is logged with full stack trace',
       'PR is not blocked (fail-open policy)',
       'Clear error message shown in PR comments',
-      'Admin notified via configured channels',
+      'Admins notified via configured channels',
     ],
   },
 ]
@@ -115,10 +115,7 @@ export function FailureModes({ className }: FailureModesProps) {
                         <p className="text-sm text-text-muted mt-1">{scenario.description}</p>
                       </div>
                     </div>
-                    <Badge
-                      variant={scenario.prStatus === 'warn' ? 'warning' : 'destructive'}
-                      className="text-xs"
-                    >
+                    <Badge variant={scenario.prStatus === 'warn' ? 'warning' : 'destructive'} className="text-xs">
                       {scenario.prStatus === 'warn' ? 'Warns' : 'Blocks'}
                     </Badge>
                   </div>
@@ -166,7 +163,7 @@ export function FailureModes({ className }: FailureModesProps) {
               <div className="font-semibold mb-2">Fail-open policy</div>
               <p className="text-sm text-text-muted">
                 ReadyLayer never blocks PRs due to its own failures. If ReadyLayer encounters an error, the PR is
-                allowed with a warning. This ensures ReadyLayer never becomes a blocker for your team.
+                allowed with a warning so governance never becomes a blocker.
               </p>
             </div>
           </div>
