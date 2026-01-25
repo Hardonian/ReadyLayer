@@ -349,7 +349,7 @@ export function InteractivePRDemo({
               <CardTitle className="text-base font-semibold">Pull Request #42</CardTitle>
               <Badge variant="outline" className="text-xs flex items-center gap-1">
                 <Bot className="h-3 w-3" />
-                AI Detected
+                Policy flagged
               </Badge>
               <Badge className="text-xs flex items-center gap-1 bg-success-muted text-success border-success/20">
                 <CheckCircle2 className="h-3 w-3" />
@@ -445,7 +445,7 @@ export function InteractivePRDemo({
                               {check.aiDetected && (
                                 <Badge variant="info" className="text-xs px-1.5 py-0 flex items-center gap-1">
                                   <Bot className="h-3 w-3" />
-                                  AI detected
+                                  Policy flagged
                                 </Badge>
                               )}
                               {check.metrics && (
@@ -513,7 +513,7 @@ export function InteractivePRDemo({
                 })}
               </AnimatePresence>
 
-              {/* Merge Confidence Certificate */}
+              {/* Decision Record */}
               {checkStates.get('ds-changelog') === 'success' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -522,24 +522,24 @@ export function InteractivePRDemo({
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Award className="h-5 w-5 text-primary" />
-                    <span className="font-semibold text-primary">Merge Confidence Certificate</span>
+                    <span className="font-semibold text-primary">Decision record</span>
                   </div>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
-                      <span className="text-text-muted">Certificate ID:</span>
-                      <span className="font-mono text-xs">cert_rev_abc123_{Date.now()}</span>
+                      <span className="text-text-muted">Decision ID:</span>
+                      <span className="font-mono text-xs">decision_rev_abc123_{Date.now()}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-text-muted">Confidence Score:</span>
-                      <span className="font-semibold text-success">85/100</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-text-muted">Readiness Level:</span>
+                      <span className="text-text-muted">Outcome:</span>
                       <Badge variant="success" className="text-xs">Ready</Badge>
                     </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">Policy version:</span>
+                      <span className="font-mono text-xs">policy_v1.4</span>
+                    </div>
                     <div className="pt-2 border-t border-primary/20 text-xs text-text-muted">
-                      <strong className="text-text-primary">The Inevitability Principle:</strong> If ReadyLayer didn&apos;t review it, that absence is visible. 
-                      This certificate proves deterministic review with policy version hash.
+                      <strong className="text-text-primary">Governance visibility:</strong> Every decision records a deterministic review with a policy
+                      hash and evidence bundle.
                     </div>
                   </div>
                 </motion.div>
@@ -560,9 +560,9 @@ export function InteractivePRDemo({
                     Critical finding must be resolved before merging.
                   </p>
                   <div className="mt-2 p-2 bg-background/50 rounded border border-danger/20">
-                    <div className="text-xs font-semibold text-danger mb-1">No Certificate Issued</div>
+                    <div className="text-xs font-semibold text-danger mb-1">No decision record</div>
                     <div className="text-xs text-text-muted">
-                      ReadyLayer review incomplete. This PR cannot be merged without a Merge Confidence Certificate.
+                      ReadyLayer review incomplete. This PR cannot be merged until required checks pass.
                     </div>
                   </div>
                 </motion.div>

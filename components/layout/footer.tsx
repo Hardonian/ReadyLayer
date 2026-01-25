@@ -3,18 +3,17 @@
 import Link from 'next/link'
 import { Container } from '@/components/ui/container'
 import { LogoWord } from '@/components/ui/logo'
-import { Github, Twitter, Mail, Shield, FileText, BarChart3 } from 'lucide-react'
+import { Github, Twitter, Mail, Shield, FileText, BookOpen } from 'lucide-react'
 
 export function Footer() {
   return (
     <footer className="border-t border-border-subtle bg-surface-muted/50">
       <Container size="lg">
-        {/* Logo Section - Top Block */}
         <div className="py-12 border-b border-border-subtle/50">
           <div className="flex flex-col gap-4 max-w-sm">
             <LogoWord size="sm" />
             <p className="text-sm text-text-muted leading-relaxed">
-              The default authority for AI-generated code safety.
+              Open-source governance framework for AI-generated code. Composable, deterministic, and audit-ready.
             </p>
             <div className="flex gap-3 w-fit">
               <a
@@ -46,9 +45,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Menu Section - Bottom Block */}
         <div className="py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Product */}
           <div>
             <h4 className="font-semibold text-sm mb-4">Product</h4>
             <ul className="space-y-2 text-sm">
@@ -58,36 +55,30 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="text-text-muted hover:text-text transition-colors">
-                  Pricing
+                <Link href="/open-source" className="text-text-muted hover:text-text transition-colors">
+                  Open Source
                 </Link>
               </li>
               <li>
-                <Link href="/marketplace" className="text-text-muted hover:text-text transition-colors">
-                  Marketplace
+                <Link href="/governance" className="text-text-muted hover:text-text transition-colors">
+                  Governance
                 </Link>
               </li>
               <li>
-                <Link href="/features/oss-maintainers" className="text-text-muted hover:text-text transition-colors">
-                  For OSS Maintainers
-                </Link>
-              </li>
-              <li>
-                <Link href="/features/startup-ctos" className="text-text-muted hover:text-text transition-colors">
-                  For Startup CTOs
+                <Link href="/enterprise" className="text-text-muted hover:text-text transition-colors">
+                  Enterprise (optional)
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Trust & Security */}
           <div>
             <h4 className="font-semibold text-sm mb-4">Trust & Security</h4>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/security" className="text-text-muted hover:text-text transition-colors flex items-center gap-1">
                   <Shield className="h-3 w-3" />
-                  Security & Compliance
+                  Security
                 </Link>
               </li>
               <li>
@@ -95,17 +86,6 @@ export function Footer() {
                   <FileText className="h-3 w-3" />
                   Audit Example
                 </Link>
-              </li>
-              <li>
-                <a
-                  href="https://status.readylayer.io"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-text-muted hover:text-text transition-colors flex items-center gap-1"
-                >
-                  <BarChart3 className="h-3 w-3" />
-                  Status Page
-                </a>
               </li>
               <li>
                 <a
@@ -117,26 +97,26 @@ export function Footer() {
                   Report Vulnerability
                 </a>
               </li>
+              <li>
+                <Link href="/open-source#oss-boundary" className="text-text-muted hover:text-text transition-colors">
+                  OSS Boundary
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Resources */}
           <div>
             <h4 className="font-semibold text-sm mb-4">Resources</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/docs/api-reference" className="text-text-muted hover:text-text transition-colors">
+                <Link href="/docs" className="text-text-muted hover:text-text transition-colors flex items-center gap-1">
+                  <BookOpen className="h-3 w-3" />
                   Documentation
                 </Link>
               </li>
               <li>
-                <Link href="/help" className="text-text-muted hover:text-text transition-colors">
-                  Help & Support
-                </Link>
-              </li>
-              <li>
-                <Link href="/help/getting-started" className="text-text-muted hover:text-text transition-colors">
-                  Getting Started
+                <Link href="/integrations" className="text-text-muted hover:text-text transition-colors">
+                  Integrations
                 </Link>
               </li>
               <li>
@@ -149,13 +129,27 @@ export function Footer() {
                   GitHub Repository
                 </a>
               </li>
+              <li>
+                <Link href="/changelog" className="text-text-muted hover:text-text transition-colors">
+                  Changelog
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Legal */}
           <div>
             <h4 className="font-semibold text-sm mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
+              <li>
+                <a
+                  href="https://github.com/Hardonian/ReadyLayer/blob/main/LICENSE"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-muted hover:text-text transition-colors"
+                >
+                  License
+                </a>
+              </li>
               <li>
                 <Link href="/privacy" className="text-text-muted hover:text-text transition-colors">
                   Privacy Policy
@@ -167,11 +161,6 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/dpa" className="text-text-muted hover:text-text transition-colors">
-                  Data Processing
-                </Link>
-              </li>
-              <li>
                 <Link href="/cookies" className="text-text-muted hover:text-text transition-colors">
                   Cookie Policy
                 </Link>
@@ -180,10 +169,9 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="border-t border-border-subtle py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-text-muted">
           <p>© {new Date().getFullYear()} ReadyLayer. All rights reserved.</p>
-          <p>Made with care for AI-generated code safety.</p>
+          <p>Open-source governance, optional hosted convenience.</p>
         </div>
       </Container>
     </footer>
