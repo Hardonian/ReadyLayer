@@ -77,6 +77,7 @@ PR approved or blocked with specific feedback
 - **Deterministic**: Same input + same policy = same output (cryptographically hashed)
 - **Auditable**: Every decision includes policy version, input hash, and evidence bundle
 - **Composable**: Use only what you need (security only, tests only, or all three)
+- **Deterministic policy core**: Rust policy evaluator + SARIF generator (OSS, no telemetry)
 - **Portable**: No vendor lock-in, runs anywhere Docker runs
 - **Privacy-preserving**: Your code never leaves your infrastructure (self-hosted mode)
 

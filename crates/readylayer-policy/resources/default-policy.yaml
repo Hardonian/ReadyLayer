@@ -1,0 +1,45 @@
+policy_version: "1.0.0"
+rules:
+  - id: block-secrets
+    level: block
+    description: "Secrets detected in changes"
+    required_actions:
+      - "Rotate any exposed credentials"
+      - "Remove secrets from source history"
+    conditions:
+      block_on_secrets: true
+  - id: block-failed-checks
+    level: block
+    description: "Failing checks block merge"
+    required_actions:
+      - "Fix failing checks"
+    conditions:
+      block_on_failed_checks: true
+  - id: block-critical-findings
+    level: block
+    description: "Critical findings must be resolved"
+    required_actions:
+      - "Resolve critical findings"
+    conditions:
+      block_on_severity: "critical"
+  - id: warn-dependency-changes
+    level: warn
+    description: "Dependency changes require review"
+    required_actions:
+      - "Review dependency updates"
+    conditions:
+      warn_on_dependency_changes: true
+  - id: warn-permission-changes
+    level: warn
+    description: "Permission changes require review"
+    required_actions:
+      - "Review permission changes"
+    conditions:
+      warn_on_permission_changes: true
+  - id: warn-security-category
+    level: warn
+    description: "Security findings require review"
+    required_actions:
+      - "Triage security findings"
+    conditions:
+      warn_on_category: "security"

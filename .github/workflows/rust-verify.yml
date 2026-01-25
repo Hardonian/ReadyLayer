@@ -1,0 +1,31 @@
+name: Rust Verify
+
+on:
+  pull_request:
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+  push:
+    branches:
+      - main
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Cargo fmt
+        run: cargo fmt --all -- --check
+      - name: Cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Cargo test
+        run: cargo test --workspace

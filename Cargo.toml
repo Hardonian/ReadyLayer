@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/readylayer-policy",
+  "crates/readylayer-sarif",
+]
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/readylayer/readylayer"
+
+[workspace.dependencies]
+anyhow = "1.0.99"
+clap = { version = "4.5.32", features = ["derive"] }
+serde = { version = "1.0.223", features = ["derive"] }
+serde_json = "1.0.145"
+serde_yaml = "0.9.34"
+sha2 = "0.10.9"
+thiserror = "2.0.16"
