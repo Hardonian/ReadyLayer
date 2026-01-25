@@ -1,0 +1,57 @@
+name: release-runner
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-runner:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build binaries
+        working-directory: tools/ready-layer-runner
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          platforms=(
+            "linux/amd64"
+            "linux/arm64"
+            "darwin/amd64"
+            "darwin/arm64"
+            "windows/amd64"
+            "windows/arm64"
+          )
+          for platform in "${platforms[@]}"; do
+            IFS='/' read -r goos goarch <<< "${platform}"
+            ext=""
+            if [ "${goos}" = "windows" ]; then
+              ext=".exe"
+            fi
+            output="dist/ready-layer-runner-${goos}-${goarch}${ext}"
+            env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} \
+              go build -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" \
+              -o "${output}" ./cmd/ready-layer-runner
+          done
+
+      - name: Generate checksums
+        working-directory: tools/ready-layer-runner
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum * > checksums.txt
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            tools/ready-layer-runner/dist/*

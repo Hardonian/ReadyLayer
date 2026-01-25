@@ -18,6 +18,9 @@
 # misc
 .DS_Store
 *.pem
+.readylayer/
+tools/ready-layer-runner/fixtures/output/
+tools/ready-layer-runner/bin/
 
 # debug
 npm-debug.log*

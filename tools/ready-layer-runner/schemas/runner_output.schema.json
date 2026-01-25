@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://readylayer.dev/schemas/runner_output.schema.json",
+  "title": "ReadyLayer Runner Output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool_version",
+    "summary",
+    "changed_files",
+    "check_results",
+    "evidence_manifest",
+    "error_classification"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "tool_version": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass", "total_checks", "passed_checks", "failed_checks", "duration_seconds"],
+      "properties": {
+        "pass": { "type": "boolean" },
+        "total_checks": { "type": "integer", "minimum": 0 },
+        "passed_checks": { "type": "integer", "minimum": 0 },
+        "failed_checks": { "type": "integer", "minimum": 0 },
+        "duration_seconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "changed_files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "check_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "category",
+          "status",
+          "exit_code",
+          "duration_seconds",
+          "stdout_path",
+          "stderr_path",
+          "artifacts"
+        ],
+        "properties": {
+          "name": { "type": "string" },
+          "category": {
+            "type": "string",
+            "enum": ["review_guard", "test_engine", "doc_sync", "custom"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "fail", "timeout", "error", "skipped"]
+          },
+          "exit_code": { "type": "integer" },
+          "duration_seconds": { "type": "number", "minimum": 0 },
+          "stdout_path": { "type": "string" },
+          "stderr_path": { "type": "string" },
+          "artifacts": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "evidence_manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_hashes", "output_hashes"],
+      "properties": {
+        "input_hashes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "output_hashes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "error_classification": {
+      "type": "string",
+      "enum": ["user_error", "tool_error", "repo_error"]
+    }
+  }
+}

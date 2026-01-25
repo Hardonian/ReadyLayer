@@ -9,6 +9,7 @@ export const PUBLIC_ROUTES = [
 export const PUBLIC_ROUTE_PREFIXES = [
   '/about',
   '/audit-example',
+  '/runner-import',
   '/changelog',
   '/contact',
   '/cookies',
