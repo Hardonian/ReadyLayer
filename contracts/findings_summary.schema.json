@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://readylayer.dev/contracts/findings_summary.schema.json",
+  "title": "ReadyLayer Findings Summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "total", "by_severity", "by_category"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "total": { "type": "integer", "minimum": 0 },
+    "by_severity": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+    "by_category": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    }
+  }
+}

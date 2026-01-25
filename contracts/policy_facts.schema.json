@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://readylayer.dev/contracts/policy_facts.schema.json",
+  "title": "ReadyLayer Policy Facts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "check_results", "findings", "tool_versions"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "tool_versions": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "owner": { "type": ["string", "null"] },
+        "url": { "type": ["string", "null"] },
+        "default_branch": { "type": ["string", "null"] }
+      }
+    },
+    "diff_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "changed_files": { "type": "array", "items": { "type": "string" } },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "files": { "type": ["integer", "null"], "minimum": 0 },
+              "additions": { "type": ["integer", "null"], "minimum": 0 },
+              "deletions": { "type": ["integer", "null"], "minimum": 0 }
+            }
+          }
+        },
+        "total_files": { "type": ["integer", "null"], "minimum": 0 },
+        "additions": { "type": ["integer", "null"], "minimum": 0 },
+        "deletions": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "check_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check_id", "status"],
+        "properties": {
+          "check_id": { "type": "string" },
+          "status": { "type": "string" },
+          "exit_code": { "type": ["integer", "null"] },
+          "metrics": { "type": "object", "additionalProperties": true }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "severity", "category", "message"],
+        "properties": {
+          "rule_id": { "type": "string" },
+          "severity": { "type": "string" },
+          "category": { "type": "string" },
+          "message": { "type": "string" },
+          "file": { "type": ["string", "null"] },
+          "line": { "type": ["integer", "null"], "minimum": 1 }
+        }
+      }
+    },
+    "risk_signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dependency_changes": { "type": ["boolean", "null"] },
+        "permission_changes": { "type": ["boolean", "null"] },
+        "secrets_detected": { "type": ["boolean", "null"] },
+        "binary_changes": { "type": ["boolean", "null"] }
+      }
+    }
+  }
+}

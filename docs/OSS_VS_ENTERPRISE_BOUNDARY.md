@@ -32,6 +32,7 @@ These principles are **permanent and binding** on the ReadyLayer project:
 - The Test Engine coverage analyzer stays OSS
 - The Doc Sync validator stays OSS
 - The Policy Engine evaluation logic stays OSS
+- The Rust policy evaluator and SARIF generator stay OSS
 - All policy templates and rules stay OSS
 
 **What this prevents:**
