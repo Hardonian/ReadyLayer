@@ -10,6 +10,7 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 export { LoadingSpinner, LoadingState, Skeleton, SkeletonText, CardSkeleton } from './loading'
 export { EmptyState } from './empty-state'
 export { ErrorState } from './error-state'
+export { ErrorBoundary } from './error-boundary'
 export { PageWrapper } from './page-wrapper'
 export { Container } from './container'
 export { Badge, badgeVariants } from './badge'

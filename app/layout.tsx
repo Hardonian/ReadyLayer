@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { QueryProvider } from '@/components/providers/query-provider'
@@ -6,7 +7,24 @@ import { PlatformThemeProvider } from '@/components/providers/platform-theme-pro
 import { RuntimeUiConfigProvider } from '@/components/providers/runtime-ui-config-provider'
 import { Toaster } from '@/components/ui/toaster'
 
-const inter = { variable: '--font-inter', className: '' }
+// Stitch typography system
+const inter = Inter({ 
+  variable: '--font-inter', 
+  subsets: ['latin'],
+  display: 'swap',
+})
+
+const spaceGrotesk = Space_Grotesk({ 
+  variable: '--font-space-grotesk',
+  subsets: ['latin'],
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({ 
+  variable: '--font-jetbrains-mono',
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -90,7 +108,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
           <QueryProvider>
             <PlatformThemeProvider>

@@ -7,7 +7,7 @@ import { PUBLIC_NAV_ITEMS } from '@/lib/navigation'
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60">
+      <header className="sticky top-0 z-40 border-b border-border/20 backdrop-blur-custom bg-surface/95 dark:bg-surface/90 shadow-surface-flat transition-all duration-300">
         <Container>
           <div className="flex h-16 items-center justify-between gap-4">
             <Link href="/" className="flex items-center flex-shrink-0" aria-label="ReadyLayer Home">
@@ -28,16 +28,16 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="px-3 py-2 text-sm font-medium text-text-muted hover:text-text transition-colors"
+                  className="px-4 py-2 text-sm font-display font-medium text-text-muted hover:text-text-primary transition-colors rounded-lg hover:bg-surface-hover tap-target"
                 >
                   {item.label}
                 </Link>
               ))}
             </nav>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Link
                 href="/docs"
-                className="text-sm font-medium text-text-muted hover:text-text transition-colors"
+                className="text-sm font-display font-medium text-text-muted hover:text-text-primary transition-colors px-3 py-2 rounded-lg hover:bg-surface-hover tap-target"
               >
                 View docs
               </Link>
@@ -45,7 +45,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 href="https://github.com/Hardonian/ReadyLayer"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+                className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-display font-semibold text-primary-foreground shadow-glow hover:shadow-glow-green transition-all tap-target"
               >
                 See GitHub
               </a>

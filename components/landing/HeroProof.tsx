@@ -50,16 +50,16 @@ export function HeroProof({ user }: HeroProofProps) {
 
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      <div className="absolute inset-0 hero-gradient">
+        <div className="absolute inset-0 bg-grid"></div>
+        <div className="absolute top-0 left-0 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-accent rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-success rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
 
       <div className="relative z-10">
         <motion.header
-          className="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 bg-gradient-to-b from-blue-50 via-indigo-50/80 to-transparent dark:from-gray-900 dark:via-gray-800/80 dark:to-transparent overflow-visible"
+          className="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 backdrop-blur-custom bg-surface/80 dark:bg-surface/80 border-b border-border/20 overflow-visible"
           variants={prefersReducedMotion ? fadeIn : fadeIn}
           initial="hidden"
           animate="visible"
@@ -70,7 +70,7 @@ export function HeroProof({ user }: HeroProofProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="text-xs md:text-sm text-text-muted hover:text-text-primary transition-colors font-bold whitespace-nowrap leading-none"
+                  className="text-xs md:text-sm font-display font-medium text-text-muted hover:text-text-primary transition-colors whitespace-nowrap leading-none"
                 >
                   {item.label}
                 </Link>
@@ -108,40 +108,40 @@ export function HeroProof({ user }: HeroProofProps) {
                     Deterministic checks
                   </Badge>
                 </div>
-                <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight mb-4 leading-tight">
-                  <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Open-source governance
-                  </span>
-                  <br />
-                  <span className="text-text-primary">for AI-generated code</span>
-                </h1>
-                <p className="text-base sm:text-lg lg:text-xl text-text-muted max-w-xl mb-2">
-                  ReadyLayer is a composable governance framework for AI-generated code. Integrate with Git and CI, apply deterministic policy checks, and ship traceable decisions.
-                </p>
-                <p className="text-sm text-text-muted max-w-xl">
-                  Get your first governed PR in 10 minutes with OSS-first workflows.{' '}
-                  <Link href="/how-it-works" className="text-accent hover:underline font-medium">
-                    See how it works →
-                  </Link>
-                </p>
+                 <h1 className="text-4xl sm:text-5xl lg:text-7xl font-display font-bold tracking-tight mb-6 leading-tight">
+                   <span className="bg-gradient-to-r from-primary via-accent to-success bg-clip-text text-transparent animate-float">
+                     Open-source governance
+                   </span>
+                   <br />
+                   <span className="text-text-primary">for AI-generated code</span>
+                 </h1>
+                 <p className="text-lg sm:text-xl lg:text-2xl font-body text-text-muted max-w-2xl mb-4">
+                   ReadyLayer is a composable governance framework for AI-generated code. Integrate with Git and CI, apply deterministic policy checks, and ship traceable decisions.
+                 </p>
+                 <p className="text-base font-body text-text-subtle max-w-xl">
+                   Get your first governed PR in 10 minutes with OSS-first workflows.{' '}
+                   <Link href="/how-it-works" className="text-primary hover:text-primary-dark font-medium transition-colors">
+                     See how it works →
+                   </Link>
+                 </p>
               </motion.div>
 
               <motion.div
-                className="space-y-4"
+                className="space-y-6"
                 variants={prefersReducedMotion ? fadeIn : staggerContainer}
                 initial="hidden"
                 animate="visible"
               >
                 <motion.div
                   variants={prefersReducedMotion ? fadeIn : staggerItem}
-                  className="flex items-start gap-4 p-4 rounded-lg border border-border-subtle bg-surface-raised"
+                  className="flex items-start gap-4 p-5 rounded-xl border border-border/20 bg-surface-raised shadow-surface-raised transition-all hover:shadow-glow"
                 >
-                  <div className="p-2 rounded-md bg-info-muted flex-shrink-0">
-                    <Shield className="h-5 w-5 text-info" />
+                  <div className="p-3 rounded-lg bg-info/10 flex-shrink-0">
+                    <Shield className="h-6 w-6 text-info" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold mb-1">Review Guard</div>
-                    <div className="text-sm text-text-muted">
+                    <div className="font-display font-semibold text-lg mb-2">Review Guard</div>
+                    <div className="text-base font-body text-text-muted">
                       Deterministic security, performance, and quality checks that attach policy versions to every decision.
                     </div>
                   </div>
@@ -149,14 +149,14 @@ export function HeroProof({ user }: HeroProofProps) {
 
                 <motion.div
                   variants={prefersReducedMotion ? fadeIn : staggerItem}
-                  className="flex items-start gap-4 p-4 rounded-lg border border-border-subtle bg-surface-raised"
+                  className="flex items-start gap-4 p-5 rounded-xl border border-border/20 bg-surface-raised shadow-surface-raised transition-all hover:shadow-glow-green"
                 >
-                  <div className="p-2 rounded-md bg-success-muted flex-shrink-0">
-                    <TestTube className="h-5 w-5 text-success" />
+                  <div className="p-3 rounded-lg bg-success/10 flex-shrink-0">
+                    <TestTube className="h-6 w-6 text-success" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold mb-1">Test Engine</div>
-                    <div className="text-sm text-text-muted">
+                    <div className="font-display font-semibold text-lg mb-2">Test Engine</div>
+                    <div className="text-base font-body text-text-muted">
                       Deterministic test generation and coverage enforcement that can plug into existing CI workflows.
                     </div>
                   </div>
@@ -164,26 +164,26 @@ export function HeroProof({ user }: HeroProofProps) {
 
                 <motion.div
                   variants={prefersReducedMotion ? fadeIn : staggerItem}
-                  className="flex items-start gap-4 p-4 rounded-lg border border-border-subtle bg-surface-raised"
+                  className="flex items-start gap-4 p-5 rounded-xl border border-border/20 bg-surface-raised shadow-surface-raised transition-all hover:shadow-glow"
                 >
-                  <div className="p-2 rounded-md bg-accent-muted flex-shrink-0">
-                    <FileText className="h-5 w-5 text-accent" />
+                  <div className="p-3 rounded-lg bg-primary/10 flex-shrink-0">
+                    <FileText className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold mb-1">Doc Sync</div>
-                    <div className="text-sm text-text-muted">
+                    <div className="font-display font-semibold text-lg mb-2">Doc Sync</div>
+                    <div className="text-base font-body text-text-muted">
                       Deterministic doc synchronization so governance signals stay aligned with the code that shipped.
                     </div>
                   </div>
                 </motion.div>
               </motion.div>
 
-              <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-                <div className="p-4 rounded-lg border border-border-subtle bg-gradient-to-r from-primary/5 to-purple-500/5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span className="text-sm font-semibold">Governance artifacts</span>
-                  </div>
+               <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
+                 <div className="p-5 rounded-xl border border-border/20 bg-gradient-to-r from-primary/5 to-accent/5 shadow-surface-raised">
+                   <div className="flex items-center gap-2 mb-4">
+                     <Shield className="h-5 w-5 text-primary flex-shrink-0" />
+                     <span className="text-base font-display font-semibold">Governance artifacts</span>
+                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-3">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-3.5 w-3.5 text-success flex-shrink-0" />
@@ -214,23 +214,23 @@ export function HeroProof({ user }: HeroProofProps) {
                 initial="hidden"
                 animate="visible"
               >
-                <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-                  <Button asChild size="lg" className="shadow-lg">
-                    <Link href="/docs">Get started (OSS)</Link>
-                  </Button>
-                </motion.div>
-                <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-                  <Button asChild variant="outline" size="lg">
-                    <Link href="/docs">View docs</Link>
-                  </Button>
-                </motion.div>
-                <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-                  <Button asChild variant="ghost" size="lg">
-                    <a href="https://github.com/Hardonian/ReadyLayer" target="_blank" rel="noopener noreferrer">
-                      See GitHub
-                    </a>
-                  </Button>
-                </motion.div>
+                 <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
+                   <Button asChild size="lg" className="shadow-glow hover:shadow-glow-green tap-target">
+                     <Link href="/docs">Get started (OSS)</Link>
+                   </Button>
+                 </motion.div>
+                 <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
+                   <Button asChild variant="outline" size="lg" className="tap-target">
+                     <Link href="/docs">View docs</Link>
+                   </Button>
+                 </motion.div>
+                 <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
+                   <Button asChild variant="ghost" size="lg" className="tap-target">
+                     <a href="https://github.com/Hardonian/ReadyLayer" target="_blank" rel="noopener noreferrer">
+                       See GitHub
+                     </a>
+                   </Button>
+                 </motion.div>
               </motion.div>
 
               <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
@@ -255,19 +255,19 @@ export function HeroProof({ user }: HeroProofProps) {
               animate="visible"
             >
               <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
-                <div className="rounded-xl border border-border-subtle bg-surface-raised shadow-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-surface-muted">
-                    <div className="text-sm font-medium">Governed PR walkthrough</div>
-                    <Button variant="ghost" size="sm" onClick={scrollToDemo} className="text-xs">
-                      <Play className="h-3 w-3 mr-1" />
-                      Replay
-                    </Button>
-                  </div>
-                  <div ref={demoRef} className="p-4">
-                    <InteractivePRDemo autoPlay={demoPlaying} onComplete={() => setDemoPlaying(false)} />
-                  </div>
-                </div>
-              </motion.div>
+                 <div className="rounded-xl border border-border/20 bg-surface-code overflow-hidden shadow-code-preview">
+                   <div className="flex items-center justify-between px-5 py-4 border-b border-border/20 bg-surface-dark">
+                     <div className="text-sm font-display font-medium">Governed PR walkthrough</div>
+                     <Button variant="ghost" size="sm" onClick={scrollToDemo} className="text-xs tap-target">
+                       <Play className="h-3 w-3 mr-1" />
+                       Replay
+                     </Button>
+                   </div>
+                   <div ref={demoRef} className="p-4 bg-grid">
+                     <InteractivePRDemo autoPlay={demoPlaying} onComplete={() => setDemoPlaying(false)} />
+                   </div>
+                 </div>
+               </motion.div>
 
               <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
                 <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-text-muted">

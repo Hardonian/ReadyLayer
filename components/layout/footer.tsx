@@ -7,83 +7,83 @@ import { Github, Twitter, Mail, Shield, FileText, BookOpen } from 'lucide-react'
 
 export function Footer() {
   return (
-    <footer className="border-t border-border-subtle bg-surface-muted/50">
+    <footer className="border-t border-border/20 bg-surface-code/50">
       <Container size="lg">
-        <div className="py-12 border-b border-border-subtle/50">
-          <div className="flex flex-col gap-4 max-w-sm">
+        <div className="py-16 border-b border-border/20">
+          <div className="flex flex-col gap-6 max-w-sm">
             <LogoWord size="sm" />
-            <p className="text-sm text-text-muted leading-relaxed">
+            <p className="text-base font-body text-text-muted leading-relaxed">
               Open-source governance framework for AI-generated code. Composable, deterministic, and audit-ready.
             </p>
-            <div className="flex gap-3 w-fit">
+            <div className="flex gap-4 w-fit">
               <a
                 href="https://github.com/Hardonian/ReadyLayer"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"
-                className="p-2 rounded-lg bg-surface-raised hover:bg-surface-hover transition-colors"
+                className="p-3 rounded-xl bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
               >
-                <Github className="h-4 w-4 text-text-muted hover:text-text" />
+                <Github className="h-5 w-5 text-text-muted hover:text-text" />
               </a>
               <a
                 href="https://twitter.com/readylayer"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="p-2 rounded-lg bg-surface-raised hover:bg-surface-hover transition-colors"
+                className="p-3 rounded-xl bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
               >
-                <Twitter className="h-4 w-4 text-text-muted hover:text-text" />
+                <Twitter className="h-5 w-5 text-text-muted hover:text-text" />
               </a>
               <a
                 href="mailto:support@readylayer.io"
                 aria-label="Email"
-                className="p-2 rounded-lg bg-surface-raised hover:bg-surface-hover transition-colors"
+                className="p-3 rounded-xl bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
               >
-                <Mail className="h-4 w-4 text-text-muted hover:text-text" />
+                <Mail className="h-5 w-5 text-text-muted hover:text-text" />
               </a>
             </div>
           </div>
         </div>
 
-        <div className="py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div>
-            <h4 className="font-semibold text-sm mb-4">Product</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/how-it-works" className="text-text-muted hover:text-text transition-colors">
-                  How it Works
-                </Link>
-              </li>
-              <li>
-                <Link href="/open-source" className="text-text-muted hover:text-text transition-colors">
-                  Open Source
-                </Link>
-              </li>
-              <li>
-                <Link href="/governance" className="text-text-muted hover:text-text transition-colors">
-                  Governance
-                </Link>
-              </li>
-              <li>
-                <Link href="/enterprise" className="text-text-muted hover:text-text transition-colors">
-                  Enterprise (optional)
-                </Link>
-              </li>
-            </ul>
-          </div>
+          <div className="py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div>
+              <h4 className="font-display font-semibold text-lg mb-6">Product</h4>
+              <ul className="space-y-3 text-base font-body">
+                <li>
+                  <Link href="/how-it-works" className="text-text-muted hover:text-text-primary transition-colors">
+                    How it Works
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/open-source" className="text-text-muted hover:text-text-primary transition-colors">
+                    Open Source
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/governance" className="text-text-muted hover:text-text-primary transition-colors">
+                    Governance
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/enterprise" className="text-text-muted hover:text-text-primary transition-colors">
+                    Enterprise (optional)
+                  </Link>
+                </li>
+              </ul>
+            </div>
 
           <div>
-            <h4 className="font-semibold text-sm mb-4">Trust & Security</h4>
-            <ul className="space-y-2 text-sm">
+            <h4 className="font-display font-semibold text-lg mb-6">Trust & Security</h4>
+            <ul className="space-y-3 text-base font-body">
               <li>
-                <Link href="/security" className="text-text-muted hover:text-text transition-colors flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
+                <Link href="/security" className="text-text-muted hover:text-text-primary transition-colors flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
                   Security
                 </Link>
               </li>
               <li>
-                <Link href="/audit-example" className="text-text-muted hover:text-text transition-colors flex items-center gap-1">
-                  <FileText className="h-3 w-3" />
+                <Link href="/audit-example" className="text-text-muted hover:text-text-primary transition-colors flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
                   Audit Example
                 </Link>
               </li>
@@ -92,13 +92,13 @@ export function Footer() {
                   href="https://github.com/Hardonian/ReadyLayer/blob/main/SECURITY.md"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-text-muted hover:text-text transition-colors"
+                  className="text-text-muted hover:text-text-primary transition-colors"
                 >
                   Report Vulnerability
                 </a>
               </li>
               <li>
-                <Link href="/open-source#oss-boundary" className="text-text-muted hover:text-text transition-colors">
+                <Link href="/open-source#oss-boundary" className="text-text-muted hover:text-text-primary transition-colors">
                   OSS Boundary
                 </Link>
               </li>
@@ -169,7 +169,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-border-subtle py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-text-muted">
+        <div className="border-t border-border/20 py-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-body text-text-muted">
           <p>© {new Date().getFullYear()} ReadyLayer. All rights reserved.</p>
           <p>Open-source governance, optional hosted convenience.</p>
         </div>

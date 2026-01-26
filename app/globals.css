@@ -8,12 +8,14 @@
    * Softened whites, clear hierarchy, reduced chroma
    */
   :root {
-    /* SURFACES - Layered elevation system */
+    /* SURFACES - Stitch-inspired layered elevation system */
     --surface: 0 0% 100%;                    /* Base app background - pure white */
     --surface-muted: 210 40% 98%;           /* Subtle panels, nav backgrounds */
     --surface-raised: 0 0% 100%;            /* Cards, elevated panels */
     --surface-overlay: 0 0% 100%;           /* Modals, popovers, dropdowns */
     --surface-hover: 210 40% 96%;           /* Hover state for interactive surfaces */
+    --surface-dark: 220 13% 9%;              /* Dark code/terminal surfaces */
+    --surface-code: 220 13% 7%;              /* Code background areas */
     
     /* TEXT - Clear hierarchy */
     --text: 222.2 84% 4.9%;                 /* Primary text - near black */
@@ -26,11 +28,17 @@
     --border-strong: 214.3 31.8% 85%;        /* Emphasis borders */
     --ring: 221.2 83.2% 53.3%;              /* Focus ring */
     
-    /* ACCENT / BRAND */
-    --accent: 221.2 83.2% 53.3%;            /* Primary action color */
-    --accent-hover: 221.2 83.2% 48%;        /* Hover state */
-    --accent-muted: 221.2 83.2% 96%;        /* Background tint */
-    --accent-foreground: 0 0% 100%;         /* Text on accent */
+    /* ACCENT / BRAND - Stitch-inspired colors */
+    --accent: 217 91% 60%;                   /* Primary blue from Stitch (#135bec) */
+    --accent-hover: 217 91% 55%;              /* Hover state */
+    --accent-muted: 217 91% 96%;              /* Background tint */
+    --accent-foreground: 0 0% 100%;           /* Text on accent */
+    
+    /* STITCH PRIMARY VARIANTS */
+    --primary: 217 91% 60%;                   /* Same as accent for consistency */
+    --primary-light: 217 91% 70%;             /* Lighter variant */
+    --primary-dark: 217 91% 45%;              /* Darker variant */
+    --primary-foreground: 0 0% 100%;         /* Text on primary */
     
     /* STATUS COLORS - WCAG AA compliant */
     --success: 142 71% 45%;                 /* Success state */
@@ -78,12 +86,14 @@
    * Not inverted light mode - carefully crafted dark palette
    */
   .dark {
-    /* SURFACES - Dark mode surfaces with subtle elevation */
-    --surface: 222.2 84% 4.9%;              /* Base - very dark blue-gray */
-    --surface-muted: 217.2 32.6% 8%;        /* Subtle panels - slightly lighter */
-    --surface-raised: 217.2 32.6% 12%;      /* Cards - elevated */
-    --surface-overlay: 217.2 32.6% 15%;     /* Modals - highest elevation */
-    --surface-hover: 217.2 32.6% 18%;      /* Hover state */
+    /* SURFACES - Stitch dark mode surfaces */
+    --surface: 222 84% 5%;                   /* Base - #0a0a0c from Stitch */
+    --surface-muted: 222 32% 8%;             /* Subtle panels - #101622 */
+    --surface-raised: 222 32% 12%;           /* Cards - elevated */
+    --surface-overlay: 222 32% 15%;          /* Modals - highest elevation */
+    --surface-hover: 222 32% 18%;            /* Hover state */
+    --surface-dark: 222 26% 10%;            /* Dark code/terminal surfaces */
+    --surface-code: 222 26% 7%;              /* Code background areas */
 
     /* TEXT - Clear hierarchy in dark mode (improved contrast for WCAG AA) */
     --text: 210 40% 98%;                    /* Primary - near white */
@@ -96,11 +106,17 @@
     --border-strong: 217.2 32.6% 30%;       /* Emphasis borders */
     --ring: 224.3 76.3% 48%;               /* Focus ring - brighter */
     
-    /* ACCENT / BRAND - Adjusted for dark mode */
-    --accent: 217.2 91.2% 59.8%;            /* Primary action - brighter */
-    --accent-hover: 217.2 91.2% 65%;       /* Hover state */
-    --accent-muted: 217.2 32.6% 18%;        /* Background tint */
-    --accent-foreground: 222.2 47.4% 11.2%; /* Text on accent */
+    /* ACCENT / BRAND - Stitch dark mode adjustments */
+    --accent: 217 91% 60%;                   /* Primary action - Stitch blue */
+    --accent-hover: 217 91% 65%;             /* Hover state */
+    --accent-muted: 217 32% 18%;             /* Background tint */
+    --accent-foreground: 222 47% 11%;        /* Text on accent */
+    
+    /* STITCH PRIMARY VARIANTS - Dark mode */
+    --primary: 217 91% 60%;                 /* Same as accent */
+    --primary-light: 217 91% 70%;           /* Lighter variant */
+    --primary-dark: 217 91% 45%;            /* Darker variant */
+    --primary-foreground: 0 0% 100%;        /* Text on primary */
     
     /* STATUS COLORS - Dark mode adjusted */
     --success: 142 71% 50%;                 /* Success - brighter */
@@ -368,9 +384,25 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/**
- * Animated code preview hero effect
- */
+ /**
+  * Stitch grid background for code/terminal sections
+  */
+ .bg-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+.dark .bg-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+ /**
+  * Animated code preview hero effect
+  */
 @keyframes codeGlow {
   0%, 100% {
     opacity: 0.3;
@@ -408,4 +440,48 @@
 
 .float-animation-delay-2 {
   animation-delay: 2s;
+}
+
+/**
+ * Stitch utility classes
+ */
+
+/* Custom scrollbars - hidden for cleaner mobile experience */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Backdrop blur effects from Stitch */
+.backdrop-blur-custom {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Terminal text shadow effect */
+.terminal-text {
+  text-shadow: 0 0 8px rgba(29, 100, 237, 0.4);
+}
+
+.dark .terminal-text {
+  text-shadow: 0 0 8px rgba(19, 236, 91, 0.4);
+}
+
+/* Tap targets for mobile accessibility */
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Hero gradient backgrounds */
+.hero-gradient {
+  background: radial-gradient(circle at 50% -20%, rgba(29, 100, 237, 0.15), transparent 70%);
+}
+
+.dark .hero-gradient {
+  background: radial-gradient(circle at 50% -20%, rgba(19, 236, 91, 0.1), transparent 70%);
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { PublicLayout } from '@/components/layout/public-layout'
+import { ErrorBoundary } from '@/components/ui/error-boundary'
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -40,18 +41,20 @@ export default function PublicRootLayout({
   children: React.ReactNode
 }) {
   return (
-    <PublicLayout>
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }}
-      />
-      {children}
-    </PublicLayout>
+    <ErrorBoundary>
+      <PublicLayout>
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }}
+        />
+        {children}
+      </PublicLayout>
+    </ErrorBoundary>
   )
 }
