@@ -34,7 +34,7 @@ const integrationIcons = [
   { name: 'Bitbucket', icon: Code, color: 'text-[#0052CC]' },
 ]
 
-export function HeroProof({ user }: HeroProofProps) {
+export function HeroProof({ user: _user }: HeroProofProps) {
   const [demoPlaying, setDemoPlaying] = React.useState(false)
   const demoRef = React.useRef<HTMLDivElement>(null)
 
