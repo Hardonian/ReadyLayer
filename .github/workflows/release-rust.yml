@@ -1,0 +1,57 @@
+name: Release Rust CLIs
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build release
+        run: cargo build --release -p readylayer-policy -p readylayer-sarif
+      - name: Package binaries (unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/release/readylayer-policy dist/readylayer-policy
+          cp target/release/readylayer-sarif dist/readylayer-sarif
+          tar -czf readylayer-${{ runner.os }}.tar.gz -C dist readylayer-policy readylayer-sarif
+          shasum -a 256 readylayer-${{ runner.os }}.tar.gz > readylayer-${{ runner.os }}.tar.gz.sha256
+      - name: Package binaries (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item target/release/readylayer-policy.exe dist/readylayer-policy.exe
+          Copy-Item target/release/readylayer-sarif.exe dist/readylayer-sarif.exe
+          Compress-Archive -Path dist/* -DestinationPath readylayer-Windows.zip
+          $hash = Get-FileHash readylayer-Windows.zip -Algorithm SHA256
+          "$($hash.Hash)  readylayer-Windows.zip" | Out-File -FilePath readylayer-Windows.zip.sha256 -Encoding ascii
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: readylayer-${{ runner.os }}
+          path: |
+            readylayer-${{ runner.os }}.tar.gz
+            readylayer-${{ runner.os }}.tar.gz.sha256
+            readylayer-Windows.zip
+            readylayer-Windows.zip.sha256
+      - name: Upload release assets
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            readylayer-${{ runner.os }}.tar.gz
+            readylayer-${{ runner.os }}.tar.gz.sha256
+            readylayer-Windows.zip
+            readylayer-Windows.zip.sha256

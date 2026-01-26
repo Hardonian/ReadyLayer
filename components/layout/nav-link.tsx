@@ -21,9 +21,9 @@ export function NavLink({ href, label, onClick, variant = 'desktop' }: NavLinkPr
         href={href}
         onClick={onClick}
         className={cn(
-          'block px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
+          'block px-4 py-3 rounded-xl text-sm font-display font-medium transition-all duration-200 tap-target',
           isActive
-            ? 'bg-accent text-accent-foreground shadow-sm'
+            ? 'bg-primary text-primary-foreground shadow-glow'
             : 'text-text-muted hover:bg-surface-hover hover:text-text-primary'
         )}
         aria-current={isActive ? 'page' : undefined}
@@ -37,9 +37,9 @@ export function NavLink({ href, label, onClick, variant = 'desktop' }: NavLinkPr
     <Link
       href={href}
       className={cn(
-        'relative text-sm font-medium transition-colors duration-200 px-1 py-2',
+        'relative text-sm font-display font-medium transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-surface-hover',
         isActive
-          ? 'text-text-primary'
+          ? 'text-primary bg-primary/10 shadow-glow'
           : 'text-text-muted hover:text-text-primary'
       )}
       aria-current={isActive ? 'page' : undefined}
@@ -48,7 +48,7 @@ export function NavLink({ href, label, onClick, variant = 'desktop' }: NavLinkPr
       {/* Animated underline for active state */}
       {isActive && (
         <span
-          className="absolute bottom-0 left-1 right-1 h-0.5 bg-accent rounded-full"
+          className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full animate-pulse-slow"
           aria-hidden="true"
         />
       )}

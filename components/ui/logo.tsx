@@ -43,7 +43,7 @@ export function Logo({
   const isDark = theme === 'dark'
 
   return (
-    <picture>
+    <picture className="overflow-visible block">
       {variant === 'full' && (
         <>
           <source
@@ -57,6 +57,7 @@ export function Logo({
             height={dimensions.h}
             className={`h-auto w-auto ${className}`}
             priority
+            style={{ maxWidth: 'none', maxHeight: 'none' }}
           />
         </>
       )}
@@ -70,6 +71,7 @@ export function Logo({
             height={dimensions.h}
             className={`h-auto w-auto ${isDark ? 'invert' : ''} ${className}`}
             priority
+            style={{ maxWidth: 'none', maxHeight: 'none' }}
           />
         </>
       )}
@@ -83,6 +85,7 @@ export function Logo({
             height={dimensions.h}
             className={`h-auto w-auto ${isDark ? 'invert' : ''} ${className}`}
             priority
+            style={{ maxWidth: 'none', maxHeight: 'none' }}
           />
         </>
       )}

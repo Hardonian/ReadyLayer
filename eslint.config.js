@@ -1,13 +1,33 @@
-const js = require('@eslint/js');
-const tseslint = require('@typescript-eslint/eslint-plugin');
-const tsparser = require('@typescript-eslint/parser');
-const nextPlugin = require('@next/eslint-plugin-next');
-const reactPlugin = require('eslint-plugin-react');
-const reactHooksPlugin = require('eslint-plugin-react-hooks');
-const globals = require('globals');
+const safeRequire = (moduleName) => {
+  try {
+    return require(moduleName)
+  } catch {
+    return null
+  }
+}
 
-module.exports = [
-  // Global ignores (must come first)
+const globalsModule = safeRequire('globals')
+const js = safeRequire('@eslint/js')
+const tseslint = safeRequire('@typescript-eslint/eslint-plugin')
+const tsparser = safeRequire('@typescript-eslint/parser')
+const nextPlugin = safeRequire('@next/eslint-plugin-next')
+const reactPlugin = safeRequire('eslint-plugin-react')
+const reactHooksPlugin = safeRequire('eslint-plugin-react-hooks')
+
+const baseRecommended = js?.configs?.recommended ?? { rules: {} }
+const globals = globalsModule ?? { browser: {}, node: {}, es2021: {} }
+
+const baseRules = {
+  'no-console': ['warn', { allow: ['warn', 'error', 'log', 'info'] }],
+  'prefer-const': 'error',
+  'no-var': 'error',
+  'no-useless-escape': 'warn',
+  'no-case-declarations': 'warn',
+  'no-useless-catch': 'warn',
+  'no-undef': 'warn',
+}
+
+const config = [
   {
     ignores: [
       'node_modules/**',
@@ -23,12 +43,10 @@ module.exports = [
       'vitest.config.ts',
       'playwright.config.ts',
       'postcss.config.js',
-      // Test files excluded from tsconfig
       'tests/behavior/**',
       'tests/invariants/**',
       'workers/__tests__/**',
       'e2e/golden-path.test.ts',
-      // All test files
       '**/__tests__/**',
       '**/*.test.ts',
       '**/*.test.tsx',
@@ -36,13 +54,74 @@ module.exports = [
       '**/*.spec.tsx',
     ],
   },
+  baseRecommended,
+]
 
-  // Base JavaScript recommended rules
-  js.configs.recommended,
+const jsPlugins = {}
+if (reactPlugin) jsPlugins['react'] = reactPlugin
+if (reactHooksPlugin) jsPlugins['react-hooks'] = reactHooksPlugin
 
-  // TypeScript and React files configuration
-  {
-    files: ['**/*.{ts,tsx,js,jsx}'],
+if (Object.keys(jsPlugins).length > 0) {
+  config.push({
+    files: ['**/*.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021,
+      },
+    },
+    plugins: jsPlugins,
+    rules: {
+      ...baseRules,
+      ...(reactHooksPlugin
+        ? { 'react-hooks/exhaustive-deps': 'warn', 'react-hooks/rules-of-hooks': 'error' }
+        : {}),
+    },
+  })
+}
+
+if (tsparser && tseslint) {
+  const tsPlugins = {
+    '@typescript-eslint': tseslint,
+  }
+  if (nextPlugin) tsPlugins['@next/next'] = nextPlugin
+  if (reactPlugin) tsPlugins['react'] = reactPlugin
+  if (reactHooksPlugin) tsPlugins['react-hooks'] = reactHooksPlugin
+
+  const tsRules = {
+    'no-unused-vars': 'off',
+    ...baseRules,
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      },
+    ],
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+  }
+
+  if (reactHooksPlugin) {
+    tsRules['react-hooks/exhaustive-deps'] = 'warn'
+    tsRules['react-hooks/rules-of-hooks'] = 'error'
+  }
+
+  if (nextPlugin) {
+    tsRules['@next/next/no-html-link-for-pages'] = 'warn'
+    tsRules['@next/next/no-sync-scripts'] = 'error'
+    tsRules['@next/next/no-img-element'] = 'warn'
+  }
+
+  config.push({
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -62,50 +141,9 @@ module.exports = [
         NodeJS: 'writable',
       },
     },
-    plugins: {
-      '@typescript-eslint': tseslint,
-      '@next/next': nextPlugin,
-      'react': reactPlugin,
-      'react-hooks': reactHooksPlugin,
-    },
-    rules: {
-      // Disable base no-unused-vars (TypeScript version is more accurate)
-      'no-unused-vars': 'off',
+    plugins: tsPlugins,
+    rules: tsRules,
+  })
+}
 
-      // TypeScript rules
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
-      '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-
-      // React Hooks rules
-      'react-hooks/exhaustive-deps': 'warn',
-      'react-hooks/rules-of-hooks': 'error',
-
-      // General JavaScript rules
-      'no-console': ['warn', { allow: ['warn', 'error', 'log', 'info'] }],
-      'prefer-const': 'error',
-      'no-var': 'error',
-      'no-useless-escape': 'warn',
-      'no-case-declarations': 'warn',
-      'no-useless-catch': 'warn',
-      'no-undef': 'warn', // Downgraded to warning (TypeScript catches most issues)
-
-      // Next.js specific rules (from next/core-web-vitals)
-      '@next/next/no-html-link-for-pages': 'warn', // Allow in some legacy components
-      '@next/next/no-sync-scripts': 'error',
-      '@next/next/no-img-element': 'warn',
-    },
-  },
-];
+module.exports = config

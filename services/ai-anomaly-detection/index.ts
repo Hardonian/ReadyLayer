@@ -151,12 +151,15 @@ export class AIAnomalyDetectionService {
 
     // Detect anomalies - map reviews to expected format
     const anomalies = await this.detectAnomalies(
-      reviews.map(r => ({ id: r.id, createdAt: r.createdAt, summary: r.summary, isBlocked: r.isBlocked })),
+      reviews.map(r => ({ id: r.id, createdAt: r.createdAt, summary: r.summary as ReviewSummary | null, isBlocked: r.isBlocked })),
       violations
     );
 
     // Analyze token waste
-    const tokenWaste = await this.analyzeTokenWaste(costTracking, reviews);
+    const tokenWaste = await this.analyzeTokenWaste(
+      costTracking.map(ct => ({ date: ct.date, units: ct.units, metadata: ct.metadata as Record<string, unknown> | null })),
+      reviews
+    );
 
     // Detect repeated mistakes
     const repeatedMistakes = await this.detectRepeatedMistakes(violations);

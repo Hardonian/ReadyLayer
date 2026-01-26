@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
 /**
  * Handle subscription created/updated
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 async function handleSubscriptionChange(subscription: any): Promise<void> {
   const log = logger.child({ subscriptionId: subscription.id });
 
@@ -308,7 +308,7 @@ async function handleSubscriptionChange(subscription: any): Promise<void> {
     // Update or create subscription
     const existingSubscription = org.subscriptions[0];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
     if (existingSubscription) {
       const sub = subscription as any; // Stripe type doesn't expose all fields
       await prisma.subscription.update({
@@ -438,7 +438,7 @@ async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
       },
     });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
     if (subscription) {
       // Update subscription period if needed
     if (invoice.subscription && typeof invoice.subscription !== 'string') {
@@ -462,7 +462,7 @@ async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 /**
  * Handle invoice payment failed
  */
@@ -572,3 +572,4 @@ function mapStripeStatus(stripeStatus: Stripe.Subscription.Status): 'active' | '
       return 'active'; // Default to active for unknown statuses
   }
 }
+ 

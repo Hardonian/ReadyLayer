@@ -396,7 +396,7 @@ export class DocSyncService {
     const currentEndpoints = await this.extractEndpoints(repositoryId, ref, framework);
 
     // Compare with documented endpoints
-    const documentedEndpoints = this.extractEndpointsFromOpenAPI(latestDoc.spec);
+    const documentedEndpoints = this.extractEndpointsFromOpenAPI(latestDoc.spec as OpenApiSpec);
 
     const missingEndpoints: DriftCheckResult['missingEndpoints'] = [];
     const extraEndpoints: DriftCheckResult['extraEndpoints'] = [];

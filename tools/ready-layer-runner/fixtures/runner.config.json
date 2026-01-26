@@ -1,0 +1,20 @@
+{
+  "repo_path": "tools/ready-layer-runner/fixtures/sample-repo",
+  "diff_base": "HEAD~1",
+  "diff_head": "HEAD",
+  "checks": [
+    {
+      "name": "Fixture Echo",
+      "category": "custom",
+      "command": "echo fixture-ok",
+      "timeout_seconds": 30,
+      "allow_failure": false
+    }
+  ],
+  "output_dir": "tools/ready-layer-runner/fixtures/output",
+  "redaction": {
+    "patterns": [],
+    "paths": []
+  },
+  "mode": "ci"
+}

@@ -82,7 +82,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {showNav && (
         <motion.nav
           className={cn(
-            'sticky top-0 z-40 border-b border-border-subtle bg-surface-muted/95 backdrop-blur supports-[backdrop-filter]:bg-surface-muted/60 transition-shadow duration-300',
+            'sticky top-0 z-40 border-b border-border/20 backdrop-blur-custom bg-surface/95 dark:bg-surface/90 transition-all duration-300',
             scrolled && 'shadow-surface-raised'
           )}
           variants={fadeIn}
@@ -132,7 +132,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <ThemeToggle />
                   {user ? (
                     <>
-                      <span className="text-sm text-text-muted hidden sm:inline truncate max-w-xs">
+                      <span className="text-sm font-display font-medium text-text-muted hidden sm:inline truncate max-w-xs">
                         {user.user_metadata?.full_name || user.email}
                       </span>
                       <Button

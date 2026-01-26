@@ -7,36 +7,40 @@ const port = Number.parseInt(process.env.ROUTE_SMOKE_PORT || '3100', 10)
 const baseUrl = process.env.ROUTE_SMOKE_BASE_URL || `http://localhost:${port}`
 
 const publicRoutes = [
-  '/',
-  '/pricing',
-  '/how-it-works',
-  '/features',
-  '/features/oss-maintainers',
-  '/features/startup-ctos',
-  '/docs',
-  '/docs/api-reference',
-  '/help',
-  '/help/getting-started',
-  '/help/getting-started/welcome',
-  '/help/getting-started/connect-repo',
-  '/help/getting-started/first-review',
-  '/help/getting-started/policies',
-  '/help/support',
-  '/marketplace',
-  '/marketplace/integrations',
-  '/integrations',
-  '/security',
-  '/audit-example',
-  '/about',
-  '/changelog',
-  '/privacy',
-  '/terms',
-  '/status',
-  '/contact',
-  '/faq',
-  '/support',
-  '/cookies',
-  '/dpa',
+  { path: '/', expected: [200] },
+  { path: '/how-it-works', expected: [200] },
+  { path: '/open-source', expected: [200] },
+  { path: '/docs', expected: [200] },
+  { path: '/docs/api-reference', expected: [200] },
+  { path: '/integrations', expected: [200] },
+  { path: '/governance', expected: [200] },
+  { path: '/security', expected: [200] },
+  { path: '/enterprise', expected: [200] },
+  { path: '/changelog', expected: [200] },
+  { path: '/about', expected: [200] },
+  { path: '/audit-example', expected: [200] },
+  { path: '/privacy', expected: [200] },
+  { path: '/terms', expected: [200] },
+  { path: '/status', expected: [200] },
+  { path: '/contact', expected: [200] },
+  { path: '/faq', expected: [200] },
+  { path: '/support', expected: [200] },
+  { path: '/cookies', expected: [200] },
+  { path: '/dpa', expected: [200] },
+  { path: '/pricing', expected: [307, 308] },
+  { path: '/features', expected: [307, 308] },
+  { path: '/features/oss-maintainers', expected: [307, 308] },
+  { path: '/features/startup-ctos', expected: [307, 308] },
+  { path: '/help', expected: [307, 308] },
+  { path: '/help/getting-started', expected: [307, 308] },
+  { path: '/help/getting-started/welcome', expected: [307, 308] },
+  { path: '/help/getting-started/connect-repo', expected: [307, 308] },
+  { path: '/help/getting-started/first-review', expected: [307, 308] },
+  { path: '/help/getting-started/policies', expected: [307, 308] },
+  { path: '/help/support', expected: [307, 308] },
+  { path: '/marketplace', expected: [307, 308] },
+  { path: '/marketplace/integrations', expected: [307, 308] },
+  { path: '/marketplace/policies', expected: [307, 308] },
 ]
 
 const authRoutes = [
@@ -89,7 +93,7 @@ try {
   await waitForServer()
 
   for (const route of publicRoutes) {
-    await checkRoute(route, [200])
+    await checkRoute(route.path, route.expected)
   }
 
   for (const route of publicApiRoutes) {

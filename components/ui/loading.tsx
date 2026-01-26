@@ -30,7 +30,7 @@ export function LoadingSpinner({
     >
       <motion.div
         className={cn(
-          'border-2 border-accent/20 border-t-accent rounded-full',
+          'border-2 border-border/20 border-t-primary rounded-full shadow-glow',
           sizeClasses[size]
         )}
         animate={{ rotate: 360 }}
@@ -57,13 +57,13 @@ export function LoadingState({
 }) {
   return (
     <motion.div
-      className={cn('flex flex-col items-center justify-center min-h-[400px]', className)}
+      className={cn('flex flex-col items-center justify-center min-h-[400px] p-8', className)}
       variants={fadeIn}
       initial="hidden"
       animate="visible"
     >
-      <LoadingSpinner size="lg" className="mb-4" />
-      <p className="text-sm text-text-muted">{message}</p>
+      <LoadingSpinner size="lg" className="mb-6" />
+      <p className="text-base font-display font-medium text-text-muted">{message}</p>
     </motion.div>
   )
 }
@@ -82,7 +82,7 @@ export function Skeleton({
 >) {
   return (
     <motion.div
-      className={cn('animate-pulse rounded-md bg-surface-muted', className)}
+      className={cn('animate-pulse rounded-lg bg-surface-muted border border-border/10', className)}
       variants={fadeIn}
       initial="hidden"
       animate="visible"

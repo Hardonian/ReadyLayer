@@ -22,7 +22,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/findings', label: 'Findings' },
   { href: '/dashboard/policies', label: 'Policies' },
   { href: '/dashboard/audit', label: 'Audit' },
-  { href: '/marketplace', label: 'Marketplace' },
   { href: '/dashboard/billing', label: 'Billing' },
   { href: '/dashboard/settings', label: 'Settings' },
   { href: '/help', label: 'Help' },
@@ -34,16 +33,12 @@ export const NAV_ITEMS: NavItem[] = [
  */
 export const PUBLIC_NAV_ITEMS: NavItem[] = [
   { href: '/how-it-works', label: 'How it Works' },
-  {
-    href: '/features',
-    label: 'Features',
-    children: [
-      { href: '/features/oss-maintainers', label: 'For OSS Maintainers' },
-      { href: '/features/startup-ctos', label: 'For Startup CTOs' },
-    ],
-  },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/marketplace', label: 'Marketplace' },
-  { href: '/docs/api-reference', label: 'Docs' },
-  { href: '/help', label: 'Help' },
+  { href: '/open-source', label: 'Open Source' },
+  { href: '/governance', label: 'Governance' },
+  { href: '/docs', label: 'Docs' },
+  { href: '/integrations', label: 'Integrations' },
+  { href: '/security', label: 'Security' },
+  { href: '/enterprise', label: 'Enterprise' },
+  { href: '/about', label: 'About' },
+  { href: '/changelog', label: 'Changelog' },
 ]

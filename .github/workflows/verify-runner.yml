@@ -1,0 +1,52 @@
+name: verify-runner
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build runner
+        working-directory: tools/ready-layer-runner
+        run: go build -o bin/ready-layer-runner ./cmd/ready-layer-runner
+
+      - name: Prepare fixture repository
+        run: |
+          set -euo pipefail
+          cd tools/ready-layer-runner/fixtures/sample-repo
+          git init
+          git config user.email "runner@example.com"
+          git config user.name "Runner"
+          git add README.md
+          git commit -m "fixture: initial"
+          echo "fixture change" >> README.md
+          git add README.md
+          git commit -m "fixture: change"
+
+      - name: Run runner
+        run: |
+          set -euo pipefail
+          ./tools/ready-layer-runner/bin/ready-layer-runner \
+            --config tools/ready-layer-runner/fixtures/runner.config.json \
+            --output tools/ready-layer-runner/fixtures/output/runner_output.json
+
+      - name: Validate output schema
+        run: |
+          node tools/ready-layer-runner/scripts/validate-output.mjs \
+            tools/ready-layer-runner/schemas/runner_output.schema.json \
+            tools/ready-layer-runner/fixtures/output/runner_output.json

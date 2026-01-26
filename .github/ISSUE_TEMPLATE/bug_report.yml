@@ -1,0 +1,188 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in ReadyLayer
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thank you for reporting a bug!**
+
+        Please fill out this form to help us understand and reproduce the issue.
+
+        **Before submitting:**
+        - Search existing issues to avoid duplicates
+        - Verify you're using the latest version
+        - Check the [documentation](https://github.com/Hardonian/ReadyLayer/tree/main/docs)
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: "When I do X, Y happens instead of Z..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+      placeholder: "I expected ReadyLayer to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened (include error messages, screenshots, logs).
+      placeholder: "Instead, ReadyLayer..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: ReadyLayer Version
+      description: Which version of ReadyLayer are you using?
+      options:
+        - "1.0.0 (latest)"
+        - "main branch (development)"
+        - "Other (please specify in additional context)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment Type
+      description: How are you running ReadyLayer?
+      options:
+        - "Self-hosted (Docker)"
+        - "Self-hosted (Node.js)"
+        - "GitHub Action"
+        - "Local development"
+        - "Other (please specify)"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: "Run `node --version` to find this"
+      placeholder: "v20.11.0"
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you using?
+      placeholder: "macOS 14.2, Ubuntu 22.04, Windows 11, etc."
+    validations:
+      required: false
+
+  - type: dropdown
+    id: git-provider
+    attributes:
+      label: Git Provider
+      description: Which git provider are you using?
+      options:
+        - "GitHub"
+        - "GitLab"
+        - "Bitbucket"
+        - "Other"
+        - "N/A"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: |
+        Include any relevant logs, error messages, or stack traces.
+        **Important**: Redact any secrets, API keys, or sensitive data.
+      placeholder: |
+        ```
+        Error: ...
+        ```
+      render: shell
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: |
+        Share relevant configuration (policy YAML, environment variables, etc.)
+        **Important**: Redact any secrets or sensitive data.
+      placeholder: |
+        ```yaml
+        # .readylayer/policy.yml
+        version: "1.0"
+        review_guard:
+          enabled: true
+        ```
+      render: yaml
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: |
+        Any other context about the problem:
+        - Screenshots or videos
+        - Related issues
+        - Workarounds you've tried
+        - Impact on your workflow
+      placeholder: "This bug affects..."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify these before submitting.
+      options:
+        - label: I have searched for similar issues and this is not a duplicate
+          required: true
+        - label: I have redacted all sensitive information (API keys, secrets, PII)
+          required: true
+        - label: I have included reproduction steps
+          required: true
+        - label: I am using the latest version (or specified version above)
+          required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        **What happens next?**
+
+        1. A maintainer will review within 48 hours
+        2. We'll add appropriate labels and priority
+        3. We may ask for more information
+        4. We'll update you on progress
+
+        **For security issues**: Please **DO NOT** file a public issue. Email security@readylayer.io instead.
+
+        **Thank you for helping improve ReadyLayer!** 🙏

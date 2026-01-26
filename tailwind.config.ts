@@ -39,12 +39,31 @@ const config: Config = {
           focus: 'hsl(var(--ring))',
         },
         
-        // ACCENT / BRAND TOKENS
+        // ACCENT / BRAND TOKENS - Stitch-inspired primary colors
         accent: {
           DEFAULT: 'hsl(var(--accent))',
           hover: 'hsl(var(--accent-hover))',
           muted: 'hsl(var(--accent-muted))',
           foreground: 'hsl(var(--accent-foreground))',
+        },
+        
+        // STITCH BRAND COLORS - Additional primary variants from Stitch export
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          light: 'hsl(var(--primary-light))',
+          dark: 'hsl(var(--primary-dark))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        
+        // STITCH SURFACE SYSTEM - Enhanced surface tokens
+        surface: {
+          DEFAULT: 'hsl(var(--surface))',
+          muted: 'hsl(var(--surface-muted))',
+          raised: 'hsl(var(--surface-raised))',
+          overlay: 'hsl(var(--surface-overlay))',
+          hover: 'hsl(var(--surface-hover))',
+          dark: 'hsl(var(--surface-dark))', // For dark mode cards/panels
+          code: 'hsl(var(--surface-code))', // For terminal/code backgrounds
         },
         
         // STATUS TOKENS
@@ -105,6 +124,12 @@ const config: Config = {
         platinum: '#E5E4E2',
         diamond: '#B9F2FF',
       },
+      fontFamily: {
+        // Stitch typography system - using CSS custom properties
+        display: ['var(--font-space-grotesk)', 'Inter', 'sans-serif'],
+        body: ['var(--font-inter)', 'Noto Sans', 'sans-serif'],
+        mono: ['var(--font-jetbrains-mono)', 'Fira Code', 'ui-monospace', 'monospace'],
+      },
       borderRadius: {
         sm: 'var(--radius-sm)',
         md: 'var(--radius-md)',
@@ -115,6 +140,34 @@ const config: Config = {
         'surface-flat': 'none',
         'surface-raised': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
         'surface-overlay': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+        // Stitch shadow effects
+        'glow': '0 0 40px -10px rgba(29, 100, 237, 0.3)',
+        'glow-green': '0 0 40px -10px rgba(19, 236, 91, 0.3)',
+        'code-preview': '0 4px 20px -4px rgba(0, 0, 0, 0.3)',
+      },
+      animation: {
+        // Stitch animation patterns
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'float': 'float 6s ease-in-out infinite',
+        'code-glow': 'codeGlow 4s ease-in-out infinite',
+        'blob': 'blob 7s infinite',
+      },
+      keyframes: {
+        // Stitch keyframes
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
+        codeGlow: {
+          '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+          '50%': { opacity: '0.6', transform: 'scale(1.05)' },
+        },
+        blob: {
+          '0%': { transform: 'translate(0px, 0px) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+          '100%': { transform: 'translate(0px, 0px) scale(1)' },
+        },
       },
     },
   },

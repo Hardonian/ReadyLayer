@@ -27,6 +27,37 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Performance optimizations
+  poweredByHeader: false,
+  compress: true,
+  // Image optimization for Vercel
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60,
+  },
+  // Output configuration for Vercel
+  output: 'standalone',
+  // Logging
+  logging: {
+    fetches: {
+      fullUrl: process.env.NODE_ENV === 'development',
+    },
+  },
+  async redirects() {
+    return [
+      { source: '/pricing', destination: '/enterprise', permanent: false },
+      { source: '/features', destination: '/open-source', permanent: false },
+      { source: '/features/oss-maintainers', destination: '/open-source', permanent: false },
+      { source: '/features/startup-ctos', destination: '/open-source', permanent: false },
+      { source: '/marketplace', destination: '/integrations', permanent: false },
+      { source: '/marketplace/integrations', destination: '/integrations', permanent: false },
+      { source: '/marketplace/policies', destination: '/governance', permanent: false },
+      { source: '/help', destination: '/docs', permanent: false },
+      { source: '/help/:path*', destination: '/docs', permanent: false },
+    ];
+  },
   // Security headers
   async headers() {
     return [

@@ -1,38 +1,45 @@
 import type { Metadata } from 'next'
-// import { Inter } from 'next/font/google' // Disabled for build - network issues
+import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import { AppLayout } from '@/components/layout/app-layout'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { PlatformThemeProvider } from '@/components/providers/platform-theme-provider'
 import { RuntimeUiConfigProvider } from '@/components/providers/runtime-ui-config-provider'
-import { AISupportBot } from '@/components/ai-support/chat-bot'
 import { Toaster } from '@/components/ui/toaster'
 
-// const inter = Inter({
-//   subsets: ['latin'],
-//   display: 'swap',
-//   variable: '--font-inter',
-// })
-const inter = { variable: '--font-inter', className: '' } // Fallback for build
+// Stitch typography system
+const inter = Inter({ 
+  variable: '--font-inter', 
+  subsets: ['latin'],
+  display: 'swap',
+})
+
+const spaceGrotesk = Space_Grotesk({ 
+  variable: '--font-space-grotesk',
+  subsets: ['latin'],
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({ 
+  variable: '--font-jetbrains-mono',
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
-    default: 'ReadyLayer — AI Code Readiness Platform',
+    default: 'ReadyLayer — Open-source governance for AI-generated code',
     template: '%s | ReadyLayer',
   },
-  description: 'AI writes the code. ReadyLayer makes it production-ready. Automated verification, testing, and documentation for AI-generated code.',
+  description:
+    'ReadyLayer is an open-source governance framework for AI-generated code. Deterministic checks, traceable decisions, and composable workflow policy.',
   keywords: [
-    'AI code review',
-    'code verification',
-    'AI code quality',
-    'automated testing',
-    'code documentation',
-    'GitHub integration',
-    'GitLab integration',
-    'CI/CD integration',
-    'code security',
-    'AI code safety',
+    'open-source governance',
+    'AI-generated code',
+    'code governance framework',
+    'policy as code',
+    'deterministic checks',
+    'git workflow governance',
   ],
   authors: [{ name: 'ReadyLayer' }],
   creator: 'ReadyLayer',
@@ -51,21 +58,23 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: '/',
     siteName: 'ReadyLayer',
-    title: 'ReadyLayer — AI Code Readiness Platform',
-    description: 'AI writes the code. ReadyLayer makes it production-ready.',
+    title: 'ReadyLayer — Open-source governance for AI-generated code',
+    description:
+      'Open-source governance framework for AI-generated code with deterministic checks and traceable decisions.',
     images: [
       {
         url: '/logo-seo.png',
         width: 359,
         height: 344,
-        alt: 'ReadyLayer - AI Code Readiness Platform',
+        alt: 'ReadyLayer - Open-source governance framework',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ReadyLayer — AI Code Readiness Platform',
-    description: 'AI writes the code. ReadyLayer makes it production-ready.',
+    title: 'ReadyLayer — Open-source governance for AI-generated code',
+    description:
+      'Open-source governance framework for AI-generated code with deterministic checks and traceable decisions.',
     images: ['/logo-seo.png'],
   },
   robots: {
@@ -99,13 +108,12 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
         <ThemeProvider>
           <QueryProvider>
             <PlatformThemeProvider>
               <RuntimeUiConfigProvider>
-                <AppLayout>{children}</AppLayout>
-                <AISupportBot />
+                {children}
                 <Toaster />
               </RuntimeUiConfigProvider>
             </PlatformThemeProvider>
