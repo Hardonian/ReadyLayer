@@ -14,7 +14,7 @@ interface AdminUser {
 
 export default function UsersPage() {
   const [users] = useState<AdminUser[]>([])
-  const [showInviteForm, setShowInviteForm] = useState(false)
+  const [showInviteForm, setShowInviteForm] = useState<boolean>(false)
 
   return (
     <div className="space-y-6">

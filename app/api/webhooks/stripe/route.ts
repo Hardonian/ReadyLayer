@@ -96,7 +96,7 @@ function verifySignature(
  * POST /api/webhooks/stripe
  * Handle Stripe webhooks
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `stripe_${Date.now()}`;
   const log = logger.child({ requestId });
 

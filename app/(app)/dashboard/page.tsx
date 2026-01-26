@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -114,7 +114,7 @@ interface AIOptimizationData {
   }
 }
 
-export default function DashboardPage() {
+const DashboardPage: React.FC = () => {
   const { persona } = usePersona()
   const { registerRefetch } = useRefetch()
   const [repos, setRepos] = useState<Repository[]>([])
@@ -916,3 +916,5 @@ export default function DashboardPage() {
     </Container>
   )
 }
+
+export default DashboardPage

@@ -7,7 +7,7 @@ import { logger } from '../../../observability/logging';
  * Health check endpoint with environment validation
  * Returns 200 if healthy, 503 if unhealthy
  */
-export async function GET() {
+export async function GET(): Promise<NextResponse> {
   try {
     // Check required environment variables (safe - no secrets exposed)
     const requiredEnvVars = {

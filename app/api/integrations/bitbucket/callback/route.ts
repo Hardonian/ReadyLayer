@@ -18,7 +18,7 @@ const BITBUCKET_CLIENT_SECRET = process.env.BITBUCKET_CLIENT_SECRET;
  *
  * Receives authorization code from Bitbucket
  */
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const searchParams = req.nextUrl.searchParams;
     const code = searchParams.get('code');

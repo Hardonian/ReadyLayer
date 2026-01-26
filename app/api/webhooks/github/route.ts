@@ -45,7 +45,7 @@ export const GitHubWebhookEventSchema = z.object({
  * Handle GitHub webhooks
  * Requires Node runtime for signature verification
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
   const log = logger.child({ requestId });
 

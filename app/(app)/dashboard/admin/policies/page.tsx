@@ -11,9 +11,9 @@ interface PolicySummary {
   description: string
 }
 
-export default function PoliciesPage() {
+export default function PoliciesPage(): React.ReactElement {
   const [policies] = useState<PolicySummary[]>([])
-  const [showBuilder, setShowBuilder] = useState(false)
+  const [showBuilder, setShowBuilder] = useState<boolean>(false)
 
   return (
     <div className="space-y-6">

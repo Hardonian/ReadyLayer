@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     'ReadyLayer is an open-source governance framework for AI-generated code. Ship governed PRs in minutes with deterministic checks and traceable decisions.',
 }
 
-export default function Home() {
+export default function Home(): React.ReactElement {
   return (
     <main className="min-h-screen">
       <HeroProof />

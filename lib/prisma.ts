@@ -19,15 +19,15 @@ const globalForPrisma = globalThis as unknown as {
  */
 function getPrismaLogLevel() {
   if (process.env.NODE_ENV === 'development') {
-    return ['query', 'error', 'warn'] as const
+    return ['query', 'error', 'warn']
   }
 
   // Production: Log slow queries only
   if (process.env.LOG_SLOW_QUERIES === 'true') {
-    return ['error', 'warn'] as const
+    return ['error', 'warn']
   }
 
-  return ['error'] as const
+  return ['error']
 }
 
 /**
@@ -35,15 +35,15 @@ function getPrismaLogLevel() {
  */
 function createPrismaClient() {
   const client = new PrismaClient({
-    log: getPrismaLogLevel(),
+    log: getPrismaLogLevel() as any,
 
     // Query logging in production (for slow query detection)
     // @ts-ignore - Prisma types don't include this yet
     ...(process.env.NODE_ENV === 'production' && {
       // Log queries slower than 1s
       log: [
-        { level: 'query', emit: 'event' },
-        { level: 'error', emit: 'event' },
+        { level: 'query' as any, emit: 'event' },
+        { level: 'error' as any, emit: 'event' },
       ],
     }),
   })
@@ -68,7 +68,7 @@ function createPrismaClient() {
       }
 
       // Histogram for all queries
-      metrics.histogram('prisma.query.duration', durationMs)
+      metrics.recordHistogram('prisma.query.duration', durationMs)
     })
 
     // @ts-ignore
