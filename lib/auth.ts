@@ -7,7 +7,7 @@
 import { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { prisma } from './prisma';
-import { createHash, randomFillSync } from 'crypto';
+import { createHash } from 'crypto';
 import { logger } from '../observability/logging';
 import { UnauthorizedError } from './errors';
 
@@ -242,10 +242,10 @@ export async function generateApiKey(
   scopes: string[],
   expiresAt?: Date
 ): Promise<{ key: string; id: string }> {
-  // Generate random API key
-  const randomBytes = Buffer.allocUnsafe(32);
-  randomFillSync(randomBytes);
-  const key = `rl_${randomBytes.toString('base64url')}`;
+    // Generate random API key
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
+    const key = `rl_${Buffer.from(randomBytes).toString('base64url')}`;
   const keyHash = createHash('sha256').update(key).digest('hex');
 
   const apiKey = await prisma.apiKey.create({

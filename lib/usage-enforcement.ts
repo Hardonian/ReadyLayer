@@ -81,10 +81,11 @@ export class UsageEnforcementService {
       },
       _sum: {
         units: true,
+        avg: true,
       },
-    });
+    }) as unknown;
 
-    const todayTokens = Number(todayUsage._sum.units || 0);
+    const todayTokens = Number(todayUsage._sum?.units || 0);
     const dailyRemaining = limits.llmTokensPerDay - todayTokens;
 
     if (todayTokens + requestedTokens > limits.llmTokensPerDay) {
@@ -112,9 +113,9 @@ export class UsageEnforcementService {
       _sum: {
         units: true,
       },
-    });
+    }) as { _sum: { units: number } };
 
-    const monthTokens = Number(monthUsage._sum.units || 0);
+    const monthTokens = Number(monthUsage._sum?.units || 0);
     const monthlyRemaining = limits.llmTokensPerMonth - monthTokens;
 
     if (monthTokens + requestedTokens > limits.llmTokensPerMonth) {
@@ -227,6 +228,15 @@ export class UsageEnforcementService {
           organizationId,
         },
         status: { in: ['pending', 'processing', 'retrying'] },
+      },
+    });
+
+    const jobProcessingCount = await prisma.job.count({
+      where: {
+        repository: {
+          organizationId,
+        },
+        status: 'processing',
       },
     });
 
@@ -348,7 +358,7 @@ export class UsageEnforcementService {
     jobType: string
   ): Promise<void> {
     // Check runs limit (for review/test jobs)
-    if (jobType === 'review' || jobType === 'test_generation' || jobType === 'webhook') {
+    if (['review', 'test_generation', 'webhook'].includes(jobType)) {
       const runsCheck = await this.checkRunsLimit(organizationId);
       await this.logEnforcementDecision(
         organizationId,
