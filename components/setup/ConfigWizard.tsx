@@ -305,7 +305,7 @@ export function ConfigWizard() {
           </div>
           
           <div className="flex items-center gap-2">
-            {steps.map((s, index) => (
+            {steps.map((s, _index) => (
               <div
                 key={s.id}
                 className={`flex-1 h-1 rounded ${
