@@ -20,7 +20,7 @@ const GITHUB_APP_PRIVATE_KEY = process.env.GITHUB_APP_PRIVATE_KEY;
  *
  * Receives installation_id and setup_action from GitHub
  */
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const searchParams = req.nextUrl.searchParams;
     const installationId = searchParams.get('installation_id');

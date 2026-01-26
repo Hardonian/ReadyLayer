@@ -24,7 +24,7 @@ export const GitLabWebhookEventSchema = z.object({
  * Handle GitLab webhooks
  * Requires Node runtime for signature verification and raw body access
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
   const log = logger.child({ requestId });
 

@@ -12,7 +12,7 @@ import { metrics } from '@/observability/metrics';
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: NextRequest) {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
     // Generate CSRF state token
     const stateToken = generateOAuthStateToken();
@@ -84,7 +84,7 @@ export async function GET(_request: NextRequest) {
 /**
  * POST endpoint for OAuth initiation (alternative to GET)
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const body = await request.json();
     const { redirect_uri = null } = body;

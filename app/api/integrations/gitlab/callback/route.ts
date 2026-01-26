@@ -19,7 +19,7 @@ const GITLAB_URL = process.env.GITLAB_URL || 'https://gitlab.com';
  *
  * Receives authorization code from GitLab
  */
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const searchParams = req.nextUrl.searchParams;
     const code = searchParams.get('code');

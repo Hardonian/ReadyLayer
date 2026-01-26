@@ -4,7 +4,7 @@
  * POST /api/v1/billing/checkout - Create Stripe checkout session
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { prisma } from '../../../../../lib/prisma';
@@ -49,7 +49,7 @@ const checkoutSchema = z.object({
  * POST /api/v1/billing/checkout
  * Create Stripe checkout session
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `checkout_${Date.now()}`;
   const log = logger.child({ requestId });
 

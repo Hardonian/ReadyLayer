@@ -56,7 +56,7 @@ interface SlackMessage {
 /**
  * POST /api/webhooks/slack/blocked-pr
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const token = process.env.SLACK_BLOCKED_PR_WEBHOOK_TOKEN;
     if (token) {

@@ -32,11 +32,11 @@ interface Repository {
   createdAt: string
 }
 
-export default function RepositoriesPage() {
+export default function RepositoriesPage(): React.ReactElement {
   const [repos, setRepos] = useState<Repository[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState<string>('')
 
   useEffect(() => {
     async function fetchRepos() {

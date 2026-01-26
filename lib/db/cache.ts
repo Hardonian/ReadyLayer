@@ -182,7 +182,7 @@ export class QueryCache {
 
         if (cached) {
           metrics.increment('cache.hit', { backend: 'redis' })
-          metrics.histogram('cache.get.duration', Date.now() - startTime, { backend: 'redis' })
+          metrics.recordHistogram('cache.get.duration', Date.now() - startTime, { backend: 'redis' })
           return JSON.parse(cached) as T
         }
 

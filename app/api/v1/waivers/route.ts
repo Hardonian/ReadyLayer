@@ -27,7 +27,7 @@ const createWaiverSchema = z.object({
  * POST /api/v1/waivers
  * Create a new waiver
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
   const log = logger.child({ requestId });
 
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
  * GET /api/v1/waivers
  * List waivers (tenant-isolated)
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
   const log = logger.child({ requestId });
 
