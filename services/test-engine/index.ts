@@ -629,7 +629,7 @@ export class TestEngineService {
     );
 
 // Enqueue the job
-    const jobInfo = await enqueueTestExecutionJob({
+    const result = await enqueueTestExecutionJob({
       id: `job_${runId}_${Date.now()}`,
       testRunId: runId,
       organizationId,
@@ -643,7 +643,7 @@ export class TestEngineService {
     });
 
     return {
-      jobId: jobInfo.id,
+      jobId: result.id,
       queuedAt: new Date(),
     };
   }
