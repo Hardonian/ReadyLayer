@@ -640,7 +640,7 @@ export class TestEngineService {
         code: testContent,
         targetFile: filePath,
       }],
-    });
+    }) as { id: string; status: string };
 
     return {
       jobId: job.id,
