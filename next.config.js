@@ -37,8 +37,12 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 60,
   },
-  // Output configuration for Vercel
-  output: 'standalone',
+// Output configuration
+  // IMPORTANT: Do NOT use 'standalone' output for Vercel serverless deployments
+  // Vercel optimizes builds automatically with serverless functions
+  // 'standalone' is only for self-hosted deployments (Docker, VPS)
+  // Keeping output undefined allows Vercel to handle serverless optimization
+  
   // Logging
   logging: {
     fetches: {
