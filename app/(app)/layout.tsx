@@ -6,7 +6,7 @@ export default function AppRootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
+}): React.JSX.Element {
   return (
     <ErrorBoundary>
       <AppLayout>

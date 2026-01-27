@@ -12,7 +12,7 @@ import { GitBranch, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 
-export default function PRsPage() {
+export default function PRsPage(): React.JSX.Element {
   const { organizationId, loading } = useOrganizationId()
 
   const { status, lastEventTime } = useStreamConnection({

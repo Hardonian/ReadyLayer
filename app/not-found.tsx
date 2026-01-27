@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
 import { Home, ArrowLeft } from 'lucide-react'
 
-export default function NotFound() {
+export default function NotFound(): React.JSX.Element {
   return (
     <Container size="md" className="min-h-screen flex items-center justify-center py-12">
       <motion.div

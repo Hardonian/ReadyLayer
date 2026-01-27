@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-export default function LiveOpsConsolePage() {
+export default function LiveOpsConsolePage(): React.JSX.Element {
   const { organizationId, loading } = useOrganizationId()
 
   const { status, lastEventTime } = useStreamConnection({

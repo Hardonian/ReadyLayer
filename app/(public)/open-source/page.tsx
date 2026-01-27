@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     'ReadyLayer is OSS-first governance infrastructure. Run it locally, fork it safely, and audit the source end-to-end.',
 }
 
-export default function OpenSourcePage() {
+export default function OpenSourcePage(): React.JSX.Element {
   return (
     <main className="min-h-screen py-12 lg:py-24">
       <Container size="lg" className="space-y-12">

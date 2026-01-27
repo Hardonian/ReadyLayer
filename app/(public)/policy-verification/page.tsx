@@ -56,29 +56,29 @@ type ValidationError = {
   message: string;
 };
 
-export default function PolicyVerificationPage() {
+export default function PolicyVerificationPage(): React.JSX.Element {
   const [facts, setFacts] = useState<PolicyFacts | null>(null);
   const [decision, setDecision] = useState<PolicyDecision | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [factsFilename, setFactsFilename] = useState('');
   const [decisionFilename, setDecisionFilename] = useState('');
 
-  const statusLabel = useMemo(() => {
+  const statusLabel = useMemo((): string => {
     if (!decision) return 'Awaiting decision';
     if (decision.decision === 'block') return 'Block';
     if (decision.decision === 'warn') return 'Warn';
     return 'Allow';
   }, [decision]);
 
-  const handleFacts = async (file: File) => {
+  const handleFacts = async (file: File): Promise<void> => {
     setFactsFilename(file.name);
     setErrors([]);
     setFacts(null);
 
     const text = await file.text();
     try {
-      const json = JSON.parse(text);
-      const validationErrors = validateSchema(factsSchema as SchemaNode, json);
+      const json = JSON.parse(text) as unknown;
+      const validationErrors = validateSchema(factsSchema as unknown as SchemaNode, json);
       if (validationErrors.length > 0) {
         setErrors(validationErrors.map((error) => `${error.path} ${error.message}`));
         return;
@@ -89,15 +89,15 @@ export default function PolicyVerificationPage() {
     }
   };
 
-  const handleDecision = async (file: File) => {
+  const handleDecision = async (file: File): Promise<void> => {
     setDecisionFilename(file.name);
     setErrors([]);
     setDecision(null);
 
     const text = await file.text();
     try {
-      const json = JSON.parse(text);
-      const validationErrors = validateSchema(decisionSchema as SchemaNode, json);
+      const json = JSON.parse(text) as unknown;
+      const validationErrors = validateSchema(decisionSchema as unknown as SchemaNode, json);
       if (validationErrors.length > 0) {
         setErrors(validationErrors.map((error) => `${error.path} ${error.message}`));
         return;

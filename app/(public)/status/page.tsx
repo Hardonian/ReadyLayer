@@ -1,6 +1,6 @@
 import { SimplePage } from '@/components/marketing/simple-page'
 
-export default function StatusPage() {
+export default function StatusPage(): React.JSX.Element {
   return (
     <SimplePage
       title="System Status"

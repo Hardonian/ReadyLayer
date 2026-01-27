@@ -39,7 +39,7 @@ export default function PublicRootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
+}): React.JSX.Element {
   return (
     <ErrorBoundary>
       <PublicLayout>

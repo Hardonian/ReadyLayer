@@ -77,13 +77,12 @@ export class UsageEnforcementService {
       where: {
         organizationId,
         date: today,
-        service: 'llm',
+        service: "llm",
       },
       _sum: {
         units: true,
-        avg: true,
       },
-    }) as unknown;
+    });
 
     const todayTokens = Number(todayUsage._sum?.units || 0);
     const dailyRemaining = limits.llmTokensPerDay - todayTokens;
@@ -228,15 +227,6 @@ export class UsageEnforcementService {
           organizationId,
         },
         status: { in: ['pending', 'processing', 'retrying'] },
-      },
-    });
-
-    const jobProcessingCount = await prisma.job.count({
-      where: {
-        repository: {
-          organizationId,
-        },
-        status: 'processing',
       },
     });
 

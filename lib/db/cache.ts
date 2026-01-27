@@ -205,7 +205,7 @@ export class QueryCache {
       metrics.increment('cache.error', { operation: 'get' })
       return null
     } finally {
-      metrics.histogram('cache.get.duration', Date.now() - startTime)
+      metrics.recordHistogram('cache.get.duration', Date.now() - startTime)
     }
   }
 
@@ -220,13 +220,13 @@ export class QueryCache {
 
       if (redis) {
         await redis.setEx(key, ttlSeconds, JSON.stringify(value))
-        metrics.histogram('cache.set.duration', Date.now() - startTime, { backend: 'redis' })
+        metrics.recordHistogram('cache.set.duration', Date.now() - startTime, { backend: 'redis' })
         return
       }
 
       // Fallback to memory cache
       memoryCache.set(key, value, ttlSeconds)
-      metrics.histogram('cache.set.duration', Date.now() - startTime, { backend: 'memory' })
+      metrics.recordHistogram('cache.set.duration', Date.now() - startTime, { backend: 'memory' })
     } catch (error) {
       logger.warn({ err: error instanceof Error ? error : new Error(String(error)), key }, 'Cache set failed')
       metrics.increment('cache.error', { operation: 'set' })
@@ -289,7 +289,6 @@ export async function cachedQuery<T>(
   } = {}
 ): Promise<T> {
   const ttl = options.ttl || CACHE_CONFIG.TTL_MEDIUM
-  const useStaleWhileRevalidate = options.staleWhileRevalidate ?? true
 
   // Check cache
   const cached = await queryCache.get<T>(cacheKey)
@@ -396,4 +395,5 @@ export const cacheInvalidation = {
 /**
  * Export for use in application
  */
-export { queryCache, cachedQuery }
+export { queryCache }
+

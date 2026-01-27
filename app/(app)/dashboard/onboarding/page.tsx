@@ -10,7 +10,7 @@ import { useOnboardingProgress } from '@/lib/hooks/use-onboarding-progress'
 import { staggerContainer, staggerItem } from '@/lib/design/motion'
 import { ArrowRight } from 'lucide-react'
 
-export default function OnboardingPage() {
+export default function OnboardingPage(): React.JSX.Element {
   const router = useRouter()
   const { progress, completeStep, shouldShowOnboarding } = useOnboardingProgress()
   const [selectedStep, setSelectedStep] = useState<string | null>(null)

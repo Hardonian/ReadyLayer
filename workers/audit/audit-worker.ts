@@ -16,16 +16,6 @@ import { getAuditQueue, flushAuditLogs, type AuditEvent } from '../../lib/audit-
 import { queueService } from '../../queue'
 
 /**
- * Worker configuration
- */
-const WORKER_CONFIG = {
-  POLL_INTERVAL_MS: 5000, // Poll every 5 seconds
-  BATCH_SIZE: 100, // Process up to 100 events per batch
-  MAX_RETRIES: 3, // Retry failed batches up to 3 times
-  RETRY_DELAY_MS: 10000, // Wait 10s before retry
-}
-
-/**
  * Process audit log queue
  */
 async function processAuditQueue(): Promise<void> {
@@ -62,48 +52,6 @@ function isAuditEvent(payload: unknown): payload is AuditEvent {
 }
 
 /**
- * Batch processor (alternative to queue service pattern)
- * Uses direct queue polling for larger batches
- */
-async function batchProcessor(): Promise<void> {
-  logger.info('Starting audit log batch processor')
-
-  while (true) {
-    try {
-      const queue = await getAuditQueue()
-
-      // Dequeue batch
-      const events = await queue.dequeue(WORKER_CONFIG.BATCH_SIZE)
-
-      if (events.length > 0) {
-        logger.info({ count: events.length }, 'Processing audit log batch')
-
-        // Flush to database
-        await flushAuditLogs(events)
-      }
-
-      // Wait before next poll
-      await sleep(WORKER_CONFIG.POLL_INTERVAL_MS)
-    } catch (error) {
-      logger.error({
-        err: error instanceof Error ? error : new Error(String(error)),
-      }, 'Batch processor error')
-      metrics.increment('audit.worker.batch_error')
-
-      // Continue after error
-      await sleep(WORKER_CONFIG.POLL_INTERVAL_MS)
-    }
-  }
-}
-
-/**
- * Sleep helper
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/**
  * Start audit worker
  */
 export async function startAuditWorker(): Promise<void> {
@@ -111,9 +59,6 @@ export async function startAuditWorker(): Promise<void> {
 
   // Use queue service pattern (recommended)
   await processAuditQueue()
-
-  // Alternative: Use batch processor
-  // await batchProcessor()
 }
 
 /**

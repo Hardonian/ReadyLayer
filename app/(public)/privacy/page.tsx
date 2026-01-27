@@ -1,6 +1,6 @@
 import { SimplePage } from '@/components/marketing/simple-page'
 
-export default function PrivacyPage() {
+export default function PrivacyPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Privacy Policy"

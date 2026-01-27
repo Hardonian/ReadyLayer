@@ -16,7 +16,7 @@ import { getRuntimeCopy } from '@/lib/runtime-ui-config'
 type DemoState = 'normal' | 'loading' | 'empty' | 'error'
 type BannerVariant = 'info' | 'success' | 'warning' | 'danger'
 
-export default function ReviewClient() {
+export default function ReviewClient(): React.JSX.Element {
   const { organizationId, loading: orgLoading } = useOrganizationId()
   const runtime = useRuntimeUiConfig()
   const [demoState, setDemoState] = useState<DemoState>('normal')

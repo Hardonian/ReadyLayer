@@ -86,7 +86,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const body = await request.json();
+    const body = await request.json() as { redirect_uri?: string | null };
     const { redirect_uri = null } = body;
 
     // Generate CSRF state token

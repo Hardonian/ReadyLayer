@@ -55,6 +55,15 @@ const StripeCheckoutSessionSchema = z.object({
 // Initialize Stripe client
 let stripe: Stripe | null = null;
 
+interface StripeSubscriptionWithPeriod extends Stripe.Subscription {
+  current_period_start: number;
+  current_period_end: number;
+}
+
+interface StripeInvoiceWithSubscription extends Stripe.Invoice {
+  subscription: StripeSubscriptionWithPeriod | string | null;
+}
+
 function getStripeClient(): Stripe {
   if (!stripe) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -266,14 +275,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 /**
  * Handle subscription created/updated
  */
- 
-async function handleSubscriptionChange(subscription: any): Promise<void> {
+async function handleSubscriptionChange(subscription: Stripe.Subscription): Promise<void> {
   const log = logger.child({ subscriptionId: subscription.id });
 
   try {
     const customerId = typeof subscription.customer === 'string'
       ? subscription.customer
-      : subscription.customer.id;
+      : (subscription.customer as Stripe.Customer).id;
 
     // Find organization by Stripe customer ID
     const org = await prisma.organization.findFirst({
@@ -308,18 +316,17 @@ async function handleSubscriptionChange(subscription: any): Promise<void> {
     // Update or create subscription
     const existingSubscription = org.subscriptions[0];
 
- 
     if (existingSubscription) {
-      const sub = subscription as any; // Stripe type doesn't expose all fields
+      const sub = subscription as StripeSubscriptionWithPeriod;
       await prisma.subscription.update({
         where: { id: existingSubscription.id },
         data: {
           plan,
-          status: mapStripeStatus(sub.status),
-          stripeSubscriptionId: sub.id,
+          status: mapStripeStatus(subscription.status),
+          stripeSubscriptionId: subscription.id,
           currentPeriodStart: new Date(sub.current_period_start * 1000),
           currentPeriodEnd: new Date(sub.current_period_end * 1000),
-          cancelAtPeriodEnd: sub.cancel_at_period_end || false,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
           updatedAt: new Date(),
         },
       });
@@ -337,6 +344,7 @@ async function handleSubscriptionChange(subscription: any): Promise<void> {
         return;
       }
 
+      const sub = subscription as StripeSubscriptionWithPeriod;
       await prisma.subscription.create({
         data: {
           organizationId: org.id,
@@ -345,8 +353,8 @@ async function handleSubscriptionChange(subscription: any): Promise<void> {
           status: mapStripeStatus(subscription.status),
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscription.id,
-          currentPeriodStart: new Date(subscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodStart: new Date(sub.current_period_start * 1000),
+          currentPeriodEnd: new Date(sub.current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
         },
       });
@@ -367,15 +375,14 @@ async function handleSubscriptionChange(subscription: any): Promise<void> {
 
 /**
  * Handle subscription deleted
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
  */
-async function handleSubscriptionDeleted(subscription: any): Promise<void> {
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
   const log = logger.child({ subscriptionId: subscription.id });
 
   try {
     const customerId = typeof subscription.customer === 'string'
       ? subscription.customer
-      : subscription.customer.id;
+      : (subscription.customer as Stripe.Customer).id;
 
     // Find and update subscription
     const dbSubscription = await prisma.subscription.findFirst({
@@ -416,10 +423,9 @@ async function handleSubscriptionDeleted(subscription: any): Promise<void> {
 }
 
 /**
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
  * Handle invoice payment succeeded
  */
-async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
   const log = logger.child({ invoiceId: invoice.id });
 
   try {
@@ -429,7 +435,7 @@ async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
     }
     const customerId = typeof invoice.customer === 'string'
       ? invoice.customer
-      : invoice.customer.id;
+      : (invoice.customer as Stripe.Customer).id;
 
     // Find subscription
     const subscription = await prisma.subscription.findFirst({
@@ -438,11 +444,11 @@ async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
       },
     });
 
- 
     if (subscription) {
       // Update subscription period if needed
-    if (invoice.subscription && typeof invoice.subscription !== 'string') {
-      const stripeSubscription = invoice.subscription as any; // Stripe types don't expose all fields
+      const inv = invoice as StripeInvoiceWithSubscription;
+      if (inv.subscription && typeof inv.subscription !== 'string') {
+        const stripeSubscription = inv.subscription as StripeSubscriptionWithPeriod;
         await prisma.subscription.update({
           where: { id: subscription.id },
           data: {
@@ -462,11 +468,10 @@ async function handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
   }
 }
 
- 
 /**
  * Handle invoice payment failed
  */
-async function handleInvoicePaymentFailed(invoice: any): Promise<void> {
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   const log = logger.child({ invoiceId: invoice.id });
 
   try {
@@ -476,7 +481,7 @@ async function handleInvoicePaymentFailed(invoice: any): Promise<void> {
     }
     const customerId = typeof invoice.customer === 'string'
       ? invoice.customer
-      : invoice.customer.id;
+      : (invoice.customer as Stripe.Customer).id;
 
     // Find subscription
     const subscription = await prisma.subscription.findFirst({

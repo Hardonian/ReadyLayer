@@ -12,7 +12,7 @@ interface AdminUser {
   role: string
 }
 
-export default function UsersPage() {
+export default function UsersPage(): React.JSX.Element {
   const [users] = useState<AdminUser[]>([])
   const [showInviteForm, setShowInviteForm] = useState<boolean>(false)
 

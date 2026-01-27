@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Release notes and governance updates for ReadyLayer OSS.',
 }
 
-export default function ChangelogPage() {
+export default function ChangelogPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Changelog"

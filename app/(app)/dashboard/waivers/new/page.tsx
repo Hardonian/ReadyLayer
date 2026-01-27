@@ -23,7 +23,7 @@ import {
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'
 
-export default function NewWaiverPage() {
+export default function NewWaiverPage(): React.JSX.Element {
   const { toast } = useToast()
   const router = useRouter()
   const [organizationId, setOrganizationId] = useState('')

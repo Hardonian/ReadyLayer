@@ -128,7 +128,7 @@ interface RunDetails {
   providerLink?: string
 }
 
-export default function RunDetailsPage() {
+export default function RunDetailsPage(): React.JSX.Element {
   const params = useParams()
   const router = useRouter()
   const runId = params.runId as string

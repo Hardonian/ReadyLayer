@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Security disclosure guidance and non-guarantees for ReadyLayer OSS governance workflows.',
 }
 
-export default function SecurityPage() {
+export default function SecurityPage(): React.JSX.Element {
   return (
     <main className="min-h-screen py-12 lg:py-24">
       <Container size="lg" className="space-y-12">

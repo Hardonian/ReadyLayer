@@ -19,7 +19,7 @@ interface PolicyWidgetProps {
  * Shows policy status in repository view
  * Adapts to Git provider UI
  */
-export function PolicyWidget({ repository, reviewId }: PolicyWidgetProps) {
+export function PolicyWidget({ repository, reviewId }: PolicyWidgetProps): React.JSX.Element {
   const { provider: _provider, theme: _theme } = useGitProvider({ repository })
 
   // This would fetch the latest policy evaluation for this repo

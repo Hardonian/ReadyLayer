@@ -60,7 +60,7 @@ export async function queryWithTimeout<T>(
     const duration = Date.now() - startTime
 
     // Metrics
-    metrics.histogram('db.query.duration', duration, { query: queryName })
+    metrics.recordHistogram('db.query.duration', duration, { query: queryName })
 
     // Slow query logging
     if (duration > DB_GATEWAY_CONFIG.SLOW_QUERY_THRESHOLD_MS) {
@@ -189,7 +189,7 @@ export async function transactionWithTimeout<T>(
 /**
  * Batch insert with size limit
  */
-export async function createManyWithLimit<T, A extends { data: unknown[] }>(
+export async function createManyWithLimit<A extends { data: unknown[] }>(
   model: {
     createMany: (args: A) => Promise<Prisma.BatchPayload>
   },
@@ -250,7 +250,7 @@ export async function healthCheck(prisma: PrismaClient): Promise<boolean> {
 /**
  * Connection pool metrics
  */
-export async function getPoolMetrics(prisma: PrismaClient): Promise<{
+export async function getPoolMetrics(_prisma: PrismaClient): Promise<{
   activeConnections: number
   idleConnections: number
   totalConnections: number

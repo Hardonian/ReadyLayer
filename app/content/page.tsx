@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { ArrowRight, BookOpen, FileText, Award, Shield, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
-export default function ContentHubPage() {
+export default function ContentHubPage(): React.JSX.Element {
   return (
     <Container className="py-12">
       <div className="max-w-7xl mx-auto space-y-12">

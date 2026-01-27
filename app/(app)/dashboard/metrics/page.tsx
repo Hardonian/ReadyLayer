@@ -46,7 +46,7 @@ interface Metrics {
   }
 }
 
-export default function MetricsPage() {
+export default function MetricsPage(): React.JSX.Element {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Documentation for ReadyLayer OSS governance workflows and API reference.',
 }
 
-export default function DocsPage() {
+export default function DocsPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Documentation"

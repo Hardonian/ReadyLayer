@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Users, Shield, Bell, Zap } from 'lucide-react'
 
-export default function AdminPage() {
+export default function AdminPage(): React.JSX.Element {
   useEffect(() => {
     // TODO: Fetch organization admin data
   }, [])

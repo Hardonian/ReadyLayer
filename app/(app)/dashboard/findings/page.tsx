@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { getSeverityColor, type SeverityLevel } from '@/lib/utils/color-mapping'
 import Link from 'next/link'
 
-export default function FindingsPage() {
+export default function FindingsPage(): React.JSX.Element {
   const { organizationId, loading } = useOrganizationId()
   const [filter, setFilter] = useState<'all' | 'critical' | 'high' | 'warn' | 'info'>('all')
 

@@ -38,6 +38,7 @@ import {
 interface InteractivePRDemoProps {
   autoPlay?: boolean
   onCheckClick?: (checkId: string) => void
+  onComplete?: () => void
   className?: string
 }
 
@@ -46,6 +47,7 @@ type DemoState = 'idle' | 'playing' | 'paused' | 'completed'
 export function InteractivePRDemo({
   autoPlay = false,
   onCheckClick,
+  onComplete,
   className,
 }: InteractivePRDemoProps) {
   const [state, setState] = React.useState<DemoState>('idle')
@@ -84,12 +86,14 @@ export function InteractivePRDemo({
       const totalSteps = demoChecks.length
       if (currentStep >= totalSteps) {
         setState('completed')
+        onComplete?.()
         return
       }
 
       const check = demoChecks[currentStep]
       if (!check) {
         setState('completed')
+        onComplete?.()
         return
       }
       

@@ -1,6 +1,6 @@
 import { SimplePage } from '@/components/marketing/simple-page'
 
-export default function TermsPage() {
+export default function TermsPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Terms of Service"

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Learn about ReadyLayer, the open-source governance framework for AI-generated code.',
 }
 
-export default function AboutPage() {
+export default function AboutPage(): React.JSX.Element {
   return (
     <SimplePage
       title="About ReadyLayer"

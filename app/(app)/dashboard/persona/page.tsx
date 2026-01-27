@@ -84,7 +84,7 @@ const personaInfo = {
   },
 }
 
-export default function PersonaDashboardPage() {
+export default function PersonaDashboardPage(): React.JSX.Element {
   const { persona, loading } = usePersona()
 
   if (loading) {

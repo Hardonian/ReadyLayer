@@ -11,7 +11,7 @@ const chartData = [
   { date: 'Jan 29', cost: 48 },
 ]
 
-export default function BillingUsagePage() {
+export default function BillingUsagePage(): React.JSX.Element {
   return (
     <div className="space-y-8">
       <div>

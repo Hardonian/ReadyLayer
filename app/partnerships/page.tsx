@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function PartnershipsPage() {
+export default function PartnershipsPage(): React.JSX.Element {
   return (
     <Container className="py-12">
       <div className="max-w-7xl mx-auto space-y-16">

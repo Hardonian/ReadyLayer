@@ -9,7 +9,7 @@ import { fadeIn } from '@/lib/design/motion'
 import { FileText, Download, Search, Filter } from 'lucide-react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
-export default function AuditPage() {
+export default function AuditPage(): React.JSX.Element {
   const { organizationId, loading } = useOrganizationId()
   const [exporting, setExporting] = useState(false)
 
