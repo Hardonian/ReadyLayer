@@ -45,5 +45,4 @@ scripts/**
 .next/**
 node_modules/**
 
-# Workers (if deployed separately)
-workers/**
+# Workers are required during build/lint/typecheck
