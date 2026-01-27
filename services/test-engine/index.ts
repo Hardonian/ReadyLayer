@@ -628,7 +628,7 @@ export class TestEngineService {
       'Queuing test execution job'
     );
 
-    // Enqueue the job
+// Enqueue the job
     const jobInfo = await enqueueTestExecutionJob({
       id: `job_${runId}_${Date.now()}`,
       testRunId: runId,
@@ -640,10 +640,10 @@ export class TestEngineService {
         code: testContent,
         targetFile: filePath,
       }],
-    });
+    }) as { id: string; status: string };
 
     return {
-      jobId: jobInfo.id,
+      jobId: jobInfo.id as string,
       queuedAt: new Date(),
     };
   }
