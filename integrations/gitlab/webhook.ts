@@ -143,7 +143,7 @@ export class GitLabWebhookHandler {
     const fullName = project.path_with_namespace ?? '';
 
     // Find or create repository
-    const repoId = await this.getOrCreateRepository(fullName, installation.organizationId || installation.repositoryId || null);
+const repoId = await this.getOrCreateRepository(fullName, (installation.organizationId ?? installation.repositoryId) ?? null);
 
     if (event.object_kind === 'merge_request') {
       const mr = (event.object_attributes ?? event.merge_request ?? {}) as GitLabMergeRequest;

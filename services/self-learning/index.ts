@@ -60,7 +60,7 @@ export class SelfLearningService {
    * P2-FIX: Helper for cursor-based pagination to prevent OOM with large datasets
    * Yields batches of records instead of loading all into memory
    */
-  private async *fetchModelPerformanceInBatches(
+private async *fetchModelPerformanceInBatches(
     where: { organizationId: string; modelId?: string; timestamp?: { gte: Date } },
     batchSize = 1000
   ): AsyncGenerator<Array<{
@@ -75,7 +75,6 @@ export class SelfLearningService {
     let cursor: string | undefined = undefined;
 
     while (true) {
-      // @ts-expect-error - Circular type inference issue
       const batch = await prisma.modelPerformance.findMany({
         where,
         take: batchSize,
@@ -91,11 +90,27 @@ export class SelfLearningService {
           tokensUsed: true,
           cost: true,
         },
-      });
+      }) as unknown as Array<{
+        id: string;
+        modelId: string;
+        provider: string;
+        success: boolean;
+        responseTimeMs: number;
+        tokensUsed: number;
+        cost: number;
+      }>;
 
-      if (batch.length === 0) break;
+if (batch.length === 0) break;
 
-      yield batch.map((p: typeof batch[0]) => ({
+      const mapped: Array<{
+        id: string;
+        modelId: string;
+        provider: string;
+        success: boolean;
+        responseTimeMs: number;
+        tokensUsed: number;
+        cost: number;
+      }> = batch.map((p) => ({
         id: p.id,
         modelId: p.modelId,
         provider: p.provider,
@@ -105,7 +120,9 @@ export class SelfLearningService {
         cost: Number(p.cost),
       }));
 
-      cursor = batch[batch.length - 1].id;
+      cursor = mapped[mapped.length - 1].id;
+
+      yield mapped;
     }
   }
 

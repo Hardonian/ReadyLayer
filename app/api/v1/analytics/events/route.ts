@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
   try {
     // Events are anonymous - no session required
 
-    // Parse payload
-    const payload: AnalyticsPayload = await request.json();
+// Parse payload
+    const payload = await request.json() as AnalyticsPayload;
     const { events = [] } = payload;
 
     if (!Array.isArray(events) || events.length === 0) {

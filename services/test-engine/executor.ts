@@ -154,7 +154,7 @@ export async function executeTests(
 /**
  * Get executor for framework
  */
-function getExecutor(framework: string) {
+function getExecutor(framework: string): TestFrameworkExecutor {
   switch (framework.toLowerCase()) {
     case 'jest':
       return new JestExecutor()

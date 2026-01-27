@@ -67,7 +67,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    const payload = await request.json();
+    const payload = await request.json() as unknown;
     const parsed = BlockedPRNotificationSchema.safeParse(payload);
     if (!parsed.success) {
       logger.warn({ issues: parsed.error.issues }, 'Invalid blocked PR Slack payload');

@@ -91,8 +91,8 @@ function CompactSocialProof({ className }: { className: string }) {
         {testimonials.slice(0, 3).map((testimonial, index) => (
           <Card key={index} className="bg-secondary/30">
             <CardContent className="pt-6">
-              <div className="flex mb-2">
-                {[...Array(5)].map((_, i) => (
+<div className="flex mb-2">
+                {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="w-4 h-4 fill-primary text-primary" />
                 ))}
               </div>
@@ -147,8 +147,8 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
     <Card className="h-full">
       <CardContent className="pt-6 space-y-4">
         {/* Rating */}
-        <div className="flex">
-          {[...Array(5)].map((_, i) => (
+<div className="flex">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Star key={i} className="w-4 h-4 fill-primary text-primary" />
           ))}
         </div>

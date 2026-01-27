@@ -18,7 +18,7 @@ import { enqueueTestExecutionJob } from '../../workers/test-executor-worker';
 import { logger } from '../../observability/logging';
 import { testEnginePromptBuilder, combinedPrompt } from '../../lib/prompts/builder';
 import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
-import { executeTests } from './executor';
+import { executeTests, type TestExecutionResult } from './executor';
 
 export interface TestGenerationRequest {
   repositoryId: string;
@@ -648,7 +648,7 @@ export class TestEngineService {
     };
   }
 
-  /**
+/**
    * Process test execution job synchronously (for testing/debugging)
    *
    * @param runId - Run ID
@@ -662,7 +662,7 @@ export class TestEngineService {
    * @param timeoutMs - Execution timeout in milliseconds
    * @returns Test execution result
    */
-  async executeTestsSync(
+async executeTestsSync(
     _runId: string,
     _repositoryId: string,
     _organizationId: string,
@@ -672,7 +672,7 @@ export class TestEngineService {
     framework: string = 'jest',
     _coverageThreshold: number = 80,
     _timeoutMs: number = 30000
-  ) {
+  ): Promise<TestExecutionResult> {
     logger.info(
       {
         runId: _runId,

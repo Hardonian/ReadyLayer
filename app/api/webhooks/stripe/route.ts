@@ -6,6 +6,8 @@
  * Requires Node runtime for signature verification and raw body access
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import type WebhookEvent from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { logger } from '../../../../observability/logging';

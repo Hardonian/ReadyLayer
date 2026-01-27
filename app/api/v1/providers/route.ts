@@ -21,8 +21,8 @@ export const POST = createRouteHandler(
   async (context) => {
     const { request, user, log, requestId } = context;
 
-    // Parse and validate body
-    const bodyResult = await request.json();
+// Parse and validate body
+    const bodyResult = await request.json() as unknown;
     const validation = ProviderConfigSchema.safeParse(bodyResult);
 
     if (!validation.success) {

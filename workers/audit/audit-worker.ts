@@ -55,10 +55,10 @@ function isAuditEvent(payload: unknown): payload is AuditEvent {
  * Start audit worker
  */
 export async function startAuditWorker(): Promise<void> {
-  logger.info('Starting audit log worker')
+  logger.info('Starting audit log worker');
 
   // Use queue service pattern (recommended)
-  await processAuditQueue()
+  await processAuditQueue();
 }
 
 /**
@@ -69,23 +69,23 @@ export async function auditWorkerHealth(): Promise<{
   queueDepth?: number
 }> {
   try {
-    const queue = await getAuditQueue()
+    const queue = await getAuditQueue();
 
     // Check queue depth if using memory queue
     if ('size' in queue && typeof queue.size === 'function') {
-      const depth = queue.size()
+      const depth = (queue.size as unknown as () => number)();
       return {
         healthy: depth < 5000, // Unhealthy if queue backing up
         queueDepth: depth,
-      }
+      };
     }
 
-    return { healthy: true }
+    return { healthy: true };
   } catch (error) {
     logger.error({
       err: error instanceof Error ? error : new Error(String(error)),
-    }, 'Audit worker health check failed')
-    return { healthy: false }
+    }, 'Audit worker health check failed');
+    return { healthy: false };
   }
 }
 
