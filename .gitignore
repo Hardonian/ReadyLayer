@@ -38,6 +38,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Package manager lockfiles - use npm only
+pnpm-lock.yaml
+yarn.lock
+bun.lockb
+
 # prisma
 # Keep backend migrations, ignore root prisma migrations
 /prisma/migrations/
