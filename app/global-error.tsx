@@ -11,7 +11,7 @@ export default function GlobalError({
 }: {
   error: Error & { digest?: string }
   reset: () => void
-}) {
+}): React.JSX.Element {
   return (
     <html>
       <body>

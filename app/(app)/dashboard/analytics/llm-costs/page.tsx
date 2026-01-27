@@ -22,7 +22,7 @@ const costsByDay = [
 
 const COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981']
 
-export default function LLMCostsPage() {
+export default function LLMCostsPage(): React.JSX.Element {
   return (
     <div className="space-y-8">
       <div>

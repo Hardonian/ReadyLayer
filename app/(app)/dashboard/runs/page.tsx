@@ -56,7 +56,7 @@ interface Run {
   }
 }
 
-export default function RunsPage() {
+export default function RunsPage(): React.JSX.Element {
   const { registerRefetch } = useRefetch()
   const [runs, setRuns] = useState<Run[]>([])
   const [loading, setLoading] = useState(true)

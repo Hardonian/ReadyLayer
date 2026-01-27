@@ -47,7 +47,7 @@ function AuthErrorContent() {
   )
 }
 
-export default function AuthErrorPage() {
+export default function AuthErrorPage(): React.JSX.Element {
   return (
     <Suspense fallback={
       <Container size="sm" className="min-h-screen flex items-center justify-center">

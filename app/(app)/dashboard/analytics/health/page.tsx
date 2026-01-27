@@ -4,7 +4,7 @@ import { ObservabilityDashboard } from '@/components/dashboard/metrics/Observabi
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle, AlertTriangle } from 'lucide-react'
 
-export default function HealthPage() {
+export default function HealthPage(): React.JSX.Element {
   return (
     <div className="space-y-8">
       <div>

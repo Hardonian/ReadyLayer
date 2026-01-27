@@ -213,7 +213,7 @@ function SignInContent() {
   )
 }
 
-export default function SignInPage() {
+export default function SignInPage(): React.JSX.Element {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">

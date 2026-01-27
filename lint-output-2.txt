@@ -3,79 +3,33 @@
 > eslint .
 
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\admin\users\page.tsx
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\analytics\health\page.tsx
-  7:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  7:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\analytics\llm-costs\page.tsx
-  25:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  25:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\audit\page.tsx
-  12:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  12:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   16:33  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\billing\page.tsx
-  12:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  12:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\billing\usage\page.tsx
-  14:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  14:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\error.tsx
-  11:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  11:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\evidence\[bundleId]\page.tsx
-   48:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   48:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
    59:5   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
    94:33  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   141:30  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   149:30  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\evidence\page.tsx
-   39:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   39:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
    80:49  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   127:52  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   140:52  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\findings\page.tsx
-  16:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  16:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   65:46  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   82:52  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\layout.tsx
-  14:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  14:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\live\page.tsx
-   22:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   22:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   219:34  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\metrics\page.tsx
-  49:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  49:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   54:33  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\onboarding\page.tsx
-  13:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  13:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   27:44  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   53:47  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\persona\page.tsx
-  87:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  87:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\policies\[packId]\edit\page.tsx
   36:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
@@ -115,23 +69,11 @@ C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\policies\page.tsx
    57:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   101:49  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\prs\page.tsx
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\repos\[repoId]\page.tsx
-   41:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   41:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
    54:5   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   138:40  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\repos\[repoId]\policy-widget.tsx
-  22:8  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  22:8  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\repos\connect\page.tsx
-   32:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   32:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
    41:5   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
    78:77  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   111:55  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
@@ -144,21 +86,15 @@ C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\repos\page.tsx
   183:27  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\reviews\[reviewId]\page.tsx
-   73:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   73:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
    84:5   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   141:52  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   159:47  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   174:46  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\reviews\page.tsx
-   41:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   41:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   104:15  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\runs\[runId]\page.tsx
-  131:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  131:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   140:5   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   201:43  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   328:22  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
@@ -166,177 +102,41 @@ C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\runs\[runId]\page
   421:22  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\runs\page.tsx
-   59:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   59:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   167:81  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   186:89  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\runs\sandbox\page.tsx
-  26:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  26:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   32:38  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\settings\page.tsx
-  12:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  12:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\waivers\new\page.tsx
-  26:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  26:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   39:51  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\dashboard\waivers\page.tsx
-   44:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   44:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
    90:49  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   133:38  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   138:37  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(app)\layout.tsx
-  5:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  5:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\about\page.tsx
-  9:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  9:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\audit-example\page.tsx
-  10:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  10:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   17:49  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   59:88  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\auth\callback\route.ts
-  8:8  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  8:8  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\auth\error\page.tsx
-  11:1   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  50:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  50:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
+  11:1  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\auth\signin\page.tsx
-   12:23  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   18:23  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   27:26  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   74:1   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   80:51  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  216:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  216:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\auth\signout\route.ts
-  5:8  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  5:8  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\changelog\page.tsx
-  9:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  9:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\contact\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\cookies\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\docs\api-reference\page.tsx
-  6:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  6:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\docs\page.tsx
-  9:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  9:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\dpa\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\enterprise\page.tsx
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\faq\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\features\oss-maintainers\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\features\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\features\startup-ctos\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\governance\page.tsx
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\error.tsx
-  11:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  11:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\getting-started\connect-repo\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\getting-started\first-review\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\getting-started\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\getting-started\policies\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\getting-started\welcome\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\help\support\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\how-it-works\page.tsx
-  22:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  22:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
+  12:23  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  18:23  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  27:26  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  74:1   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  80:51  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\integrations\page.tsx
   32:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   32:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\layout.tsx
-  38:16  error    Missing return type on function                                                     @typescript-eslint/explicit-function-return-type
-  38:16  error    Missing return type on function                                                     @typescript-eslint/explicit-module-boundary-types
   48:11  warning  Unused eslint-disable directive (no problems were reported from 'react/no-danger')
   53:11  warning  Unused eslint-disable directive (no problems were reported from 'react/no-danger')
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\marketplace\integrations\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\marketplace\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\marketplace\policies\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\open-source\page.tsx
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  15:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\policy-verification\page.tsx
   59:16  error  Missing return type on function      @typescript-eslint/explicit-function-return-type
@@ -346,43 +146,11 @@ C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\policy-verification\page
   92:45  error  Missing return type on function      @typescript-eslint/explicit-function-return-type
   99:13  error  Unsafe assignment of an `any` value  @typescript-eslint/no-unsafe-assignment
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\pricing\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\privacy\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\runner-import\page.tsx
-  50:16  error  Missing return type on function      @typescript-eslint/explicit-function-return-type
-  50:16  error  Missing return type on function      @typescript-eslint/explicit-module-boundary-types
   60:41  error  Missing return type on function      @typescript-eslint/explicit-function-return-type
   67:13  error  Unsafe assignment of an `any` value  @typescript-eslint/no-unsafe-assignment
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\security\page.tsx
-  14:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  14:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\status\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\support\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\(public)\terms\page.tsx
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  3:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\_internal\review\page.tsx
-  29:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  29:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\_internal\review\review-client.tsx
-  19:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  19:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
   66:3   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   99:25  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
@@ -663,38 +431,14 @@ C:\Users\scott\Documents\GitHub\ReadyLayer\app\api\webhooks\stripe\route.ts
   479:17  error  Unsafe member access .customer on an `any` value              @typescript-eslint/no-unsafe-member-access
   484:9   error  Unsafe assignment of an `any` value                           @typescript-eslint/no-unsafe-assignment
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\content\page.tsx
-  13:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  13:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\error.tsx
-  10:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  10:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\evaluate\page.tsx
-   36:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   36:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
    47:15  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
    89:40  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
   206:1   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\global-error.tsx
-  8:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  8:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\layout.tsx
-  96:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  96:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
-C:\Users\scott\Documents\GitHub\ReadyLayer\app\not-found.tsx
-  10:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  10:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-
 C:\Users\scott\Documents\GitHub\ReadyLayer\app\partnerships\page.tsx
-   29:16  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-   29:16  error  Missing return type on function  @typescript-eslint/explicit-module-boundary-types
-  161:1   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
-  220:1   error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  161:1  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
+  220:1  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
 
 C:\Users\scott\Documents\GitHub\ReadyLayer\cli\readylayer-cli.ts
    66:1  error  Missing return type on function  @typescript-eslint/explicit-function-return-type
@@ -1556,6 +1300,6 @@ C:\Users\scott\Documents\GitHub\ReadyLayer\workers\audit\audit-worker.ts
   76:21  error  Unsafe call of a `Function` typed value  @typescript-eslint/no-unsafe-call
   79:9   error  Unsafe assignment of an `any` value      @typescript-eslint/no-unsafe-assignment
 
-✖ 995 problems (992 errors, 3 warnings)
+✖ 843 problems (840 errors, 3 warnings)
   0 errors and 2 warnings potentially fixable with the `--fix` option.
 

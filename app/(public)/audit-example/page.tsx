@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { fadeIn, slideUp } from '@/lib/design/motion'
 import { CheckCircle2, Clock, Lock, FileText, Copy } from 'lucide-react'
 
-export default function AuditExamplePage() {
+export default function AuditExamplePage(): React.JSX.Element {
   const [copied, setCopied] = React.useState<string | null>(null)
 
   const prefersReducedMotion =

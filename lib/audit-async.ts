@@ -18,6 +18,8 @@
 import { logger } from '../observability/logging'
 import { metrics } from '../observability/metrics'
 
+import { toNullableJsonValue } from './prisma-json'
+
 /**
  * Audit log data structure
  * Matches AuditLog Prisma model
@@ -75,7 +77,7 @@ export enum AuditPriority {
 /**
  * Audit event for queue
  */
-interface AuditEvent {
+export interface AuditEvent {
   data: AuditLogData
   priority: AuditPriority
   timestamp: number
@@ -94,13 +96,16 @@ interface AuditQueue {
  * Redis-backed queue implementation
  */
 class RedisAuditQueue implements AuditQueue {
-  private queueKey = 'rl:queue:audit'
-
   async enqueue(event: AuditEvent): Promise<void> {
     try {
       // Use existing queue service
       const { queueService } = await import('../queue')
-      await queueService.enqueue('audit', event)
+      await queueService.enqueue('audit', {
+        type: 'audit_log',
+        data: event,
+        organizationId: event.data.organizationId || undefined,
+        userId: event.data.userId || undefined,
+      })
 
       metrics.increment('audit.enqueued', { priority: event.priority })
     } catch (error) {
@@ -116,9 +121,8 @@ class RedisAuditQueue implements AuditQueue {
     }
   }
 
-  async dequeue(batchSize: number): Promise<AuditEvent[]> {
+  async dequeue(_batchSize: number): Promise<AuditEvent[]> {
     try {
-      const { queueService } = await import('../queue')
       // Queue service handles dequeue via worker pattern
       // This is a placeholder for explicit batch dequeue
       return []
@@ -208,10 +212,10 @@ export async function createAuditLogAsync(
           action: data.action,
           resourceType: data.resourceType,
           resourceId: data.resourceId,
-          details: data.details || null,
+          details: toNullableJsonValue(data.details),
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
-          metadata: data.metadata || null,
+          metadata: toNullableJsonValue(data.metadata),
           actorIp: data.actorIp,
           governanceRunId: data.governanceRunId,
           runId: data.runId,
@@ -221,7 +225,7 @@ export async function createAuditLogAsync(
         },
       })
 
-      metrics.histogram('audit.write.duration', Date.now() - startTime, { priority: 'critical', path: 'direct' })
+      metrics.recordHistogram('audit.write.duration', Date.now() - startTime, { priority: 'critical', path: 'direct' })
       metrics.increment('audit.created', { priority: 'critical', path: 'direct' })
 
       return
@@ -236,7 +240,7 @@ export async function createAuditLogAsync(
       timestamp: Date.now(),
     })
 
-    metrics.histogram('audit.write.duration', Date.now() - startTime, { priority, path: 'async' })
+    metrics.recordHistogram('audit.write.duration', Date.now() - startTime, { priority, path: 'async' })
     metrics.increment('audit.created', { priority, path: 'async' })
   } catch (error) {
     logger.error({
@@ -290,10 +294,10 @@ export async function flushAuditLogs(events: AuditEvent[]): Promise<void> {
         action: event.data.action,
         resourceType: event.data.resourceType,
         resourceId: event.data.resourceId,
-        details: event.data.details || null,
+        details: toNullableJsonValue(event.data.details),
         ipAddress: event.data.ipAddress,
         userAgent: event.data.userAgent,
-        metadata: event.data.metadata || null,
+        metadata: toNullableJsonValue(event.data.metadata),
         actorIp: event.data.actorIp,
         governanceRunId: event.data.governanceRunId,
         runId: event.data.runId,
@@ -304,8 +308,8 @@ export async function flushAuditLogs(events: AuditEvent[]): Promise<void> {
       skipDuplicates: true, // Idempotency
     })
 
-    metrics.histogram('audit.batch_flush.duration', Date.now() - startTime)
-    metrics.histogram('audit.batch_flush.size', events.length)
+    metrics.recordHistogram('audit.batch_flush.duration', Date.now() - startTime)
+    metrics.recordHistogram('audit.batch_flush.size', events.length)
     metrics.increment('audit.batch_flushed', { count: events.length.toString() })
 
     logger.info({ count: events.length, durationMs: Date.now() - startTime }, 'Audit logs flushed')
@@ -327,4 +331,5 @@ export async function flushAuditLogs(events: AuditEvent[]): Promise<void> {
 /**
  * Export for worker
  */
-export { AuditEvent, getAuditQueue }
+export { getAuditQueue }
+

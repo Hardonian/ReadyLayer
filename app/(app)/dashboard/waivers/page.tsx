@@ -41,7 +41,7 @@ interface Waiver {
   updatedAt: string
 }
 
-export default function WaiversPage() {
+export default function WaiversPage(): React.JSX.Element {
   const { toast } = useToast()
   const [waivers, setWaivers] = useState<Waiver[]>([])
   const [loading, setLoading] = useState(true)

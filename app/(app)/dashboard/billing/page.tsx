@@ -9,7 +9,7 @@ import { fadeIn } from '@/lib/design/motion'
 import { CreditCard, CheckCircle2, ArrowRight, Zap, Shield, Rocket } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-export default function BillingPage() {
+export default function BillingPage(): React.JSX.Element {
   const { organizationId, loading } = useOrganizationId()
   const [currentPlan] = useState('starter')
 

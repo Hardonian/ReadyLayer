@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * GitHub App Installation Callback
  *
@@ -95,24 +94,24 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     // Create GitHub App JWT
     const { App } = await import('@octokit/app');
+    const { Octokit: OctokitRest } = await import('@octokit/rest');
     const app = new App({
       appId: GITHUB_APP_ID,
       privateKey: GITHUB_APP_PRIVATE_KEY,
     });
 
     // Get installation access token
-    const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10));
+    const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10)) as unknown as InstanceType<typeof OctokitRest>;
 
-    // Get installation details - use unknown cast to work with Octokit's dynamic types
- 
-    const installationData = await (installationOctokit as any).rest.apps.getInstallation({
+    // Get installation details
+    const installationData = await installationOctokit.rest.apps.getInstallation({
       installation_id: parseInt(installationId, 10),
-    });
+    }) as unknown as { data: Record<string, unknown> };
 
     // Get installation access token
-    const tokenData = await (installationOctokit as any).rest.apps.createInstallationAccessToken({
+    const tokenData = await installationOctokit.rest.apps.createInstallationAccessToken({
       installation_id: parseInt(installationId, 10),
-    });
+    }) as unknown as { data: Record<string, unknown> };
 
     const installation = installationData.data;
     const tokenResponse = tokenData.data;
@@ -124,7 +123,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       },
       provider: 'github',
       providerId: installationId,
-      accessToken: tokenResponse.token,
+      accessToken: tokenResponse.token as string,
       permissions: toJsonValue((installation.permissions as Record<string, unknown>) || {}),
       selectedRepos: installation.repository_selection === 'all'
         ? []

@@ -36,7 +36,7 @@ interface EvidenceBundle {
   createdAt: string
 }
 
-export default function EvidencePage() {
+export default function EvidencePage(): React.JSX.Element {
   const { toast } = useToast()
   const [evidence, setEvidence] = useState<EvidenceBundle[]>([])
   const [loading, setLoading] = useState(true)

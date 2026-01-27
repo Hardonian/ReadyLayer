@@ -1,6 +1,6 @@
 import { SimplePage } from '@/components/marketing/simple-page'
 
-export default function SupportPage() {
+export default function SupportPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Support"

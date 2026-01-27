@@ -77,7 +77,6 @@ export class CircuitBreaker {
   private state: CircuitState = CircuitState.CLOSED
   private failureCount = 0
   private successCount = 0
-  private lastFailureTime = 0
   private nextAttemptTime = 0
   private halfOpenRequests = 0
 
@@ -130,7 +129,6 @@ export class CircuitBreaker {
     }
 
     // Execute request
-    const startTime = Date.now()
     try {
       const result = await fn()
 
@@ -176,7 +174,6 @@ export class CircuitBreaker {
   private recordFailure(): void {
     this.requests.push({ success: false, timestamp: Date.now() })
     this.failureCount++
-    this.lastFailureTime = Date.now()
 
     metrics.increment('circuit_breaker.failure', { name: this.name })
 

@@ -38,7 +38,7 @@ interface Review {
   createdAt: string
 }
 
-export default function ReviewsPage() {
+export default function ReviewsPage(): React.JSX.Element {
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

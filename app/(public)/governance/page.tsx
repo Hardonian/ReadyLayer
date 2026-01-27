@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     'Human-in-the-loop governance for AI-generated code. Deterministic checks, explicit failure modes, and auditable decisions.',
 }
 
-export default function GovernancePage() {
+export default function GovernancePage(): React.JSX.Element {
   return (
     <main className="min-h-screen py-12 lg:py-24">
       <Container size="lg" className="space-y-12">

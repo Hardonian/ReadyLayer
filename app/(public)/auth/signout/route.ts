@@ -2,7 +2,7 @@ import { createSupabaseRouteHandlerClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/observability/logging'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const response = NextResponse.next()
     const supabase = createSupabaseRouteHandlerClient(request, response)

@@ -33,7 +33,7 @@ interface EvaluationStep {
   icon: React.ReactNode
 }
 
-export default function EvaluatePage() {
+export default function EvaluatePage(): React.JSX.Element {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [elapsedTime, setElapsedTime] = useState(0)

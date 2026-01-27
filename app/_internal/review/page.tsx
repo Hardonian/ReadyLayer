@@ -26,7 +26,7 @@ function isInternalReviewEnabled(): boolean {
   return process.env.INTERNAL_REVIEW_ENABLED === 'true'
 }
 
-export default async function InternalReviewPage() {
+export default async function InternalReviewPage(): Promise<React.JSX.Element> {
   if (!isInternalReviewEnabled()) {
     notFound()
   }

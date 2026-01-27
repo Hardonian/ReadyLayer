@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function StartupCtosRedirectPage() {
+export default function StartupCtosRedirectPage(): void {
   redirect('/open-source')
 }

@@ -1,6 +1,6 @@
 import { SimplePage } from '@/components/marketing/simple-page'
 
-export default function CookiesPage() {
+export default function CookiesPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Cookie Policy"

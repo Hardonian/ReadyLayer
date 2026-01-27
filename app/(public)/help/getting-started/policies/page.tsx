@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default function PoliciesRedirectPage() {
+export default function PoliciesRedirectPage(): void {
   redirect('/docs')
 }

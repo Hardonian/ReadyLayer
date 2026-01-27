@@ -1,6 +1,6 @@
 import { SimplePage } from '@/components/marketing/simple-page'
 
-export default function DpaPage() {
+export default function DpaPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Data Processing Addendum"

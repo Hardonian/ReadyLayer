@@ -38,7 +38,7 @@ interface RepoMetrics {
  * 
  * Shows repository details, configuration, and analytics
  */
-export default function RepositoryDetailPage() {
+export default function RepositoryDetailPage(): React.JSX.Element {
   const params = useParams()
   const repoId = params.repoId as string
   const [repo, setRepo] = useState<Repository | null>(null)

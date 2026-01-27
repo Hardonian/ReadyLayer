@@ -29,7 +29,7 @@ interface Repository {
   createdAt: string
 }
 
-export default function ConnectRepositoryPage() {
+export default function ConnectRepositoryPage(): React.JSX.Element {
   const [connecting, setConnecting] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<'github' | 'gitlab' | 'bitbucket' | null>(null)
   const [installations, setInstallations] = useState<Installation[]>([])

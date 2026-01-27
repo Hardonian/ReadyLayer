@@ -1,6 +1,6 @@
 import { SimplePage } from '@/components/marketing/simple-page'
 
-export default function ContactPage() {
+export default function ContactPage(): React.JSX.Element {
   return (
     <SimplePage
       title="Contact"

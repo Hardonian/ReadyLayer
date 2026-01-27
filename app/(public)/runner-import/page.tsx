@@ -47,7 +47,7 @@ type ValidationError = {
   message: string;
 };
 
-export default function RunnerImportPage() {
+export default function RunnerImportPage(): React.JSX.Element {
   const [output, setOutput] = useState<RunnerOutput | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [filename, setFilename] = useState<string>('');

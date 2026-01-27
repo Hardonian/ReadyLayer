@@ -14,7 +14,7 @@ export default function HelpError({
 }: {
   error: Error & { digest?: string }
   reset: () => void
-}) {
+}): React.JSX.Element {
   useEffect(() => {
     console.error('Help section error:', error)
   }, [error])

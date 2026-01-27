@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/container'
@@ -13,13 +12,7 @@ import { Shield, TestTube, FileText, CheckCircle2, ArrowRight, GitBranch } from 
 import { FailureModes } from '@/components/landing/FailureModes'
 import { RunArtifacts } from '@/components/landing/RunArtifacts'
 
-export const metadata: Metadata = {
-  title: 'How it works',
-  description:
-    'See how ReadyLayer moves a PR through deterministic governance: diff inputs, policy checks, and a traceable decision.',
-}
-
-export default function HowItWorksPage() {
+export default function HowItWorksPage(): React.JSX.Element {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []

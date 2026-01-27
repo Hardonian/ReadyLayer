@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     'Optional hosted ReadyLayer service for teams that want managed infrastructure without changing governance logic.',
 }
 
-export default function EnterprisePage() {
+export default function EnterprisePage(): React.JSX.Element {
   return (
     <main className="min-h-screen py-16 lg:py-24">
       <Container size="lg" className="space-y-16">

@@ -32,7 +32,7 @@ interface Repository {
   createdAt: string
 }
 
-export default function RepositoriesPage(): React.ReactElement {
+export default function RepositoriesPage(): React.JSX.Element {
   const [repos, setRepos] = useState<Repository[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)

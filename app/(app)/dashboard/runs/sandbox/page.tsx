@@ -23,7 +23,7 @@ interface SandboxRunResult {
   sandboxId: string
 }
 
-export default function SandboxRunPage() {
+export default function SandboxRunPage(): React.JSX.Element {
   const router = useRouter()
   const [run, setRun] = useState<SandboxRunResult | null>(null)
   const [loading, setLoading] = useState(false)

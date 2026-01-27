@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function APIReferencePage() {
+export default function APIReferencePage(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (

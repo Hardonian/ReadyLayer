@@ -70,7 +70,7 @@ interface Review {
   completedAt?: string
 }
 
-export default function ReviewDetailPage() {
+export default function ReviewDetailPage(): React.JSX.Element {
   const params = useParams()
   const reviewId = params.reviewId as string
   const [review, setReview] = useState<Review | null>(null)

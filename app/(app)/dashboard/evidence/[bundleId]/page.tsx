@@ -45,7 +45,7 @@ interface EvidenceBundle {
   createdAt: string
 }
 
-export default function EvidenceDetailPage() {
+export default function EvidenceDetailPage(): React.JSX.Element {
   const { toast } = useToast()
   const router = useRouter()
   const params = useParams()
@@ -91,7 +91,7 @@ export default function EvidenceDetailPage() {
     }
   }, [bundleId])
 
-  const handleExport = async () => {
+  const handleExport = async (): Promise<void> => {
     try {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -138,7 +138,7 @@ export default function EvidenceDetailPage() {
     }
   }
 
-  const getResourceLink = () => {
+  const getResourceLink = (): string | null => {
     if (!evidence) return null
     if (evidence.reviewId) return `/dashboard/reviews/${evidence.reviewId}`
     if (evidence.testId) return `/dashboard/tests/${evidence.testId}`
@@ -146,7 +146,7 @@ export default function EvidenceDetailPage() {
     return null
   }
 
-  const getResourceType = () => {
+  const getResourceType = (): string => {
     if (!evidence) return 'Unknown'
     if (evidence.reviewId) return 'Review'
     if (evidence.testId) return 'Test'

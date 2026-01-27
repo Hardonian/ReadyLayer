@@ -14,13 +14,13 @@ import { createSupabaseClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Database } from 'lucide-react';
 
-export default function ReadinessPage() {
+export default function ReadinessPage(): React.JSX.Element {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchOrganizationId() {
+    async function fetchOrganizationId(): Promise<void> {
       try {
         const supabase = createSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
@@ -38,7 +38,7 @@ export default function ReadinessPage() {
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as { repositories?: Array<{ id: string }> };
           if (data.repositories && data.repositories.length > 0) {
             // Get org ID from first repo
             const repoResponse = await fetch(`/api/v1/repos/${data.repositories[0].id}`, {
@@ -48,7 +48,7 @@ export default function ReadinessPage() {
             });
             
             if (repoResponse.ok) {
-              const repoData = await repoResponse.json();
+              const repoData = await repoResponse.json() as { data?: { organizationId: string } };
               if (repoData.data?.organizationId) {
                 setOrganizationId(repoData.data.organizationId);
               }
@@ -62,7 +62,7 @@ export default function ReadinessPage() {
       }
     }
 
-    fetchOrganizationId();
+    void fetchOrganizationId();
   }, [router]);
 
   if (loading) {

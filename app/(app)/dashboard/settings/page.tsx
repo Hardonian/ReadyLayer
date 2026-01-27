@@ -9,7 +9,7 @@ import { fadeIn } from '@/lib/design/motion'
 import { Settings, Github, Gitlab, ToggleLeft, ToggleRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-export default function SettingsPage() {
+export default function SettingsPage(): React.JSX.Element {
   const { organizationId, loading } = useOrganizationId()
   const [featureFlags, setFeatureFlags] = useState({
     aiAssistEnabled: true,
