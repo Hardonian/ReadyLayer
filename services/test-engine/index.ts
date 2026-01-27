@@ -640,10 +640,10 @@ export class TestEngineService {
         code: testContent,
         targetFile: filePath,
       }],
-    }) as { id: string; status: string };
+    });
 
     return {
-      jobId: jobInfo.id as string,
+      jobId: jobInfo.id,
       queuedAt: new Date(),
     };
   }
