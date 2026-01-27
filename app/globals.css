@@ -8,6 +8,11 @@
    * Softened whites, clear hierarchy, reduced chroma
    */
   :root {
+    /* TYPOGRAPHY - system-safe font stacks */
+    --font-inter: "Inter", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-space-grotesk: "Space Grotesk", "Inter", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-jetbrains-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
     /* SURFACES - Stitch-inspired layered elevation system */
     --surface: 0 0% 100%;                    /* Base app background - pure white */
     --surface-muted: 210 40% 98%;           /* Subtle panels, nav backgrounds */
