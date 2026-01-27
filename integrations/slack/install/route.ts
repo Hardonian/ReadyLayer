@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
+import { randomBytes } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,7 +79,7 @@ export async function GET(_request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { workspace_id } = await request.json();
+    const { workspace_id } = await request.json() as { workspace_id?: string };
 
     if (!SLACK_CLIENT_ID) {
       logger.error('Slack client ID not configured');
@@ -135,5 +136,5 @@ export async function POST(request: NextRequest) {
  * Generate state token for CSRF protection
  */
 function generateStateToken(): string {
-  return require('crypto').randomBytes(32).toString('hex');
+  return randomBytes(32).toString('hex');
 }

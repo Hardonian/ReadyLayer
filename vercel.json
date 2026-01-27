@@ -41,5 +41,53 @@
       "destination": "https://github.com/Hardonian/ReadyLayer",
       "permanent": false
     }
+],
+  "build": {
+    "env": {
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/github",
+      "destination": "https://github.com/Hardonian/ReadyLayer",
+      "permanent": false
+    }
+  ]
+}
+  }
+}
+  },
+  "crons": [],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-DNS-Prefetch-Control",
+          "value": "on"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "rewrites": [],
+  "redirects": [
+    {
+      "source": "/github",
+      "destination": "https://github.com/Hardonian/ReadyLayer",
+      "permanent": false
+    }
   ]
 }

@@ -35,15 +35,15 @@ function getPrismaLogLevel() {
  */
 function createPrismaClient() {
   const client = new PrismaClient({
-    log: getPrismaLogLevel() as any,
+    log: getPrismaLogLevel() as Array<'query' | 'error' | 'warn'>,
 
     // Query logging in production (for slow query detection)
     // @ts-ignore - Prisma types don't include this yet
     ...(process.env.NODE_ENV === 'production' && {
       // Log queries slower than 1s
       log: [
-        { level: 'query' as any, emit: 'event' },
-        { level: 'error' as any, emit: 'event' },
+        { level: 'query' as 'query', emit: 'event' as 'event' },
+        { level: 'error' as 'error', emit: 'event' as 'event' },
       ],
     }),
   })

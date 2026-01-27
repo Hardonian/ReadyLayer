@@ -93,15 +93,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     // Create GitHub App JWT
-    const { App } = await import('@octokit/app');
-    const { Octokit: OctokitRest } = await import('@octokit/rest');
+const { App } = await import('@octokit/app');
     const app = new App({
       appId: GITHUB_APP_ID,
       privateKey: GITHUB_APP_PRIVATE_KEY,
     });
 
+    type OctokitRest = InstanceType<typeof import('@octokit/rest').Octokit>;
+
     // Get installation access token
-    const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10)) as unknown as InstanceType<typeof OctokitRest>;
+    const installationOctokit = await app.getInstallationOctokit(parseInt(installationId, 10)) as unknown as OctokitRest;
 
     // Get installation details
     const installationData = await installationOctokit.rest.apps.getInstallation({

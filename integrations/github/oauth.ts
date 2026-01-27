@@ -5,8 +5,34 @@
  * to prevent CSRF attacks.
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes, createHmac } from 'crypto';
 import { logger } from '@/observability/logging';
+
+interface GitHubOAuthResponse {
+  error?: string;
+  error_description?: string;
+  access_token?: string;
+  token_type?: string;
+  scope?: string;
+}
+
+interface GitHubUserResponse {
+  id: number;
+  login: string;
+  email?: string;
+  name?: string;
+  avatar_url?: string;
+}
+
+interface GitHubRepository {
+  id: number;
+  name: string;
+  full_name: string;
+  private: boolean;
+  owner: {
+    login: string;
+  };
+}
 
 /**
  * Generate OAuth state token for CSRF protection
@@ -101,7 +127,7 @@ export async function exchangeOAuthCodeForToken(
       return null;
     }
 
-    const data = await response.json();
+    const data = await response.json() as GitHubOAuthResponse;
 
     if (data.error) {
       logger.error(
@@ -115,9 +141,9 @@ export async function exchangeOAuthCodeForToken(
     }
 
     return {
-      accessToken: data.access_token,
-      tokenType: data.token_type,
-      scope: data.scope,
+      accessToken: data.access_token ?? '',
+      tokenType: data.token_type ?? '',
+      scope: data.scope ?? '',
     };
   } catch (error) {
     logger.error(
@@ -159,7 +185,7 @@ export async function getGitHubUser(accessToken: string): Promise<{
       return null;
     }
 
-    return await response.json();
+    return await response.json() as GitHubUserResponse;
   } catch (error) {
     logger.error(
       {
@@ -209,7 +235,7 @@ export async function listGitHubRepositories(
       return null;
     }
 
-    return await response.json();
+    return await response.json() as GitHubRepository[];
   } catch (error) {
     logger.error(
       {
@@ -232,13 +258,11 @@ export function verifyGitHubWebhookSignature(
   secret: string
 ): boolean {
   try {
-    const crypto = require('crypto');
-
     // Remove "sha256=" prefix if present
     const cleanSignature = signature.replace('sha256=', '');
 
     // Calculate HMAC
-    const hmac = crypto.createHmac('sha256', secret);
+    const hmac = createHmac('sha256', secret);
     hmac.update(payload);
     const calculated = hmac.digest('hex');
 

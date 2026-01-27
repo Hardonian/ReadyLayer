@@ -34,8 +34,8 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
           },
         })
 
-        if (response.ok) {
-          const data = await response.json()
+if (response.ok) {
+          const data = await response.json() as { repositories?: Array<{ provider: string }> }
           if (data.repositories?.[0]?.provider) {
             const repoProvider = data.repositories[0].provider.toLowerCase() as GitProvider
             setProvider(repoProvider)

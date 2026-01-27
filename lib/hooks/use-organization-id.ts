@@ -29,8 +29,8 @@ export function useOrganizationId() {
           },
         })
 
-        if (response.ok) {
-          const data = await response.json()
+if (response.ok) {
+          const data = await response.json() as { repositories?: Array<{ organization?: { id: string } }> };
           if (data.repositories?.[0]?.organization?.id) {
             setOrganizationId(data.repositories[0].organization.id)
           }

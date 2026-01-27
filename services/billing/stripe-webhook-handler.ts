@@ -11,6 +11,7 @@
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
 import Stripe from 'stripe';
+import { createHmac } from 'crypto';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-12-15.clover',
@@ -468,10 +469,7 @@ export function verifyWebhookSignature(
   secret: string
 ): boolean {
   try {
-    const crypto = require('crypto');
-
-    const hash = crypto
-      .createHmac('sha256', secret)
+    const hash = createHmac('sha256', secret)
       .update(payload)
       .digest('hex');
 

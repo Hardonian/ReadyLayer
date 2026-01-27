@@ -202,15 +202,15 @@ async function main() {
     },
   });
 
-  // Capture server output for debugging
-  serverProcess.stdout?.on('data', (data) => {
+// Capture server output for debugging
+  serverProcess.stdout?.on('data', (data: Buffer) => {
     const output = data.toString();
     if (output.includes('Ready') || output.includes('started')) {
       // Server is ready
     }
   });
 
-  serverProcess.stderr?.on('data', (data) => {
+  serverProcess.stderr?.on('data', (data: Buffer) => {
     // Log errors but don't fail test
     console.error(`Server stderr: ${data.toString()}`);
   });

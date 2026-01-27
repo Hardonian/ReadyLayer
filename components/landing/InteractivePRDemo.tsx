@@ -125,7 +125,7 @@ export function InteractivePRDemo({
       setState('completed')
       return
     }
-  }, [autoPlay, state, currentStep, prefersReducedMotion])
+  }, [autoPlay, state, currentStep, prefersReducedMotion, onComplete])
 
   const handlePlay = () => {
     if (state === 'completed') {

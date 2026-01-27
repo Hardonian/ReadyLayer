@@ -64,7 +64,7 @@ export default function RunnerImportPage(): React.JSX.Element {
 
     const text = await file.text();
     try {
-      const json = JSON.parse(text);
+      const json = JSON.parse(text) as unknown;
       const validationErrors = validateSchema(runnerOutputSchema as unknown as SchemaNode, json);
       if (validationErrors.length > 0) {
         setErrors(validationErrors.map((error) => `${error.path} ${error.message}`));

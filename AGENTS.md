@@ -52,11 +52,18 @@ When integrating new UI exports (e.g., Stitch):
 
 ## 8) Quality gates (required)
 Discover scripts from `package.json`. Typical:
-1. Install: `pnpm install`
-2. Lint: `pnpm lint`
-3. Typecheck: `pnpm typecheck`
-4. Tests: `pnpm test` (if present)
-5. Build: `pnpm build`
+1. Install: `npm install` (MUST run after any package.json change)
+2. Lint: `npm run lint`
+3. Typecheck: `npm run type-check`
+4. Tests: `npm test` (if present)
+5. Build: `npm run build`
+
+### Package Lock Sync (CRITICAL)
+**ALWAYS** run `npm install` after any `package.json` modification.  
+**NEVER** commit `package.json` changes without also committing the updated lockfile.
+
+**Verification:** `npm ci` must pass before any commit.  
+**Failure means lockfile is out of sync** → run `npm install` to regenerate.
 
 Do not claim completion unless **lint + typecheck + build** are green.
 

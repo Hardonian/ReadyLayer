@@ -143,7 +143,7 @@ async function getRedisClient(): Promise<RedisClientType | null> {
       },
     })
 
-    redisClient.on('error', (err) => {
+redisClient.on('error', (err: Error) => {
       logger.error({ err }, 'Redis client error')
       metrics.increment('cache.redis.error')
     })

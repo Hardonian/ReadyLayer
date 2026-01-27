@@ -649,7 +649,7 @@ function getLLMService(): LLMService {
 
 // Export getter that lazily initializes
 export const llmService = new Proxy({} as LLMService, {
-  get(_target, prop: keyof LLMService) {
+  get(_target, prop: keyof LLMService): unknown {
     const service = getLLMService();
     return service[prop];
   },

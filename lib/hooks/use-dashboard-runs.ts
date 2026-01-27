@@ -48,12 +48,12 @@ export function useDashboardRuns({
         },
       })
 
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
+if (!response.ok) {
+        const error = await response.json().catch(() => ({})) as { error?: { message?: string } };
         throw new Error(error.error?.message || 'Failed to fetch runs')
       }
 
-      const result = await response.json()
+      const result = await response.json() as { data: unknown };
       return result.data as RunSnapshot
     },
     organizationId,

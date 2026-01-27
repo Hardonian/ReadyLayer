@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
  * Error Normalization Utility
  *
@@ -174,20 +174,20 @@ function extractErrorDetails(error: unknown): {
   // Standard Error
   if (error instanceof Error) {
     // Check for known error names/codes
-    const code = (error as any).code || error.name || 'INTERNAL_SERVER_ERROR';
-    const statusCode = ERROR_STATUS_CODES[code] || 500;
+const code = (error as { code?: string }).code || error.name || 'INTERNAL_SERVER_ERROR';
+    const statusCode = ERROR_STATUS_CODES[code as keyof typeof ERROR_STATUS_CODES] || 500;
 
     // Safe message (don't leak internal details in production)
     const message = process.env.NODE_ENV === 'production' && statusCode >= 500
       ? 'An internal error occurred. Please try again later.'
       : error.message;
 
-    return {
+return {
       code,
       message,
       statusCode,
       details: process.env.NODE_ENV !== 'production' ? { stack: error.stack } : undefined,
-    };
+    } as const;
   }
 
   // String error

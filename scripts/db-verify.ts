@@ -82,7 +82,7 @@ async function verifyDatabase(): Promise<VerificationResult> {
       encoding: 'utf-8',
       env: process.env,
     });
-    liveInventory = JSON.parse(liveOutput);
+    liveInventory = JSON.parse(liveOutput) as DatabaseInventory;
     result.info.push(`Found ${liveInventory.tables.length} tables in live database`);
   } catch (error) {
     result.critical.push(`Failed to inventory live database: ${error}`);
@@ -97,7 +97,7 @@ async function verifyDatabase(): Promise<VerificationResult> {
       encoding: 'utf-8',
       env: process.env,
     });
-    expectedContract = JSON.parse(expectedOutput);
+    expectedContract = JSON.parse(expectedOutput) as ExpectedContract;
     result.info.push(`Expected ${expectedContract.tables.length} tables`);
   } catch (error) {
     result.critical.push(`Failed to load expected contract: ${error}`);
