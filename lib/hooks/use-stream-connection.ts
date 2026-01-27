@@ -58,13 +58,13 @@ export function useStreamConnection({
         }
       })
 
-      eventSource.addEventListener('connected', (e) => {
-        const data = JSON.parse(e.data)
+eventSource.addEventListener('connected', (e) => {
+        const data = JSON.parse(e.data) as { timestamp: string };
         setLastEventTime(new Date(data.timestamp))
       })
 
       eventSource.addEventListener('heartbeat', (e) => {
-        const data = JSON.parse(e.data)
+        const data = JSON.parse(e.data) as { timestamp: string };
         setLastEventTime(new Date(data.timestamp))
       })
 

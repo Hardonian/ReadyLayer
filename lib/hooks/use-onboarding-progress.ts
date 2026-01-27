@@ -185,10 +185,10 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => voi
         return initialValue
       }
 
-      const item = window.localStorage.getItem(key)
-      return item ? JSON.parse(item) : initialValue
-    } catch (error) {
-      console.warn(`Error reading localStorage key "${key}":`, error)
+const item = window.localStorage.getItem(key)
+      return item ? JSON.parse(item) as T : initialValue
+    } catch {
+      console.warn(`Error reading localStorage key "${key}":`)
       return initialValue
     }
   })
@@ -196,13 +196,13 @@ function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => voi
   // Return a wrapped version of useState's setter function that persists to localStorage
   const setValue = (value: T) => {
     try {
-      const valueToStore = value instanceof Function ? value(storedValue) : value
+const valueToStore = value instanceof Function ? (value as (prev: T) => T)(storedValue) : value
       setStoredValue(valueToStore)
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(key, JSON.stringify(valueToStore))
       }
-    } catch (error) {
-      console.warn(`Error setting localStorage key "${key}":`, error)
+    } catch {
+      console.warn(`Error setting localStorage key "${key}":`)
     }
   }
 

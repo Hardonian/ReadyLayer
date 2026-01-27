@@ -177,7 +177,7 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
   }
 
   // Create Supabase client (may fail if env vars missing)
-  const { client: supabase } = createEdgeSupabaseClient(request)
+  const { client: supabase } = createEdgeSupabaseClient(request) as { client?: unknown };
 
   // For public routes, allow through even if Supabase fails
   // (This shouldn't happen due to early return above, but defensive)

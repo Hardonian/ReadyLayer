@@ -34,7 +34,7 @@ type SlackEventData = z.infer<typeof SlackEventDataSchema>;
  */
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json();
+    const payload = await request.json() as Record<string, unknown>;
     const parsed = SlackEventPayloadSchema.safeParse(payload);
     if (!parsed.success) {
       logger.warn({ issues: parsed.error.issues }, 'Invalid Slack event payload');

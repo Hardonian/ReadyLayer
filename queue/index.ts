@@ -51,7 +51,7 @@ export class QueueService {
 
     try {
       this.redis = createClient({ url: redisUrl });
-      this.redis.on('error', (err) => {
+      this.redis.on('error', (err: Error) => {
         logger.error({ err }, 'Redis error');
         this.isConnected = false;
       });
@@ -149,7 +149,7 @@ export class QueueService {
           continue;
         }
 
-        const jobData = JSON.parse(result.element);
+const jobData = JSON.parse(result.element) as { id: string };
         await this.processJob(jobData.id, handler);
       } catch (error) {
         logger.error(error, 'Queue processing error');

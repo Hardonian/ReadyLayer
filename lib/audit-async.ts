@@ -122,16 +122,7 @@ class RedisAuditQueue implements AuditQueue {
   }
 
   async dequeue(_batchSize: number): Promise<AuditEvent[]> {
-    try {
-      // Queue service handles dequeue via worker pattern
-      // This is a placeholder for explicit batch dequeue
-      return []
-    } catch (error) {
-      logger.error({
-        err: error instanceof Error ? error : new Error(String(error)),
-      }, 'Failed to dequeue audit logs')
-      return []
-    }
+    return []
   }
 }
 

@@ -73,10 +73,11 @@ export class GitLabWebhookHandler {
   /**
    * Validate webhook token (timing-attack resistant)
    */
-  validateToken(_payload: string, token: string, secret: string): boolean {
+validateToken(_payload: string, token: string, secret: string): boolean {
     // GitLab uses token-based validation
     // Use timing-safe comparison to prevent timing attacks
-    const { timingSafeEqual } = require('crypto');
+    const crypto = require('crypto') as { timingSafeEqual: (a: Buffer, b: Buffer) => boolean };
+    const timingSafeEqual = crypto.timingSafeEqual;
 
     // Ensure both strings are the same length before comparison
     if (token.length !== secret.length) {
