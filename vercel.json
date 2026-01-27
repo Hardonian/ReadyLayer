@@ -46,10 +46,5 @@
     "env": {
       "NEXT_TELEMETRY_DISABLED": "1"
     }
-  },
-  "ignoreCommands": [
-    "^pnpm",
-    "^yarn",
-    "^bun"
-  ]
+  }
 }
