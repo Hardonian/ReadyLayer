@@ -41,11 +41,20 @@
       "destination": "https://github.com/Hardonian/ReadyLayer",
       "permanent": false
     }
-  ],
+],
   "build": {
     "env": {
       "NEXT_TELEMETRY_DISABLED": "1"
     }
+  },
+  "redirects": [
+    {
+      "source": "/github",
+      "destination": "https://github.com/Hardonian/ReadyLayer",
+      "permanent": false
+    }
+  ]
+}
   }
 }
   },
