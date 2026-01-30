@@ -301,7 +301,9 @@ export const GET = createRouteHandler(
       }
     }
 
-    const [reviews, total] = await promiseAllWithTimeout([
+    const [reviews, total] = await promiseAllWithTimeout<
+      [Awaited<ReturnType<typeof prisma.review.findMany>>, number]
+    >([
       prisma.review.findMany({
         where,
         take: limit,
@@ -319,7 +321,7 @@ export const GET = createRouteHandler(
         },
       }),
       prisma.review.count({ where }),
-    ], 10000, 'reviews list query');
+    ] as const, 10000, 'reviews list query');
 
     // P3-FIX: Filter response fields based on select parameter
     const filteredReviews = reviews.map((r) => {

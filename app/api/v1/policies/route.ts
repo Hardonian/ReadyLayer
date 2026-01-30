@@ -190,7 +190,9 @@ export const GET = createRouteHandler(
       where.repositoryId = repositoryId === null ? null : undefined;
     }
 
-    const [policies, total] = await promiseAllWithTimeout([
+    const [policies, total] = await promiseAllWithTimeout<
+      [Awaited<ReturnType<typeof prisma.policyPack.findMany>>, number]
+    >([
       prisma.policyPack.findMany({
         where,
         take: limit,
@@ -201,7 +203,7 @@ export const GET = createRouteHandler(
         orderBy: { createdAt: 'desc' },
       }),
       prisma.policyPack.count({ where }),
-    ], 10000, 'policies list query');
+    ] as const, 10000, 'policies list query');
 
     return NextResponse.json({
       policies: policies.map((policy) => ({

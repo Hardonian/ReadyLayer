@@ -63,16 +63,16 @@ export async function withTimeout<T>(
  * @param operation - Operation name for error messages
  * @returns Array of results
  */
-export async function promiseAllWithTimeout<T>(
-  promises: Promise<T>[],
+export async function promiseAllWithTimeout<T extends readonly unknown[] | []>(
+  promises: readonly [...{ [K in keyof T]: Promise<T[K]> }],
   timeoutMs: number = DEFAULT_QUERY_TIMEOUT_MS,
   operation: string = 'batch query'
-): Promise<T[]> {
+): Promise<T> {
   return Promise.all(
     promises.map((promise, index) =>
-      withTimeout(promise, timeoutMs, `${operation}[${index}]`)
+      withTimeout(promise as Promise<T[number]>, timeoutMs, `${operation}[${index}]`)
     )
-  );
+  ) as Promise<T>;
 }
 
 /**

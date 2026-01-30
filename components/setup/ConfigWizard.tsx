@@ -50,7 +50,7 @@ export function ConfigWizard() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: { message: 'Setup failed' } }));
+        const errorData = await response.json().catch(() => ({ error: { message: 'Setup failed' } })) as { error?: { message?: string } };
         throw new Error(errorData.error?.message || `Setup failed with status ${response.status}`);
       }
 
