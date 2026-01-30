@@ -97,7 +97,8 @@ validateToken(_payload: string, token: string, secret: string): boolean {
   async handleEvent(
     event: GitLabWebhookEvent,
     installationId: string,
-    token: string
+    token: string,
+    rawPayload: string
   ): Promise<void> {
     // Get installation
     const installation = await prisma.installation.findUnique({
@@ -114,8 +115,9 @@ validateToken(_payload: string, token: string, secret: string): boolean {
     }
 
     // Validate token
-    const payload = JSON.stringify(event);
-    if (!this.validateToken(payload, token, installation.webhookSecret)) {
+    // NOTE: GitLab uses token-based validation (X-Gitlab-Token), not payload HMAC
+    // The rawPayload parameter is accepted for API consistency but not used for validation
+    if (!this.validateToken(rawPayload, token, installation.webhookSecret)) {
       throw new Error('Invalid webhook token');
     }
 

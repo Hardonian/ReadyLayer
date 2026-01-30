@@ -83,8 +83,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       eventKey: typeof event === 'object' && event !== null && 'eventKey' in event ? String((event as { eventKey?: string }).eventKey) : undefined,
     }, 'Received Bitbucket webhook');
 
-    // Handle event
-    await bitbucketWebhookHandler.handleEvent(event as BitbucketWebhookEvent, installationId, signature);
+    // Handle event (pass raw payload for signature verification)
+    await bitbucketWebhookHandler.handleEvent(event as BitbucketWebhookEvent, installationId, signature, payload);
 
     metrics.increment('webhooks.received', { provider: 'bitbucket', event: eventType });
 
@@ -93,11 +93,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     log.error(error, 'Webhook handling failed');
     metrics.increment('webhooks.failed', { provider: 'bitbucket' });
 
+    // Sanitize error message to prevent information disclosure
+    // Internal details are logged but not exposed to caller
     return NextResponse.json(
       {
         error: {
           code: 'WEBHOOK_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
+          message: 'Webhook processing failed. Please check webhook configuration and try again.',
         },
       },
       { status: 500 }

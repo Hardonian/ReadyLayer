@@ -226,14 +226,10 @@ Return a JSON array with objects containing: ruleId, title, severity (critical/h
  */
 function parseLLMResponse(response: string, filePath: string): ReviewIssue[] {
   try {
-    // Attempt to extract JSON from response
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      logger.warn({ filePath }, 'No JSON found in LLM response');
-      return [];
-    }
+    // Use safe JSON parsing utility to extract and parse JSON from LLM response
+    const { extractAndParseJson } = require('@/lib/safe-json') as { extractAndParseJson: <T>(text: string, fallback: T) => T };
+    const parsed: unknown = extractAndParseJson<unknown[]>(response, []);
 
-    const parsed: unknown = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(parsed)) {
       logger.warn({ filePath }, 'LLM response is not an array');
       return [];
