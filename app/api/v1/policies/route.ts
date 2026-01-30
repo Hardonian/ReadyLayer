@@ -212,7 +212,7 @@ export const GET = createRouteHandler(
         repositoryId: policy.repositoryId,
         version: policy.version,
         checksum: policy.checksum,
-        rules: policy.rules,
+        rules: policy.rules as unknown,
         createdAt: policy.createdAt,
         updatedAt: policy.updatedAt,
       })),
