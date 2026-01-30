@@ -9,6 +9,7 @@ import { createHash, randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/observability/logging';
 import { requireAuth } from '@/lib/auth';
+import { validateReturnUrl } from '@/lib/redirect-validation';
 
 const GITLAB_CLIENT_ID = process.env.GITLAB_CLIENT_ID;
 const GITLAB_URL = process.env.GITLAB_URL || 'https://gitlab.com';
@@ -57,6 +58,13 @@ export async function GET(req: NextRequest) {
     const state = randomBytes(32).toString('hex');
     const stateHash = createHash('sha256').update(state).digest('hex');
 
+    // Validate and sanitize return URL to prevent open redirect vulnerabilities
+    const returnUrl = validateReturnUrl(
+      req.nextUrl.searchParams.get('returnUrl'),
+      ['/dashboard'],
+      '/dashboard/repos'
+    );
+
     // Store state with user/org context (expires in 10 minutes)
     await prisma.oAuthState.create({
       data: {
@@ -64,7 +72,7 @@ export async function GET(req: NextRequest) {
         userId,
         organizationId,
         provider: 'gitlab',
-        returnUrl: req.nextUrl.searchParams.get('returnUrl') || '/dashboard/repos',
+        returnUrl,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       },
     });

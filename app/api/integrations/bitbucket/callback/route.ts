@@ -9,6 +9,7 @@ import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/observability/logging';
 import { createInstallationWithEncryptedToken } from '@/lib/secrets/installation-helpers';
+import { validateReturnUrl } from '@/lib/redirect-validation';
 
 const BITBUCKET_CLIENT_ID = process.env.BITBUCKET_CLIENT_ID;
 const BITBUCKET_CLIENT_SECRET = process.env.BITBUCKET_CLIENT_SECRET;
@@ -156,8 +157,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       'Bitbucket integration completed'
     );
 
-    // Redirect to success page
-    const returnUrl = oauthState.returnUrl || '/dashboard/repos';
+    // Redirect to success page (validate returnUrl for defense in depth)
+    const returnUrl = validateReturnUrl(
+      oauthState.returnUrl,
+      ['/dashboard'],
+      '/dashboard/repos'
+    );
     const successUrl = new URL(returnUrl, req.url);
     successUrl.searchParams.set('installation', 'success');
     successUrl.searchParams.set('provider', 'bitbucket');
