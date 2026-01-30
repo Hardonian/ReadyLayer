@@ -100,7 +100,8 @@ export class BitbucketWebhookHandler {
   async handleEvent(
     event: BitbucketWebhookEvent,
     installationId: string,
-    signature: string
+    signature: string,
+    rawPayload: string
   ): Promise<void> {
     // Get installation
     const installation = await prisma.installation.findUnique({
@@ -116,9 +117,9 @@ export class BitbucketWebhookHandler {
       throw new Error('Installation not found or webhook secret not configured');
     }
 
-    // Validate signature
-    const payload = JSON.stringify(event);
-    if (!this.validateSignature(payload, signature, installation.webhookSecret)) {
+    // Validate signature using raw payload (not re-stringified)
+    // CRITICAL: Must use the original raw payload that Bitbucket signed, not JSON.stringify(event)
+    if (!this.validateSignature(rawPayload, signature, installation.webhookSecret)) {
       throw new Error('Invalid webhook signature');
     }
 

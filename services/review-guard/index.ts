@@ -628,11 +628,13 @@ export class ReviewGuardService {
 
     try {
       const response = await llmService.complete(llmRequest);
-      
+
       // Track token usage for anomaly detection
       await this.recordTokenUsage(response, llmRequest.prompt, repositoryId, organizationId, 'review');
 
-      const issues = JSON.parse(response.content) as Issue[];
+      // Safe parse LLM response (may be malformed JSON)
+      const { extractAndParseJson } = await import('@/lib/safe-json');
+      const issues = extractAndParseJson<Issue[]>(response.content, []);
 
       // Validate AI output
       return issues.filter((issue) => {

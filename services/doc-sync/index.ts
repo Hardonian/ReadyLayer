@@ -654,7 +654,9 @@ Return the enhanced OpenAPI spec as JSON.`;
 
       try {
         const response = await llmService.complete(llmRequest);
-        spec = JSON.parse(response.content) as OpenApiSpec;
+        // Safe parse LLM response (may be malformed JSON)
+        const { extractAndParseJson } = await import('@/lib/safe-json');
+        spec = extractAndParseJson<OpenApiSpec>(response.content, spec);
       } catch {
         // LLM enhancement failed, use basic spec
         // Error is handled gracefully, basic spec is used
@@ -687,8 +689,16 @@ Return the enhanced OpenAPI spec as JSON.`;
   private async validateDocs(content: string, format: string): Promise<void> {
     if (format === 'openapi') {
       try {
-        const spec = JSON.parse(content) as OpenApiSpec;
-        if (!spec.openapi || !spec.info || !spec.paths) {
+        // Safe parse to prevent hard 500 on malformed JSON
+        const { safeJsonParseResult } = await import('@/lib/safe-json');
+        const result = safeJsonParseResult<OpenApiSpec>(content);
+
+        if (!result.success) {
+          throw new Error(`Invalid JSON: ${result.error?.message || 'Unknown error'}`);
+        }
+
+        const spec = result.data;
+        if (!spec || !spec.openapi || !spec.info || !spec.paths) {
           throw new Error('Invalid OpenAPI spec: missing required fields');
         }
       } catch (error) {

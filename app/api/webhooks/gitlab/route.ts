@@ -99,8 +99,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       objectKind: eventData.object_kind,
     }, 'Received GitLab webhook');
 
-    // Handle event
-    await gitlabWebhookHandler.handleEvent(eventData, installationId, token);
+    // Handle event (pass raw payload for API consistency)
+    await gitlabWebhookHandler.handleEvent(eventData, installationId, token, payload);
 
     metrics.increment('webhooks.received', { provider: 'gitlab', event: eventType });
 
@@ -109,11 +109,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     log.error(error, 'Webhook handling failed');
     metrics.increment('webhooks.failed', { provider: 'gitlab' });
 
+    // Sanitize error message to prevent information disclosure
+    // Internal details are logged but not exposed to caller
     return NextResponse.json(
       {
         error: {
           code: 'WEBHOOK_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
+          message: 'Webhook processing failed. Please check webhook configuration and try again.',
         },
       },
       { status: 500 }

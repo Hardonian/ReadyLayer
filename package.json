@@ -40,6 +40,8 @@
     "doctor": "tsx scripts/doctor.ts",
     "clean": "rm -rf .next node_modules/.cache dist",
     "verify": "npm run lint && npm run type-check && npm test",
+    "verify:fast": "npm run lint && npm run type-check",
+    "verify:full": "npm run lint && npm run type-check && npm test && npm run build",
     "readylayer:run": "node scripts/readylayer-runner.mjs",
     "readylayer:policy": "node scripts/readylayer-policy.mjs",
     "readylayer:sarif": "node scripts/readylayer-sarif.mjs"

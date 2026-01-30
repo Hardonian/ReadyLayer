@@ -81,7 +81,8 @@ export class GitHubWebhookHandler {
   async handleEvent(
     event: GitHubWebhookEvent,
     installationId: string,
-    signature: string
+    signature: string,
+    rawPayload: string
   ): Promise<void> {
     // Get installation (P2-FIX: Include updatedAt for optimistic locking)
     const installation = await prisma.installation.findUnique({
@@ -104,9 +105,9 @@ export class GitHubWebhookHandler {
       throw new Error('Installation not found or webhook secret not configured');
     }
 
-    // Validate signature
-    const payload = JSON.stringify(event);
-    if (!this.validateSignature(payload, signature, installation.webhookSecret)) {
+    // Validate signature using raw payload (not re-stringified)
+    // CRITICAL: Must use the original raw payload that GitHub signed, not JSON.stringify(event)
+    if (!this.validateSignature(rawPayload, signature, installation.webhookSecret)) {
       throw new Error('Invalid webhook signature');
     }
 

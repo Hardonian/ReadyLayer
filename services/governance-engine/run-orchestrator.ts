@@ -280,8 +280,10 @@ Focus on:
    */
   private parseGovernanceFindings(content: string): Finding[] {
     try {
-      // Try to parse JSON response
-      const parsed: unknown = JSON.parse(content);
+      // Safe parse LLM response (may be malformed JSON)
+      const { extractAndParseJson } = require('@/lib/safe-json') as { extractAndParseJson: <T>(text: string, fallback: T) => T };
+      const parsed: unknown = extractAndParseJson<Record<string, unknown>>(content, {});
+
       if (parsed && typeof parsed === 'object' && 'findings' in parsed) {
         const rawFindings = (parsed as { findings?: unknown }).findings;
         if (Array.isArray(rawFindings)) {

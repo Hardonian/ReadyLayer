@@ -120,8 +120,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       action: eventData.action,
     }, 'Received GitHub webhook');
 
-    // Handle event
-    await githubWebhookHandler.handleEvent(eventData, installationId, signature);
+    // Handle event (pass raw payload for signature verification)
+    await githubWebhookHandler.handleEvent(eventData, installationId, signature, payload);
 
     metrics.increment('webhooks.received', { provider: 'github', event: eventType });
 
@@ -147,11 +147,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Sanitize error message to prevent information disclosure
+    // Internal details are logged but not exposed to caller
     return NextResponse.json(
       {
         error: {
           code: 'WEBHOOK_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
+          message: 'Webhook processing failed. Please check webhook configuration and try again.',
         },
       },
       { status: 500 }

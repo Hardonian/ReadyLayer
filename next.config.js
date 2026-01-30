@@ -92,6 +92,23 @@ const nextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains',
           },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Next.js requires unsafe-inline for hydration
+              "style-src 'self' 'unsafe-inline'", // Required for CSS-in-JS and Tailwind
+              "img-src 'self' data: https: blob:", // Allow images from CDNs and data URIs
+              "font-src 'self' data:", // Allow fonts
+              "connect-src 'self' https://*.supabase.co https://api.stripe.com", // Allow Supabase and Stripe API calls
+              "frame-src 'self' https://js.stripe.com", // Allow Stripe checkout frames
+              "object-src 'none'", // Block plugins
+              "base-uri 'self'", // Restrict base tag
+              "form-action 'self'", // Restrict form submissions
+              "frame-ancestors 'none'", // Same as X-Frame-Options DENY
+              "upgrade-insecure-requests", // Upgrade HTTP to HTTPS
+            ].join('; '),
+          },
         ],
       },
     ];

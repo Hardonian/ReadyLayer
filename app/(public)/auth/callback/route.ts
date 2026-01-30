@@ -5,11 +5,37 @@ import { logger } from '@/observability/logging'
 // Force dynamic rendering - this route uses request.url
 export const dynamic = 'force-dynamic'
 
+/**
+ * Validates a redirect path to prevent open redirect vulnerabilities.
+ * Only allows relative paths that start with `/` and do not contain protocol-relative URLs.
+ */
+function isValidRedirectPath(path: string): boolean {
+  // Must start with `/` (relative path)
+  if (!path.startsWith('/')) {
+    return false
+  }
+
+  // Must not start with `//` (protocol-relative URL)
+  if (path.startsWith('//')) {
+    return false
+  }
+
+  // Must not contain common protocol prefixes (defense in depth)
+  if (/^\/[a-z][a-z0-9+.-]*:/i.test(path)) {
+    return false
+  }
+
+  return true
+}
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const requestUrl = new URL(request.url)
     const code = requestUrl.searchParams.get('code')
-    const redirect = requestUrl.searchParams.get('redirect') || '/'
+    const redirectParam = requestUrl.searchParams.get('redirect') || '/'
+
+    // Validate redirect path to prevent open redirect attacks
+    const redirect = isValidRedirectPath(redirectParam) ? redirectParam : '/'
 
     const response = NextResponse.next()
 
