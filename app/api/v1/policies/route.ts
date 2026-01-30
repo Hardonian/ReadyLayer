@@ -190,9 +190,7 @@ export const GET = createRouteHandler(
       where.repositoryId = repositoryId === null ? null : undefined;
     }
 
-    const [policies, total] = await promiseAllWithTimeout<
-      [Awaited<ReturnType<typeof prisma.policyPack.findMany>>, number]
-    >([
+    const [policies, total] = await promiseAllWithTimeout([
       prisma.policyPack.findMany({
         where,
         take: limit,
@@ -212,7 +210,7 @@ export const GET = createRouteHandler(
         repositoryId: policy.repositoryId,
         version: policy.version,
         checksum: policy.checksum,
-        rules: policy.rules as unknown,
+        rules: policy.rules,
         createdAt: policy.createdAt,
         updatedAt: policy.updatedAt,
       })),

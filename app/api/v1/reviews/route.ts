@@ -301,9 +301,7 @@ export const GET = createRouteHandler(
       }
     }
 
-    const [reviews, total] = await promiseAllWithTimeout<
-      [Awaited<ReturnType<typeof prisma.review.findMany>>, number]
-    >([
+    const [reviews, total] = await promiseAllWithTimeout([
       prisma.review.findMany({
         where,
         take: limit,
