@@ -18,6 +18,7 @@ import {
   parsePagination,
   RouteContext,
 } from '../../../../lib/api-route-helpers';
+import { promiseAllWithTimeout } from '../../../../lib/db-timeout';
 
 const createPolicyPackSchema = z.object({
   organizationId: z.string(),
@@ -189,7 +190,7 @@ export const GET = createRouteHandler(
       where.repositoryId = repositoryId === null ? null : undefined;
     }
 
-    const [policies, total] = await Promise.all([
+    const [policies, total] = await promiseAllWithTimeout([
       prisma.policyPack.findMany({
         where,
         take: limit,
@@ -200,7 +201,7 @@ export const GET = createRouteHandler(
         orderBy: { createdAt: 'desc' },
       }),
       prisma.policyPack.count({ where }),
-    ]);
+    ] as const, 10000, 'policies list query');
 
     return NextResponse.json({
       policies: policies.map((policy) => ({

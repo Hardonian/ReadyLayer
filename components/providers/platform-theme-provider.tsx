@@ -42,10 +42,11 @@ if (response.ok) {
             setTheme(getPlatformTheme(repoProvider))
           }
         }
-      } catch {
-        // Fallback to default
-        setProvider('github')
-        setTheme(getPlatformTheme('github'))
+      } catch (error) {
+        // Fallback to default theme on error
+        console.warn('Failed to fetch platform theme from API, using default:', error instanceof Error ? error.message : String(error));
+        setProvider('github');
+        setTheme(getPlatformTheme('github'));
       }
     }
 
