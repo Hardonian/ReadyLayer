@@ -82,6 +82,7 @@ interface ConnectionState {
   queue: EventQueue
   lastHeartbeat: number
   closed: boolean
+  isPolling: boolean // Polling lock to prevent concurrent queries
 }
 
 const connections = new Map<string, ConnectionState>()
@@ -163,6 +164,7 @@ export async function GET(request: NextRequest) {
       queue: new EventQueue(),
       lastHeartbeat: Date.now(),
       closed: false,
+      isPolling: false,
     }
     connections.set(connectionId, connection)
 
@@ -217,6 +219,13 @@ export async function GET(request: NextRequest) {
             return
           }
 
+          // Skip poll if previous poll is still running
+          if (connection.isPolling) {
+            log.warn('Skipping poll - previous poll still in progress', { connectionId });
+            return
+          }
+
+          connection.isPolling = true
           try {
             // Check for new runs
             const recentRuns = await prisma.readyLayerRun.findMany({
@@ -328,6 +337,8 @@ export async function GET(request: NextRequest) {
             }
           } catch (error) {
             log.error(error, 'Failed to poll for changes')
+          } finally {
+            connection.isPolling = false
           }
         }, 5000) // Poll every 5 seconds
 

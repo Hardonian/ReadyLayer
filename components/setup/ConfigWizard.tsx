@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Settings, 
-  Database, 
-  GitBranch, 
-  Shield, 
+import {
+  Settings,
+  Database,
+  GitBranch,
+  Shield,
   CheckCircle,
   ChevronRight,
-  Zap
+  Zap,
+  AlertCircle
 } from 'lucide-react';
 
 export function ConfigWizard() {
@@ -23,6 +24,8 @@ export function ConfigWizard() {
     policies: true,
     notifications: false
   });
+  const [isCompleting, setIsCompleting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const steps = [
     { id: 1, title: 'Database', icon: Database, description: 'Choose your data store' },
@@ -35,18 +38,30 @@ export function ConfigWizard() {
   const prevStep = () => setStep(Math.max(step - 1, 1));
 
   const completeSetup = async () => {
+    setIsCompleting(true);
+    setError(null);
+
     try {
       const response = await fetch('/api/v1/setup/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify(config),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       });
-      
-      if (response.ok) {
-        window.location.href = '/dashboard';
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: { message: 'Setup failed' } }));
+        throw new Error(errorData.error?.message || `Setup failed with status ${response.status}`);
       }
+
+      // Success - redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred during setup';
+      setError(errorMessage);
       console.error('Setup failed:', error);
+    } finally {
+      setIsCompleting(false);
     }
   };
 
@@ -343,18 +358,39 @@ export function ConfigWizard() {
             </div>
             
             {step < steps.length ? (
-              <Button onClick={nextStep} className="font-mono">
+              <Button onClick={nextStep} className="font-mono" disabled={isCompleting}>
                 Next Step
                 <ChevronRight className="h-4 w-4 ml-2" />
               </Button>
             ) : (
-              <Button onClick={completeSetup} className="font-mono">
+              <Button onClick={completeSetup} className="font-mono" disabled={isCompleting}>
                 <Zap className="h-4 w-4 mr-2" />
-                Complete Setup
+                {isCompleting ? 'Completing...' : 'Complete Setup'}
               </Button>
             )}
           </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 rounded-lg bg-destructive/10 border border-destructive/20 p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-display font-semibold text-destructive mb-1">Setup Failed</h3>
+                <p className="text-sm text-destructive/90">{error}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setError(null)}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Step Content */}
         <div className="mb-6">
