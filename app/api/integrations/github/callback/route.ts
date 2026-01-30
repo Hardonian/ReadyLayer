@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/observability/logging';
 import { createInstallationWithEncryptedToken } from '@/lib/secrets/installation-helpers';
 import { toJsonValue } from '@/lib/prisma-json';
+import { validateReturnUrl } from '@/lib/redirect-validation';
 
 const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
 const GITHUB_APP_PRIVATE_KEY = process.env.GITHUB_APP_PRIVATE_KEY;
@@ -144,8 +145,12 @@ const { App } = await import('@octokit/app');
       'GitHub App installation completed'
     );
 
-    // Redirect to success page
-    const returnUrl = oauthState.returnUrl || '/dashboard/repos';
+    // Redirect to success page (validate returnUrl for defense in depth)
+    const returnUrl = validateReturnUrl(
+      oauthState.returnUrl,
+      ['/dashboard'],
+      '/dashboard/repos'
+    );
     const successUrl = new URL(returnUrl, req.url);
     successUrl.searchParams.set('installation', 'success');
     successUrl.searchParams.set('provider', 'github');
