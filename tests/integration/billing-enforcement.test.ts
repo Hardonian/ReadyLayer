@@ -1,6 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { usageEnforcementService, LimitType } from '../../lib/usage-enforcement';
 import { billingService, BILLING_TIERS } from '../../billing';
+
+// Mock prisma module
+vi.mock('../../lib/prisma', () => ({
+  prisma: {
+    organization: {
+      findUnique: vi.fn().mockResolvedValue({ timezone: 'UTC' }),
+    },
+    costTracking: {
+      aggregate: vi.fn(),
+    },
+  },
+}));
+
+// Import mocked prisma
 import { prisma } from '../../lib/prisma';
 
 describe('Billing Enforcement Integration', () => {
@@ -8,9 +22,7 @@ describe('Billing Enforcement Integration', () => {
 
   beforeEach(() => {
     vi.spyOn(billingService, 'getOrganizationTier').mockResolvedValue(BILLING_TIERS.starter);
-    vi.spyOn(prisma.organization, 'findUnique').mockResolvedValue(
-      { timezone: 'UTC' } as unknown as { timezone: string | null }
-    );
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -19,12 +31,20 @@ describe('Billing Enforcement Integration', () => {
 
   it('blocks when daily LLM token limit exceeded', async () => {
     vi.spyOn(prisma.costTracking, 'aggregate')
-      .mockResolvedValueOnce({ _sum: { units: BILLING_TIERS.starter.limits.llmTokensPerDay } } as unknown as {
-        _sum: { units: number | null };
-      })
-      .mockResolvedValueOnce({ _sum: { units: 0 } } as unknown as {
-        _sum: { units: number | null };
-      });
+      .mockResolvedValueOnce({ 
+        _sum: { units: BILLING_TIERS.starter.limits.llmTokensPerDay },
+        _count: undefined,
+        _avg: undefined,
+        _min: undefined,
+        _max: undefined,
+      } as unknown as never)
+      .mockResolvedValueOnce({ 
+        _sum: { units: 0 },
+        _count: undefined,
+        _avg: undefined,
+        _min: undefined,
+        _max: undefined,
+      } as unknown as never);
 
     const result = await usageEnforcementService.checkLLMTokenLimit(organizationId, 1);
 

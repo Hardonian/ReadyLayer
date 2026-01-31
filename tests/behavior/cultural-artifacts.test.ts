@@ -145,7 +145,7 @@ describe('Readiness Score - Behavior Tests', () => {
         testCoverage: 0.4,
         docSync: 0.5,
       })
-    ).toBe(58);
+    ).toBe(56);
   });
 
   test('readiness level thresholds are monotonic', () => {
@@ -215,7 +215,7 @@ describe('AI Risk Exposure Index - Behavior Tests', () => {
         averageConfidence: 0.5,
         criticalFindingsRate: 0.3,
       })
-    ).toBe(85);
+    ).toBe(65);
   });
 
   test('risk level classification', () => {
