@@ -64,6 +64,7 @@ model Organization {
   providerConfigs ProviderConfig[]
   governanceRuns GovernanceRun[]
   oauthStates    OAuthState[]
+  jobs          Job[]
 
   @@index([slug])
 }
@@ -362,6 +363,7 @@ model ReadyLayerRun {
   review       Review?   @relation(fields: [reviewId], references: [id], onDelete: SetNull)
   
   auditLogs    AuditLog[]
+  jobs         Job[]
 
   @@index([correlationId])
   @@index([repositoryId])
@@ -373,32 +375,51 @@ model ReadyLayerRun {
 
 // Queue Jobs (Redis-backed, but also persisted for durability)
 model Job {
-  id          String    @id @default(cuid())
-  type        String // review, test_generation, doc_sync, webhook, run
-  status      String    @default("pending") // pending, processing, completed, failed, retrying
-  payload     Json // Job payload
-  result      Json? // Job result
-  error       String?   @db.Text
-  retryCount  Int       @default(0)
-  maxRetries  Int       @default(3)
-  scheduledAt DateTime  @default(now())
-  startedAt   DateTime?
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  type           String // review, test_generation, doc_sync, webhook, run
+  status         String    @default("queued") // queued, running, succeeded, failed, dead, canceled
+  payload        Json // Job payload
+  result         Json? // Job result
+  error          String?   @db.Text
+  retryCount     Int       @default(0)
+  maxRetries     Int       @default(3)
+  scheduledAt    DateTime  @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  repositoryId String?
-  userId       String?
-  runId        String?   // Link to ReadyLayerRun if this job is part of a run
+  // Tenant isolation
+  organizationId String?
 
-  repository Repository? @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
-  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Worker claiming
+  lockedAt       DateTime?
+  lockedBy       String?
+
+  // Idempotency
+  idempotencyKey String?
+
+  // Relations
+  repositoryId   String?
+  userId         String?
+  runId          String? // Link to ReadyLayerRun if this job is part of a run
+
+  repository     Repository?    @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  run            ReadyLayerRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
 
   @@index([type])
   @@index([status])
   @@index([scheduledAt])
   @@index([repositoryId])
   @@index([runId])
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([status, scheduledAt])
+  @@index([lockedBy])
+  @@index([idempotencyKey])
+  @@unique([organizationId, type, idempotencyKey])
 }
 
 // Historical Violation Tracking (for pattern detection)
