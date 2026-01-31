@@ -1123,3 +1123,43 @@ model AIRiskExposureIndex {
   @@index([riskLevel])
   @@index([createdAt])
 }
+model TrustVerification {
+  id                   String   @id @default(cuid())
+  organizationId       String
+  entityType           String   // model, prediction, alert, insight
+  entityId             String   // Reference to the entity being verified
+  
+  // Trust scores (P0: Multi-dimensional trust assessment)
+  overallTrustScore    Decimal  @db.Decimal(5, 4) // 0-1 composite score
+  accuracyTrust        Decimal  @db.Decimal(5, 4) // 0-1 historical accuracy
+  consistencyTrust     Decimal  @db.Decimal(5, 4) // 0-1 prediction consistency
+  transparencyTrust    Decimal  @db.Decimal(5, 4) // 0-1 explainability score
+  fairnessTrust        Decimal  @db.Decimal(5, 4) // 0-1 bias detection score
+  
+  // Verification metadata
+  verificationMethod   String   // automated, manual, hybrid
+  verificationStatus   String   @default("pending") // pending, verified, failed, revoked
+  verifiedBy           String?  // User ID or system identifier
+  verifiedAt           DateTime?
+  
+  // Evidence and rationale
+  evidenceHash         String?  // SHA256 of supporting evidence
+  rationale            String?  @db.Text // Human-readable explanation
+  confidenceInterval   Json?    // { lower: 0.95, upper: 0.99 }
+  
+  // Audit trail
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  expiresAt            DateTime? // Trust expiration for periodic re-verification
+  
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@unique([organizationId, entityType, entityId])
+  @@index([organizationId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([verificationStatus])
+  @@index([overallTrustScore])
+  @@index([expiresAt])
+  @@index([createdAt])
+}
