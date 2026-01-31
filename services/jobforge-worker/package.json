@@ -1,0 +1,30 @@
+{
+  "name": "@jobforge/worker-ts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript worker for JobForge",
+  "main": "./dist/index.js",
+  "bin": {
+    "jobforge-worker": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jobforge/sdk-ts": "workspace:*",
+    "@jobforge/shared": "workspace:*",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@jobforge/typescript-config": "workspace:*",
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

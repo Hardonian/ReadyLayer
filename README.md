@@ -448,6 +448,55 @@ See [Long-Term Governance](./docs/LONG_TERM_GOVERNANCE.md) for full commitments 
 
 ---
 
+## Background Job Processing (JobForge)
+
+ReadyLayer includes **JobForge**, a Postgres-native job queue for reliable background processing. JobForge handles async operations like webhook delivery, report generation, and HTTP requests with:
+
+- **Multi-tenant isolation** via Row Level Security (RLS)
+- **Automatic retries** with exponential backoff
+- **Idempotency** to prevent duplicate processing
+- **Concurrency-safe** job claiming (`FOR UPDATE SKIP LOCKED`)
+- **Built-in connectors** for HTTP requests, webhooks, and reports
+
+### Quick Start
+
+```bash
+# Apply JobForge migration
+npm run db:jobforge:migrate
+
+# Run worker
+npm run jobforge:worker
+
+# Enqueue a test job
+npm run jobforge:smoke
+```
+
+### Usage Example
+
+```typescript
+import { enqueueJob } from '@/lib/jobforge/enqueue'
+
+// Enqueue webhook delivery
+await enqueueJob({
+  tenant_id: organizationId,
+  type: 'connector.webhook.deliver',
+  payload: {
+    target_url: 'https://customer.com/webhook',
+    event_type: 'evaluation.completed',
+    data: { evalId: '123', result: 'pass' },
+  },
+  idempotency_key: `webhook-${organizationId}-${evalId}`,
+})
+```
+
+See [docs/jobforge.md](./docs/jobforge.md) for full documentation, including:
+- Built-in connectors (HTTP, webhooks, reports)
+- Job monitoring and dead letter queue handling
+- Worker scaling and operations
+- Security (SSRF protection, webhook signing)
+
+---
+
 ## Development
 
 ### Quick Start

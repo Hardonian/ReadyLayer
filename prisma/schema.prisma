@@ -65,6 +65,7 @@ model Organization {
   governanceRuns GovernanceRun[]
   oauthStates    OAuthState[]
   jobs          Job[]
+  trustVerifications TrustVerification[]
 
   @@index([slug])
 }
