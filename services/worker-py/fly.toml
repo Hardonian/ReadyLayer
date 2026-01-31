@@ -1,0 +1,62 @@
+# Fly.io deployment configuration
+# Usage: fly launch --config fly.toml
+
+app = "readylayer-worker-py"
+primary_region = "iad"  # Change to your preferred region
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  WORKER_ID = "fly-worker-01"
+  POLL_INTERVAL_SECONDS = "5"
+  MAX_CONCURRENT_JOBS = "5"
+  JOB_TIMEOUT_SECONDS = "300"
+  MAX_RETRIES = "3"
+  LOG_LEVEL = "INFO"
+  LOG_FORMAT = "json"
+  HEARTBEAT_INTERVAL_SECONDS = "30"
+  HEALTH_CHECK_PORT = "8080"
+  ENABLE_DEAD_LETTER_QUEUE = "true"
+
+# Database URL should be set as a secret:
+# fly secrets set DATABASE_URL="postgresql://..."
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 8080
+    handlers = ["http"]
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "10s"
+    method = "get"
+    path = "/health"
+    protocol = "http"
+
+[metrics]
+  port = 8080
+  path = "/metrics"
+
+# Optional: Add a persistent volume for local caching
+# [[mounts]]
+#   source = "worker_cache"
+#   destination = "/app/cache"
+
+# Resource constraints
+[vm]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+# Scale to zero when idle (optional, for cost savings)
+# [experimental]
+#   auto_stop_machines = true
+#   auto_start_machines = true

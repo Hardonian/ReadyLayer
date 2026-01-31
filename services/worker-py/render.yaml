@@ -1,0 +1,50 @@
+# Render.com deployment configuration
+# Use with: render blueprint apply render.yaml
+
+services:
+  - type: worker
+    name: readylayer-worker-py
+    runtime: docker
+    repo: https://github.com/yourusername/readylayer
+    rootDir: services/worker-py
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: WORKER_ID
+        value: render-worker-01
+      - key: POLL_INTERVAL_SECONDS
+        value: "5"
+      - key: MAX_CONCURRENT_JOBS
+        value: "5"
+      - key: JOB_TIMEOUT_SECONDS
+        value: "300"
+      - key: MAX_RETRIES
+        value: "3"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_FORMAT
+        value: json
+      - key: HEARTBEAT_INTERVAL_SECONDS
+        value: "30"
+      - key: HEALTH_CHECK_PORT
+        value: "8080"
+      - key: ENABLE_DEAD_LETTER_QUEUE
+        value: "true"
+    healthCheckPath: /health
+    healthCheckPort: 8080
+    # Auto-deploy on push to main branch
+    autoDeploy: true
+    # Plan: starter ($7/mo) or standard ($25/mo)
+    plan: standard
+    # Scaling: uncomment for multiple workers
+    # numInstances: 2
+    # Scaling limits
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+    # Secret files (optional - for service account keys)
+    # secretFiles:
+    #   - filename: service-account.json
+    #     sync: false

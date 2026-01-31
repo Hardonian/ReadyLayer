@@ -14,7 +14,7 @@ import { logger } from '@/observability/logging';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = `job_req_${Date.now()}`;
   const log = logger.child({ requestId });
@@ -29,7 +29,7 @@ export async function GET(
       );
     }
 
-    const { id: jobId } = params;
+    const { id: jobId } = await params;
 
     log.info({ jobId, userId: user.id }, 'Fetching job status');
 
@@ -80,7 +80,7 @@ export async function GET(
     });
 
   } catch (error) {
-    log.error({ error, jobId: params.id }, 'Failed to fetch job status');
+    log.error({ error, jobId: (await params).id }, 'Failed to fetch job status');
 
     return NextResponse.json(
       { 

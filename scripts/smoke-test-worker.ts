@@ -41,8 +41,19 @@ interface JobCompletionResult {
   error?: string | null;
 }
 
+interface JobStatus {
+  status: string;
+  result: Record<string, unknown> | null;
+  error: string | null;
+}
+
+interface JobOrg {
+  id: string;
+  organizationId: string;
+}
+
 async function enqueueSmokeJob(organizationId: string): Promise<string> {
-  const { data, error } = await supabase.rpc('enqueue_job', {
+  const result = await supabase.rpc('enqueue_job', {
     p_organization_id: organizationId,
     p_type: 'smoke.test.echo',
     p_payload: {
@@ -55,34 +66,28 @@ async function enqueueSmokeJob(organizationId: string): Promise<string> {
     p_max_attempts: 3
   });
 
-  if (error) {
-    throw new Error(`Failed to enqueue job: ${error.message}`);
+  if (result.error) {
+    throw new Error(`Failed to enqueue job: ${result.error.message}`);
   }
 
-  return data as string;
+  return result.data as string;
 }
 
 async function waitForJobCompletion(jobId: string, timeoutMs = 60000): Promise<JobCompletionResult> {
   const startTime = Date.now();
   
   while (Date.now() - startTime < timeoutMs) {
-    interface JobStatus {
-      status: string;
-      result: Record<string, unknown> | null;
-      error: string | null;
-    }
-    
-    const { data, error } = await supabase
+    const queryResult = await supabase
       .from('Job')
       .select('status, result, error')
       .eq('id', jobId)
       .single();
 
-    if (error) {
-      throw new Error(`Failed to check job status: ${error.message}`);
+    if (queryResult.error) {
+      throw new Error(`Failed to check job status: ${queryResult.error.message}`);
     }
 
-    const job = data as JobStatus;
+    const job = queryResult.data as JobStatus;
 
     if (job.status === 'succeeded' || job.status === 'completed') {
       return { status: job.status, result: job.result || undefined };
@@ -161,7 +166,7 @@ async function runSmokeTest2(): Promise<JobResult> {
     // Enqueue a job that will fail (we don't have a failure handler, so we simulate)
     console.log('  Enqueueing job with forced failure simulation...');
     
-    const { data: jobId, error } = await supabase.rpc('enqueue_job', {
+    const result = await supabase.rpc('enqueue_job', {
       p_organization_id: orgId,
       p_type: 'test.fail',
       p_payload: {
@@ -171,13 +176,14 @@ async function runSmokeTest2(): Promise<JobResult> {
       p_max_attempts: 2
     });
 
-    if (error) throw error;
+    if (result.error) throw new Error(result.error.message);
     
-    console.log(`  ✅ Job enqueued: ${jobId as string}`);
+    const jobId = result.data as string;
+    console.log(`  ✅ Job enqueued: ${jobId}`);
     console.log('  ⏭️  Skipping execution (no failure handler registered)');
     
     return {
-      jobId: jobId as string,
+      jobId,
       status: 'passed',
       duration: Date.now() - startTime,
       details: { skipped: true, reason: 'No failure handler available' }
@@ -207,21 +213,16 @@ async function runSmokeTest3(): Promise<JobResult> {
     console.log(`  ✅ Created jobs: ${job1} (org1), ${job2} (org2)`);
     
     // Verify RLS by querying with service role (simulating multi-tenant check)
-    interface JobOrg {
-      id: string;
-      organizationId: string;
-    }
-    
-    const { data, error } = await supabase
+    const queryResult = await supabase
       .from('Job')
       .select('id, organizationId')
       .in('id', [job1, job2])
       .order('createdAt', { ascending: false })
       .limit(2);
 
-    if (error) throw error;
+    if (queryResult.error) throw new Error(queryResult.error.message);
     
-    const jobs = (data as JobOrg[]) || [];
+    const jobs = (queryResult.data as JobOrg[]) || [];
     
     // Verify each job has correct organization
     const foundJob1 = jobs.find(j => j.id === job1);
@@ -266,9 +267,7 @@ async function verifyMigrations(): Promise<boolean> {
   try {
     // Check if required functions exist
     const result = await supabase
-      .rpc('claim_jobs', { p_worker_id: 'test', p_limit: 1 })
-      .select('*')
-      .limit(1);
+      .rpc('claim_jobs', { p_worker_id: 'test', p_limit: 1 });
 
     if (result.error && !result.error.message?.includes('claim_jobs')) {
       console.log('  ⚠️  RPC returned error (may be normal if no jobs):', result.error.message);

@@ -20,6 +20,7 @@ from src.database import (
     update_heartbeat,
 )
 from src.handlers import get_handler, list_registered_handlers
+from src.health_server import start_health_server, update_worker_state
 from src.utils.logging import configure_logging, get_logger, set_correlation_id
 
 # Configure logging first
@@ -28,6 +29,10 @@ logger = get_logger(__name__)
 
 # Global shutdown flag
 _shutdown_requested = False
+
+# Job counters for metrics
+_jobs_processed = 0
+_jobs_failed = 0
 
 
 @dataclass
@@ -123,6 +128,14 @@ def execute_job(job: Job, context: JobContext) -> None:
                 metrics,
             )
             
+            # Update metrics
+            global _jobs_processed
+            _jobs_processed += 1
+            update_worker_state(
+                jobs_processed=_jobs_processed,
+                last_job_completed=datetime.utcnow().isoformat()
+            )
+            
             logger.info(
                 "Job completed successfully",
                 job_id=job.id,
@@ -136,6 +149,11 @@ def execute_job(job: Job, context: JobContext) -> None:
                 job.retry_count + 1,
                 job.max_retries,
             )
+            
+            # Update failure metrics
+            global _jobs_failed
+            _jobs_failed += 1
+            update_worker_state(jobs_failed=_jobs_failed)
             
             if not will_retry:
                 logger.error(
@@ -155,6 +173,11 @@ def execute_job(job: Job, context: JobContext) -> None:
             duration_ms=duration_ms,
             traceback=traceback.format_exc(),
         )
+        
+        # Update failure metrics
+        global _jobs_failed
+        _jobs_failed += 1
+        update_worker_state(jobs_failed=_jobs_failed)
         
         # Mark failed (will retry if under max)
         try:
@@ -244,6 +267,11 @@ def run_worker() -> None:
         heartbeat_interval=settings.heartbeat_interval_seconds,
     )
     
+    # Start health server
+    health_port = getattr(settings, 'health_check_port', 8080)
+    health_server = start_health_server(port=health_port)
+    update_worker_state(status="starting")
+    
     logger.info(
         "Worker starting",
         worker_id=context.worker_id,
@@ -252,6 +280,7 @@ def run_worker() -> None:
         max_concurrent=settings.max_concurrent_jobs,
         job_timeout=settings.job_timeout_seconds,
         max_retries=settings.max_retries,
+        health_port=health_port,
     )
     
     # Reset any stale jobs from crashed workers
@@ -261,6 +290,9 @@ def run_worker() -> None:
             logger.info("Reset stale jobs", count=reset_count)
     except Exception as e:
         logger.warning("Failed to reset stale jobs", error=str(e))
+    
+    # Update state to running
+    update_worker_state(status="running")
     
     # Main loop
     try:
@@ -286,6 +318,8 @@ def run_worker() -> None:
         raise
     finally:
         logger.info("Worker shutting down...")
+        update_worker_state(status="shutting_down")
+        health_server.stop()
         close_pool()
         logger.info("Worker shutdown complete")
 

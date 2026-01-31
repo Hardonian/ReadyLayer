@@ -45,7 +45,7 @@ async function main() {
   console.log(`Payload: ${JSON.stringify(payload, null, 2)}`);
   console.log(`Organization: ${organizationId}`);
 
-  const { data: jobId, error } = await supabase.rpc('enqueue_job', {
+  const result = await supabase.rpc('enqueue_job', {
     p_organization_id: organizationId,
     p_type: jobType,
     p_payload: payload,
@@ -53,15 +53,15 @@ async function main() {
     p_max_attempts: 3
   });
 
-  if (error) {
-    console.error('\n❌ Failed to enqueue job:', error.message);
+  if (result.error) {
+    console.error('\n❌ Failed to enqueue job:', result.error.message);
     process.exit(1);
   }
 
-  const id = jobId as string;
+  const jobId = result.data as string;
 
   console.log('\n✅ Job enqueued successfully!');
-  console.log(`Job ID: ${id}`);
+  console.log(`Job ID: ${jobId}`);
   console.log('\nNext steps:');
   console.log('  1. Start worker: pnpm worker:py');
   console.log('  2. Check status: pnpm worker:status');

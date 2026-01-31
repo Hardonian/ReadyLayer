@@ -46,6 +46,29 @@ def get_pool() -> pool.ThreadedConnectionPool:
     return _connection_pool
 
 
+def get_pool_status() -> dict:
+    """Get connection pool status for health checks."""
+    global _connection_pool
+    if _connection_pool is None:
+        return {"healthy": False, "status": "not_initialized"}
+    
+    try:
+        # Try to get a connection to verify health
+        conn = _connection_pool.getconn()
+        _connection_pool.putconn(conn)
+        return {
+            "healthy": True,
+            "status": "connected"
+        }
+    except Exception as e:
+        logger.warning("Pool health check failed", error=str(e))
+        return {
+            "healthy": False,
+            "status": "error",
+            "error": str(e)
+        }
+
+
 def close_pool() -> None:
     """Close connection pool."""
     global _connection_pool

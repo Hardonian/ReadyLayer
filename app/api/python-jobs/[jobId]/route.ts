@@ -14,7 +14,7 @@ import { requireAuth } from '@/lib/auth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
     // Authenticate user
@@ -23,7 +23,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { jobId } = params;
+    const { jobId } = await params;
 
     // Fetch job from database
     const job = await prisma.job.findUnique({
@@ -82,7 +82,7 @@ export async function GET(
   } catch (error) {
     logger.error({
       msg: 'Error fetching job status',
-      jobId: params.jobId,
+      jobId: (await params).jobId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 

@@ -253,7 +253,7 @@ export class ReadyLayerClient {
         }
 
         // Handle error responses
-        const errorData = await response.json().catch(() => null);
+        const errorData: unknown = await response.json().catch(() => null);
         const errorBody = (errorData ?? {}) as { error?: { code: string; message: string; context?: Record<string, unknown>; errors?: Array<{ path: Array<string | number>; message: string }> } };
         const error = createErrorFromResponse(response.status, errorBody.error);
 
