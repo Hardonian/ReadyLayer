@@ -85,6 +85,7 @@ def execute_job(job: Job, context: JobContext) -> None:
         job: Job to execute
         context: Execution context
     """
+    global _jobs_processed, _jobs_failed
     start_time = time.time()
     
     logger.info(
@@ -129,7 +130,6 @@ def execute_job(job: Job, context: JobContext) -> None:
             )
             
             # Update metrics
-            global _jobs_processed
             _jobs_processed += 1
             update_worker_state(
                 jobs_processed=_jobs_processed,
@@ -151,7 +151,6 @@ def execute_job(job: Job, context: JobContext) -> None:
             )
             
             # Update failure metrics
-            global _jobs_failed
             _jobs_failed += 1
             update_worker_state(jobs_failed=_jobs_failed)
             
@@ -175,7 +174,6 @@ def execute_job(job: Job, context: JobContext) -> None:
         )
         
         # Update failure metrics
-        global _jobs_failed
         _jobs_failed += 1
         update_worker_state(jobs_failed=_jobs_failed)
         
