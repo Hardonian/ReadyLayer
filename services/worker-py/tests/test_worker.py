@@ -10,6 +10,8 @@ from src.handlers.ingest_normalize import IngestNormalizeHandler
 from src.handlers.recon_run import ReconRunHandler
 from src.handlers.anomaly_score import AnomalyScoreHandler
 from src.handlers.eval_run import EvalRunHandler
+from src.handlers.readiness_score import ReadinessScoreHandler
+from src.handlers.report_artifact import ReportArtifactHandler
 
 
 class TestConfig:
