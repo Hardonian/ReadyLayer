@@ -26,9 +26,39 @@ jobs:
   # PHASE 1: CODE QUALITY & SECURITY
   # ══════════════════════════════════════════════════════════
 
+  oss-guard:
+    name: 🛡️ OSS Safety Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check internal/ not tracked
+        run: |
+          echo "Checking that internal/ directory is not tracked..."
+          if git ls-files | grep -q "^internal/"; then
+            echo "❌ ERROR: internal/ directory contains tracked files:"
+            git ls-files | grep "^internal/"
+            echo "Move these to internal/ and remove from git tracking."
+            exit 1
+          fi
+          echo "✅ internal/ is correctly excluded from git"
+
+      - name: Check for leaked agent docs
+        run: |
+          echo "Checking for agent/planning docs outside internal/..."
+          # Find markdown files with common agent doc patterns
+          FOUND=$(git ls-files | grep -E "(\.md)$" | xargs grep -l -i "agent\|planning\|strategy\|roadmap\|audit\|summary" 2>/dev/null | grep -v "^docs/" | grep -v "^internal/" | grep -v "^README" | grep -v "CHANGELOG\|LICENSE\|SECURITY\|CODE_OF_CONDUCT\|CONTRIBUTING\|COMMITTERS" | head -20)
+          if [ -n "$FOUND" ]; then
+            echo "⚠️ WARNING: Potentially internal docs found outside internal/:"
+            echo "$FOUND"
+          fi
+          echo "✅ OSS guard checks complete"
+
   security-scan:
     name: 🔒 Security Scan
     runs-on: ubuntu-latest
+    needs: oss-guard
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
