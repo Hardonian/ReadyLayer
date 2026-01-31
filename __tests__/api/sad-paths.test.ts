@@ -11,7 +11,7 @@
  * These tests ensure the API fails gracefully and returns consistent error responses.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { prisma } from '@/lib/prisma';
 import type { ErrorResponse } from '@/lib/errors/normalize';
 
@@ -280,6 +280,11 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
 }
 
 describe('API Sad Path Tests', () => {
+  beforeEach(() => {
+    // Reset rate limiter state between tests
+    requestCounts.clear();
+  });
+
   describe('400 Bad Request - Validation Errors', () => {
     it('should return 400 for missing required fields in POST request', async () => {
       const response = await mockApiRequest({
