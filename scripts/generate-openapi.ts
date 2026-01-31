@@ -102,23 +102,20 @@ function zodToOpenAPI(schema: z.ZodTypeAny): Record<string, unknown> {
   if (schema instanceof z.ZodArray) {
     return {
       type: 'array',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      items: zodToOpenAPI(schema.element as any),
+      items: zodToOpenAPI(schema.element as z.ZodTypeAny),
       description: schema.description,
     };
   }
 
   if (schema instanceof z.ZodUnion) {
     return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      oneOf: schema.options.map((opt: any) => zodToOpenAPI(opt)),
+      oneOf: (schema.options as z.ZodTypeAny[]).map((opt) => zodToOpenAPI(opt)),
       description: schema.description,
     };
   }
 
   if (schema instanceof z.ZodOptional) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return zodToOpenAPI(schema.unwrap() as any);
+    return zodToOpenAPI(schema.unwrap() as z.ZodTypeAny);
   }
 
   // Default fallback
