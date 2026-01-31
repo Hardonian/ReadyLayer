@@ -1,0 +1,19 @@
+# Core dependencies
+psycopg2-binary>=2.9.9
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-json-logger>=2.0.7
+
+# Task handlers (install as needed)
+# reportlab>=4.0.7          # PDF generation (uncomment when needed)
+# pandas>=2.1.0             # Data processing (uncomment when needed)
+# numpy>=1.24.0             # Analytics (uncomment when needed)
+
+# Development dependencies
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+mypy>=1.7.0
+
+# Observability
+structlog>=23.0.0
