@@ -19,9 +19,10 @@ import { runPipelineService } from '../services/run-pipeline';
 import { outboxService } from '../services/outbox';
 import { validateResponse, runResponseSchema } from '../lib/contracts/schemas';
 
+const hasDatabase = !!process.env.DATABASE_URL;
 const prisma = new PrismaClient();
 
-describe('Golden Path: ReadyLayer Activation Flow', () => {
+describe.skipIf(!hasDatabase)('Golden Path: ReadyLayer Activation Flow', () => {
   let sandboxRunId: string | null = null;
   let correlationId: string | null = null;
 

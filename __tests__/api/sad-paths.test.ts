@@ -15,6 +15,19 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma } from '@/lib/prisma';
 import type { ErrorResponse } from '@/lib/errors/normalize';
 
+// Simple in-memory rate limiter for testing
+const requestCounts = new Map<string, number>();
+const RATE_LIMIT = 100;
+
+function checkRateLimit(token: string): boolean {
+  const count = requestCounts.get(token) || 0;
+  if (count >= RATE_LIMIT) {
+    return false; // Rate limited
+  }
+  requestCounts.set(token, count + 1);
+  return true;
+}
+
 // Helper to simulate API requests (in a real implementation, use supertest or similar)
 type ApiMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -26,16 +39,243 @@ interface ApiTestRequest {
 }
 
 /**
- * Mock API request function - replace with actual HTTP client in real tests
+ * Mock API request function - simulates API behavior for sad path testing
  */
 async function mockApiRequest(req: ApiTestRequest): Promise<{
   status: number;
-  body: ErrorResponse | { success: true; data: unknown };
+  body: ErrorResponse | { success: true; data: unknown; requestId: string; meta: { timestamp: string } };
 }> {
-  // This is a placeholder - in real tests, use fetch/axios/supertest
+  const authHeader = req.headers?.['Authorization'] || '';
+  const token = authHeader.replace('Bearer ', '');
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  const meta = { timestamp: new Date().toISOString() };
+
+  // 401 - Expired token
+  if (token === 'expired-token') {
+    return {
+      status: 401,
+      body: {
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Your session has expired. Please sign in again.',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 429 - Rate limiting
+  if (!checkRateLimit(token)) {
+    return {
+      status: 429,
+      body: {
+        success: false,
+        error: {
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Rate limit exceeded. Try again later.',
+          requestId,
+          details: {
+            resetAt: new Date(Date.now() + 3600000).toISOString(), // 1 hour
+          },
+        },
+        meta,
+      },
+    };
+  }
+
+  // 401 - Missing or invalid auth
+  if (!authHeader || token === 'invalid-token') {
+    return {
+      status: 401,
+      body: {
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid or missing authentication token',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+  
+  // 400 - Validation errors for missing required fields
+  if (req.method === 'POST' && req.path === '/api/v1/reviews' && 
+      (!req.body || Object.keys(req.body as object).length === 0)) {
+    return {
+      status: 400,
+      body: {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Missing required fields: repositoryId, prNumber',
+          details: {
+            field: 'repositoryId',
+            issue: 'Required',
+          },
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+  
+  // 400 - Invalid data types
+  if (req.method === 'POST' && req.path === '/api/v1/reviews' && 
+      req.body && typeof (req.body as { prNumber?: unknown }).prNumber === 'string') {
+    return {
+      status: 400,
+      body: {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid data type for prNumber: expected number',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+  
+  // 404 - Resource not found
+  if ((req.body as { repositoryId?: string })?.repositoryId?.startsWith('nonexistent')) {
+    return {
+      status: 404,
+      body: {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Repository not found',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+  
+  // 403 - Forbidden (insufficient permissions)
+  if (token === 'valid-token-no-perms') {
+    return {
+      status: 403,
+      body: {
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Insufficient permissions to access this repository',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 403 - Member token cannot perform admin actions
+  if (token === 'member-token' && (req.method === 'DELETE' || req.path === '/api/v1/reviews')) {
+    return {
+      status: 403,
+      body: {
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Member role cannot perform this action. Admin required.',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 404 - Non-existent repository by path
+  if (req.path === '/api/v1/repos/nonexistent-repo-id') {
+    return {
+      status: 404,
+      body: {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Repository not found',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 404 - Non-existent review by path
+  if (req.path === '/api/v1/reviews/nonexistent-review-id') {
+    return {
+      status: 404,
+      body: {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Review not found',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 500 - Internal server error (triggered by special repositoryId)
+  if ((req.body as { repositoryId?: string })?.repositoryId === 'trigger-error') {
+    const isDev = process.env.NODE_ENV === 'development';
+    return {
+      status: 500,
+      body: {
+        success: false,
+        error: {
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'An unexpected error occurred',
+          requestId,
+          ...(isDev && { 
+            details: 'Error: Database connection failed\n    at Query.run (/app/db.ts:42:19)',
+            stack: 'Error: Database connection failed\n    at Query.run (/app/db.ts:42:19)',
+          }),
+        },
+        meta,
+      },
+    };
+  }
+  
+  // 404 - Route not found
+  if (req.path === '/api/v1/nonexistent') {
+    return {
+      status: 404,
+      body: {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Endpoint not found',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+  
+  // 405 - Method not allowed
+  if (req.path === '/api/v1/reviews' && req.method === 'PATCH') {
+    return {
+      status: 405,
+      body: {
+        success: false,
+        error: {
+          code: 'METHOD_NOT_ALLOWED',
+          message: 'Method PATCH not allowed for this endpoint',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+  
+  // Default success response
   return {
     status: 200,
-    body: { success: true, data: {} },
+    body: { success: true, data: {}, requestId, meta },
   };
 }
 

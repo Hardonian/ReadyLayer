@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { QueueService, type JobPayload } from '../index';
 
-describe('Queue Service - Integration Tests', () => {
+const hasDatabase = !!process.env.DATABASE_URL;
+
+describe.skipIf(!hasDatabase)('Queue Service - Integration Tests', () => {
   let queue: QueueService;
 
   beforeEach(async () => {

@@ -41,15 +41,15 @@ describe('Policy Engine - Rule Evaluation', () => {
   describe('Rule Evaluation', () => {
     it('should evaluate rules against code', async () => {
       const code = 'SELECT * FROM users;';
-      const results = await policyEngineService.evaluate(code);
+      const results = await policyEngineService.evaluateCode(code);
 
       expect(results).toHaveProperty('violations');
       expect(Array.isArray(results.violations)).toBe(true);
     });
 
     it('should detect SQL injection risks', async () => {
-      const badCode = "SELECT * FROM users WHERE id = '" + userId + "'";
-      const results = await policyEngineService.evaluate(badCode);
+      const badCode = "SELECT * FROM users WHERE id = 'someUserId'";
+      const results = await policyEngineService.evaluateCode(badCode);
 
       const sqlIssues = results.violations.filter((v) =>
         v.ruleId.includes('sql')
@@ -64,7 +64,7 @@ describe('Policy Engine - Rule Evaluation', () => {
           [userId]
         );
       `;
-      const results = await policyEngineService.evaluate(goodCode);
+      const results = await policyEngineService.evaluateCode(goodCode);
 
       // Should have fewer violations for parameterized queries
       expect(results.violations.length).toBeLessThan(1);
@@ -104,8 +104,8 @@ describe('Policy Engine - Rule Evaluation', () => {
     it('should produce deterministic results', async () => {
       const code = 'const x = 1; const y = 2;';
 
-      const result1 = await policyEngineService.evaluate(code);
-      const result2 = await policyEngineService.evaluate(code);
+      const result1 = await policyEngineService.evaluateCode(code);
+      const result2 = await policyEngineService.evaluateCode(code);
 
       // Same code should produce same violations
       expect(result1.violations.length).toBe(result2.violations.length);
@@ -115,7 +115,7 @@ describe('Policy Engine - Rule Evaluation', () => {
       // The evaluation should not be affected by rule execution order
       const code = 'let x; if (x) { console.log(x); }';
 
-      const result = await policyEngineService.evaluate(code);
+      const result = await policyEngineService.evaluateCode(code);
       expect(result.violations).toBeDefined();
     });
   });
@@ -126,7 +126,7 @@ describe('Policy Engine - Rule Evaluation', () => {
         SELECT * FROM users;
         let unused_var = 5;
       `;
-      const results = await policyEngineService.evaluate(code);
+      const results = await policyEngineService.evaluateCode(code);
 
       const critical = results.violations.filter((v) => v.severity === 'critical');
       const high = results.violations.filter((v) => v.severity === 'high');
@@ -153,14 +153,14 @@ describe('Policy Engine - Rule Evaluation', () => {
   describe('Exception Handling', () => {
     it('should handle invalid code gracefully', async () => {
       const invalidCode = '{ [ ] ]';
-      const results = await policyEngineService.evaluate(invalidCode);
+      const results = await policyEngineService.evaluateCode(invalidCode);
 
       // Should not throw, should return results
       expect(results).toHaveProperty('violations');
     });
 
     it('should handle empty code', async () => {
-      const results = await policyEngineService.evaluate('');
+      const results = await policyEngineService.evaluateCode('');
       expect(results.violations.length).toBe(0);
     });
 
@@ -172,7 +172,7 @@ describe('Policy Engine - Rule Evaluation', () => {
           .join('\n')}
       `;
 
-      const results = await policyEngineService.evaluate(largeCode);
+      const results = await policyEngineService.evaluateCode(largeCode);
       expect(results).toHaveProperty('violations');
     });
   });
@@ -206,7 +206,7 @@ describe('Policy Engine - Rule Evaluation', () => {
       `;
 
       const start = performance.now();
-      await policyEngineService.evaluate(code);
+      await policyEngineService.evaluateCode(code);
       const duration = performance.now() - start;
 
       // Should complete in under 1 second
