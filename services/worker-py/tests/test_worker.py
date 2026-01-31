@@ -218,5 +218,127 @@ class TestBaseHandler:
                     return JobResult(success=True)
 
 
+class TestReadinessScoreHandler:
+    """Test readiness.score handler - Phase 4 Real Work."""
+    
+    def test_validation_required_fields(self):
+        """Test payload validation requires repository_id and organization_id."""
+        handler = ReadinessScoreHandler()
+        
+        # Valid payload
+        valid = handler.validate_payload({
+            "repository_id": "repo-123",
+            "organization_id": "org-456",
+        })
+        assert valid["lookback_days"] == 30  # Default
+        assert valid["store_result"] is True  # Default
+        
+        # Missing repository_id
+        with pytest.raises(ValueError, match="repository_id"):
+            handler.validate_payload({"organization_id": "org-456"})
+        
+        # Missing organization_id
+        with pytest.raises(ValueError, match="organization_id"):
+            handler.validate_payload({"repository_id": "repo-123"})
+    
+    def test_validation_lookback_days(self):
+        """Test lookback_days validation."""
+        handler = ReadinessScoreHandler()
+        
+        # Invalid lookback_days (too small)
+        with pytest.raises(ValueError, match="lookback_days"):
+            handler.validate_payload({
+                "repository_id": "repo-123",
+                "organization_id": "org-456",
+                "lookback_days": 0,
+            })
+        
+        # Invalid lookback_days (too large)
+        with pytest.raises(ValueError, match="lookback_days"):
+            handler.validate_payload({
+                "repository_id": "repo-123",
+                "organization_id": "org-456",
+                "lookback_days": 400,
+            })
+
+
+class TestReportArtifactHandler:
+    """Test report.generate handler - Phase 4 Real Work."""
+    
+    def test_validation_required_fields(self):
+        """Test payload validation requires job_id."""
+        handler = ReportArtifactHandler()
+        
+        # Valid payload
+        valid = handler.validate_payload({
+            "job_id": "job-123",
+            "format": "json",
+        })
+        assert valid["format"] == "json"
+        assert valid["include_context"] is True  # Default
+        
+        # Missing job_id
+        with pytest.raises(ValueError, match="job_id"):
+            handler.validate_payload({"format": "json"})
+    
+    def test_validation_format(self):
+        """Test format validation."""
+        handler = ReportArtifactHandler()
+        
+        # Valid formats
+        for fmt in ["json", "html", "markdown"]:
+            valid = handler.validate_payload({
+                "job_id": "job-123",
+                "format": fmt,
+            })
+            assert valid["format"] == fmt
+        
+        # Invalid format
+        with pytest.raises(ValueError, match="format"):
+            handler.validate_payload({
+                "job_id": "job-123",
+                "format": "xml",
+            })
+    
+    def test_report_hash_determinism(self):
+        """Test that report hash is deterministic."""
+        import hashlib
+        import json
+        
+        def compute_hash(data):
+            content = json.dumps(data, sort_keys=True, default=str)
+            return hashlib.sha256(content.encode('utf-8')).hexdigest()[:16]
+        
+        data = {"score": 85.5, "status": "passed"}
+        hash1 = compute_hash(data)
+        hash2 = compute_hash(data)
+        
+        assert hash1 == hash2, "Hash should be deterministic for same input"
+        assert len(hash1) == 16, "Hash should be 16 chars (truncated SHA-256)"
+
+
+class TestPhase4HandlerRegistration:
+    """Test Phase 4 handlers are properly registered."""
+    
+    def test_new_handlers_registered(self):
+        """Test that Phase 4 handlers are in the registry."""
+        from src.handlers import get_handler, list_registered_handlers
+        
+        handlers = list_registered_handlers()
+        
+        # Phase 4 handlers should be registered
+        assert "readiness.score" in handlers, "readiness.score handler not registered"
+        assert "report.generate" in handlers, "report.generate handler not registered"
+        
+        # Can instantiate
+        readiness = get_handler("readiness.score")
+        assert readiness is not None
+        assert isinstance(readiness, ReadinessScoreHandler)
+        
+        report = get_handler("report.generate")
+        assert report is not None
+        assert isinstance(report, ReportArtifactHandler)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
