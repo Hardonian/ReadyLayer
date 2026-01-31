@@ -12,6 +12,14 @@ from src.handlers.eval_run import EvalRunHandler
 from src.handlers.readiness_score import ReadinessScoreHandler
 from src.handlers.report_artifact import ReportArtifactHandler
 
+# Phase 6 - Shared/Core handlers
+from src.handlers.batch_backfill import BatchBackfillHandler
+from src.handlers.ml_features import MLFeaturesBuildHandler
+
+# Phase 6 - ReadyLayer-specific handlers
+from src.handlers.repo_snapshot import RepoSnapshotIngestHandler
+from src.handlers.report_artifact_build import ReportArtifactBuildHandler
+
 __all__ = [
     "register_handler",
     "get_handler",
@@ -25,4 +33,9 @@ __all__ = [
     "EvalRunHandler",
     "ReadinessScoreHandler",
     "ReportArtifactHandler",
+    # Phase 6 handlers
+    "BatchBackfillHandler",
+    "MLFeaturesBuildHandler",
+    "RepoSnapshotIngestHandler",
+    "ReportArtifactBuildHandler",
 ]
