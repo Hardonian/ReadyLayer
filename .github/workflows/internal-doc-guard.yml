@@ -1,0 +1,84 @@
+name: Internal Doc Guard
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  check-internal-docs:
+    name: Check for Internal Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for internal/ directory in PR
+        run: |
+          echo "Checking for internal/ directory in tracked files..."
+          
+          # Check if internal/ is tracked (should not be)
+          if git ls-files | grep -q "^internal/"; then
+            echo "❌ ERROR: internal/ directory contains tracked files!"
+            echo "Files found:"
+            git ls-files | grep "^internal/"
+            echo ""
+            echo "Internal documentation should NOT be committed to the OSS repo."
+            echo "These files have been moved to internal/ and should remain untracked."
+            exit 1
+          fi
+          
+          echo "✅ No internal/ files are tracked"
+
+      - name: Check for new agent/planning docs outside internal/
+        run: |
+          echo "Checking for new agent/planning/strategy markdown files outside internal/..."
+          
+          # Patterns that indicate internal docs
+          PATTERNS="COMPLETE|SUMMARY|AUDIT|ANALYSIS|CONVERGENCE|REALITY|HARDENING|IMPLEMENTATION|VERIFICATION|COMPRESSION|QUALITY|REVIEW|FINDINGS|FIXES|ERRORS|UPGRADE|CHECKLIST|RUNBOOK|INVENTORY|REPORT|ROADMAP|PLAN|STRATEGY|GAPS|MECHANICS|MATRIX|EVENTS|USAGE|ENFORCEMENT|TEST-RESULTS|POSTMORTEM|LOCK|CLOSURE|EXECUTIVE|FOUNDER|PAIN|FIRST|NOTES|DASHBOARD|READY|LAUNCH|DEPLOYMENT|MIGRATION|SETUP|INSTRUCTIONS|GUIDE|REFERENCE|QUICK|START|PROMPT|PERSONAS|POLICY|UI|UX|NAVIGATION|LANDING|PAGE|VALUE|DRIVERS|HERO|MESSAGING|THEMING|EXPANSION|REFLECTION|IMPROVEMENTS|ENHANCEMENT|TIER|TYPES|TYPESAFE|MOCKUPS|VISUAL|SYSTEM|EXTENSION|FUTURE|COLLABORATION|SOCIAL|DEMO|CHANGELOG|COMMITTERS|CONDUCT|LICENSE|SECURITY|BACKEND|FRONTEND|COMPONENT|LIBRARY|DESIGN|ARCHITECTURE|GAP|PERFORMANCE|PROFILING|STRATEGIC|SELF|LEARNING|INVARIANTS|SYSTEMIC"
+          
+          # Get list of new/changed .md files in this PR
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only --diff-filter=A origin/${{ github.base_ref }}...HEAD | grep '\.md$' || true)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD | grep '\.md$' || true)
+          fi
+          
+          VIOLATIONS=""
+          for file in $CHANGED_FILES; do
+            # Skip files in internal/, docs/, or other allowed directories
+            if [[ "$file" =~ ^(internal/|docs/|sdk/|tools/|python-workhorse/|supabase/|backend/|ROADMAP/|architecture/) ]]; then
+              continue
+            fi
+            
+            # Skip README, LICENSE, CODE_OF_CONDUCT, SECURITY, CHANGELOG in root
+            if [[ "$file" =~ ^(README|LICENSE|CODE_OF_CONDUCT|SECURITY|CHANGELOG|CONTRIBUTING|AUTHORS|INSTALL|TODO)\.md$ ]]; then
+              continue
+            fi
+            
+            # Check if filename matches internal doc patterns
+            if echo "$file" | grep -iE "($PATTERNS)" > /dev/null; then
+              VIOLATIONS="$VIOLATIONS\n  - $file"
+            fi
+          done
+          
+          if [ -n "$VIOLATIONS" ]; then
+            echo "❌ ERROR: New internal/planning/strategy docs detected outside internal/:"
+            echo -e "$VIOLATIONS"
+            echo ""
+            echo "These files should be placed in internal/ directory, not in the OSS repo root."
+            exit 1
+          fi
+          
+          echo "✅ No unauthorized internal docs found"
+
+      - name: Verify .gitignore includes internal/
+        run: |
+          if ! grep -q "^internal/" .gitignore; then
+            echo "❌ ERROR: .gitignore does not exclude internal/ directory"
+            exit 1
+          fi
+          echo "✅ .gitignore properly excludes internal/"
