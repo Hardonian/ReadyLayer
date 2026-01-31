@@ -158,7 +158,7 @@ describe('INV-E5: Secrets Never Logged', () => {
   });
 
   test('text with OpenAI key throws error', () => {
-    const unsafeText = 'const key = "skabc123def456ghi789jkl012mno345pqr678";';
+    const unsafeText = 'const key = "sk-abc123def456ghi789jkl012mno345pqr678";';
 
     expect(() =>
       assertNoSecretsInText(unsafeText, secretPatterns)
