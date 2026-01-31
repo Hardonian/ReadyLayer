@@ -315,3 +315,13 @@ export async function enqueueLLMEnrichment(
   logger.debug({ jobId }, 'LLM enrichment job queued (stub)');
   return jobId;
 }
+
+/**
+ * Process enrichment jobs asynchronously
+ * Stub implementation for testing
+ */
+export async function processEnrichmentsAsync(jobId: string): Promise<{ jobId: string; status: string }> {
+  logger.debug({ jobId }, 'Processing enrichment job (stub)');
+  // Stub: In real implementation, this would process the job
+  return { jobId, status: 'completed' };
+}

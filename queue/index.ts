@@ -301,6 +301,26 @@ const jobData = JSON.parse(result.element) as { id: string };
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+
+  /**
+   * Initialize the queue service
+   * Public method for tests and explicit initialization
+   */
+  async initialize(): Promise<void> {
+    await this.ensureRedisInitialized();
+  }
+
+  /**
+   * Cleanup resources
+   * Public method for tests to cleanup connections
+   */
+  async cleanup(): Promise<void> {
+    if (this.redis && this.isConnected) {
+      await this.redis.quit();
+      this.isConnected = false;
+      this.redis = null;
+    }
+  }
 }
 
 export const queueService = new QueueService();
