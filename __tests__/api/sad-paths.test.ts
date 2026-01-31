@@ -252,6 +252,22 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
     };
   }
 
+  // 403 - Repository from different organization (no access)
+  if (req.path.includes('repo-from-different-org')) {
+    return {
+      status: 403,
+      body: {
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this organization\'s resources',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
   // 404 - Non-existent review by path
   if (req.path === '/api/v1/reviews/nonexistent-review-id') {
     return {
@@ -314,6 +330,22 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
         error: {
           code: 'METHOD_NOT_ALLOWED',
           message: 'Method PATCH not allowed for this endpoint',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 404 - Any invalid endpoint (catches all unmatched routes)
+  if (req.path.includes('invalid') || req.path.includes('nonexistent')) {
+    return {
+      status: 404,
+      body: {
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Endpoint not found',
           requestId,
         },
         meta,
