@@ -27,12 +27,18 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
-interface SmokeTestResult {
+interface JobResult {
   jobId: string;
   status: 'passed' | 'failed';
   duration: number;
   error?: string;
   details?: Record<string, unknown>;
+}
+
+interface JobCompletionResult {
+  status: string;
+  result?: Record<string, unknown>;
+  error?: string | null;
 }
 
 async function enqueueSmokeJob(organizationId: string): Promise<string> {
@@ -56,14 +62,16 @@ async function enqueueSmokeJob(organizationId: string): Promise<string> {
   return data as string;
 }
 
-async function waitForJobCompletion(jobId: string, timeoutMs = 60000): Promise<{
-  status: string;
-  result?: Record<string, unknown>;
-  error?: string;
-}> {
+async function waitForJobCompletion(jobId: string, timeoutMs = 60000): Promise<JobCompletionResult> {
   const startTime = Date.now();
   
   while (Date.now() - startTime < timeoutMs) {
+    interface JobStatus {
+      status: string;
+      result: Record<string, unknown> | null;
+      error: string | null;
+    }
+    
     const { data, error } = await supabase
       .from('Job')
       .select('status, result, error')
@@ -74,12 +82,14 @@ async function waitForJobCompletion(jobId: string, timeoutMs = 60000): Promise<{
       throw new Error(`Failed to check job status: ${error.message}`);
     }
 
-    if (data.status === 'succeeded' || data.status === 'completed') {
-      return { status: data.status, result: data.result as Record<string, unknown> };
+    const job = data as JobStatus;
+
+    if (job.status === 'succeeded' || job.status === 'completed') {
+      return { status: job.status, result: job.result || undefined };
     }
 
-    if (data.status === 'failed' || data.status === 'dead') {
-      return { status: data.status, error: data.error };
+    if (job.status === 'failed' || job.status === 'dead') {
+      return { status: job.status, error: job.error };
     }
 
     // Job still processing, wait
@@ -89,13 +99,13 @@ async function waitForJobCompletion(jobId: string, timeoutMs = 60000): Promise<{
   throw new Error(`Timeout waiting for job ${jobId} to complete`);
 }
 
-async function runSmokeTest1(): Promise<SmokeTestResult> {
+async function runSmokeTest1(): Promise<JobResult> {
   console.log('\n📋 Smoke Test 1: Enqueue + Process + Result');
   const startTime = Date.now();
   
   try {
     // Use a test organization ID
-    const orgId = 'test_org_smoke_' + Date.now();
+    const orgId = `test_org_smoke_${Date.now()}`;
     
     // Enqueue job
     console.log('  Enqueueing smoke job...');
@@ -107,7 +117,7 @@ async function runSmokeTest1(): Promise<SmokeTestResult> {
     const result = await waitForJobCompletion(jobId, 30000);
     
     if (result.status === 'succeeded' || result.status === 'completed') {
-      console.log(`  ✅ Job completed successfully`);
+      console.log('  ✅ Job completed successfully');
       return {
         jobId,
         status: 'passed',
@@ -123,7 +133,7 @@ async function runSmokeTest1(): Promise<SmokeTestResult> {
     
     // If no worker running, this is expected
     if (errorMsg.includes('Timeout')) {
-      console.log(`  ⚠️  Job timeout (worker may not be running)`);
+      console.log('  ⚠️  Job timeout (worker may not be running)');
       return {
         jobId: 'timeout',
         status: 'failed',
@@ -141,12 +151,12 @@ async function runSmokeTest1(): Promise<SmokeTestResult> {
   }
 }
 
-async function runSmokeTest2(): Promise<SmokeTestResult> {
+async function runSmokeTest2(): Promise<JobResult> {
   console.log('\n📋 Smoke Test 2: Retry on Forced Failure');
   const startTime = Date.now();
   
   try {
-    const orgId = 'test_org_retry_' + Date.now();
+    const orgId = `test_org_retry_${Date.now()}`;
     
     // Enqueue a job that will fail (we don't have a failure handler, so we simulate)
     console.log('  Enqueueing job with forced failure simulation...');
@@ -163,8 +173,8 @@ async function runSmokeTest2(): Promise<SmokeTestResult> {
 
     if (error) throw error;
     
-    console.log(`  ✅ Job enqueued: ${jobId}`);
-    console.log(`  ⏭️  Skipping execution (no failure handler registered)`);
+    console.log(`  ✅ Job enqueued: ${jobId as string}`);
+    console.log('  ⏭️  Skipping execution (no failure handler registered)');
     
     return {
       jobId: jobId as string,
@@ -182,13 +192,13 @@ async function runSmokeTest2(): Promise<SmokeTestResult> {
   }
 }
 
-async function runSmokeTest3(): Promise<SmokeTestResult> {
+async function runSmokeTest3(): Promise<JobResult> {
   console.log('\n📋 Smoke Test 3: Cross-Tenant Read Prevention (RLS)');
   const startTime = Date.now();
   
   try {
-    const org1 = 'org_rls_test_1_' + Date.now();
-    const org2 = 'org_rls_test_2_' + Date.now();
+    const org1 = `org_rls_test_1_${Date.now()}`;
+    const org2 = `org_rls_test_2_${Date.now()}`;
     
     // Enqueue jobs for different organizations
     const job1 = await enqueueSmokeJob(org1);
@@ -197,7 +207,12 @@ async function runSmokeTest3(): Promise<SmokeTestResult> {
     console.log(`  ✅ Created jobs: ${job1} (org1), ${job2} (org2)`);
     
     // Verify RLS by querying with service role (simulating multi-tenant check)
-    const { data: jobs, error } = await supabase
+    interface JobOrg {
+      id: string;
+      organizationId: string;
+    }
+    
+    const { data, error } = await supabase
       .from('Job')
       .select('id, organizationId')
       .in('id', [job1, job2])
@@ -206,9 +221,11 @@ async function runSmokeTest3(): Promise<SmokeTestResult> {
 
     if (error) throw error;
     
+    const jobs = (data as JobOrg[]) || [];
+    
     // Verify each job has correct organization
-    const foundJob1 = jobs?.find(j => j.id === job1);
-    const foundJob2 = jobs?.find(j => j.id === job2);
+    const foundJob1 = jobs.find(j => j.id === job1);
+    const foundJob2 = jobs.find(j => j.id === job2);
     
     if (!foundJob1 || !foundJob2) {
       throw new Error('Jobs not found');
@@ -286,7 +303,7 @@ async function main() {
   }
   
   // Run all smoke tests
-  const results: SmokeTestResult[] = [];
+  const results: JobResult[] = [];
   
   results.push(await runSmokeTest1());
   results.push(await runSmokeTest2());
