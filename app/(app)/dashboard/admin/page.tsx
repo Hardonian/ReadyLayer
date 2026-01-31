@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Users, Shield, Bell, Zap } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Users, Shield, Bell, Zap, Server } from 'lucide-react'
 
 export default function AdminPage(): React.JSX.Element {
   useEffect(() => {
@@ -12,11 +14,19 @@ export default function AdminPage(): React.JSX.Element {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Organization Settings</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage organization-wide settings, users, and policies
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Organization Settings</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage organization-wide settings, users, and policies
+          </p>
+        </div>
+        <Link href="/dashboard/admin/jobs">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Server className="h-4 w-4" />
+            View Jobs
+          </Button>
+        </Link>
       </div>
 
       <Tabs defaultValue="users" className="w-full">

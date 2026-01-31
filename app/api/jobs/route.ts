@@ -19,7 +19,7 @@ import { logger } from '@/observability/logging';
 // Validation schemas
 const enqueueJobSchema = z.object({
   type: z.string().min(1).max(100),
-  payload: z.record(z.unknown()).default({}),
+  payload: z.record(z.string(), z.unknown()).default({}),
   idempotencyKey: z.string().min(1).max(100).optional(),
   repositoryId: z.string().optional(),
   maxRetries: z.number().int().min(1).max(10).default(3),

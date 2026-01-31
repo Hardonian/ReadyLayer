@@ -6,12 +6,14 @@
 
 import pino from 'pino';
 
-export interface LogContext {
+// Use pino's Bindings type for compatibility
+type Bindings = Record<string, unknown>;
+
+export interface LogContext extends Bindings {
   requestId?: string;
   userId?: string;
   organizationId?: string;
   repositoryId?: string;
-  [key: string]: unknown;
 }
 
 class Logger {
