@@ -30,6 +30,258 @@ import {
 import { ValidationError } from '../lib/errors';
 import { createHmac } from 'crypto';
 
+/**
+ * Validate webhook signature
+ * Supports sha256 and sha1 signatures
+ * Returns true if signature is valid, false otherwise
+ */
+export function validateWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  if (!signature || !secret) {
+    return false;
+  }
+
+  try {
+    // Extract algorithm and signature value
+    const parts = signature.split('=');
+    if (parts.length !== 2) {
+      return false;
+    }
+
+    const [algorithm, signatureValue] = parts;
+    
+    // Supported algorithms
+    if (algorithm !== 'sha256' && algorithm !== 'sha1') {
+      return false;
+    }
+
+    // Compute expected signature
+    const expectedSignature = createHmac(algorithm, secret)
+      .update(payload)
+      .digest('hex');
+
+    // Constant-time comparison to prevent timing attacks
+    if (signatureValue.length !== expectedSignature.length) {
+      return false;
+    }
+
+    let result = 0;
+    for (let i = 0; i < signatureValue.length; i++) {
+      result |= signatureValue.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
+    }
+
+    return result === 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Process webhook by event type
+ * Wraps processWebhookEvent with event type routing
+ */
+export async function processWebhook(
+  eventType: string,
+  event: Record<string, unknown>
+): Promise<{ success: boolean; message: string }> {
+  try {
+    // Transform event to WebhookEvent format based on type
+    const webhookEvent = transformEventToWebhookEvent(eventType, event);
+    
+    if (!webhookEvent) {
+      return { success: false, message: `Unsupported event type: ${eventType}` };
+    }
+
+    await processWebhookEvent(webhookEvent);
+    return { success: true, message: 'Webhook processed successfully' };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, message };
+  }
+}
+
+/**
+ * Transform provider-specific events to WebhookEvent format
+ */
+function transformEventToWebhookEvent(
+  eventType: string,
+  event: Record<string, unknown>
+): unknown {
+  // Handle GitHub events
+  if (eventType === 'pull_request') {
+    const action = event.action as string;
+    const pr = event.pull_request as Record<string, unknown> | undefined;
+    
+    if (!pr) {
+      return null;
+    }
+
+    const head = pr.head as Record<string, unknown> | undefined;
+    const base = pr.base as Record<string, unknown> | undefined;
+    const repo = base?.repo as Record<string, unknown> | undefined;
+    const owner = repo?.owner as Record<string, unknown> | undefined;
+
+    return {
+      type: action === 'opened' ? 'pr.opened' : 'pr.updated',
+      installation: {
+        installationId: 0, // Would be extracted from event
+      },
+      repository: {
+        id: typeof pr.id === 'number' ? pr.id : 0,
+        fullName: repo?.full_name as string || `${owner?.login}/${repo?.name}`,
+        provider: 'github',
+        url: repo?.html_url as string || '',
+      },
+      pr: {
+        number: typeof pr.number === 'number' ? pr.number : 0,
+        title: pr.title as string || '',
+        head: {
+          sha: (head?.sha as string) || '',
+        },
+        base: {
+          ref: (base?.ref as string) || '',
+        },
+      },
+    };
+  }
+
+  if (eventType === 'push') {
+    const repo = event.repository as Record<string, unknown> | undefined;
+    
+    return {
+      type: 'merge.completed',
+      installation: {
+        installationId: 0,
+      },
+      repository: {
+        id: typeof repo?.id === 'number' ? repo.id : 0,
+        fullName: repo?.full_name as string || '',
+        provider: 'github',
+        url: repo?.html_url as string || '',
+      },
+      pr: {
+        number: 0,
+        title: '',
+        head: {
+          sha: (event.after as string) || '',
+        },
+        base: {
+          ref: (event.ref as string)?.replace('refs/heads/', '') || '',
+        },
+      },
+    };
+  }
+
+  // Handle GitLab events
+  if (eventType === 'merge_request') {
+    const attrs = event.object_attributes as Record<string, unknown> | undefined;
+    const project = event.project as Record<string, unknown> | undefined;
+
+    if (!attrs) {
+      return null;
+    }
+
+    const lastCommit = attrs.last_commit as Record<string, unknown> | undefined;
+
+    return {
+      type: 'pr.opened',
+      installation: {
+        installationId: 0,
+      },
+      repository: {
+        id: typeof project?.id === 'number' ? project.id : 0,
+        fullName: project?.path_with_namespace as string || '',
+        provider: 'gitlab',
+        url: project?.web_url as string || '',
+      },
+      pr: {
+        number: typeof attrs.iid === 'number' ? attrs.iid : 0,
+        title: attrs.title as string || '',
+        head: {
+          sha: (lastCommit?.id as string) || '',
+        },
+        base: {
+          ref: attrs.target_branch as string || '',
+        },
+      },
+    };
+  }
+
+  // Handle Bitbucket events
+  if (eventType === 'pullrequest:created') {
+    const pr = event.pullRequest as Record<string, unknown> | undefined;
+    const toRef = pr?.toRef as Record<string, unknown> | undefined;
+    const repository = toRef?.repository as Record<string, unknown> | undefined;
+    const project = repository?.project as Record<string, unknown> | undefined;
+    const fromRef = pr?.fromRef as Record<string, unknown> | undefined;
+    const fromCommit = fromRef?.commit as Record<string, unknown> | undefined;
+    const repoLinks = repository?.links as Record<string, unknown> | undefined;
+    const selfLinks = repoLinks?.self as Array<{ href: string }> | undefined;
+
+    if (!pr) {
+      return null;
+    }
+
+    return {
+      type: 'pr.opened',
+      installation: {
+        installationId: 0,
+      },
+      repository: {
+        id: typeof pr.id === 'number' ? pr.id : 0,
+        fullName: `${project?.key as string}/${repository?.name as string}`,
+        provider: 'bitbucket',
+        url: selfLinks?.[0]?.href || '',
+      },
+      pr: {
+        number: typeof pr.id === 'number' ? pr.id : 0,
+        title: pr.title as string || '',
+        head: {
+          sha: (fromCommit?.hash as string) || '',
+        },
+        base: {
+          ref: (toRef?.displayId as string) || '',
+        },
+      },
+    };
+  }
+
+  if (eventType === 'repo:push') {
+    const repository = event.repository as Record<string, unknown> | undefined;
+    const repoProject = repository?.project as Record<string, unknown> | undefined;
+    const repoLinks = repository?.links as Record<string, unknown> | undefined;
+    const selfLinks = repoLinks?.self as Array<{ href: string }> | undefined;
+
+    return {
+      type: 'merge.completed',
+      installation: {
+        installationId: 0,
+      },
+      repository: {
+        id: typeof repository?.id === 'number' ? repository.id : 0,
+        fullName: `${repoProject?.key as string}/${repository?.name as string}`,
+        provider: 'bitbucket',
+        url: selfLinks?.[0]?.href || '',
+      },
+      pr: {
+        number: 0,
+        title: '',
+        head: {
+          sha: '',
+        },
+        base: {
+          ref: '',
+        },
+      },
+    };
+  }
+
+  return null;
+}
+
 
 /**
  * Generate suggested fix as unified diff (minimal, safe fixes only)
