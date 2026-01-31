@@ -85,8 +85,8 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
     };
   }
 
-  // 401 - Missing or invalid auth
-  if (!authHeader || token === 'invalid-token') {
+  // 401 - Missing or invalid auth (any token containing 'invalid' is rejected)
+  if (!authHeader || token.includes('invalid')) {
     return {
       status: 401,
       body: {
@@ -122,7 +122,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
     };
   }
   
-  // 400 - Invalid data types
+  // 400 - Invalid data types for reviews
   if (req.method === 'POST' && req.path === '/api/v1/reviews' && 
       req.body && typeof (req.body as { prNumber?: unknown }).prNumber === 'string') {
     return {
@@ -132,6 +132,55 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid data type for prNumber: expected number',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 400 - Invalid data types for repos (name should be string, not number)
+  if (req.method === 'POST' && req.path === '/api/v1/repos' && 
+      req.body && typeof (req.body as { name?: unknown }).name === 'number') {
+    return {
+      status: 400,
+      body: {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid data type for name: expected string',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+
+  // 400 - Invalid query parameters
+  if (req.path.includes('?') && req.path.match(/\?(.*&)?limit=invalid/)) {
+    return {
+      status: 400,
+      body: {
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid query parameter: limit must be a number',
+          requestId,
+        },
+        meta,
+      },
+    };
+  }
+  
+  // 403 - Blocked repository access
+  if ((req.body as { repositoryId?: string })?.repositoryId?.startsWith('blocked')) {
+    return {
+      status: 403,
+      body: {
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Access to this repository is blocked',
           requestId,
         },
         meta,
@@ -290,7 +339,10 @@ describe('API Sad Path Tests', () => {
       const response = await mockApiRequest({
         method: 'POST',
         path: '/api/v1/reviews',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer valid-token',
+        },
         body: {}, // Missing required fields
       });
 
@@ -306,7 +358,10 @@ describe('API Sad Path Tests', () => {
       const response = await mockApiRequest({
         method: 'POST',
         path: '/api/v1/repos',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer valid-token',
+        },
         body: {
           name: 123, // Should be string
           provider: 'invalid', // Should be enum
@@ -323,7 +378,7 @@ describe('API Sad Path Tests', () => {
       const response = await mockApiRequest({
         method: 'GET',
         path: '/api/v1/reviews?limit=invalid',
-        headers: {},
+        headers: { 'Authorization': 'Bearer valid-token' },
       });
 
       expect(response.status).toBe(400);
