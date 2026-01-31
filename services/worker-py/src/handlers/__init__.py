@@ -20,6 +20,11 @@ from src.handlers.ml_features import MLFeaturesBuildHandler
 from src.handlers.repo_snapshot import RepoSnapshotIngestHandler
 from src.handlers.report_artifact_build import ReportArtifactBuildHandler
 
+# Phase 6 - AI/ML Advanced handlers
+from src.handlers.anomaly_detect import AnomalyDetectHandler
+from src.handlers.trust_verify import TrustVerifyHandler
+from src.handlers.review_prioritize import ReviewPrioritizeHandler
+
 __all__ = [
     "register_handler",
     "get_handler",
@@ -38,4 +43,8 @@ __all__ = [
     "MLFeaturesBuildHandler",
     "RepoSnapshotIngestHandler",
     "ReportArtifactBuildHandler",
+    # AI/ML handlers
+    "AnomalyDetectHandler",
+    "TrustVerifyHandler",
+    "ReviewPrioritizeHandler",
 ]

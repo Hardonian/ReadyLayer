@@ -311,11 +311,11 @@ class AsyncClient(BaseClient):
                 return response
 
             except httpx.TimeoutException as e:
-                last_exception = TimeoutError(f"Request timed out: {e}") from e
+                last_exception = TimeoutError(f"Request timed out: {e}")
             except httpx.ConnectError as e:
-                last_exception = ConnectionError(f"Connection error: {e}") from e
+                last_exception = ConnectionError(f"Connection error: {e}")
             except httpx.HTTPError as e:
-                last_exception = ConnectionError(f"HTTP error: {e}") from e
+                last_exception = ConnectionError(f"HTTP error: {e}")
             except (TimeoutError, ConnectionError) as e:
                 last_exception = e
 
