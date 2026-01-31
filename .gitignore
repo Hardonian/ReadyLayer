@@ -361,3 +361,7 @@ internal/
 *-LEARNING*.md
 *-INVARIANTS*.md
 *-SYSTEMIC*.md
+# JobForge integration artifacts
+JobForge-main.zip
+.tmp/
+*.zip
