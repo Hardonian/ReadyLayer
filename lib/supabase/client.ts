@@ -14,10 +14,10 @@ export function createSupabaseClient(): SupabaseClient {
     return createBrowserClient(
       url || 'https://placeholder.supabase.co',
       key || 'placeholder-key'
-    )
+    ) as SupabaseClient
   }
 
-  return createBrowserClient(url, key)
+  return createBrowserClient(url, key) as SupabaseClient
 }
 
 /**
@@ -32,8 +32,8 @@ export function createSupabaseServerClient(): SupabaseClient {
     return createClient(
       url || 'https://placeholder.supabase.co',
       key || 'placeholder-key'
-    );
+    ) as SupabaseClient;
   }
   
-  return createClient(url, key);
+  return createClient(url, key) as SupabaseClient;
 }

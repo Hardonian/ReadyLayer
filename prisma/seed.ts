@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-async function main() {
+async function main(): Promise<void> {
   // ReadyLayer seed data
   // Note: This replaces the old gamification seed data
   // Add seed data for ReadyLayer models here if needed

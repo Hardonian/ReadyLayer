@@ -91,7 +91,7 @@ const reportGenerators: Record<
  * Convert JSON report to simple HTML
  */
 function jsonToHtml(data: Record<string, unknown>, title: string): string {
-  const escapeHtml = (str: string) =>
+  const escapeHtml = (str: string): string =>
     str.replace(/[&<>"']/g, (char) => {
       const escapeMap: Record<string, string> = {
         '&': '&amp;',

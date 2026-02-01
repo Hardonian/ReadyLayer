@@ -20,7 +20,7 @@ const SLACK_REDIRECT_URI = process.env.SLACK_REDIRECT_URI ||
  * GET /integrations/slack/install
  * Initiate Slack OAuth flow
  */
-export async function GET(_request: NextRequest) {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
     if (!SLACK_CLIENT_ID) {
       logger.error('Slack client ID not configured');
@@ -77,7 +77,7 @@ export async function GET(_request: NextRequest) {
  * POST /integrations/slack/install
  * Alternative POST endpoint for installation
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const { workspace_id } = await request.json() as { workspace_id?: string };
 

@@ -32,7 +32,7 @@ type SlackEventData = z.infer<typeof SlackEventDataSchema>;
 /**
  * POST /integrations/slack/events
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const payload = await request.json() as Record<string, unknown>;
     const parsed = SlackEventPayloadSchema.safeParse(payload);

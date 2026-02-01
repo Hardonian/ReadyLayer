@@ -115,8 +115,8 @@ export async function startJobProcessor(): Promise<void> {
 
 // Start worker if run directly
 if (require.main === module) {
-  startJobProcessor().catch((error) => {
-    logger.error('Job processor failed', error);
+  startJobProcessor().catch((error: unknown) => {
+    logger.error('Job processor failed', { error: String(error) });
     process.exit(1);
   });
 }

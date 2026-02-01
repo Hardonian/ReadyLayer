@@ -34,7 +34,7 @@ interface TabnineConfig {
 /**
  * Initialize ReadyLayer integration in Tabnine
  */
-export function initializeReadyLayer(config: TabnineConfig) {
+export function initializeReadyLayer(config: TabnineConfig): void {
   if (!config.readyLayer.enabled) {
     return;
   }
@@ -46,7 +46,7 @@ export function initializeReadyLayer(config: TabnineConfig) {
 /**
  * Register Tabnine agent hooks
  */
-function registerTabnineHooks(config: TabnineConfig) {
+function registerTabnineHooks(config: TabnineConfig): void {
   // Hook: Before code completion
   tabnine.onBeforeCompletion(async (context) => {
     if (!config.readyLayer.autoReview) {

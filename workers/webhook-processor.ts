@@ -882,8 +882,8 @@ export async function startWebhookProcessor(): Promise<void> {
 
 // Start worker if run directly
 if (require.main === module) {
-  startWebhookProcessor().catch((error) => {
-    logger.error('Webhook processor failed', error);
+  startWebhookProcessor().catch((error: unknown) => {
+    logger.error('Webhook processor failed', { error: String(error) });
     process.exit(1);
   });
 }

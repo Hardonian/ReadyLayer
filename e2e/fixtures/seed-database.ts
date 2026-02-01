@@ -69,7 +69,7 @@ export class TestDataSeeder {
   /**
    * Create a complete test fixture (org + user + repo)
    */
-  async createTestFixture() {
+  async createTestFixture(): Promise<{ org: Organization; user: User; repo: Repository }> {
     const org = await this.createOrganization();
     const user = await this.createUser(org.id);
     const repo = await this.createRepository(org.id);
@@ -80,7 +80,7 @@ export class TestDataSeeder {
   /**
    * Clean up test data
    */
-  async cleanup() {
+  async cleanup(): Promise<void> {
     try {
       // Delete in order of dependencies
       await prisma.review.deleteMany({});

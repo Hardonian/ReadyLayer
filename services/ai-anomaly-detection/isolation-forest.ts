@@ -560,7 +560,7 @@ export class AnomalyDetectionService {
     return this.forest.predict(dataPoints);
   }
 
-  getStats() {
+  getStats(): ReturnType<IsolationForest['getStats']> {
     return this.forest.getStats();
   }
 }

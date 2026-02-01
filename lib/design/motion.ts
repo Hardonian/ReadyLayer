@@ -169,7 +169,13 @@ export const reducedMotionVariants: Variants = {
  * }
  * ```
  */
-export function getMotionConfig() {
+export function getMotionConfig(): {
+  transitionDuration: number
+  microDuration: number
+  pageDuration: number
+  standardEasing: [number, number, number, number]
+  shouldReduceMotion: boolean
+} {
   // Check if user prefers reduced motion
   const prefersReducedMotion =
     typeof window !== 'undefined' &&

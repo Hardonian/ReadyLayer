@@ -65,6 +65,7 @@ export function createSupabaseRouteHandlerClient(
   // During build, env vars might not be available
   if (!url || !key) {
     // Return a mock client that won't crash during build
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return createServerClient(
       url || 'https://placeholder.supabase.co',
       key || 'placeholder-key',
@@ -81,6 +82,7 @@ export function createSupabaseRouteHandlerClient(
     )
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return createServerClient(url, key, {
     cookies: {
       getAll() {

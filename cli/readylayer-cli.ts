@@ -63,7 +63,7 @@ interface ReviewOptions {
 }
 
 // Review file
-async function reviewFile(filePath: string, options: ReviewOptions) {
+async function reviewFile(filePath: string, options: ReviewOptions): Promise<void> {
   const config = loadConfig();
   
   if (!config.apiKey) {
@@ -163,7 +163,7 @@ interface TestOptions {
 }
 
 // Generate tests
-async function generateTests(filePath: string, options: TestOptions) {
+async function generateTests(filePath: string, options: TestOptions): Promise<void> {
   const config = loadConfig();
   
   if (!config.apiKey) {
@@ -237,7 +237,7 @@ async function generateTests(filePath: string, options: TestOptions) {
 }
 
 // Initialize config
-function initConfig() {
+function initConfig(): void {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   
   if (fs.existsSync(configPath)) {
@@ -298,7 +298,7 @@ function initConfig() {
   });
 }
 
-function finishConfig(config: ReadyLayerConfig, rl: readline.Interface) {
+function finishConfig(config: ReadyLayerConfig, rl: readline.Interface): void {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
   console.log(`\n✅ Configuration saved to ${configPath}`);

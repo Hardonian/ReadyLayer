@@ -74,7 +74,7 @@ interface CursorConfig {
 /**
  * Initialize ReadyLayer integration in Cursor
  */
-export function initializeReadyLayer(config: CursorConfig) {
+export function initializeReadyLayer(config: CursorConfig): void {
   if (!config.readyLayer.enabled) {
     return;
   }
@@ -96,7 +96,7 @@ export function initializeReadyLayer(config: CursorConfig) {
 /**
  * Register Cursor commands
  */
-function registerCommands(config: CursorConfig) {
+function registerCommands(config: CursorConfig): void {
   // Command: Review Current File
   cursor.commands.registerCommand('readylayer.reviewFile', async () => {
     const activeFile = cursor.activeEditor?.document;
@@ -128,7 +128,7 @@ function registerCommands(config: CursorConfig) {
 /**
  * Review a file
  */
-async function reviewFile(filePath: string, config: CursorConfig) {
+async function reviewFile(filePath: string, config: CursorConfig): Promise<void> {
   const fileContent = await cursor.workspace.fs.readFile(filePath);
   const content = new TextDecoder().decode(fileContent);
 
@@ -180,7 +180,7 @@ async function reviewFile(filePath: string, config: CursorConfig) {
 /**
  * Generate tests for a file
  */
-async function generateTests(filePath: string, config: CursorConfig) {
+async function generateTests(filePath: string, config: CursorConfig): Promise<void> {
   const fileContent = await cursor.workspace.fs.readFile(filePath);
   const content = new TextDecoder().decode(fileContent);
 
@@ -226,7 +226,7 @@ async function generateTests(filePath: string, config: CursorConfig) {
 /**
  * Setup file watchers for auto-review
  */
-function setupFileWatchers(config: CursorConfig) {
+function setupFileWatchers(config: CursorConfig): void {
   cursor.workspace.onDidSaveTextDocument(async (document) => {
     // Debounce auto-review
     setTimeout(async () => {
@@ -238,7 +238,7 @@ function setupFileWatchers(config: CursorConfig) {
 /**
  * Setup inline diagnostics
  */
-function setupInlineDiagnostics(config: CursorConfig) {
+function setupInlineDiagnostics(config: CursorConfig): void {
   // Register diagnostic collection
   const diagnosticCollection = cursor.languages.createDiagnosticCollection('readylayer');
 
@@ -325,7 +325,7 @@ async function getFileIssues(filePath: string, config: CursorConfig): Promise<Is
 /**
  * Show issues panel
  */
-function showIssuesPanel(issues: Issue[]) {
+function showIssuesPanel(issues: Issue[]): void {
   // Create output panel with issues
   const outputChannel = cursor.window.createOutputChannel('ReadyLayer Issues');
   outputChannel.clear();
@@ -347,7 +347,7 @@ function showIssuesPanel(issues: Issue[]) {
 /**
  * Show test preview
  */
-function showTestPreview(testContent: string, placement: string) {
+function showTestPreview(testContent: string, placement: string): void {
   // Open test file in editor or show preview
   const messageResult = cursor.window.showInformationMessage(
     `Tests generated. Placement: ${placement}`,

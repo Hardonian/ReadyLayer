@@ -45,7 +45,7 @@ const registry = new HandlerRegistry()
 const worker = new Worker(config, registry)
 
 // Run worker
-;(async () => {
+;(async (): Promise<void> => {
   if (mode === 'once') {
     logger.info('Running worker once')
     await worker.runOnce()

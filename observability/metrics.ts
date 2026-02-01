@@ -146,7 +146,7 @@ class ExtendedMetricsCollector extends MetricsCollector {
     const sum = values.reduce((a, b) => a + b, 0);
     const avg = sum / values.length;
 
-    const percentile = (p: number) => {
+    const percentile = (p: number): number => {
       const idx = Math.ceil((p / 100) * values.length) - 1;
       return sorted[Math.max(0, idx)];
     };

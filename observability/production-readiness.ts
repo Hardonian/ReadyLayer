@@ -166,7 +166,7 @@ class ProductionReadinessService {
       return { p50: 0, p95: 0, p99: 0 };
     }
 
-    const getPercentile = (p: number) => {
+    const getPercentile = (p: number): number => {
       const index = Math.ceil((p / 100) * recentChecks.length) - 1;
       return recentChecks[Math.max(0, index)].latency;
     };

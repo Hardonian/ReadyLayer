@@ -64,7 +64,7 @@ export function useProviderStyles(provider: GitProvider): {
     colors: config.theme.colors,
     spacing: config.theme.spacing,
     typography: config.theme.typography,
-    getStatusColor: (status: 'success' | 'failure' | 'pending' | 'error') => {
+    getStatusColor: (status: 'success' | 'failure' | 'pending' | 'error'): string => {
       const statusColors = {
         success: config.theme.colors.success,
         failure: config.theme.colors.danger,
