@@ -1,0 +1,270 @@
+name: Readiness Assessment
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Phase 1: Run all tools
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint 2>&1 | tee lint-output.txt || true
+      - run: npm run type-check 2>&1 | tee typecheck-output.txt || true
+      - name: Upload tool outputs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-typecheck-outputs
+          path: |
+            lint-output.txt
+            typecheck-output.txt
+          retention-days: 7
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test 2>&1 | tee test-output.txt || true
+      - name: Upload test outputs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-outputs
+          path: test-output.txt
+          retention-days: 7
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, unit-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build 2>&1 | tee build-output.txt || true
+      - name: Upload build outputs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-outputs
+          path: build-output.txt
+          retention-days: 7
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run test:e2e
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.PLAYWRIGHT_TEST_BASE_URL }}
+      - name: Upload Playwright results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  visual-regression:
+    name: Visual Regression
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:visual:ci
+      - name: Upload visual test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-test-results
+          path: |
+            playwright-report/
+            e2e/__screenshots__/
+            test-results/
+          retention-days: 14
+
+  # Phase 2: Run Readiness Engine
+  readiness-assessment:
+    name: Readiness Assessment
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, unit-tests, build, e2e-tests, visual-regression]
+    if: always()  # Run even if previous jobs failed
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Node dependencies
+        run: npm ci
+      
+      - name: Install Readiness Engine
+        working-directory: tools/readiness_engine
+        run: |
+          pip install -e .
+      
+      # Download all artifacts from previous jobs
+      - name: Download lint/typecheck outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: lint-typecheck-outputs
+          path: ./tool-outputs/
+        continue-on-error: true
+      
+      - name: Download test outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: test-outputs
+          path: ./tool-outputs/
+        continue-on-error: true
+      
+      - name: Download build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+          path: ./tool-outputs/
+        continue-on-error: true
+      
+      - name: Download E2E results
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-test-results
+          path: ./tool-outputs/playwright/
+        continue-on-error: true
+      
+      - name: Download visual results
+        uses: actions/download-artifact@v4
+        with:
+          name: visual-test-results
+          path: ./tool-outputs/playwright/
+        continue-on-error: true
+      
+      # Run Readiness Engine
+      - name: Run Readiness Engine
+        id: readiness
+        run: |
+          readiness-engine \
+            --project-root . \
+            --output-dir ./readiness-output \
+            --project-name readylayer \
+            --fail-on-blocker \
+            --fail-on-high
+        continue-on-error: true
+      
+      # Upload readiness outputs
+      - name: Upload Readiness Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: readiness-reports
+          path: |
+            readiness-output/
+          retention-days: 30
+      
+      # Comment on PR with results
+      - name: Comment PR with Readiness Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './readiness-output/readiness.json';
+            
+            if (!fs.existsSync(path)) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '❌ Readiness Engine failed to generate report'
+              });
+              return;
+            }
+            
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const ready = report.ready ? '✅ READY' : '❌ NOT READY';
+            const metrics = report.metrics;
+            
+            const body = `## Readiness Assessment: ${ready}
+            
+            | Severity | Count |
+            |----------|-------|
+            | 🔴 BLOCKER | ${metrics.blocker_count} |
+            | 🟠 HIGH | ${metrics.high_count} |
+            | 🟡 MEDIUM | ${metrics.medium_count} |
+            | 🟢 LOW | ${metrics.low_count} |
+            | **Total** | ${metrics.total_findings} |
+            
+            <details>
+            <summary>View full report</summary>
+            
+            \`\`\`json
+            ${JSON.stringify(report, null, 2)}
+            \`\`\`
+            </details>
+            
+            [View artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+      
+      # Fail the job if not ready
+      - name: Check Readiness
+        if: steps.readiness.outcome == 'failure'
+        run: |
+          echo "❌ Readiness assessment failed - blockers or high severity issues found"
+          exit 1

@@ -1,0 +1,111 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-31T12:00:00",
+  "project": "readylayer",
+  "commit_sha": "abc123def456",
+  "branch": "feature/readiness-engine",
+  "ready": false,
+  "findings": [
+    {
+      "rule_id": "TS7006",
+      "category": "type",
+      "severity": "BLOCKER",
+      "title": "Parameter 'user' implicitly has an 'any' type",
+      "description": "TypeScript error: Parameter 'user' implicitly has an 'any' type",
+      "location": "app/(app)/dashboard/page.tsx",
+      "line": 45,
+      "column": 23,
+      "evidence": [
+        {
+          "type": "log",
+          "content": "app/(app)/dashboard/page.tsx(45,23): error TS7006: Parameter 'user' implicitly has an 'any' type."
+        }
+      ],
+      "remediation": "Add explicit type annotation to the parameter",
+      "tool": "typescript",
+      "timestamp": "2026-01-31T12:00:00"
+    },
+    {
+      "rule_id": "@typescript-eslint/no-explicit-any",
+      "category": "lint",
+      "severity": "HIGH",
+      "title": "Unexpected any. Specify a different type.",
+      "description": "ESLint error: Unexpected any. Specify a different type.",
+      "location": "components/ui/button.tsx",
+      "line": 12,
+      "column": 15,
+      "evidence": [
+        {
+          "type": "log",
+          "content": "components/ui/button.tsx:12:15 error @typescript-eslint/no-explicit-any Unexpected any. Specify a different type."
+        }
+      ],
+      "remediation": "Replace 'any' with specific type or use unknown",
+      "tool": "eslint",
+      "timestamp": "2026-01-31T12:00:00"
+    },
+    {
+      "rule_id": "playwright/visual-regression",
+      "category": "ui",
+      "severity": "HIGH",
+      "title": "Visual regression on critical route: homepage-loaded",
+      "description": "Playwright test failed: homepage-loaded\n\nError:\nScreenshot comparison failed - 124 pixels different (0.02%)",
+      "location": "homepage-loaded",
+      "evidence": [
+        {
+          "type": "screenshot",
+          "path": "test-results/visual-homepage-loaded-chromium/homepage-loaded-actual.png",
+          "metadata": {"context": "failure screenshot"}
+        },
+        {
+          "type": "trace",
+          "path": "test-results/visual-homepage-loaded-chromium/trace.zip",
+          "metadata": {"context": "Playwright trace"}
+        }
+      ],
+      "remediation": "Review test failure and fix underlying issue",
+      "tool": "playwright",
+      "timestamp": "2026-01-31T12:00:00"
+    },
+    {
+      "rule_id": "build/warnings-present",
+      "category": "build",
+      "severity": "MEDIUM",
+      "title": "Build completed with warnings",
+      "description": "The build succeeded but contains warnings that should be addressed",
+      "location": ".",
+      "evidence": [
+        {
+          "type": "log",
+          "content": "warn  - Compiled with warnings\n./node_modules/some-package/index.js\nModule not found: Can't resolve 'optional-dep'"
+        }
+      ],
+      "remediation": "Review build warnings and fix underlying issues",
+      "tool": "build",
+      "timestamp": "2026-01-31T12:00:00"
+    }
+  ],
+  "metrics": {
+    "total_findings": 4,
+    "blocker_count": 1,
+    "high_count": 2,
+    "medium_count": 1,
+    "low_count": 0,
+    "by_category": {
+      "type": 1,
+      "lint": 1,
+      "build": 1,
+      "ui": 1,
+      "infra": 0,
+      "test": 0,
+      "security": 0
+    },
+    "by_tool": {
+      "typescript": 1,
+      "eslint": 1,
+      "playwright": 1,
+      "build": 1
+    }
+  },
+  "metadata": {}
+}

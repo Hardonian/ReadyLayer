@@ -1,0 +1,5 @@
+severity,category,rule_id,title,location,line,column,tool,remediation
+BLOCKER,type,TS7006,Parameter 'user' implicitly has an 'any' type,app/(app)/dashboard/page.tsx,45,23,typescript,Add explicit type annotation to the parameter
+HIGH,lint,@typescript-eslint/no-explicit-any,Unexpected any. Specify a different type.,components/ui/button.tsx,12,15,eslint,Replace 'any' with specific type or use unknown
+HIGH,ui,playwright/visual-regression,Visual regression on critical route: homepage-loaded,homepage-loaded,,,playwright,Review test failure and fix underlying issue
+MEDIUM,build,build/warnings-present,Build completed with warnings,.,,,build,Review build warnings and fix underlying issues
