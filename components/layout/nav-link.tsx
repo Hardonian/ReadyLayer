@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -11,7 +12,7 @@ interface NavLinkProps {
   variant?: 'desktop' | 'mobile'
 }
 
-export function NavLink({ href, label, onClick, variant = 'desktop' }: NavLinkProps) {
+export function NavLink({ href, label, onClick, variant = 'desktop' }: NavLinkProps): React.JSX.Element {
   const pathname = usePathname()
   const isActive = pathname === href
 

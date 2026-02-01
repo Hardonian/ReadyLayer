@@ -56,7 +56,7 @@ const pipelineNodes: PipelineNode[] = [
   },
 ]
 
-export function PipelineStrip() {
+export function PipelineStrip(): React.JSX.Element {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []

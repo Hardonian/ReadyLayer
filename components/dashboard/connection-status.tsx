@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { ConnectionStatus } from '@/lib/hooks/use-stream-connection'
 import { Wifi, WifiOff, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +11,7 @@ interface ConnectionStatusBadgeProps {
   lastEventTime?: Date | null
 }
 
-export function ConnectionStatusBadge({ status, lastEventTime }: ConnectionStatusBadgeProps) {
+export function ConnectionStatusBadge({ status, lastEventTime }: ConnectionStatusBadgeProps): React.JSX.Element {
   const getStatusConfig = () => {
     switch (status) {
       case 'connected':

@@ -15,7 +15,7 @@ interface MobileNavProps {
   homeHref?: string
 }
 
-export function MobileNav({ navItems, homeHref = '/dashboard' }: MobileNavProps) {
+export function MobileNav({ navItems, homeHref = '/dashboard' }: MobileNavProps): React.JSX.Element {
   const [isOpen, setIsOpen] = React.useState(false)
   const pathname = usePathname()
   const menuRef = React.useRef<HTMLDivElement>(null)

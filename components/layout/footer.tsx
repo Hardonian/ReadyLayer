@@ -1,11 +1,12 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import { Container } from '@/components/ui/container'
 import { LogoWord } from '@/components/ui/logo'
 import { Github, Twitter, Mail, Shield, FileText, BookOpen } from 'lucide-react'
 
-export function Footer() {
+export function Footer(): React.JSX.Element {
   return (
     <footer className="border-t border-border/20 bg-surface-code/50">
       <Container size="lg">

@@ -389,7 +389,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
   };
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     const inventory = await inventoryLiveDatabase();
     console.log(JSON.stringify(inventory, null, 2));

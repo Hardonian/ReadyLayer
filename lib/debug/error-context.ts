@@ -241,21 +241,26 @@ export function withErrorContext<T>(
  * tracker.error('Payment failed');
  * ```
  */
-export function createBreadcrumbTracker(category: string) {
+export function createBreadcrumbTracker(category: string): {
+  debug: (message: string, data?: Record<string, unknown>) => void;
+  log: (message: string, data?: Record<string, unknown>) => void;
+  warn: (message: string, data?: Record<string, unknown>) => void;
+  error: (message: string, data?: Record<string, unknown>) => void;
+} {
   return {
-    debug(message: string, data?: Record<string, unknown>) {
+    debug(message: string, data?: Record<string, unknown>): void {
       addBreadcrumb(category, message, 'debug', data);
     },
 
-    log(message: string, data?: Record<string, unknown>) {
+    log(message: string, data?: Record<string, unknown>): void {
       addBreadcrumb(category, message, 'info', data);
     },
 
-    warn(message: string, data?: Record<string, unknown>) {
+    warn(message: string, data?: Record<string, unknown>): void {
       addBreadcrumb(category, message, 'warning', data);
     },
 
-    error(message: string, data?: Record<string, unknown>) {
+    error(message: string, data?: Record<string, unknown>): void {
       addBreadcrumb(category, message, 'error', data);
     },
   };

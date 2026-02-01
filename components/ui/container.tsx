@@ -26,7 +26,7 @@ export function Container({
   className,
   size = 'lg',
   ...props 
-}: ContainerProps) {
+}: ContainerProps): React.JSX.Element {
   return (
     <div
       className={cn(

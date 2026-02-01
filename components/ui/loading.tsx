@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { fadeIn } from '@/lib/design/motion'
@@ -14,7 +15,7 @@ export function LoadingSpinner({
 }: { 
   className?: string
   size?: 'sm' | 'md' | 'lg'
-}) {
+}): React.JSX.Element {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-8 w-8',
@@ -54,7 +55,7 @@ export function LoadingState({
 }: { 
   message?: string
   className?: string
-}) {
+}): React.JSX.Element {
   return (
     <motion.div
       className={cn('flex flex-col items-center justify-center min-h-[400px] p-8', className)}
@@ -79,7 +80,7 @@ export function Skeleton({
 }: Omit<
   HTMLMotionProps<'div'>,
   'onAnimationStart' | 'onDrag' | 'onDragStart' | 'onDragEnd'
->) {
+>): React.JSX.Element {
   return (
     <motion.div
       className={cn('animate-pulse rounded-lg bg-surface-muted border border-border/10', className)}
@@ -101,7 +102,7 @@ export function SkeletonText({
 }: { 
   lines?: number
   className?: string
-}) {
+}): React.JSX.Element {
   return (
     <div className={cn('space-y-2', className)}>
       {Array.from({ length: lines }).map((_, i) => (
@@ -121,7 +122,7 @@ export function SkeletonText({
  * Card Skeleton
  * For loading card content
  */
-export function CardSkeleton({ className }: { className?: string }) {
+export function CardSkeleton({ className }: { className?: string }): React.JSX.Element {
   return (
     <div className={cn('rounded-lg border border-border-subtle bg-surface-raised p-6', className)}>
       <Skeleton className="h-6 w-1/3 mb-4" />

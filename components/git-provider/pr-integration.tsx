@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { PolicyStatusWidget } from './policy-status-widget'
 import { TestRunStatus } from './test-run-status'
 import { formatProviderComment, getStatusCheckDescription, type GitProvider } from '@/lib/git-provider-ui'
@@ -23,7 +23,7 @@ interface PRIntegrationProps {
  * Embeds policy status into Git provider PR/MR UI
  * Adapts styling and behavior to match provider
  */
-export function PRIntegration({ repository, prNumber, prSha, reviewId }: PRIntegrationProps) {
+export function PRIntegration({ repository, prNumber, prSha, reviewId }: PRIntegrationProps): React.JSX.Element | null {
   const [policyResult, setPolicyResult] = useState<{
     blocked: boolean
     score: number

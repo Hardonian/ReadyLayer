@@ -5,6 +5,7 @@
  * to validate ReadyLayer's effectiveness and build credibility
  */
 
+import React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Star, Users, Shield, TrendingUp, Award, CheckCircle2 } from 'lucide-react'
@@ -29,7 +30,7 @@ interface SocialProofProps {
   className?: string
 }
 
-export function SocialProof({ variant = 'detailed', showMetrics = true, className = '' }: SocialProofProps) {
+export function SocialProof({ variant = 'detailed', showMetrics = true, className = '' }: SocialProofProps): React.JSX.Element {
   if (variant === 'stats-only') {
     return <SocialProofStats className={className} />
   }

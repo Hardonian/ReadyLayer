@@ -28,6 +28,8 @@ export const logLevels = {
 /**
  * Create a child logger with context
  */
-export function createLogger(context: Record<string, unknown>) {
+import type { Logger } from 'pino';
+
+export function createLogger(context: Record<string, unknown>): Logger {
   return logger.child(context)
 }

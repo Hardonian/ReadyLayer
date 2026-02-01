@@ -18,7 +18,7 @@ export function Logo({
   variant = 'full',
   size = 'md',
   className = '',
-}: LogoProps) {
+}: LogoProps): React.JSX.Element {
   const { theme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
@@ -96,14 +96,14 @@ export function Logo({
 /**
  * Convenience exports for specific variants
  */
-export function LogoFull(props: Omit<LogoProps, 'variant'>) {
+export function LogoFull(props: Omit<LogoProps, 'variant'>): React.JSX.Element {
   return <Logo {...props} variant="full" />
 }
 
-export function LogoMark(props: Omit<LogoProps, 'variant'>) {
+export function LogoMark(props: Omit<LogoProps, 'variant'>): React.JSX.Element {
   return <Logo {...props} variant="mark" />
 }
 
-export function LogoWord(props: Omit<LogoProps, 'variant'>) {
+export function LogoWord(props: Omit<LogoProps, 'variant'>): React.JSX.Element {
   return <Logo {...props} variant="word" />
 }

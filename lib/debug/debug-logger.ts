@@ -299,13 +299,17 @@ export const debug = createDebugLogger('app');
  * profile.end(); // Logs duration
  * ```
  */
+interface ProfilerHandle {
+  end: (data?: unknown) => number;
+}
+
 export const profiler = {
-  start(label: string) {
+  start(label: string): ProfilerHandle {
     const startTime = performance.now();
     const logger = createDebugLogger('profiler');
 
     return {
-      end(data?: unknown) {
+      end(data?: unknown): number {
         const duration = performance.now() - startTime;
         logger.checkpoint(`${label} completed in ${duration.toFixed(2)}ms`, data);
         return duration;

@@ -352,7 +352,7 @@ function generateSpec(): OpenAPISpec {
 }
 
 // Write spec to file
-function main() {
+function main(): void {
   const spec = generateSpec();
   const outputPath = path.join(process.cwd(), 'public', 'openapi.json');
 

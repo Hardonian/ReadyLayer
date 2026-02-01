@@ -91,7 +91,7 @@ const defaultPolicies: Record<string, PolicyCategory> = {
   },
 }
 
-export function PolicyPreview({ className }: PolicyPreviewProps) {
+export function PolicyPreview({ className }: PolicyPreviewProps): React.JSX.Element {
   const [selectedPolicy, setSelectedPolicy] = React.useState<keyof typeof defaultPolicies>('security')
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,

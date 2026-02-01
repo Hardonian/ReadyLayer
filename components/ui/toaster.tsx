@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import {
   Toast,
   ToastClose,
@@ -10,7 +11,7 @@ import {
 } from '@/components/ui/toast'
 import { useToast } from '@/lib/hooks/use-toast'
 
-export function Toaster() {
+export function Toaster(): React.JSX.Element {
   const { toasts } = useToast()
 
   return (

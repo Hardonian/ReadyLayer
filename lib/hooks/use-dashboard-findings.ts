@@ -4,7 +4,7 @@
  * Fetches findings inbox with real-time updates
  */
 
-import { useRealtimeQuery } from './use-realtime-query'
+import { useRealtimeQuery, UseRealtimeQueryReturn } from './use-realtime-query'
 import { FindingSnapshot } from '@/lib/dashboard/schemas'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
@@ -24,7 +24,7 @@ export function useDashboardFindings({
   limit = 50,
   offset = 0,
   enabled = true,
-}: UseDashboardFindingsOptions) {
+}: UseDashboardFindingsOptions): UseRealtimeQueryReturn<FindingSnapshot, Error> {
   return useRealtimeQuery<FindingSnapshot>({
     queryKey: ['dashboard', 'findings', organizationId, repositoryId || '', timeRange, limit.toString(), offset.toString()],
     queryFn: async () => {

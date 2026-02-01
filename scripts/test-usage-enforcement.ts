@@ -33,7 +33,7 @@ async function test(name: string, fn: () => Promise<void>): Promise<void> {
   }
 }
 
-async function cleanup() {
+async function cleanup(): Promise<void> {
   // Clean up test data
   const testOrgId = 'test-org-usage-enforcement';
   
@@ -71,7 +71,7 @@ async function cleanup() {
   }
 }
 
-async function setupTestOrg() {
+async function setupTestOrg(): Promise<{ orgId: string; userId: string; repoId: string }> {
   const testOrgId = 'test-org-usage-enforcement';
   const testUserId = 'test-user-usage-enforcement';
 
@@ -152,7 +152,7 @@ async function setupTestOrg() {
   return { orgId: testOrgId, userId: testUserId, repoId: repo.id };
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🧪 Usage Enforcement Test Suite\n');
 
   let testData: { orgId: string; userId: string; repoId: string };

@@ -7,7 +7,7 @@
 import { prisma } from '../lib/prisma';
 import { console } from './logger';
 
-async function testTenantIsolation() {
+async function testTenantIsolation(): Promise<void> {
   console.log('🔒 Testing Tenant Isolation...\n');
 
   // Test 1: Create test data

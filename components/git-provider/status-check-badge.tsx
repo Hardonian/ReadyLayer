@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { getStatusCheckBadgeStyle, detectGitProvider, type GitProvider } from '@/lib/git-provider-ui'
 import { CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react'
@@ -14,7 +15,7 @@ interface StatusCheckBadgeProps {
   className?: string
 }
 
-export function StatusCheckBadge({ status, provider, repository, className }: StatusCheckBadgeProps) {
+export function StatusCheckBadge({ status, provider, repository, className }: StatusCheckBadgeProps): React.JSX.Element {
   const detectedProvider = provider || (repository ? detectGitProvider(repository) : 'generic')
   const style = getStatusCheckBadgeStyle(detectedProvider, status)
 

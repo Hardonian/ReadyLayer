@@ -405,7 +405,7 @@ export function calculateOverallCoverage(fileCoverages: FileCoverage[]): Coverag
     };
   }
 
-  const aggregate = (key: 'lines' | 'branches' | 'functions' | 'statements') => {
+const aggregate = (key: 'lines' | 'branches' | 'functions' | 'statements'): { total: number; covered: number; percentage: number } => {
     const total = fileCoverages.reduce((sum, fc) => sum + (fc.metrics[key]?.total || 0), 0);
     const covered = fileCoverages.reduce((sum, fc) => sum + (fc.metrics[key]?.covered || 0), 0);
     const percentage = total > 0 ? (covered / total) * 100 : 0;

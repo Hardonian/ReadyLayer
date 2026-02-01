@@ -75,7 +75,7 @@ const failureScenarios = [
   },
 ]
 
-export function FailureModes({ className }: FailureModesProps) {
+export function FailureModes({ className }: FailureModesProps): React.JSX.Element {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []

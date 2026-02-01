@@ -7,7 +7,7 @@
 import { prisma } from '../lib/prisma';
 import { console } from './logger';
 
-async function verifyMigration() {
+async function verifyMigration(): Promise<void> {
   console.log('🔍 Verifying ReadyLayer migration...\n');
 
   const checks: Array<{ name: string; passed: boolean; error?: string }> = [];

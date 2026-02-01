@@ -4,7 +4,7 @@
  * Fetches runs with real-time updates
  */
 
-import { useRealtimeQuery } from './use-realtime-query'
+import { useRealtimeQuery, UseRealtimeQueryReturn } from './use-realtime-query'
 import { RunSnapshot } from '@/lib/dashboard/schemas'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
@@ -24,7 +24,7 @@ export function useDashboardRuns({
   limit = 50,
   offset = 0,
   enabled = true,
-}: UseDashboardRunsOptions) {
+}: UseDashboardRunsOptions): UseRealtimeQueryReturn<RunSnapshot, Error> {
   return useRealtimeQuery<RunSnapshot>({
     queryKey: ['dashboard', 'runs', organizationId, repositoryId || '', timeRange, limit.toString(), offset.toString()],
     queryFn: async () => {

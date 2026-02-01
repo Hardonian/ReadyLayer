@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { Container } from '@/components/ui/container'
@@ -50,7 +51,7 @@ const features: Feature[] = [
   },
 ]
 
-export function FeatureShowcase() {
+export function FeatureShowcase(): React.JSX.Element {
   return (
     <section className="py-16 bg-surface-muted/30" aria-labelledby="features-heading">
       <Container size="lg">

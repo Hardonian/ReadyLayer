@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, CheckCircle } from 'lucide-react'
@@ -16,7 +16,7 @@ export function UserInviteForm({
   organizationId: _organizationId,
   onSuccess,
   onError,
-}: UserInviteFormProps) {
+}: UserInviteFormProps): React.JSX.Element {
   const [emails, setEmails] = useState('')
   const [role, setRole] = useState('member')
   const [loading, setLoading] = useState(false)

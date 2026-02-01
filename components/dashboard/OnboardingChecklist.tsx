@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle2, Circle, ChevronDown, ChevronUp, Zap } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,7 +37,7 @@ export function OnboardingChecklist({
   onItemClick,
   onComplete,
   compact = false,
-}: OnboardingChecklistProps) {
+}: OnboardingChecklistProps): React.JSX.Element {
   const [expandedItem, setExpandedItem] = useState<string | null>(null)
   const [localItems] = useState(items)
 

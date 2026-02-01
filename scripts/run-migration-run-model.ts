@@ -12,7 +12,7 @@ import { console } from './logger';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function main(): Promise<void> {
   const migrationPath = join(process.cwd(), 'supabase/migrations/00000000000006_ready_layer_run.sql');
   const sql = readFileSync(migrationPath, 'utf-8');
   

@@ -6,7 +6,7 @@
 
 import { enqueueJob } from '../lib/jobforge/enqueue'
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🚀 JobForge Enqueue Example\n')
 
   // You'll need to replace this with a real tenant ID

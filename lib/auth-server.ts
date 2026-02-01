@@ -23,7 +23,7 @@ export async function requireAuth(request?: NextRequest): Promise<string> {
 /**
  * Get the full authenticated user object
  */
-export async function getAuthenticatedUser(request?: NextRequest) {
+export async function getAuthenticatedUser(request?: NextRequest): Promise<ReturnType<typeof getSupabaseUser>> {
   return await getSupabaseUser(request)
 }
 

@@ -66,7 +66,7 @@ const whatWeDontDo = [
   },
 ]
 
-export function IntegrationConfidence({ className }: IntegrationConfidenceProps) {
+export function IntegrationConfidence({ className }: IntegrationConfidenceProps): React.JSX.Element {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []

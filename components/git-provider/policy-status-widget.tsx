@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -37,7 +38,7 @@ export function PolicyStatusWidget({
   evidenceBundleId,
   reviewId,
   className,
-}: PolicyStatusWidgetProps) {
+}: PolicyStatusWidgetProps): React.JSX.Element {
   const provider = detectGitProvider(repository)
   const config = getGitProviderUIConfig(provider)
   const theme = config.theme

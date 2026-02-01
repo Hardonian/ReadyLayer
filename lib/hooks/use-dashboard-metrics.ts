@@ -4,7 +4,7 @@
  * Fetches dashboard metrics with real-time updates
  */
 
-import { useRealtimeQuery } from './use-realtime-query'
+import { useRealtimeQuery, UseRealtimeQueryReturn } from './use-realtime-query'
 import { MetricsSnapshot } from '@/lib/dashboard/schemas'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
@@ -20,7 +20,7 @@ export function useDashboardMetrics({
   repositoryId,
   timeRange = '24h',
   enabled = true,
-}: UseDashboardMetricsOptions) {
+}: UseDashboardMetricsOptions): UseRealtimeQueryReturn<MetricsSnapshot, Error> {
   return useRealtimeQuery<MetricsSnapshot>({
     queryKey: ['dashboard', 'metrics', organizationId, repositoryId || '', timeRange],
     queryFn: async () => {

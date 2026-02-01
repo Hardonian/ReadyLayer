@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,7 +28,7 @@ export function PolicyTemplateSelector({
   onSelect,
   onApply,
   selected = [],
-}: PolicyTemplateSelectorProps) {
+}: PolicyTemplateSelectorProps): React.JSX.Element {
   const categories = ['security', 'compliance', 'quality', 'performance']
 
   const getIcon = (category: string) => {

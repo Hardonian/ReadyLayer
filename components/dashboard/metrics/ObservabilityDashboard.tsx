@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertCircle, TrendingUp, Activity, Zap } from 'lucide-react'
 
@@ -20,7 +20,7 @@ export interface ObservabilityDashboardProps {
 export function ObservabilityDashboard({
   organizationId,
   refreshInterval = 30000,
-}: ObservabilityDashboardProps) {
+}: ObservabilityDashboardProps): React.JSX.Element {
   const [metrics] = useState<MetricData[]>([
     { label: 'Queue Depth', value: 42, unit: 'jobs', trend: 5, status: 'healthy' },
     { label: 'Worker Latency', value: 285, unit: 'ms', trend: -12, status: 'healthy' },

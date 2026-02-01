@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, Code2, Eye, MessageSquare, X } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -54,7 +54,7 @@ export function BlockedPRAlert({
   onDismiss,
   onViewDetails,
   compact = false,
-}: BlockedPRAlertProps) {
+}: BlockedPRAlertProps): React.JSX.Element {
   const [isDismissed, setIsDismissed] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
 

@@ -289,7 +289,7 @@ async function verifyMigrations(): Promise<boolean> {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('╔════════════════════════════════════════════════════════╗');
   console.log('║     ReadyLayer Worker Smoke Test Suite                 ║');
   console.log('╚════════════════════════════════════════════════════════╝');

@@ -1,10 +1,11 @@
+import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Container } from '@/components/ui/container'
 import { Footer } from '@/components/layout/footer'
 import { PUBLIC_NAV_ITEMS } from '@/lib/navigation'
 
-export function PublicLayout({ children }: { children: React.ReactNode }) {
+export function PublicLayout({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-40 border-b border-border/20 backdrop-blur-custom bg-surface/95 dark:bg-surface/90 shadow-surface-flat transition-all duration-300">

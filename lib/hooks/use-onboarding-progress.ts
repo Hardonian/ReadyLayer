@@ -52,10 +52,18 @@ const DEFAULT_STEPS: OnboardingStep[] = [
   },
 ]
 
+interface UseOnboardingProgressResult {
+  progress: OnboardingProgress
+  completeStep: (stepId: string) => void
+  reset: () => void
+  shouldShowOnboarding: () => boolean
+  isLoading: boolean
+}
+
 /**
  * Use onboarding progress tracking
  */
-export function useOnboardingProgress() {
+export function useOnboardingProgress(): UseOnboardingProgressResult {
   const [storedProgress, setStoredProgress] = useLocalStorage<OnboardingProgress | null>(
     'readylayer:onboarding-progress',
     null
@@ -83,7 +91,7 @@ export function useOnboardingProgress() {
 
   // Mark step as completed
   const completeStep = useCallback(
-    (stepId: string) => {
+    (stepId: string): void => {
       if (!progress) return
 
       const updatedSteps = progress.steps.map((step) =>
@@ -120,7 +128,7 @@ export function useOnboardingProgress() {
   )
 
   // Reset onboarding
-  const reset = useCallback(() => {
+  const reset = useCallback((): void => {
     const initialProgress: OnboardingProgress = {
       started: false,
       steps: DEFAULT_STEPS,
@@ -132,7 +140,7 @@ export function useOnboardingProgress() {
   }, [setStoredProgress])
 
   // Check if onboarding should be shown
-  const shouldShowOnboarding = useCallback(() => {
+  const shouldShowOnboarding = useCallback((): boolean => {
     if (!progress) return true
     // Show if not started or less than 100% complete
     return !progress.isComplete
@@ -158,7 +166,7 @@ export function useOnboardingProgress() {
 function trackOnboardingEvent(
   eventName: string,
   data?: Record<string, unknown>
-) {
+): void {
   // Would send to analytics service
   // For now, just log to console in development
   if (process.env.NODE_ENV === 'development') {
@@ -194,7 +202,7 @@ const item = window.localStorage.getItem(key)
   })
 
   // Return a wrapped version of useState's setter function that persists to localStorage
-  const setValue = (value: T) => {
+  const setValue = (value: T): void => {
     try {
 const valueToStore = value instanceof Function ? (value as (prev: T) => T)(storedValue) : value
       setStoredValue(valueToStore)

@@ -16,7 +16,7 @@ import { Button } from './button'
  * - Respects reduced motion
  * - No hydration mismatch
  */
-export function ThemeToggle() {
+export function ThemeToggle(): React.JSX.Element {
   const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 

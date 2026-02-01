@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '@/observability/logging';
 
 interface Props {
@@ -126,7 +126,7 @@ export class ErrorBoundary extends Component<Props, State> {
 /**
  * Route-level error boundary with custom fallback
  */
-export function RouteErrorBoundary({ children }: { children: ReactNode }) {
+export function RouteErrorBoundary({ children }: { children: ReactNode }): React.JSX.Element {
   return (
     <ErrorBoundary
       fallback={

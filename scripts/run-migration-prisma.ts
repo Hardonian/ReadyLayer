@@ -10,7 +10,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { console } from './logger';
 
-async function runMigration() {
+async function runMigration(): Promise<void> {
   console.log('🚀 Running ReadyLayer migration via Prisma...\n');
 
   try {

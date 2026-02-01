@@ -48,7 +48,7 @@ function fileExists(filePath: string): boolean {
   return fs.existsSync(path.join(__dirname, '..', filePath));
 }
 
-function main() {
+function main(): void {
   console.log('🔍 Usage Enforcement Validation Suite\n');
 
   // Validation 1: All required files exist

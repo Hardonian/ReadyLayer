@@ -8,7 +8,7 @@ import { prisma } from '../lib/prisma';
 import { billingService } from '../billing';
 import { console } from './logger';
 
-async function testBillingEnforcement() {
+async function testBillingEnforcement(): Promise<void> {
   console.log('💰 Testing Billing Enforcement...\n');
 
   // Test 1: Create test organization

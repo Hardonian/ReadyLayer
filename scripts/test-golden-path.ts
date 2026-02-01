@@ -33,7 +33,7 @@ function recordTest(name: string, passed: boolean, error?: string): void {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🧪 Golden Path Test - ReadyLayer Activation Flow\n');
   console.log('='.repeat(60));
 

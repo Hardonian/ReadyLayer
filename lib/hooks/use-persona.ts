@@ -5,12 +5,17 @@ import { createSupabaseClient } from '@/lib/supabase/client'
 
 type Persona = 'founder' | 'enterprise-cto' | 'junior-developer' | 'open-source-maintainer' | 'agency-freelancer' | 'startup-cto' | null
 
-export function usePersona() {
+interface UsePersonaResult {
+  persona: Persona
+  loading: boolean
+}
+
+export function usePersona(): UsePersonaResult {
   const [persona, setPersona] = useState<Persona>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function detectPersona() {
+    async function detectPersona(): Promise<void> {
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()

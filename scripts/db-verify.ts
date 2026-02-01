@@ -217,7 +217,7 @@ async function verifyDatabase(): Promise<VerificationResult> {
   return result;
 }
 
-async function main() {
+async function main(): Promise<void> {
   const result = await verifyDatabase();
 
   console.log('\n' + '='.repeat(60));

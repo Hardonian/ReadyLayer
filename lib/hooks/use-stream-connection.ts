@@ -63,20 +63,20 @@ export function useStreamConnection({
         }
       })
 
-eventSource.addEventListener('connected', (e) => {
-        const data = JSON.parse(e.data) as { timestamp: string };
+eventSource.addEventListener('connected', (e: MessageEvent) => {
+        const data = JSON.parse(String(e.data)) as { timestamp: string };
         setLastEventTime(new Date(data.timestamp))
       })
 
-      eventSource.addEventListener('heartbeat', (e) => {
-        const data = JSON.parse(e.data) as { timestamp: string };
+      eventSource.addEventListener('heartbeat', (e: MessageEvent) => {
+        const data = JSON.parse(String(e.data)) as { timestamp: string };
         setLastEventTime(new Date(data.timestamp))
       })
 
       // Handle delta events
       const handleDeltaEvent = (): ((e: MessageEvent) => void) => (e: MessageEvent): void => {
         try {
-          const event = deltaEventSchema.parse(JSON.parse(e.data))
+          const event = deltaEventSchema.parse(JSON.parse(String(e.data)))
           setLastEventTime(new Date(event.timestamp))
 
           // Invalidate relevant queries
@@ -151,7 +151,7 @@ eventSource.addEventListener('connected', (e) => {
       disconnect()
     }
 
-    return () => {
+    return (): void => {
       disconnect()
     }
   }, [enabled, organizationId, repositoryId, connect, disconnect])

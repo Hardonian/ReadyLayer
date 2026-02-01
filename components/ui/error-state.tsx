@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { slideUp } from '@/lib/design/motion'
@@ -39,7 +40,7 @@ export function ErrorState({
   className,
   showDetails = false,
   details,
-}: ErrorStateProps) {
+}: ErrorStateProps): React.JSX.Element {
   return (
     <motion.div
       className={cn(

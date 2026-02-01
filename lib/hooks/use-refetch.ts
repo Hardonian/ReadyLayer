@@ -62,7 +62,7 @@ export function useRefetch(): {
    * Listen for cache invalidation events
    */
   useEffect(() => {
-    const handleInvalidate = (event: Event) => {
+    const handleInvalidate = (event: Event): void => {
       const customEvent = event as CustomEvent<{ key: string }>
       const { key } = customEvent.detail
 
@@ -74,7 +74,7 @@ export function useRefetch(): {
     }
 
     window.addEventListener('cache-invalidate', handleInvalidate)
-    return () => {
+    return (): void => {
       window.removeEventListener('cache-invalidate', handleInvalidate)
     }
   }, [refetch, refetchAll])

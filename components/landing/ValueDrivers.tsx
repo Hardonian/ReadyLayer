@@ -30,7 +30,7 @@ const drivers = [
   },
 ]
 
-export function ValueDrivers() {
+export function ValueDrivers(): React.JSX.Element {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []

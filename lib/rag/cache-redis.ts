@@ -23,6 +23,22 @@ interface CacheEntry {
   expiresAt: number;
 }
 
+interface CacheMetrics {
+  redisHits: number;
+  redisMisses: number;
+  inMemoryHits: number;
+  inMemoryMisses: number;
+  errors: number;
+  hitRate: number;
+}
+
+interface CacheHealthStatus {
+  redisHealthy: boolean;
+  inMemorySize: number;
+  inMemoryMaxSize: number;
+  hitRate: number;
+}
+
 class RedisRAGCache {
   private redisClient: RedisClientType | null = null;
   private inMemoryCache: Map<string, CacheEntry> = new Map();
@@ -258,7 +274,7 @@ class RedisRAGCache {
   /**
    * Get cache metrics
    */
-  getMetrics() {
+  getMetrics(): CacheMetrics {
     return {
       ...this.metrics,
       hitRate:
@@ -303,10 +319,10 @@ export async function clearCache(): Promise<void> {
   return ragCache.clear();
 }
 
-export function getCacheHealth() {
+export function getCacheHealth(): CacheHealthStatus {
   return ragCache.getHealthStatus();
 }
 
-export function getCacheMetrics() {
+export function getCacheMetrics(): CacheMetrics {
   return ragCache.getMetrics();
 }

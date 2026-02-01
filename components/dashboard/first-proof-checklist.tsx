@@ -1,6 +1,6 @@
 'use client'
 
-
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -22,7 +22,7 @@ export function FirstProofChecklist({
   items,
   title = 'First Proof Checklist',
   description = 'Complete these steps to see ReadyLayer in action',
-}: FirstProofChecklistProps) {
+}: FirstProofChecklistProps): React.JSX.Element {
   const completedCount = items.filter(item => item.status === 'completed').length
   const totalCount = items.length
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0

@@ -374,7 +374,7 @@ export function generateSecurityReport(issues: SecurityIssue[]): string {
     info: issues.filter(i => i.severity === 'info'),
   };
 
-  const formatIssues = (severity: string, issueList: SecurityIssue[]) => {
+  const formatIssues = (severity: string, issueList: SecurityIssue[]): void => {
     if (issueList.length === 0) return;
 
     const icon = {

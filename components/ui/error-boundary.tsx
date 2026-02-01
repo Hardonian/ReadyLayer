@@ -25,7 +25,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log error to monitoring service in production
     console.error('Error caught by boundary:', error, errorInfo)
     
@@ -35,11 +35,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
   }
 
-  reset = () => {
+  reset = (): void => {
     this.setState({ hasError: false, error: undefined })
   }
 
-  render() {
+  render(): React.ReactNode {
     if (this.state.hasError) {
       const { fallback: Fallback } = this.props
       

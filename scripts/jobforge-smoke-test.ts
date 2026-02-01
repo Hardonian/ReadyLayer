@@ -6,7 +6,7 @@
 
 import { JobForgeClient } from '../lib/jobforge/sdk/src'
 
-async function smokeTest() {
+async function smokeTest(): Promise<void> {
   console.log('🔥 JobForge Smoke Test Starting...\n')
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

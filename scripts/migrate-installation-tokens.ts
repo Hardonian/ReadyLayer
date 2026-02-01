@@ -10,7 +10,7 @@ import { encryptToken, isEncrypted, redactSecret } from '../lib/secrets';
 import { isKeyConfigured } from '../lib/crypto';
 import { logger } from '../observability/logging';
 
-async function migrateInstallationTokens() {
+async function migrateInstallationTokens(): Promise<void> {
   logger.info('Starting installation token migration');
 
   // Check if encryption keys are configured

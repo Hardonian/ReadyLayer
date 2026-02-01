@@ -12,7 +12,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MetricsCard } from '@/components/ui/metrics-card';
@@ -34,7 +34,7 @@ export interface ReadinessCommandCenterProps {
 export function ReadinessCommandCenter({
   organizationId,
   repositoryId,
-}: ReadinessCommandCenterProps) {
+}: ReadinessCommandCenterProps): React.JSX.Element {
   const [metrics, setMetrics] = useState<ReadinessMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 

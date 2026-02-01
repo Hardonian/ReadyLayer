@@ -7,6 +7,7 @@
 
 'use client';
 
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
@@ -22,7 +23,7 @@ export function CertificateBadge({
   readinessLevel,
   confidenceScore,
   showDetails = false,
-}: CertificateBadgeProps) {
+}: CertificateBadgeProps): React.JSX.Element {
   if (!certificateId) {
     // No certificate = unreviewed
     return (

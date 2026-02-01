@@ -379,10 +379,17 @@ export function getCacheStats(): {
   };
 }
 
+interface CacheHealthStatus {
+  redisHealthy: boolean;
+  inMemorySize: number;
+  inMemoryMaxSize: number;
+  hitRate: number;
+}
+
 /**
  * Get cache health status
  */
-export function getCacheHealth() {
+export function getCacheHealth(): CacheHealthStatus {
   return llmCacheInstance.getHealthStatus();
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { slideUp } from '@/lib/design/motion'
@@ -36,7 +37,7 @@ export function EmptyState({
   action,
   secondaryAction,
   className,
-}: EmptyStateProps) {
+}: EmptyStateProps): React.JSX.Element {
   return (
     <motion.div
       className={cn(

@@ -1,6 +1,6 @@
 'use client'
 
-
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { AlertTriangle, ExternalLink, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
@@ -126,7 +126,7 @@ const commonFailures: FailureExplanation[] = [
   },
 ]
 
-export function FailureExplainer({ failure, explanations = commonFailures }: FailureExplainerProps) {
+export function FailureExplainer({ failure, explanations = commonFailures }: FailureExplainerProps): React.JSX.Element {
   // Find matching explanation
   const explanation = explanations.find(e => e.code === failure.code) || 
     (failure.stage === 'review_guard' ? explanations.find(e => e.code === 'REVIEW_GUARD_FAILED') :

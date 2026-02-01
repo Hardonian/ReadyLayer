@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertCircle, TrendingUp, Zap, X, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -107,7 +107,7 @@ export function UpgradePrompt({
   onUpgradeClick,
   compact = false,
   data = {},
-}: UpgradePromptProps) {
+}: UpgradePromptProps): React.JSX.Element | null {
   const [isDismissed, setIsDismissed] = useState(false)
   const config = contextConfig[context]
   const Icon = config.icon

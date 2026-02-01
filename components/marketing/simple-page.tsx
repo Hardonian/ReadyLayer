@@ -1,3 +1,4 @@
+import React from 'react'
 import Link from 'next/link'
 import { Container } from '@/components/ui/container'
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,7 @@ type SimplePageProps = {
   secondaryCta?: SimplePageCta
 }
 
-export function SimplePage({ title, description, primaryCta, secondaryCta }: SimplePageProps) {
+export function SimplePage({ title, description, primaryCta, secondaryCta }: SimplePageProps): React.JSX.Element {
   return (
     <main className="min-h-screen py-16 lg:py-20">
       <Container size="lg">

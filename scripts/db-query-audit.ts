@@ -251,7 +251,7 @@ function extractOperationFromQuery(query: string): string {
 /**
  * Run audit on a sample of real application queries
  */
-async function runAudit() {
+async function runAudit(): Promise<void> {
   console.log('🔍 Starting Database Query Audit...\n');
 
   const auditor = new QueryAuditor();

@@ -25,7 +25,7 @@ const proofs = [
   },
 ]
 
-export function ProofGrid() {
+export function ProofGrid(): React.JSX.Element {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []

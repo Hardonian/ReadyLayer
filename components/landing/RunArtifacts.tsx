@@ -114,7 +114,7 @@ const artifactExamples = [
   },
 ]
 
-export function RunArtifacts({ className }: RunArtifactsProps) {
+export function RunArtifacts({ className }: RunArtifactsProps): React.JSX.Element {
   const [selectedArtifact, setSelectedArtifact] = React.useState(() => {
     try {
       return artifactExamples[0]?.id || 'sarif'

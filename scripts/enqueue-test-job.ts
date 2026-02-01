@@ -24,7 +24,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 
-async function main() {
+async function main(): Promise<void> {
   const jobType = process.argv[2] || 'smoke.test.echo';
   const payloadStr = process.argv[3] || '{"test": true, "manual": true}';
   

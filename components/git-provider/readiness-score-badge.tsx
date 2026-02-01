@@ -6,6 +6,7 @@
 
 'use client';
 
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
@@ -19,7 +20,7 @@ export function ReadinessScoreBadge({
   score,
   level,
   trend,
-}: ReadinessScoreBadgeProps) {
+}: ReadinessScoreBadgeProps): React.JSX.Element {
   const levelColors = {
     excellent: 'bg-green-500',
     good: 'bg-blue-500',

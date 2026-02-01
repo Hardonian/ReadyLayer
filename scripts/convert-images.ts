@@ -10,7 +10,7 @@ const writeError = (line: string): void => {
   process.stderr.write(`${line}\n`)
 }
 
-async function convertImages() {
+async function convertImages(): Promise<void> {
   const rootDir = process.cwd()
   
   // Source files

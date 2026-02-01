@@ -23,7 +23,7 @@ interface RecentRunsWidgetProps {
   maxRuns?: number
 }
 
-export function RecentRunsWidget({ runs, maxRuns = 5 }: RecentRunsWidgetProps) {
+export function RecentRunsWidget({ runs, maxRuns = 5 }: RecentRunsWidgetProps): React.JSX.Element {
   const displayRuns = runs.slice(0, maxRuns)
 
   const getStatusIcon = (status: string) => {

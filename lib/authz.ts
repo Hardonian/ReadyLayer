@@ -200,7 +200,7 @@ export const requireAdmin = createAuthzMiddleware({ requiredScopes: ['admin'] })
 /**
  * Require organization access
  */
-export const requireOrganization = (role?: 'owner' | 'admin' | 'member') =>
+export const requireOrganization = (role?: 'owner' | 'admin' | 'member'): ReturnType<typeof createAuthzMiddleware> =>
   createAuthzMiddleware({
     requireOrganization: true,
     requireRole: role,

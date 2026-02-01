@@ -8,13 +8,20 @@ import { useCallback, useRef } from 'react'
  * Provides a simple cache invalidation mechanism for client-side data fetching.
  * In a production app, consider using React Query or SWR for more robust caching.
  */
-export function useCache() {
+interface UseCacheReturn {
+  invalidate: (key: string) => void
+  invalidateAll: () => void
+  isInvalidated: (key: string) => boolean
+  clearInvalidation: (key: string) => void
+}
+
+export function useCache(): UseCacheReturn {
   const cacheKeys = useRef<Set<string>>(new Set())
 
   /**
    * Invalidate a specific cache key
    */
-  const invalidate = useCallback((key: string) => {
+  const invalidate = useCallback((key: string): void => {
     cacheKeys.current.add(key)
     // Dispatch custom event for components to listen to
     window.dispatchEvent(new CustomEvent('cache-invalidate', { detail: { key } }))
@@ -23,7 +30,7 @@ export function useCache() {
   /**
    * Invalidate all cache
    */
-  const invalidateAll = useCallback(() => {
+  const invalidateAll = useCallback((): void => {
     cacheKeys.current.clear()
     window.dispatchEvent(new CustomEvent('cache-invalidate', { detail: { key: '*' } }))
   }, [])
@@ -31,14 +38,14 @@ export function useCache() {
   /**
    * Check if a cache key is invalidated
    */
-  const isInvalidated = useCallback((key: string) => {
+  const isInvalidated = useCallback((key: string): boolean => {
     return cacheKeys.current.has(key)
   }, [])
 
   /**
    * Clear invalidation flag for a key (after refetch)
    */
-  const clearInvalidation = useCallback((key: string) => {
+  const clearInvalidation = useCallback((key: string): void => {
     cacheKeys.current.delete(key)
   }, [])
 

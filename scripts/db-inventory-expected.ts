@@ -293,7 +293,7 @@ function parseMigrationSQL(): Partial<ExpectedContract> {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   const prismaContract = parsePrismaSchema();
   const migrationContract = parseMigrationSQL();
 

@@ -431,21 +431,33 @@ class FeatureStoreCache {
 const featureCacheInstance = new FeatureStoreCache();
 
 export const featureStoreCache = {
-  get: (entityType: string, entityId: string, featureNames?: string[]) => 
+  get: (entityType: string, entityId: string, featureNames?: string[]): Promise<FeatureSet | null> => 
     featureCacheInstance.get(entityType, entityId, featureNames),
-  set: (entityType: string, entityId: string, featureSet: FeatureSet, options?: { ttl?: number; version?: string }) =>
+  set: (entityType: string, entityId: string, featureSet: FeatureSet, options?: { ttl?: number; version?: string }): Promise<void> =>
     featureCacheInstance.set(entityType, entityId, featureSet, options),
-  setWriteBehind: (entityType: string, entityId: string, featureSet: FeatureSet) =>
+  setWriteBehind: (entityType: string, entityId: string, featureSet: FeatureSet): Promise<void> =>
     featureCacheInstance.setWriteBehind(entityType, entityId, featureSet),
-  getBatch: (entityType: string, entityIds: string[], featureNames?: string[]) =>
+  getBatch: (entityType: string, entityIds: string[], featureNames?: string[]): Promise<Map<string, FeatureSet | null>> =>
     featureCacheInstance.getBatch(entityType, entityIds, featureNames),
-  invalidate: (entityType: string, entityId?: string) =>
+  invalidate: (entityType: string, entityId?: string): Promise<void> =>
     featureCacheInstance.invalidate(entityType, entityId),
-  warmCache: (entityType: string, featureSets: Array<{ entityId: string; features: FeatureSet }>) =>
+  warmCache: (entityType: string, featureSets: Array<{ entityId: string; features: FeatureSet }>): Promise<void> =>
     featureCacheInstance.warmCache(entityType, featureSets),
-  getStats: () => featureCacheInstance.getStats(),
-  getHealth: () => featureCacheInstance.getHealth(),
-  disconnect: () => featureCacheInstance.disconnect(),
+  getStats: (): {
+    l1Size: number;
+    l1HitRate: number;
+    l2HitRate: number;
+    missRate: number;
+    writes: number;
+    errors: number;
+    writeBehindQueueSize: number;
+  } => featureCacheInstance.getStats(),
+  getHealth: (): {
+    redisHealthy: boolean;
+    l1Size: number;
+    writeBehindQueueSize: number;
+  } => featureCacheInstance.getHealth(),
+  disconnect: (): Promise<void> => featureCacheInstance.disconnect(),
 };
 
 export default featureStoreCache;

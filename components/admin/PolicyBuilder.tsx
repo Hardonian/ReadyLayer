@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -25,7 +25,7 @@ export function PolicyBuilder({
   onSave,
   onCancel,
   initialPolicy,
-}: PolicyBuilderProps) {
+}: PolicyBuilderProps): React.JSX.Element {
   const [name, setName] = useState(initialPolicy?.name || '')
   const [rules, setRules] = useState<PolicyRule[]>(initialPolicy?.rules || [])
   const [newRuleName, setNewRuleName] = useState('')

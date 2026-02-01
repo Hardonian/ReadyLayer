@@ -10,7 +10,7 @@ import { spawn } from 'child_process';
 import * as http from 'http';
 import { console } from './logger';
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface TestResult {
   path: string;
@@ -163,7 +163,7 @@ async function runTests(port: number): Promise<boolean> {
   return !hasFailures;
 }
 
-async function main() {
+async function main(): Promise<void> {
   const port = parseInt(process.env.PORT || '3000', 10);
   const buildOnly = process.argv.includes('--build-only');
 

@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma';
 import { createAuditLog, AuditActions } from '../lib/audit';
 import { console } from './logger';
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🔒 Verifying Audit Chain Integrity...');
 
   const orgId = 'test-org-' + Date.now();

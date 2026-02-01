@@ -52,7 +52,7 @@ function runCheck(
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🏥 ReadyLayer Doctor - Running all checks...\n');
 
   // Check 1: Lint

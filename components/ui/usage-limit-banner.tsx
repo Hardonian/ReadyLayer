@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Card, CardContent } from './card'
 import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -24,7 +25,7 @@ interface UsageLimitBannerProps {
   className?: string
 }
 
-export function UsageLimitBanner({ stats, organizationId: _organizationId, className }: UsageLimitBannerProps) {
+export function UsageLimitBanner({ stats, organizationId: _organizationId, className }: UsageLimitBannerProps): React.JSX.Element | null {
   const warnings: Array<{
     type: 'warning' | 'error'
     message: string

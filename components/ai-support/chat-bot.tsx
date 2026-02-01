@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { Button } from '@/components/ui/button'
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react'
@@ -15,7 +15,7 @@ interface Message {
   timestamp: Date
 }
 
-export function AISupportBot() {
+export function AISupportBot(): React.JSX.Element | null {
   const runtime = useRuntimeUiConfig()
   const aiBotEnabled = runtime.config.features.aiSupportBotEnabled
 

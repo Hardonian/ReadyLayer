@@ -246,7 +246,7 @@ async function runSmokeTests(): Promise<SmokeTestResult[]> {
   return results;
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🧪 Running database smoke tests...\n');
 
   const results = await runSmokeTests();

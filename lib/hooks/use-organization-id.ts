@@ -7,13 +7,19 @@
 import { useState, useEffect } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
-export function useOrganizationId() {
+interface UseOrganizationIdReturn {
+  organizationId: string | null
+  loading: boolean
+  error: string | null
+}
+
+export function useOrganizationId(): UseOrganizationIdReturn {
   const [organizationId, setOrganizationId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchOrgId = async () => {
+    const fetchOrgId = async (): Promise<void> => {
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()

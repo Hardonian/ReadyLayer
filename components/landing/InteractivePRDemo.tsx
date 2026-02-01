@@ -49,7 +49,7 @@ export function InteractivePRDemo({
   onCheckClick,
   onComplete,
   className,
-}: InteractivePRDemoProps) {
+}: InteractivePRDemoProps): React.JSX.Element {
   const [state, setState] = React.useState<DemoState>('idle')
   const [activeTab, setActiveTab] = React.useState<'checks' | 'diff' | 'docs'>('checks')
   const [selectedCheck, setSelectedCheck] = React.useState<string | null>(null)

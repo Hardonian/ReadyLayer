@@ -15,6 +15,14 @@ interface UseRealtimeQueryOptions<TData, TError = Error> extends Omit<UseQueryOp
   pollingInterval?: number // Fallback polling if SSE fails (default: 30000ms)
 }
 
+export interface UseRealtimeQueryReturn<TData, TError = Error> {
+  data: TData | undefined
+  isLoading: boolean
+  isError: boolean
+  error: TError | null
+  status: 'pending' | 'success' | 'error'
+}
+
 export function useRealtimeQuery<TData, TError = Error>({
   queryKey,
   queryFn,
@@ -22,7 +30,7 @@ export function useRealtimeQuery<TData, TError = Error>({
   repositoryId,
   pollingInterval = 30000,
   ...queryOptions
-}: UseRealtimeQueryOptions<TData, TError>) {
+}: UseRealtimeQueryOptions<TData, TError>): UseRealtimeQueryReturn<TData, TError> {
   // Set up SSE connection
   const { status: streamStatus } = useStreamConnection({
     organizationId,

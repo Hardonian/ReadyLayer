@@ -20,7 +20,7 @@ import { Footer } from '@/components/layout/footer'
 import { NAV_ITEMS, PUBLIC_NAV_ITEMS } from '@/lib/navigation'
 import { isPublicRoute } from '@/lib/access-control'
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({ children }: { children: React.ReactNode }): React.JSX.Element {
   const pathname = usePathname()
   const [user, setUser] = React.useState<User | null>(null)
   const [loading, setLoading] = React.useState(true)

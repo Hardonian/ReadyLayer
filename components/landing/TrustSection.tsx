@@ -27,7 +27,7 @@ const trustPillars = [
   },
 ]
 
-export function TrustSection() {
+export function TrustSection(): React.JSX.Element {
   const prefersReducedMotion = React.useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     []

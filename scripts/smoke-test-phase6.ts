@@ -251,7 +251,7 @@ async function testTenantIsolation(): Promise<TestResult> {
   }
 }
 
-async function runAllTests() {
+async function runAllTests(): Promise<void> {
   console.log('\n╔════════════════════════════════════════════════════════════╗');
   console.log('║       Phase 6 Python Workhorse - Smoke Tests              ║');
   console.log('╚════════════════════════════════════════════════════════════╝');

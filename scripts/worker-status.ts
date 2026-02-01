@@ -101,7 +101,7 @@ async function checkMigrations(): Promise<boolean> {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('╔════════════════════════════════════════════════════════╗');
   console.log('║     ReadyLayer Worker Status                           ║');
   console.log('╚════════════════════════════════════════════════════════╝');

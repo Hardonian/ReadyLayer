@@ -308,7 +308,7 @@ export async function cancelJob(
 /**
  * Transform job data for API response
  */
-export function transformJobForApi(job: JobData) {
+export function transformJobForApi(job: JobData): Record<string, unknown> {
   return {
     id: job.id,
     type: job.type,
@@ -331,6 +331,14 @@ export function transformJobForApi(job: JobData) {
   };
 }
 
+interface TransformedJobResult {
+  status: JobStatus;
+  completed: boolean;
+  result: unknown | undefined;
+  error: string | undefined;
+  completedAt: string | undefined;
+}
+
 /**
  * Transform job result for API response
  */
@@ -339,7 +347,7 @@ export function transformJobResultForApi(result: {
   error?: string;
   status: JobStatus;
   completedAt?: Date;
-}) {
+}): TransformedJobResult {
   return {
     status: result.status,
     completed: result.status === 'succeeded' || result.status === 'failed' || result.status === 'dead',

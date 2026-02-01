@@ -4,7 +4,7 @@
  * Fetches PR queue with real-time updates
  */
 
-import { useRealtimeQuery } from './use-realtime-query'
+import { useRealtimeQuery, UseRealtimeQueryReturn } from './use-realtime-query'
 import { PRSnapshot } from '@/lib/dashboard/schemas'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
@@ -24,7 +24,7 @@ export function useDashboardPRs({
   limit = 50,
   offset = 0,
   enabled = true,
-}: UseDashboardPRsOptions) {
+}: UseDashboardPRsOptions): UseRealtimeQueryReturn<PRSnapshot, Error> {
   return useRealtimeQuery<PRSnapshot>({
     queryKey: ['dashboard', 'prs', organizationId, repositoryId || '', timeRange, limit.toString(), offset.toString()],
     queryFn: async () => {

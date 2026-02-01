@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { GitProvider } from '@/lib/platform-themes'
 import { Github, Gitlab } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +11,7 @@ interface PlatformBadgeProps {
   className?: string
 }
 
-export function PlatformBadge({ provider, className }: PlatformBadgeProps) {
+export function PlatformBadge({ provider, className }: PlatformBadgeProps): React.JSX.Element {
   const normalizedProvider = provider.toLowerCase() as GitProvider
 
   const getProviderConfig = () => {

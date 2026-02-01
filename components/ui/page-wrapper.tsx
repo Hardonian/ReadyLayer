@@ -19,7 +19,7 @@ export function PageWrapper({
   children, 
   className,
   ...props 
-}: PageWrapperProps) {
+}: PageWrapperProps): React.JSX.Element {
   return (
     <motion.div
       className={cn('min-h-screen', className)}

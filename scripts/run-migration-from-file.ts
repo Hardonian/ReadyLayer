@@ -8,7 +8,7 @@ import { prisma } from '../lib/prisma';
 import { readFileSync } from 'fs';
 import { console } from './logger';
 
-async function runMigrationFromFile(migrationFilePath: string) {
+async function runMigrationFromFile(migrationFilePath: string): Promise<void> {
   console.log(`🚀 Running migration from: ${migrationFilePath}\n`);
 
   try {

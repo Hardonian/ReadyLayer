@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
@@ -36,7 +37,7 @@ export interface BadgeProps
   animate?: boolean
 }
 
-function Badge({ className, variant, animate = false, ...props }: BadgeProps) {
+function Badge({ className, variant, animate = false, ...props }: BadgeProps): React.JSX.Element {
   return (
     <motion.div
       className={cn(badgeVariants({ variant }), className)}

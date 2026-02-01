@@ -28,7 +28,7 @@ export function ChartContainer({
   title,
   className,
   ...props
-}: ChartContainerProps) {
+}: ChartContainerProps): React.JSX.Element {
   return (
     <div
       className={cn('w-full h-full flex flex-col', className)}
@@ -64,7 +64,7 @@ export function LinearProgress({
   unit = '%',
   variant = 'default',
   showLabel = true,
-}: LinearProgressProps) {
+}: LinearProgressProps): React.JSX.Element {
   const percentage = Math.min((value / max) * 100, 100)
 
   const variantClasses = {
@@ -122,7 +122,7 @@ export function BarChart({
   max,
   height = 'md',
   showValues = true,
-}: BarChartProps) {
+}: BarChartProps): React.JSX.Element {
   // Calculate max if not provided
   const calculatedMax = max || Math.max(...data.map(d => d.value), 100)
 
@@ -197,7 +197,7 @@ export function DonutChart({
   data,
   size = 'md',
   showLegend = true,
-}: DonutChartProps) {
+}: DonutChartProps): React.JSX.Element {
   const total = data.reduce((sum, item) => sum + item.value, 0)
 
   const sizeMap = {
@@ -299,7 +299,7 @@ export function Sparkline({
   height = 40,
   variant = 'default',
   showLabels = false,
-}: SparklineProps) {
+}: SparklineProps): React.JSX.Element {
   if (data.length < 2) {
     return <div className="text-text-muted text-xs">Not enough data</div>
   }

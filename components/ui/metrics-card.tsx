@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './card'
 import { cn } from '@/lib/utils'
 import { LucideIcon } from 'lucide-react'
@@ -26,7 +27,7 @@ export function MetricsCard({
   description,
   className,
   glass = true,
-}: MetricsCardProps) {
+}: MetricsCardProps): React.JSX.Element {
   const trendColor = change?.trend === 'up' 
     ? 'text-success' 
     : change?.trend === 'down' 
@@ -69,7 +70,7 @@ interface ChartCardProps {
   glass?: boolean
 }
 
-export function ChartCard({ title, children, className, glass = true }: ChartCardProps) {
+export function ChartCard({ title, children, className, glass = true }: ChartCardProps): React.JSX.Element {
   return (
     <Card className={cn(
       glass && 'glass-strong backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border-white/20 dark:border-gray-700/50',

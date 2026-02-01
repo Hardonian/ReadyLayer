@@ -19,7 +19,7 @@ import { encryptToken, isEncrypted, redactSecret } from '../lib/secrets';
 import { isKeyConfigured } from '../lib/crypto';
 import { logger } from '../observability/logging';
 
-async function encryptExistingTokens() {
+async function encryptExistingTokens(): Promise<void> {
   logger.info('Starting token encryption migration');
 
   // Check if encryption keys are configured

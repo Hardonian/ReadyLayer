@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { cn } from '@/lib/utils'
 
 interface PersonaBadgeProps {
@@ -34,7 +35,7 @@ const personaConfig = {
   },
 }
 
-export function PersonaBadge({ persona, className }: PersonaBadgeProps) {
+export function PersonaBadge({ persona, className }: PersonaBadgeProps): React.JSX.Element {
   const config = personaConfig[persona]
   return (
     <span className={cn(

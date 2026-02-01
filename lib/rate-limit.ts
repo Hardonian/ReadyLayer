@@ -13,7 +13,7 @@ import { logger } from '../observability/logging';
 let rateLimiter: RateLimiterMemory | RateLimiterRedis;
 
 // Initialize rate limiter
-(async () => {
+(async (): Promise<void> => {
   try {
     if (process.env.REDIS_URL) {
       const redis = createClient({ url: process.env.REDIS_URL });

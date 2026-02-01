@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { detectGitProvider, getGitProviderUIConfig } from '@/lib/git-provider-ui'
@@ -49,7 +49,7 @@ export function TestRunStatus({
   prNumber,
   prSha,
   className,
-}: TestRunStatusProps) {
+}: TestRunStatusProps): React.JSX.Element {
   const [testRun, setTestRun] = useState<TestRun | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

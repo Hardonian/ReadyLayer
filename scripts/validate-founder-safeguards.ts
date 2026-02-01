@@ -9,7 +9,7 @@ import { schemaReconciliationService } from '../services/schema-reconciliation';
 import { shadowModeService } from '../services/shadow-mode';
 import { console } from './logger';
 
-async function validateFounderSafeguards() {
+async function validateFounderSafeguards(): Promise<void> {
   console.log('🔍 Validating Founder-Specific Safeguards...\n');
 
   let passed = 0;

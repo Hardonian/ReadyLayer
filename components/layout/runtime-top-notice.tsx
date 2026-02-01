@@ -8,7 +8,7 @@ import { useRuntimeUiConfig } from '@/components/providers/runtime-ui-config-pro
 
 const DISMISS_KEY = 'rl_runtime_top_notice_dismissed_v1'
 
-export function RuntimeTopNotice() {
+export function RuntimeTopNotice(): React.JSX.Element | null {
   const runtime = useRuntimeUiConfig()
   const notice = runtime.config.banners.topNotice
 
