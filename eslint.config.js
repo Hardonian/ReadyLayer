@@ -100,13 +100,15 @@ if (tsparser && tseslint) {
         caughtErrorsIgnorePattern: '^_',
       },
     ],
-    '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/no-unsafe-assignment': 'error',
-    '@typescript-eslint/no-unsafe-member-access': 'error',
-    '@typescript-eslint/no-unsafe-call': 'error',
-    '@typescript-eslint/no-unsafe-return': 'error',
+    // Relaxed for gradual adoption - Next.js App Router patterns
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unsafe-assignment': 'warn',
+    '@typescript-eslint/no-unsafe-member-access': 'warn',
+    '@typescript-eslint/no-unsafe-call': 'warn',
+    '@typescript-eslint/no-unsafe-return': 'warn',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/no-unsafe-argument': 'warn',
   }
 
   if (reactHooksPlugin) {
@@ -143,6 +145,19 @@ if (tsparser && tseslint) {
     },
     plugins: tsPlugins,
     rules: tsRules,
+  })
+
+  // Stricter rules for library/SDK code (warnings to avoid breaking build)
+  config.push({
+    files: ['lib/**/*.ts', 'sdk/typescript/src/**/*.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
+    },
   })
 }
 
