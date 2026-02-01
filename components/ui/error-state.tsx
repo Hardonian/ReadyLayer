@@ -6,10 +6,13 @@ import { cn } from '@/lib/utils'
 import { slideUp } from '@/lib/design/motion'
 import { Button } from './button'
 import { AlertCircle } from 'lucide-react'
+import { ErrorStateIllustration } from './optimized-image'
 
 export interface ErrorStateProps {
   title?: string
   message: string
+  illustration?: string
+  illustrationAlt?: string
   action?: {
     label: string
     onClick: () => void
@@ -35,6 +38,8 @@ export interface ErrorStateProps {
 export function ErrorState({
   title = 'Something went wrong',
   message,
+  illustration,
+  illustrationAlt = 'Error illustration',
   action,
   secondaryAction,
   className,
@@ -51,14 +56,29 @@ export function ErrorState({
       initial="hidden"
       animate="visible"
     >
-      <motion.div
-        className="mb-6 p-4 rounded-full bg-danger-muted"
-        variants={slideUp}
-        whileHover={{ scale: 1.1 }}
-        transition={{ duration: 0.2 }}
-      >
-        <AlertCircle className="h-8 w-8 text-danger" strokeWidth={1.5} />
-      </motion.div>
+      {illustration ? (
+        <motion.div
+          variants={slideUp}
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ErrorStateIllustration 
+            src={illustration} 
+            alt={illustrationAlt} 
+            width={400} 
+            height={320} 
+          />
+        </motion.div>
+      ) : (
+        <motion.div
+          className="mb-6 p-4 rounded-full bg-danger-muted"
+          variants={slideUp}
+          whileHover={{ scale: 1.1 }}
+          transition={{ duration: 0.2 }}
+        >
+          <AlertCircle className="h-8 w-8 text-danger" strokeWidth={1.5} />
+        </motion.div>
+      )}
       <h3 className="text-xl font-semibold mb-2 text-text-primary">{title}</h3>
       <p className="text-sm text-text-muted max-w-md mb-8">
         {message}

@@ -6,9 +6,11 @@ import { cn } from '@/lib/utils'
 import { slideUp } from '@/lib/design/motion'
 import { Button } from './button'
 import { LucideIcon } from 'lucide-react'
+import { EmptyStateIllustration } from './optimized-image'
 
 export interface EmptyStateProps {
   icon?: LucideIcon
+  illustration?: string
   title: string
   description: string
   action?: {
@@ -32,6 +34,7 @@ export interface EmptyStateProps {
  */
 export function EmptyState({
   icon: Icon,
+  illustration,
   title,
   description,
   action,
@@ -48,7 +51,15 @@ export function EmptyState({
       initial="hidden"
       animate="visible"
     >
-      {Icon && (
+      {illustration ? (
+        <motion.div
+          variants={slideUp}
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
+        >
+          <EmptyStateIllustration src={illustration} width={400} height={300} />
+        </motion.div>
+      ) : Icon ? (
         <motion.div
           className="mb-6 p-4 rounded-full bg-accent-muted"
           variants={slideUp}
@@ -57,7 +68,7 @@ export function EmptyState({
         >
           <Icon className="h-8 w-8 text-accent" strokeWidth={1.5} />
         </motion.div>
-      )}
+      ) : null}
       <h3 className="text-xl font-semibold mb-2 text-text-primary">{title}</h3>
       <p className="text-sm text-text-muted max-w-md mb-8">
         {description}

@@ -21,6 +21,7 @@ import {
   ChevronDown,
 } from 'lucide-react'
 import { InteractivePRDemo } from './InteractivePRDemo'
+import { HeroImage } from '@/components/ui/optimized-image'
 import { cn } from '@/lib/utils'
 import { PUBLIC_NAV_ITEMS } from '@/lib/navigation'
 
@@ -254,6 +255,22 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
               initial="hidden"
               animate="visible"
             >
+              {/* Hero Illustration - Feature flagged via env */}
+              {process.env.NEXT_PUBLIC_ENABLE_HERO_IMAGE === 'true' && (
+                <motion.div 
+                  variants={prefersReducedMotion ? fadeIn : staggerItem}
+                  className="mb-6"
+                >
+                  <HeroImage
+                    src="/assets/visuals/hero-governance.webp"
+                    alt="ReadyLayer AI code governance visualization"
+                    width={800}
+                    height={600}
+                    priority
+                  />
+                </motion.div>
+              )}
+              
               <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
                  <div className="rounded-xl border border-border/20 bg-surface-code overflow-hidden shadow-code-preview">
                    <div className="flex items-center justify-between px-5 py-4 border-b border-border/20 bg-surface-dark">
