@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrganizationId } from '@/lib/hooks'
 import { runtimeUiConfigToCssVars, type RuntimeUiConfig, getDefaultRuntimeUiConfig } from '@/lib/runtime-ui-config'
@@ -46,7 +46,7 @@ async function fetchRuntimeUiConfig(organizationId: string) {
   }
 }
 
-export function RuntimeUiConfigProvider({ children }: { children: React.ReactNode }) {
+export function RuntimeUiConfigProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const { organizationId } = useOrganizationId()
   const defaults = useMemo(() => getDefaultRuntimeUiConfig(), [])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -126,7 +126,7 @@ export function RuntimeUiConfigProvider({ children }: { children: React.ReactNod
   return <RuntimeUiConfigContext.Provider value={value}>{children}</RuntimeUiConfigContext.Provider>
 }
 
-export function useRuntimeUiConfig() {
+export function useRuntimeUiConfig(): RuntimeUiConfigContextValue {
   const ctx = useContext(RuntimeUiConfigContext)
   if (!ctx) throw new Error('useRuntimeUiConfig must be used within RuntimeUiConfigProvider')
   return ctx

@@ -9,6 +9,6 @@ import { AnimatePresence } from 'framer-motion'
  * Wraps app with AnimatePresence for page transitions
  * Respects reduced motion preferences
  */
-export function MotionProvider({ children }: { children: React.ReactNode }) {
+export function MotionProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   return <AnimatePresence mode="wait">{children}</AnimatePresence>
 }

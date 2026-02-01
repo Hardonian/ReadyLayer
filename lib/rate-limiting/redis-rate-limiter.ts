@@ -302,10 +302,17 @@ export async function clearAllRateLimits(): Promise<void> {
   return rateLimiterInstance.clearAllRateLimits();
 }
 
+interface RateLimiterHealth {
+  redisHealthy: boolean;
+  inMemorySize: number;
+  inMemoryMaxSize: number;
+  hitRate: number;
+}
+
 /**
  * Get rate limiter health status
  */
-export function getRateLimiterHealth() {
+export function getRateLimiterHealth(): RateLimiterHealth {
   return rateLimiterInstance.getHealthStatus();
 }
 

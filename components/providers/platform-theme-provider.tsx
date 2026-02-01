@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { getPlatformTheme, PlatformTheme, GitProvider } from '@/lib/platform-themes'
 import { useOrganizationId } from '@/lib/hooks'
 import { createSupabaseClient } from '@/lib/supabase/client'
@@ -13,7 +13,7 @@ interface PlatformThemeContextValue {
 
 const PlatformThemeContext = createContext<PlatformThemeContextValue | undefined>(undefined)
 
-export function PlatformThemeProvider({ children }: { children: React.ReactNode }) {
+export function PlatformThemeProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const { organizationId } = useOrganizationId()
   const [provider, setProvider] = useState<GitProvider | null>(null)
   const [theme, setTheme] = useState<PlatformTheme>(getPlatformTheme('github'))
@@ -76,7 +76,7 @@ if (response.ok) {
   )
 }
 
-export function usePlatformTheme() {
+export function usePlatformTheme(): PlatformThemeContextValue {
   const context = useContext(PlatformThemeContext)
   if (!context) {
     throw new Error('usePlatformTheme must be used within PlatformThemeProvider')

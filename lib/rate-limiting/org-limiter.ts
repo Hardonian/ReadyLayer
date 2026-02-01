@@ -106,7 +106,7 @@ class InMemoryRateLimiter {
 class RedisRateLimiter {
   private redisClient: RedisClientType | null = null;
 
-  async getClient() {
+async getClient(): Promise<RedisClientType> {
     if (this.redisClient) {
       return this.redisClient;
     }

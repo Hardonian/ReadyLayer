@@ -11,7 +11,7 @@ import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from 'ne
  * - No flash on initial load (suppressHydrationWarning)
  * - Graceful degradation to safe theme
  */
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+export function ThemeProvider({ children, ...props }: ThemeProviderProps): React.JSX.Element {
   return (
     <NextThemesProvider
       attribute="class"

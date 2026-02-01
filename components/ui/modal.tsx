@@ -98,7 +98,7 @@ ModalContent.displayName = 'ModalContent'
 const ModalHeader = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+}: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element => (
   <div
     className={cn('flex flex-col space-y-2', className)}
     {...props}
@@ -144,7 +144,7 @@ ModalDescription.displayName = DialogPrimitive.Description.displayName
 const ModalFooter = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+}: React.HTMLAttributes<HTMLDivElement>): React.JSX.Element => (
   <div
     className={cn('flex flex-col-reverse gap-3 sm:flex-row sm:justify-end', className)}
     {...props}

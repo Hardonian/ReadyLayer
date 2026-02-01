@@ -16,7 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-export function ConfigWizard() {
+export function ConfigWizard(): React.JSX.Element {
   const [step, setStep] = React.useState(1);
   const [config, setConfig] = React.useState({
     database: 'sqlite',
