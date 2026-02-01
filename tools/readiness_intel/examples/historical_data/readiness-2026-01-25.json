@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-25T09:15:00",
+  "project": "readylayer",
+  "commit_sha": "789xyzabc456123",
+  "branch": "main",
+  "ready": true,
+  "findings": [
+    {
+      "rule_id": "lint/trailing-whitespace",
+      "category": "lint",
+      "severity": "LOW",
+      "title": "Trailing whitespace",
+      "description": "Minor formatting issue",
+      "location": "README.md",
+      "line": 45,
+      "evidence": [{"type": "log", "content": "Trailing whitespace"}],
+      "remediation": "Remove trailing whitespace",
+      "tool": "eslint",
+      "timestamp": "2026-01-25T09:15:00"
+    }
+  ],
+  "metrics": {
+    "total_findings": 1,
+    "blocker_count": 0,
+    "high_count": 0,
+    "medium_count": 0,
+    "low_count": 1,
+    "by_category": {"type": 0, "lint": 1, "build": 0, "ui": 0, "infra": 0, "test": 0, "security": 0},
+    "by_tool": {"typescript": 0, "eslint": 1, "playwright": 0, "build": 0}
+  },
+  "metadata": {"author": "developer1@example.com"}
+}

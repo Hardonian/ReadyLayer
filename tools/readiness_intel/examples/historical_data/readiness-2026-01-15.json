@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-15T10:00:00",
+  "project": "readylayer",
+  "commit_sha": "abc123def456789",
+  "branch": "main",
+  "ready": false,
+  "findings": [
+    {
+      "rule_id": "TS7006",
+      "category": "type",
+      "severity": "BLOCKER",
+      "title": "Parameter 'user' implicitly has an 'any' type",
+      "description": "TypeScript error in auth flow",
+      "location": "app/(app)/dashboard/page.tsx",
+      "line": 45,
+      "column": 23,
+      "evidence": [{"type": "log", "content": "TS7006 error"}],
+      "remediation": "Add explicit type annotation",
+      "tool": "typescript",
+      "timestamp": "2026-01-15T10:00:00"
+    },
+    {
+      "rule_id": "@typescript-eslint/no-explicit-any",
+      "category": "lint",
+      "severity": "HIGH",
+      "title": "Unexpected any in button component",
+      "description": "ESLint error in UI component",
+      "location": "components/ui/button.tsx",
+      "line": 12,
+      "column": 15,
+      "evidence": [{"type": "log", "content": "ESLint error"}],
+      "remediation": "Replace any with specific type",
+      "tool": "eslint",
+      "timestamp": "2026-01-15T10:00:00"
+    },
+    {
+      "rule_id": "playwright/visual-regression",
+      "category": "ui",
+      "severity": "HIGH",
+      "title": "Visual regression on dashboard",
+      "description": "Screenshot comparison failed",
+      "location": "e2e/dashboard.spec.ts",
+      "evidence": [{"type": "screenshot", "path": "test-results/dashboard-diff.png"}],
+      "remediation": "Review visual changes",
+      "tool": "playwright",
+      "timestamp": "2026-01-15T10:00:00"
+    }
+  ],
+  "metrics": {
+    "total_findings": 3,
+    "blocker_count": 1,
+    "high_count": 2,
+    "medium_count": 0,
+    "low_count": 0,
+    "by_category": {"type": 1, "lint": 1, "build": 0, "ui": 1, "infra": 0, "test": 0, "security": 0},
+    "by_tool": {"typescript": 1, "eslint": 1, "playwright": 1, "build": 0}
+  },
+  "metadata": {"author": "developer1@example.com"}
+}

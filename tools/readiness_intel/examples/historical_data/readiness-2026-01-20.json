@@ -1,0 +1,71 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-01-20T14:30:00",
+  "project": "readylayer",
+  "commit_sha": "def789abc123456",
+  "branch": "feature/billing-update",
+  "ready": false,
+  "findings": [
+    {
+      "rule_id": "test/billing-flow",
+      "category": "test",
+      "severity": "BLOCKER",
+      "title": "Billing workflow test failure",
+      "description": "Payment processing test failed",
+      "location": "e2e/billing-workflow.spec.ts",
+      "evidence": [{"type": "log", "content": "Test timeout"}],
+      "remediation": "Fix async handling in billing flow",
+      "tool": "playwright",
+      "timestamp": "2026-01-20T14:30:00"
+    },
+    {
+      "rule_id": "type/missing-prop",
+      "category": "type",
+      "severity": "HIGH",
+      "title": "Missing property in billing types",
+      "description": "TypeScript compilation error",
+      "location": "billing/subscription.ts",
+      "line": 32,
+      "evidence": [{"type": "log", "content": "Property does not exist"}],
+      "remediation": "Add missing property to interface",
+      "tool": "typescript",
+      "timestamp": "2026-01-20T14:30:00"
+    },
+    {
+      "rule_id": "security/secrets-exposure",
+      "category": "security",
+      "severity": "BLOCKER",
+      "title": "Potential secret in logs",
+      "description": "API key may be logged",
+      "location": "backend/payment-gateway.ts",
+      "line": 45,
+      "evidence": [{"type": "log", "content": "console.log(paymentConfig)"}],
+      "remediation": "Remove console.log or sanitize",
+      "tool": "eslint",
+      "timestamp": "2026-01-20T14:30:00"
+    },
+    {
+      "rule_id": "lint/unused-import",
+      "category": "lint",
+      "severity": "MEDIUM",
+      "title": "Unused import in billing module",
+      "description": "Import not used in file",
+      "location": "billing/invoice.ts",
+      "line": 5,
+      "evidence": [{"type": "log", "content": "Unused import Stripe"}],
+      "remediation": "Remove unused import",
+      "tool": "eslint",
+      "timestamp": "2026-01-20T14:30:00"
+    }
+  ],
+  "metrics": {
+    "total_findings": 4,
+    "blocker_count": 2,
+    "high_count": 1,
+    "medium_count": 1,
+    "low_count": 0,
+    "by_category": {"type": 1, "lint": 1, "build": 0, "ui": 0, "infra": 0, "test": 1, "security": 1},
+    "by_tool": {"typescript": 1, "eslint": 2, "playwright": 1, "build": 0}
+  },
+  "metadata": {"author": "developer2@example.com"}
+}

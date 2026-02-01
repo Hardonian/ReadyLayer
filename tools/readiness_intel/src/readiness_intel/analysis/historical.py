@@ -4,7 +4,7 @@ Historical analysis engine for computing risk metrics and correlations.
 
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from dateutil import parser as date_parser
@@ -69,7 +69,7 @@ class HistoricalAnalyzer:
     ) -> Optional[float]:
         """Compute mean time to fix in hours."""
         # Group findings by file and track when they disappear
-        file_findings = defaultdict(list)
+        file_findings_map: Dict[Tuple[str, str], List[HistoricalFinding]] = defaultdict(list)
         
         for finding in self.findings:
             if file_path and finding.location != file_path:
@@ -78,11 +78,11 @@ class HistoricalAnalyzer:
                 continue
             
             key = (finding.location, finding.rule_id)
-            file_findings[key].append(finding)
+            file_findings_map[key].append(finding)
         
-        fix_times = []
+        fix_times: List[float] = []
         
-        for key, findings_list in file_findings.items():
+        for key, findings_list in file_findings_map.items():
             # Sort by timestamp
             sorted_findings = sorted(findings_list, key=lambda f: f.timestamp)
             
@@ -228,20 +228,24 @@ class HistoricalAnalyzer:
             return self._directory_profiles
 
         file_profiles = self.build_file_profiles()
-        dir_stats = defaultdict(lambda: {"files": set(), "failures": 0})
+        dir_stats: Dict[str, Dict[str, Any]] = {}
         
         for file_path, profile in file_profiles.items():
             # Extract directory from file path
             parts = file_path.split("/")
             for i in range(1, len(parts)):
                 dir_path = "/".join(parts[:i])
+                if dir_path not in dir_stats:
+                    dir_stats[dir_path] = {"files": set(), "failures": 0}
                 dir_stats[dir_path]["files"].add(file_path)
                 dir_stats[dir_path]["failures"] += profile.total_failures
         
-        profiles = {}
+        profiles: Dict[str, DirectoryRiskProfile] = {}
         for dir_path, stats in dir_stats.items():
-            file_count = len(stats["files"])
-            failure_density = stats["failures"] / file_count if file_count > 0 else 0.0
+            files_set: Set[str] = stats["files"]
+            file_count = len(files_set)
+            failures: int = stats["failures"]
+            failure_density = failures / file_count if file_count > 0 else 0.0
             
             # Compute risk score based on failure density and frequency
             risk_score = min(failure_density / 10.0, 1.0)  # Normalize
@@ -262,7 +266,7 @@ class HistoricalAnalyzer:
         if self._author_profiles is not None:
             return self._author_profiles
 
-        author_stats = defaultdict(lambda: {
+        author_stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
             "commits": set(),
             "failures": 0,
             "categories": defaultdict(int),
@@ -305,12 +309,7 @@ class HistoricalAnalyzer:
 
     def compute_test_volatility(self) -> List[TestVolatility]:
         """Analyze test volatility from historical findings."""
-        test_stats = defaultdict(lambda: {
-            "runs": set(),
-            "failures": 0,
-            "passes": 0,
-            "results": defaultdict(list),
-        })
+        test_stats: Dict[str, Dict[str, Any]] = {}
         
         for finding in self.findings:
             # Extract test name from location or rule_id
@@ -319,17 +318,26 @@ class HistoricalAnalyzer:
                 continue
             
             run_id = finding.commit_sha or finding.timestamp.strftime("%Y-%m-%d")
+            if test_name not in test_stats:
+                test_stats[test_name] = {
+                    "runs": set(),
+                    "failures": 0,
+                    "results": defaultdict(list),
+                }
             test_stats[test_name]["runs"].add(run_id)
             test_stats[test_name]["failures"] += 1
             test_stats[test_name]["results"][run_id].append(finding.severity)
         
-        volatilities = []
+        volatilities: List[TestVolatility] = []
         for test_name, stats in test_stats.items():
-            total_runs = len(stats["runs"])
+            runs_set: Set[str] = stats["runs"]
+            total_runs = len(runs_set)
+            failures: int = stats["failures"]
+            results_map: Dict[str, List[str]] = stats["results"]
             
             # Count flakes (inconsistent results)
             flakes = 0
-            for run_id, results in stats["results"].items():
+            for run_id, results in results_map.items():
                 if len(set(results)) > 1:
                     flakes += 1
             
@@ -338,8 +346,8 @@ class HistoricalAnalyzer:
             volatilities.append(TestVolatility(
                 test_name=test_name,
                 total_runs=total_runs,
-                failures=stats["failures"],
-                passes=total_runs - stats["failures"],
+                failures=failures,
+                passes=total_runs - failures,
                 flakes=flakes,
                 flake_rate=flake_rate,
             ))
