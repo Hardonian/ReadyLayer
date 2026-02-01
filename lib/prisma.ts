@@ -17,7 +17,7 @@ const globalForPrisma = globalThis as unknown as {
 /**
  * Determine log level for Prisma based on environment
  */
-function getPrismaLogLevel() {
+function getPrismaLogLevel(): Array<'query' | 'error' | 'warn'> {
   if (process.env.NODE_ENV === 'development') {
     return ['query', 'error', 'warn']
   }
@@ -33,7 +33,7 @@ function getPrismaLogLevel() {
 /**
  * Create Prisma client with optimized configuration
  */
-function createPrismaClient() {
+function createPrismaClient(): PrismaClient {
   const client = new PrismaClient({
     log: getPrismaLogLevel() as Array<'query' | 'error' | 'warn'>,
 
@@ -105,7 +105,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Graceful shutdown with connection draining
-async function gracefulShutdown() {
+async function gracefulShutdown(): Promise<void> {
   logger.info('Disconnecting Prisma client...')
 
   try {

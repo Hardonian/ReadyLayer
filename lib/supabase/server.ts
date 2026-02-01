@@ -1,4 +1,5 @@
-import { createServerClient, type SupabaseClient } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -57,7 +58,7 @@ export async function createSupabaseServerClient(_request?: NextRequest): Promis
 export function createSupabaseRouteHandlerClient(
   request: NextRequest,
   response: NextResponse
-) {
+): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -98,7 +99,7 @@ export function createSupabaseRouteHandlerClient(
 /**
  * Get authenticated user from Supabase session
  */
-export async function getSupabaseUser(_request?: NextRequest) {
+export async function getSupabaseUser(_request?: NextRequest): Promise<{ id: string; email?: string } | null> {
   const supabase = await createSupabaseServerClient(_request)
   const {
     data: { user },
