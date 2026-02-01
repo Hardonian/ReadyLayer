@@ -304,9 +304,13 @@ export async function clearAllRateLimits(): Promise<void> {
 
 interface RateLimiterHealth {
   redisHealthy: boolean;
-  inMemorySize: number;
-  inMemoryMaxSize: number;
-  hitRate: number;
+  metrics: {
+    redisChecks: number;
+    memoryChecks: number;
+    allowed: number;
+    blocked: number;
+    errors: number;
+  };
 }
 
 /**

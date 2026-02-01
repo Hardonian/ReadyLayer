@@ -54,7 +54,7 @@ export function BlockedPRAlert({
   onDismiss,
   onViewDetails,
   compact = false,
-}: BlockedPRAlertProps): React.JSX.Element {
+}: BlockedPRAlertProps): React.JSX.Element | null {
   const [isDismissed, setIsDismissed] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
 
