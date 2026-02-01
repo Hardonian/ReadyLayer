@@ -38,7 +38,7 @@ export class JobForgeClient {
     // Validate params
     const validated = enqueueJobParamsSchema.parse(params)
 
-    const { data, error } = await this.supabase.rpc('jobforge_enqueue_job', {
+    const result = await this.supabase.rpc('jobforge_enqueue_job', {
       p_tenant_id: validated.tenant_id,
       p_type: validated.type,
       p_payload: validated.payload,
@@ -47,27 +47,27 @@ export class JobForgeClient {
       p_max_attempts: validated.max_attempts || 5,
     })
 
-    if (error) {
-      throw new Error(`Failed to enqueue job: ${error.message}`)
+    if (result.error) {
+      throw new Error(`Failed to enqueue job: ${result.error.message}`)
     }
 
-    return data as JobRow
+    return result.data as JobRow
   }
 
   /**
    * Claim jobs for processing (worker use)
    */
   async claimJobs(params: ClaimJobsParams): Promise<JobRow[]> {
-    const { data, error } = await this.supabase.rpc('jobforge_claim_jobs', {
+    const result = await this.supabase.rpc('jobforge_claim_jobs', {
       p_worker_id: params.worker_id,
       p_limit: params.limit || 10,
     })
 
-    if (error) {
-      throw new Error(`Failed to claim jobs: ${error.message}`)
+    if (result.error) {
+      throw new Error(`Failed to claim jobs: ${result.error.message}`)
     }
 
-    return (data as JobRow[]) || []
+    return (result.data as JobRow[]) || []
   }
 
   /**
@@ -145,58 +145,58 @@ export class JobForgeClient {
       offset: params.filters?.offset || 0,
     }
 
-    const { data, error } = await this.supabase.rpc('jobforge_list_jobs', {
+    const result = await this.supabase.rpc('jobforge_list_jobs', {
       p_tenant_id: params.tenant_id,
       p_filters: filters,
     })
 
-    if (error) {
-      throw new Error(`Failed to list jobs: ${error.message}`)
+    if (result.error) {
+      throw new Error(`Failed to list jobs: ${result.error.message}`)
     }
 
-    return (data as JobRow[]) || []
+    return (result.data as JobRow[]) || []
   }
 
   /**
    * Get a single job by ID
    */
   async getJob(jobId: string, tenantId: string): Promise<JobRow | null> {
-    const { data, error } = await this.supabase
+    const result = await this.supabase
       .from('jobforge_jobs')
       .select('*')
       .eq('id', jobId)
       .eq('tenant_id', tenantId)
       .single()
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+    if (result.error) {
+      if (result.error.code === 'PGRST116') {
         // Not found
         return null
       }
-      throw new Error(`Failed to get job: ${error.message}`)
+      throw new Error(`Failed to get job: ${result.error.message}`)
     }
 
-    return data as JobRow
+    return result.data as JobRow
   }
 
   /**
    * Get job result
    */
   async getResult(resultId: string, tenantId: string): Promise<JobResultRow | null> {
-    const { data, error } = await this.supabase
+    const result = await this.supabase
       .from('jobforge_job_results')
       .select('*')
       .eq('id', resultId)
       .eq('tenant_id', tenantId)
       .single()
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+    if (result.error) {
+      if (result.error.code === 'PGRST116') {
         return null
       }
-      throw new Error(`Failed to get result: ${error.message}`)
+      throw new Error(`Failed to get result: ${result.error.message}`)
     }
 
-    return data as JobResultRow
+    return result.data as JobResultRow
   }
 }
