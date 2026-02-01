@@ -1,10 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Supabase client for browser/client-side usage
  */
-export function createSupabaseClient() {
+export function createSupabaseClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -23,7 +23,7 @@ export function createSupabaseClient() {
 /**
  * Create a Supabase client instance (for server-side when needed)
  */
-export function createSupabaseServerClient() {
+export function createSupabaseServerClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   

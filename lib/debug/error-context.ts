@@ -94,7 +94,7 @@ export function addBreadcrumb(
   message: string,
   level: 'debug' | 'info' | 'warning' | 'error' = 'info',
   data?: Record<string, unknown>
-) {
+): void {
   const breadcrumb: Breadcrumb = {
     timestamp: new Date().toISOString(),
     category,
@@ -114,7 +114,7 @@ export function addBreadcrumb(
 /**
  * Clear breadcrumbs (call at the start of each request)
  */
-export function clearBreadcrumbs() {
+export function clearBreadcrumbs(): void {
   breadcrumbs = [];
 }
 

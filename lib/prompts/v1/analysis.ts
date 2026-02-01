@@ -15,7 +15,7 @@ export const reviewGuardPrompts = {
   /**
    * Analyze a file for security and quality issues
    */
-  analyzeFile: (file: string, content: string, evidence?: string) => `
+  analyzeFile: (file: string, content: string, evidence?: string): string => `
 Analyze this file for security and quality issues.
 
 File: ${file}
@@ -44,7 +44,7 @@ export const testEnginePrompts = {
   /**
    * Generate tests for a file
    */
-  generateTests: (file: string, content: string, framework: string) => `
+  generateTests: (file: string, content: string, framework: string): string => `
 Generate comprehensive tests for this file.
 
 File: ${file}
@@ -68,7 +68,7 @@ Return complete test file (see system prompt for format).`,
   /**
    * Generate integration tests
    */
-  generateIntegrationTests: (files: string[], framework: string) => `
+  generateIntegrationTests: (files: string[], framework: string): string => `
 Generate integration tests for these related files.
 
 Files: ${files.join(', ')}
@@ -91,7 +91,7 @@ export const docSyncPrompts = {
   /**
    * Enhance OpenAPI spec
    */
-  enhanceOpenAPI: (spec: string) => `
+  enhanceOpenAPI: (spec: string): string => `
 Enhance this OpenAPI specification with detailed descriptions and examples.
 
 Current spec:
@@ -111,7 +111,7 @@ Return enhanced spec in YAML format.`,
   /**
    * Detect documentation drift
    */
-  detectDrift: (code: string, docs: string) => `
+  detectDrift: (code: string, docs: string): string => `
 Detect drift between code implementation and documentation.
 
 Implementation:
@@ -140,7 +140,7 @@ export const governancePrompts = {
   /**
    * Analyze code diff for governance
    */
-  analyzeDiff: (diff: string, intent?: string) => `
+  analyzeDiff: (diff: string, intent?: string): string => `
 Analyze this code diff for security, quality, and compliance issues.
 
 ${intent ? `Intent: ${intent}\n` : ''}
@@ -161,7 +161,7 @@ Return findings and governance signals (see system prompt for format).`,
   /**
    * Variance analysis across models
    */
-  varianceAnalysis: (diff: string, model1Results: string, model2Results: string) => `
+  varianceAnalysis: (diff: string, model1Results: string, model2Results: string): string => `
 Compare governance findings from multiple models to identify variance.
 
 Diff analyzed:

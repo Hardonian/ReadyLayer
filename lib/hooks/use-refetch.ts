@@ -17,16 +17,20 @@ import { useCache, CACHE_KEYS } from './use-cache'
  * }, [refetch])
  * ```
  */
-export function useRefetch() {
+export function useRefetch(): {
+  registerRefetch: (key: string, callback: () => void) => () => void
+  refetch: (key: string) => void
+  refetchAll: () => void
+} {
   const refetchCallbacks = useRef<Map<string, () => void>>(new Map())
   const { clearInvalidation } = useCache()
 
   /**
    * Register a refetch callback for a cache key
    */
-  const registerRefetch = useCallback((key: string, callback: () => void) => {
+  const registerRefetch = useCallback((key: string, callback: () => void): (() => void) => {
     refetchCallbacks.current.set(key, callback)
-    return () => {
+    return (): void => {
       refetchCallbacks.current.delete(key)
     }
   }, [])
@@ -34,7 +38,7 @@ export function useRefetch() {
   /**
    * Refetch data for a specific cache key
    */
-  const refetch = useCallback((key: string) => {
+  const refetch = useCallback((key: string): void => {
     const callback = refetchCallbacks.current.get(key)
     if (callback) {
       callback()
@@ -45,7 +49,7 @@ export function useRefetch() {
   /**
    * Refetch all registered data
    */
-  const refetchAll = useCallback(() => {
+  const refetchAll = useCallback((): void => {
     refetchCallbacks.current.forEach((callback) => {
       callback()
     })

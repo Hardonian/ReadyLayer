@@ -22,14 +22,19 @@ export function useStreamConnection({
   repositoryId,
   enabled = true,
   onEvent,
-}: UseStreamConnectionOptions) {
+}: UseStreamConnectionOptions): {
+  status: ConnectionStatus
+  lastEventTime: Date | null
+  connect: () => void
+  disconnect: () => void
+} {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected')
   const [lastEventTime, setLastEventTime] = useState<Date | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const queryClient = useQueryClient()
 
-  const connect = useCallback(() => {
+  const connect = useCallback((): void => {
     if (!enabled || !organizationId) {
       return
     }
@@ -69,7 +74,7 @@ eventSource.addEventListener('connected', (e) => {
       })
 
       // Handle delta events
-      const handleDeltaEvent = () => (e: MessageEvent) => {
+      const handleDeltaEvent = (): ((e: MessageEvent) => void) => (e: MessageEvent): void => {
         try {
           const event = deltaEventSchema.parse(JSON.parse(e.data))
           setLastEventTime(new Date(event.timestamp))
@@ -127,7 +132,7 @@ eventSource.addEventListener('connected', (e) => {
     }
   }, [enabled, organizationId, repositoryId, onEvent, queryClient])
 
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback((): void => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
       eventSourceRef.current = null

@@ -4,7 +4,7 @@
  */
 
 import { JobForgeClient } from './sdk/src'
-import type { EnqueueJobParams, JobStatus } from './shared/src'
+import type { EnqueueJobParams, JobStatus, JobRow } from './shared/src'
 
 let _jobforgeClient: JobForgeClient | null = null
 
@@ -49,7 +49,7 @@ export function getJobForgeClient(): JobForgeClient {
  * })
  * ```
  */
-export async function enqueueJob(params: EnqueueJobParams) {
+export async function enqueueJob(params: EnqueueJobParams): Promise<JobRow> {
   const client = getJobForgeClient()
   return client.enqueueJob(params)
 }
@@ -57,7 +57,7 @@ export async function enqueueJob(params: EnqueueJobParams) {
 /**
  * Get job status by ID
  */
-export async function getJobStatus(jobId: string, tenantId: string) {
+export async function getJobStatus(jobId: string, tenantId: string): Promise<JobRow | null> {
   const client = getJobForgeClient()
   return client.getJob(jobId, tenantId)
 }
@@ -65,7 +65,7 @@ export async function getJobStatus(jobId: string, tenantId: string) {
 /**
  * Cancel a job
  */
-export async function cancelJob(jobId: string, tenantId: string) {
+export async function cancelJob(jobId: string, tenantId: string): Promise<void> {
   const client = getJobForgeClient()
   return client.cancelJob({ job_id: jobId, tenant_id: tenantId })
 }
@@ -81,7 +81,7 @@ export async function listJobs(
     limit?: number
     offset?: number
   }
-) {
+): Promise<JobRow[]> {
   const client = getJobForgeClient()
   return client.listJobs({
     tenant_id: tenantId,
