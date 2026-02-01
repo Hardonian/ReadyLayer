@@ -49,7 +49,7 @@ export async function createInstallationWithEncryptedToken(
 export async function updateInstallationToken(
   installationId: string,
   accessToken: string
-): Promise<Prisma.Installation> {
+): Promise<Installation> {
   if (!isKeyConfigured()) {
     logger.error('Encryption keys not configured - cannot encrypt installation token');
     throw new Error('Encryption keys not configured. Set READY_LAYER_KMS_KEY, READY_LAYER_MASTER_KEY, or READY_LAYER_KEYS environment variable.');
