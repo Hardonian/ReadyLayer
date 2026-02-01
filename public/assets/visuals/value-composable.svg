@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180">
+      <rect fill="#f8fafc" width="240" height="180"/>
+      <!-- Puzzle pieces -->
+      <path d="M50 70 L90 70 L90 80 Q95 80 95 75 L95 65 Q95 60 90 60 L90 50 L50 50 Z" fill="#135bec" opacity="0.2"/>
+      <path d="M50 70 L90 70 L90 80 Q95 80 95 75 L95 65 Q95 60 90 60 L90 50 L50 50 Z" fill="none" stroke="#135bec" stroke-width="2"/>
+      <path d="M110 70 L150 70 L150 60 Q155 60 155 65 L155 75 Q155 80 150 80 L150 90 L110 90 Z" fill="#6b7280" opacity="0.1"/>
+      <path d="M110 70 L150 70 L150 60 Q155 60 155 65 L155 75 Q155 80 150 80 L150 90 L110 90 Z" fill="none" stroke="#6b7280" stroke-width="2"/>
+      <path d="M170 70 L210 70 L210 80 Q215 80 215 75 L215 65 Q215 60 210 60 L210 50 L170 50 Q170 55 165 55 Q160 55 160 60 Q160 65 165 65 L170 65 Z" fill="#135bec" opacity="0.2"/>
+      <path d="M170 70 L210 70 L210 80 Q215 80 215 75 L215 65 Q215 60 210 60 L210 50 L170 50 Q170 55 165 55 Q160 55 160 60 Q160 65 165 65 L170 65 Z" fill="none" stroke="#135bec" stroke-width="2"/>
+      <!-- Connecting lines -->
+      <line x1="90" y1="70" x2="110" y2="70" stroke="#135bec" stroke-width="2"/>
+      <line x1="150" y1="70" x2="170" y2="70" stroke="#135bec" stroke-width="2"/>
+    </svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320">
+      <rect fill="#ffffff" width="400" height="320"/>
+      <!-- Robot/Mascot -->
+      <rect x="160" y="80" width="80" height="70" fill="#f1f5f9" stroke="#6b7280" stroke-width="2" rx="8"/>
+      <circle cx="180" cy="115" r="8" fill="#135bec"/>
+      <circle cx="180" cy="115" r="3" fill="#ffffff"/>
+      <circle cx="220" cy="115" r="8" fill="#135bec"/>
+      <circle cx="220" cy="115" r="3" fill="#ffffff"/>
+      <!-- Confused expression -->
+      <path d="M190 135 Q200 140 210 135" fill="none" stroke="#6b7280" stroke-width="2"/>
+      <!-- Antenna -->
+      <line x1="200" y1="80" x2="200" y2="50" stroke="#6b7280" stroke-width="2"/>
+      <circle cx="200" cy="45" r="6" fill="#f59e0b"/>
+      <!-- Body -->
+      <rect x="170" y="150" width="60" height="50" fill="#f1f5f9" stroke="#6b7280" stroke-width="2" rx="4"/>
+      <!-- Arms shrugging -->
+      <path d="M160 160 L140 150" fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="135" cy="148" r="5" fill="#135bec" opacity="0.3"/>
+      <path d="M240 160 L260 150" fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="265" cy="148" r="5" fill="#135bec" opacity="0.3"/>
+      <!-- Broken gear -->
+      <circle cx="300" cy="200" r="30" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+      <circle cx="300" cy="200" r="12" fill="#f59e0b" opacity="0.3"/>
+      <path d="M300 185 L300 170 M300 215 L300 230 M285 200 L270 200 M315 200 L330 200" stroke="#f59e0b" stroke-width="3"/>
+      <text x="295" y="205" font-size="16" fill="#ef4444" font-weight="bold">!</text>
+    </svg>

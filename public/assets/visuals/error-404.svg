@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320">
+      <rect fill="#ffffff" width="400" height="320"/>
+      <!-- Mascot looking around -->
+      <ellipse cx="200" cy="160" rx="50" ry="60" fill="#f1f5f9" stroke="#135bec" stroke-width="2"/>
+      <!-- Eyes looking left -->
+      <circle cx="180" cy="145" r="12" fill="#ffffff" stroke="#135bec" stroke-width="2"/>
+      <circle cx="178" cy="145" r="5" fill="#135bec"/>
+      <circle cx="220" cy="145" r="12" fill="#ffffff" stroke="#135bec" stroke-width="2"/>
+      <circle cx="218" cy="145" r="5" fill="#135bec"/>
+      <!-- Confused mouth -->
+      <ellipse cx="200" cy="185" rx="8" ry="5" fill="#135bec" opacity="0.3"/>
+      <!-- Search lines -->
+      <path d="M120 200 Q140 180 160 190" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="4,4"/>
+      <path d="M280 200 Q260 180 240 190" fill="none" stroke="#6b7280" stroke-width="2" stroke-dasharray="4,4"/>
+      <!-- Magnifying glass -->
+      <circle cx="100" cy="240" r="25" fill="none" stroke="#135bec" stroke-width="3"/>
+      <line x1="80" y1="260" x2="60" y2="280" stroke="#135bec" stroke-width="4" stroke-linecap="round"/>
+      <!-- Empty page -->
+      <rect x="300" y="230" width="60" height="80" fill="#f8fafc" stroke="#6b7280" stroke-width="2" rx="4"/>
+      <line x1="310" y1="250" x2="350" y2="250" stroke="#e2e8f0" stroke-width="2"/>
+      <line x1="310" y1="270" x2="340" y2="270" stroke="#e2e8f0" stroke-width="2"/>
+      <text x="330" y="295" font-size="24" fill="#6b7280" text-anchor="middle">404</text>
+    </svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320">
+      <rect fill="#ffffff" width="400" height="320"/>
+      <!-- Shield with X -->
+      <path d="M200 80 L200 160 Q200 195 250 210 Q300 195 300 160 L300 80 Z" fill="#fef2f2" stroke="#ef4444" stroke-width="3"/>
+      <path d="M200 80 Q250 100 300 80" fill="#ef4444" opacity="0.1"/>
+      <line x1="235" y1="125" x2="265" y2="155" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+      <line x1="265" y1="125" x2="235" y2="155" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+      <!-- Lock -->
+      <rect x="110" y="140" width="50" height="60" fill="#f1f5f9" stroke="#135bec" stroke-width="2" rx="4"/>
+      <path d="M120 140 L120 120 Q120 100 135 100 Q150 100 150 120 L150 140" fill="none" stroke="#135bec" stroke-width="3"/>
+      <circle cx="135" cy="165" r="6" fill="#135bec"/>
+      <!-- Mascot shrugging -->
+      <circle cx="200" cy="250" r="30" fill="#f1f5f9" stroke="#6b7280" stroke-width="2"/>
+      <circle cx="190" cy="245" r="5" fill="#135bec"/>
+      <circle cx="210" cy="245" r="5" fill="#135bec"/>
+      <path d="M185 265 Q200 270 215 265" fill="none" stroke="#6b7280" stroke-width="2"/>
+      <!-- Arms -->
+      <path d="M170 260 L140 250" fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+      <path d="M230 260 L260 250" fill="none" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
+      <!-- Key nearby -->
+      <rect x="340" y="180" width="20" height="40" fill="#f1f5f9" stroke="#6b7280" stroke-width="2" rx="2" transform="rotate(45 350 200)"/>
+      <circle cx="350" cy="175" r="10" fill="#f1f5f9" stroke="#6b7280" stroke-width="2"/>
+      <circle cx="350" cy="175" r="4" fill="#6b7280" opacity="0.3"/>
+    </svg>

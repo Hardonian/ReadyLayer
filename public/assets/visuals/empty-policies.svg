@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+      <rect fill="#f8fafc" width="400" height="300"/>
+      <!-- Shield with dotted outline -->
+      <path d="M200 80 L200 140 Q200 175 240 190 Q280 175 280 140 L280 80 Z" fill="none" stroke="#135bec" stroke-width="3" stroke-dasharray="6,4"/>
+      <path d="M200 80 Q240 100 280 80" fill="#135bec" opacity="0.05"/>
+      <!-- Gear icons -->
+      <circle cx="120" cy="150" r="25" fill="#6b7280" opacity="0.1"/>
+      <circle cx="120" cy="150" r="10" fill="none" stroke="#6b7280" stroke-width="2"/>
+      <circle cx="120" cy="150" r="5" fill="#6b7280"/>
+      <line x1="120" y1="120" x2="120" y2="130" stroke="#6b7280" stroke-width="2"/>
+      <line x1="120" y1="170" x2="120" y2="180" stroke="#6b7280" stroke-width="2"/>
+      <line x1="90" y1="150" x2="100" y2="150" stroke="#6b7280" stroke-width="2"/>
+      <line x1="140" y1="150" x2="150" y2="150" stroke="#6b7280" stroke-width="2"/>
+      <!-- Second gear -->
+      <circle cx="340" cy="120" r="20" fill="#6b7280" opacity="0.1"/>
+      <circle cx="340" cy="120" r="8" fill="none" stroke="#6b7280" stroke-width="2"/>
+      <circle cx="340" cy="120" r="4" fill="#6b7280"/>
+    </svg>

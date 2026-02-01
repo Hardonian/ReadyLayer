@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+      <rect fill="#f8fafc" width="400" height="300"/>
+      <!-- Pipeline -->
+      <line x1="80" y1="150" x2="320" y2="150" fill="none" stroke="#e2e8f0" stroke-width="4"/>
+      <!-- Connected segments -->
+      <circle cx="100" cy="150" r="15" fill="#135bec"/>
+      <circle cx="100" cy="150" r="6" fill="#ffffff"/>
+      <line x1="115" y1="150" x2="160" y2="150" fill="none" stroke="#135bec" stroke-width="4"/>
+      <circle cx="175" cy="150" r="15" fill="#135bec"/>
+      <circle cx="175" cy="150" r="6" fill="#ffffff"/>
+      <!-- Dotted/disconnected segments -->
+      <line x1="190" y1="150" x2="230" y2="150" fill="none" stroke="#6b7280" stroke-width="4" stroke-dasharray="6,6"/>
+      <circle cx="245" cy="150" r="15" fill="#6b7280" opacity="0.3"/>
+      <circle cx="245" cy="150" r="6" fill="#ffffff"/>
+      <line x1="260" y1="150" x2="300" y2="150" fill="none" stroke="#6b7280" stroke-width="4" stroke-dasharray="6,6"/>
+      <circle cx="315" cy="150" r="15" fill="#6b7280" opacity="0.3"/>
+      <circle cx="315" cy="150" r="6" fill="#ffffff"/>
+    </svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+      <rect fill="#f8fafc" width="800" height="600"/>
+      <!-- Code Editor Window -->
+      <rect x="50" y="100" width="200" height="300" fill="#ffffff" stroke="#135bec" stroke-width="2" rx="8"/>
+      <rect x="50" y="100" width="200" height="30" fill="#135bec" rx="8"/>
+      <circle cx="70" cy="115" r="4" fill="#ef4444"/>
+      <circle cx="85" cy="115" r="4" fill="#f59e0b"/>
+      <circle cx="100" cy="115" r="4" fill="#22c55e"/>
+      <!-- Code lines -->
+      <rect x="65" y="150" width="120" height="8" fill="#e2e8f0" rx="2"/>
+      <rect x="65" y="170" width="160" height="8" fill="#135bec" rx="2" opacity="0.3"/>
+      <rect x="65" y="190" width="100" height="8" fill="#e2e8f0" rx="2"/>
+      <rect x="65" y="210" width="140" height="8" fill="#135bec" rx="2" opacity="0.3"/>
+      <!-- Shield Icon -->
+      <path d="M400 200 L400 350 Q400 380 430 390 Q460 380 460 350 L460 200 Z" fill="none" stroke="#135bec" stroke-width="3"/>
+      <path d="M400 200 Q430 220 460 200" fill="#135bec" opacity="0.1"/>
+      <path d="M425 290 L435 305 L455 280" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Output Window -->
+      <rect x="550" y="100" width="200" height="300" fill="#ffffff" stroke="#135bec" stroke-width="2" rx="8"/>
+      <rect x="550" y="100" width="200" height="30" fill="#22c55e" rx="8"/>
+      <circle cx="570" cy="115" r="4" fill="#ef4444"/>
+      <circle cx="585" cy="115" r="4" fill="#f59e0b"/>
+      <circle cx="600" cy="115" r="4" fill="#ffffff"/>
+      <!-- Checkmarks -->
+      <circle cx="580" cy="180" r="15" fill="#22c55e" opacity="0.1"/>
+      <path d="M573 180 L578 185 L588 175" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="580" cy="230" r="15" fill="#22c55e" opacity="0.1"/>
+      <path d="M573 230 L578 235 L588 225" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="580" cy="280" r="15" fill="#22c55e" opacity="0.1"/>
+      <path d="M573 280 L578 285 L588 275" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- Connecting arrows -->
+      <path d="M250 250 L380 275" fill="none" stroke="#135bec" stroke-width="2" stroke-dasharray="5,5"/>
+      <polygon points="375,270 385,275 375,280" fill="#135bec"/>
+      <path d="M460 275 L550 275" fill="none" stroke="#135bec" stroke-width="2" stroke-dasharray="5,5"/>
+      <polygon points="545,270 555,275 545,280" fill="#135bec"/>
+      <!-- Floating elements -->
+      <circle cx="150" cy="450" r="25" fill="#135bec" opacity="0.1"/>
+      <text x="150" y="458" font-family="monospace" font-size="20" fill="#135bec" text-anchor="middle">&lt;/&gt;</text>
+      <circle cx="650" cy="450" r="25" fill="#22c55e" opacity="0.1"/>
+      <path d="M640 450 L650 460 L665 445" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
