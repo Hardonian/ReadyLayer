@@ -5,7 +5,7 @@
  * Uses new crypto module with key rotation support
  */
 
-import { Prisma } from '@prisma/client';
+import { Prisma, Installation } from '@prisma/client';
 import { prisma } from '../prisma';
 import { encryptToken, decryptToken, redactSecret } from './index';
 import { isKeyConfigured } from '../crypto';
@@ -17,7 +17,7 @@ import { logger } from '../../observability/logging';
  */
 export async function createInstallationWithEncryptedToken(
   data: Omit<Prisma.InstallationCreateInput, 'accessToken' | 'tokenEncrypted'> & { accessToken: string }
-) {
+): Promise<Installation> {
   if (!isKeyConfigured()) {
     logger.error('Encryption keys not configured - cannot encrypt installation token');
     throw new Error('Encryption keys not configured. Set READY_LAYER_KMS_KEY, READY_LAYER_MASTER_KEY, or READY_LAYER_KEYS environment variable.');
@@ -49,7 +49,7 @@ export async function createInstallationWithEncryptedToken(
 export async function updateInstallationToken(
   installationId: string,
   accessToken: string
-) {
+): Promise<Prisma.Installation> {
   if (!isKeyConfigured()) {
     logger.error('Encryption keys not configured - cannot encrypt installation token');
     throw new Error('Encryption keys not configured. Set READY_LAYER_KMS_KEY, READY_LAYER_MASTER_KEY, or READY_LAYER_KEYS environment variable.');
@@ -79,7 +79,7 @@ export async function updateInstallationToken(
  * Never logs the token value
  * Returns null if keys not configured (graceful degradation)
  */
-export async function getInstallationWithDecryptedToken(installationId: string) {
+export async function getInstallationWithDecryptedToken(installationId: string): Promise<(Installation & { accessToken: string }) | null> {
   const installation = await prisma.installation.findUnique({
     where: { id: installationId },
   });
@@ -123,7 +123,7 @@ export async function getInstallationWithDecryptedToken(installationId: string) 
 export async function getInstallationByProviderWithDecryptedToken(
   provider: string,
   providerId: string
-) {
+): Promise<(Installation & { accessToken: string }) | null> {
   const installation = await prisma.installation.findUnique({
     where: {
       provider_providerId: {

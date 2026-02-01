@@ -1,3 +1,15 @@
+/**
+ * Stricter ESLint Configuration
+ * 
+ * This file contains stricter lint rules that can be enabled once
+ * all warnings in the lib/ directory are cleared.
+ * 
+ * To enable:
+ * 1. Fix all warnings in lib/ directory
+ * 2. Copy contents of this file to eslint.config.js
+ * 3. Run npm run lint to verify
+ */
+
 const safeRequire = (moduleName) => {
   try {
     return require(moduleName)
@@ -100,15 +112,16 @@ if (tsparser && tseslint) {
         caughtErrorsIgnorePattern: '^_',
       },
     ],
-    // Relaxed for gradual adoption - Next.js App Router patterns
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unsafe-assignment': 'warn',
-    '@typescript-eslint/no-unsafe-member-access': 'warn',
-    '@typescript-eslint/no-unsafe-call': 'warn',
-    '@typescript-eslint/no-unsafe-return': 'warn',
-    '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-unsafe-argument': 'warn',
+    // STRICT RULES - Only enable after fixing all warnings
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-unsafe-assignment': 'error',
+    '@typescript-eslint/no-unsafe-member-access': 'error',
+    '@typescript-eslint/no-unsafe-call': 'error',
+    '@typescript-eslint/no-unsafe-return': 'error',
+    '@typescript-eslint/no-unsafe-argument': 'error',
+    // Require explicit return types for better documentation
+    '@typescript-eslint/explicit-function-return-type': 'error',
+    '@typescript-eslint/explicit-module-boundary-types': 'error',
   }
 
   if (reactHooksPlugin) {
@@ -147,16 +160,34 @@ if (tsparser && tseslint) {
     rules: tsRules,
   })
 
-  // Stricter rules for library/SDK code (warnings to avoid breaking build)
+  // Library code - STRICTEST rules
   config.push({
     files: ['lib/**/*.ts', 'sdk/typescript/src/**/*.ts'],
     rules: {
-      '@typescript-eslint/explicit-function-return-type': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
+    },
+  })
+
+  // App Router pages - slightly relaxed
+  config.push({
+    files: ['app/**/*.ts', 'app/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+    },
+  })
+
+  // Components - relaxed for JSX
+  config.push({
+    files: ['components/**/*.ts', 'components/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
     },
   })
 }
