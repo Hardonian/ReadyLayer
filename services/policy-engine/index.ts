@@ -590,7 +590,7 @@ export class PolicyEngineService {
     for (const match of selectStarMatches) {
       // Check if this SELECT * is part of a parameterized query
       const queryContext = code.substring(code.indexOf(match), code.indexOf(match) + 200);
-      if (!/\$\d+|\?\b/.test(queryContext)) {
+      if (!/\$\d+|\?\b/.test(queryContext)) {
         violations.push({
           ruleId: 'performance.select-star',
           severity: 'high',
