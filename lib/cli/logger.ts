@@ -46,7 +46,7 @@ export function createLogger(scope?: string): Logger {
   const minLevel = resolveLogLevel();
   const baseContext = scope ? { scope } : undefined;
 
-  const log = (level: LogLevel, message: string, context?: LogContext) => {
+  const log = (level: LogLevel, message: string, context?: LogContext): void => {
     if (!shouldLog(level, minLevel)) {
       return;
     }

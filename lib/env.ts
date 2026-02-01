@@ -277,7 +277,7 @@ function getEnvConfig(): EnvConfig {
 
 // Export getter that lazily validates
 export const env = new Proxy({} as EnvConfig, {
-  get(_target, prop: keyof EnvConfig) {
+  get(_target, prop: keyof EnvConfig): EnvConfig[keyof EnvConfig] {
     const config = getEnvConfig();
     return config[prop];
   },

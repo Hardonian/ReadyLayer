@@ -164,7 +164,7 @@ export class AsyncHandler<T, R> {
     const startTime = Date.now();
 
     return new Promise((resolve, reject) => {
-      const checkResult = () => {
+      const checkResult = (): void => {
         const result = this.results.get(taskId);
         
         if (result) {
