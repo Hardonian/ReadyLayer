@@ -328,40 +328,40 @@ export const cache = {
   /**
    * Short TTL (5s) - Transactional data
    */
-  short: <T>(key: string, fn: () => Promise<T>) =>
+  short: <T>(key: string, fn: () => Promise<T>): Promise<T> =>
     cachedQuery(key, fn, { ttl: CACHE_CONFIG.TTL_SHORT }),
 
   /**
    * Medium TTL (60s) - Dashboard aggregates
    */
-  medium: <T>(key: string, fn: () => Promise<T>) =>
+  medium: <T>(key: string, fn: () => Promise<T>): Promise<T> =>
     cachedQuery(key, fn, { ttl: CACHE_CONFIG.TTL_MEDIUM }),
 
   /**
    * Long TTL (5min) - Static data
    */
-  long: <T>(key: string, fn: () => Promise<T>) =>
+  long: <T>(key: string, fn: () => Promise<T>): Promise<T> =>
     cachedQuery(key, fn, { ttl: CACHE_CONFIG.TTL_LONG }),
 
   /**
    * Very long TTL (1hr) - Rarely changing
    */
-  veryLong: <T>(key: string, fn: () => Promise<T>) =>
+  veryLong: <T>(key: string, fn: () => Promise<T>): Promise<T> =>
     cachedQuery(key, fn, { ttl: CACHE_CONFIG.TTL_VERY_LONG }),
 
   /**
    * Custom TTL
    */
-  custom: <T>(key: string, fn: () => Promise<T>, ttlSeconds: number) =>
+  custom: <T>(key: string, fn: () => Promise<T>, ttlSeconds: number): Promise<T> =>
     cachedQuery(key, fn, { ttl: ttlSeconds }),
 
   /**
    * Manual cache operations
    */
-  get: <T>(key: string) => queryCache.get<T>(key),
-  set: <T>(key: string, value: T, ttl: number) => queryCache.set(key, value, ttl),
-  delete: (key: string) => queryCache.delete(key),
-  deletePattern: (pattern: string) => queryCache.deletePattern(pattern),
+  get: <T>(key: string): Promise<T | null> => queryCache.get<T>(key),
+  set: <T>(key: string, value: T, ttl: number): Promise<void> => queryCache.set(key, value, ttl),
+  delete: (key: string): Promise<void> => queryCache.delete(key),
+  deletePattern: (pattern: string): Promise<void> => queryCache.deletePattern(pattern),
 
   /**
    * Build cache key helper
@@ -376,19 +376,19 @@ export const cacheInvalidation = {
   /**
    * Invalidate all caches for an organization
    */
-  invalidateOrg: (organizationId: string) =>
+  invalidateOrg: (organizationId: string): Promise<void> =>
     cache.deletePattern(`rl:*:${organizationId}:*`),
 
   /**
    * Invalidate all caches for a repository
    */
-  invalidateRepo: (repositoryId: string) =>
+  invalidateRepo: (repositoryId: string): Promise<void> =>
     cache.deletePattern(`rl:*:*:${repositoryId}*`),
 
   /**
    * Invalidate specific namespace
    */
-  invalidateNamespace: (namespace: string) =>
+  invalidateNamespace: (namespace: string): Promise<void> =>
     cache.deletePattern(`rl:${namespace}:*`),
 }
 

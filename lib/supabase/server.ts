@@ -1,11 +1,11 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type SupabaseClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Create Supabase server client for API routes and Server Components
  */
-export async function createSupabaseServerClient(_request?: NextRequest) {
+export async function createSupabaseServerClient(_request?: NextRequest): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

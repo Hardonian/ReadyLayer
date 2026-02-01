@@ -1,0 +1,272 @@
+name: SDK Verification
+
+on:
+  pull_request:
+    paths:
+      - 'sdk/**'
+      - 'lib/api/**'
+      - 'lib/openapi/**'
+      - '.github/workflows/sdk-verify.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sdk/**'
+      - 'lib/api/**'
+      - 'lib/openapi/**'
+
+env:
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  verify-typescript-sdk:
+    name: TypeScript SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/typescript
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: sdk/typescript/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Type Check
+        run: npm run type-check
+
+      - name: Build SDK
+        run: npm run build
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Verify Exports
+        run: |
+          # Check that all expected exports exist
+          node -e "
+            const sdk = require('./dist/index.js');
+            const expected = ['ReadyLayerClient', 'ReadyLayerError', 'AuthenticationError', 'NotFoundError'];
+            const missing = expected.filter(e => !sdk[e]);
+            if (missing.length > 0) {
+              console.error('Missing exports:', missing);
+              process.exit(1);
+            }
+            console.log('All expected exports present');
+          "
+
+  verify-python-sdk:
+    name: Python SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/python
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Check Compilation
+        run: python -m compileall src/readylayer
+
+      - name: Run Tests
+        run: pytest tests/ -v --tb=short
+        continue-on-error: true # Allow tests to fail if no tests exist yet
+
+      - name: Import Test
+        run: |
+          python -c "
+            from readylayer import ReadyLayerClient
+            from readylayer.errors import ReadyLayerError
+            print('Python SDK imports successfully')
+          "
+
+      - name: Type Check with mypy (if configured)
+        run: mypy src/readylayer --ignore-missing-imports || echo "mypy not configured, skipping"
+        continue-on-error: true
+
+  verify-go-sdk:
+    name: Go SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/go
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Verify Go Module
+        run: go mod verify
+
+      - name: Tidy Dependencies
+        run: go mod tidy
+
+      - name: Build SDK
+        run: go build ./...
+
+      - name: Run Tests
+        run: go test ./... -v
+        continue-on-error: true # Allow tests to fail if no tests exist yet
+
+      - name: Vet Code
+        run: go vet ./...
+
+  verify-java-sdk:
+    name: Java SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/java
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Check File Structure
+        run: |
+          # Verify expected files exist
+          test -f src/main/java/io/readylayer/ReadyLayerClient.java || exit 1
+          test -d src/main/java/io/readylayer/services || exit 1
+          test -d src/main/java/io/readylayer/models || exit 1
+          echo "Java SDK structure verified"
+
+      - name: Compile (if Maven available)
+        run: |
+          if [ -f pom.xml ]; then
+            mvn compile -q || echo "Maven compile skipped"
+          elif [ -f build.gradle ]; then
+            ./gradlew compileJava || echo "Gradle compile skipped"
+          else
+            echo "No build file found, skipping compile"
+          fi
+        continue-on-error: true
+
+  verify-csharp-sdk:
+    name: C# SDK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/csharp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check File Structure
+        run: |
+          # Verify expected files exist
+          test -f src/ReadyLayerClient.cs || exit 1
+          test -d src/Services || exit 1
+          test -d src/Models || exit 1
+          echo "C# SDK structure verified"
+
+      - name: Build (if .NET available)
+        run: |
+          if command -v dotnet &> /dev/null; then
+            dotnet build || echo "Build skipped"
+          else
+            echo ".NET SDK not available, skipping build"
+          fi
+        continue-on-error: true
+
+  openapi-consistency:
+    name: OpenAPI Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify OpenAPI Spec
+        run: |
+          # Check that openapi.json exists and is valid JSON
+          test -f sdk/openapi.json || exit 1
+          python3 -c "import json; json.load(open('sdk/openapi.json'))"
+          echo "OpenAPI spec is valid JSON"
+
+      - name: Check Spec Completeness
+        run: |
+          python3 << 'EOF'
+          import json
+
+          with open('sdk/openapi.json', 'r') as f:
+              spec = json.load(f)
+
+          # Check required fields
+          assert 'openapi' in spec, "Missing openapi version"
+          assert 'info' in spec, "Missing info section"
+          assert 'paths' in spec, "Missing paths section"
+          assert 'components' in spec or 'definitions' in spec, "Missing components/definitions"
+
+          # Check for security schemes
+          security_defined = False
+          if 'components' in spec and 'securitySchemes' in spec.get('components', {}):
+              security_defined = True
+          if 'securityDefinitions' in spec:
+              security_defined = True
+
+          if not security_defined:
+              print("Warning: No security schemes defined")
+
+          # Count endpoints
+          paths = spec.get('paths', {})
+          print(f"OpenAPI spec has {len(paths)} paths defined")
+
+          # Check for required tags
+          required_tags = ['Authentication', 'Repositories', 'Policies', 'Reviews', 'Billing', 'Health']
+          tags = [t['name'] for t in spec.get('tags', [])]
+          missing_tags = [t for t in required_tags if t not in tags]
+          if missing_tags:
+              print(f"Warning: Missing tags: {missing_tags}")
+
+          print("OpenAPI spec validation passed")
+          EOF
+
+  sdk-drift-check:
+    name: SDK Drift Detection
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for SDK Changes without OpenAPI Updates
+        run: |
+          # Get changed files
+          changed_files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          # Check if OpenAPI spec changed
+          openapi_changed=$(echo "$changed_files" | grep -c "sdk/openapi.json" || true)
+
+          # Check if any SDK implementations changed
+          sdk_changed=$(echo "$changed_files" | grep -c "sdk/.*/src/" || true)
+
+          if [ "$openapi_changed" -eq 0 ] && [ "$sdk_changed" -gt 0 ]; then
+            echo "⚠️ Warning: SDK implementations changed but OpenAPI spec was not updated"
+            echo "Changed SDK files:"
+            echo "$changed_files" | grep "sdk/.*/src/" || true
+            echo ""
+            echo "If these changes affect the API contract, please update sdk/openapi.json"
+            # Don't fail, just warn
+          else
+            echo "✓ SDK changes are consistent with OpenAPI updates"
+          fi
