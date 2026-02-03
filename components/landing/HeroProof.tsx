@@ -61,7 +61,7 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
         <Container size="lg" className="relative pt-0 sm:pt-0 lg:pt-0 pb-16 sm:pb-20 lg:pb-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <motion.div
-              className="space-y-8"
+              className="space-y-6 sm:space-y-8"
               variants={prefersReducedMotion ? fadeIn : staggerContainer}
               initial="hidden"
               animate="visible"
