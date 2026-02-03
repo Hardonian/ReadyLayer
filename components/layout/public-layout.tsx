@@ -20,7 +20,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }): React
                   width={140}
                   height={28}
                   priority
-                  className="h-7 w-auto dark:invert"
+                  className="h-7 w-auto"
                 />
               </picture>
             </Link>
