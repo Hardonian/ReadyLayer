@@ -48,8 +48,8 @@ export function Footer(): React.JSX.Element {
 
           <div className="py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
-              <h4 className="font-display font-semibold text-lg mb-6">Product</h4>
-              <ul className="space-y-3 text-base font-body">
+              <h4 className="font-display font-semibold text-base mb-4">Product</h4>
+              <ul className="space-y-2 text-sm font-body">
                 <li>
                   <Link href="/how-it-works" className="text-text-muted hover:text-text-primary transition-colors">
                     How it Works
