@@ -59,38 +59,7 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
       </div>
 
       <div className="relative z-10">
-        <motion.header
-          className="sticky top-0 z-50 px-4 sm:px-6 lg:px-8 py-4 sm:py-5 backdrop-blur-custom bg-surface/80 dark:bg-surface/80 border-b border-border/20 overflow-visible"
-          variants={prefersReducedMotion ? fadeIn : fadeIn}
-          initial="hidden"
-          animate="visible"
-        >
-          <div className="flex items-center justify-between w-full overflow-visible gap-6">
-            <nav className="hidden sm:flex items-center gap-3 md:gap-4 lg:gap-6 flex-1 overflow-visible min-w-0">
-              {PUBLIC_NAV_ITEMS.slice(0, 4).map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-xs md:text-sm font-display font-medium text-text-muted hover:text-text-primary transition-colors whitespace-nowrap leading-none"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-
-            <Link
-              href="/"
-              className="flex-shrink-0 hover:opacity-80 transition-opacity overflow-visible flex items-center"
-              aria-label="ReadyLayer Home"
-            >
-              <div className="scale-50 origin-center overflow-visible will-change-transform" style={{ height: 'auto', minHeight: 'auto' }}>
-                <Logo variant="full" size="sm" />
-              </div>
-            </Link>
-          </div>
-        </motion.header>
-
-        <Container size="lg" className="relative py-16 sm:py-20 lg:py-32">
+        <Container size="lg" className="relative pt-0 sm:pt-0 lg:pt-0 pb-16 sm:pb-20 lg:pb-32">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <motion.div
               className="space-y-8"
