@@ -16,31 +16,31 @@ export function Footer(): React.JSX.Element {
             <p className="text-sm font-body text-text-muted leading-relaxed">
               Open-source governance framework for AI-generated code.
             </p>
-            <div className="flex gap-4 w-fit">
+            <div className="flex gap-2 w-fit">
               <a
                 href="https://github.com/Hardonian/ReadyLayer"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="GitHub"
-                className="p-3 rounded-xl bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
+                className="p-2 rounded-lg bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
               >
-                <Github className="h-5 w-5 text-text-muted hover:text-text" />
+                <Github className="h-4 w-4 text-text-muted hover:text-text" />
               </a>
               <a
                 href="https://twitter.com/readylayer"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="p-3 rounded-xl bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
+                className="p-2 rounded-lg bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
               >
-                <Twitter className="h-5 w-5 text-text-muted hover:text-text" />
+                <Twitter className="h-4 w-4 text-text-muted hover:text-text" />
               </a>
               <a
                 href="mailto:support@readylayer.io"
                 aria-label="Email"
-                className="p-3 rounded-xl bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
+                className="p-2 rounded-lg bg-surface-raised hover:bg-surface-hover hover:shadow-glow transition-all duration-300 tap-target"
               >
-                <Mail className="h-5 w-5 text-text-muted hover:text-text" />
+                <Mail className="h-4 w-4 text-text-muted hover:text-text" />
               </a>
             </div>
           </div>
