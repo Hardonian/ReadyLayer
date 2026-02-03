@@ -74,8 +74,8 @@ export function Footer(): React.JSX.Element {
             </div>
 
           <div>
-            <h4 className="font-display font-semibold text-lg mb-6">Trust & Security</h4>
-            <ul className="space-y-3 text-base font-body">
+            <h4 className="font-display font-semibold text-base mb-4">Trust & Security</h4>
+            <ul className="space-y-2 text-sm font-body">
               <li>
                 <Link href="/security" className="text-text-muted hover:text-text-primary transition-colors flex items-center gap-2">
                   <Shield className="h-4 w-4" />
