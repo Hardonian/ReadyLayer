@@ -21,12 +21,20 @@ export default function AdminPage(): React.JSX.Element {
             Manage organization-wide settings, users, and policies
           </p>
         </div>
-        <Link href="/dashboard/admin/jobs">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Server className="h-4 w-4" />
-            View Jobs
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/admin/jobs">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Server className="h-4 w-4" />
+              View Jobs
+            </Button>
+          </Link>
+          <Link href="/dashboard/admin/jobforge">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              JobForge Admin
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Tabs defaultValue="users" className="w-full">

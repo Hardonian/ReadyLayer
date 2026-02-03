@@ -15,6 +15,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { createConsoleAdapter, createLogger } from '../lib/cli/logger';
+import { getJobForgeAdapter } from '../lib/jobforge/adapter';
+import { redactSecrets } from '../lib/secrets/redaction';
 
 const program = new Command();
 const log = createLogger('cli');
@@ -32,6 +34,25 @@ interface ReadyLayerConfig {
   apiUrl?: string;
   repositoryId?: string;
   llmProvider?: LLMProvider;
+}
+
+interface JobForgeCommandOptions {
+  tenant: string;
+  project: string;
+}
+
+function parseJsonArgument(value?: string): Record<string, unknown> {
+  if (!value) return {};
+  const parsed = JSON.parse(value) as unknown;
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('JSON input must be an object');
+  }
+  return parsed as Record<string, unknown>;
+}
+
+function safeCliError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return redactSecrets(message, { logDetections: false }).redacted;
 }
 
 // Load config from file or environment
@@ -337,6 +358,110 @@ program
   .action(() => {
     const config = loadConfig();
     console.log(JSON.stringify(config, null, 2));
+  });
+
+const jobforge = program
+  .command('jobforge')
+  .description('JobForge admin commands (requires JOBFORGE_INTEGRATION_ENABLED=1)');
+
+jobforge
+  .command('submit-event')
+  .description('Submit a webhook event to JobForge')
+  .requiredOption('--tenant <id>', 'Tenant (organization) ID')
+  .requiredOption('--project <id>', 'Project (repository) ID')
+  .requiredOption('--target-url <url>', 'Webhook target URL')
+  .requiredOption('--event-type <type>', 'Event type')
+  .option('--data <json>', 'Event data JSON', '{}')
+  .option('--secret-ref <ref>', 'Secret reference for signing')
+  .option('--timeout-ms <ms>', 'Timeout in milliseconds', '10000')
+  .action(async (options: JobForgeCommandOptions & { targetUrl: string; eventType: string; data?: string; secretRef?: string; timeoutMs?: string }) => {
+    try {
+      const adapter = getJobForgeAdapter();
+      const result = await adapter.submitEvent({
+        tenantId: options.tenant,
+        projectId: options.project,
+        targetUrl: options.targetUrl,
+        eventType: options.eventType,
+        data: parseJsonArgument(options.data),
+        secretRef: options.secretRef,
+        timeoutMs: options.timeoutMs ? Number(options.timeoutMs) : undefined,
+      });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      console.error(`Error: ${safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
+jobforge
+  .command('module-dry-run')
+  .description('Run a JobForge module dry-run')
+  .requiredOption('--tenant <id>', 'Tenant (organization) ID')
+  .requiredOption('--project <id>', 'Project (repository) ID')
+  .requiredOption('--module <name>', 'Module name')
+  .option('--input <json>', 'Module input JSON', '{}')
+  .action(async (options: JobForgeCommandOptions & { module: string; input?: string }) => {
+    try {
+      const adapter = getJobForgeAdapter();
+      const result = await adapter.runModuleDryRun({
+        tenantId: options.tenant,
+        projectId: options.project,
+        moduleName: options.module,
+        input: parseJsonArgument(options.input),
+      });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      console.error(`Error: ${safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
+jobforge
+  .command('report')
+  .description('Fetch a JobForge report result')
+  .requiredOption('--tenant <id>', 'Tenant (organization) ID')
+  .requiredOption('--project <id>', 'Project (repository) ID')
+  .requiredOption('--result-id <id>', 'JobForge result ID')
+  .action(async (options: JobForgeCommandOptions & { resultId: string }) => {
+    try {
+      const adapter = getJobForgeAdapter();
+      const result = await adapter.getReport({
+        tenantId: options.tenant,
+        projectId: options.project,
+        resultId: options.resultId,
+      });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      console.error(`Error: ${safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
+jobforge
+  .command('bundle-execute')
+  .description('Request bundle execution (gated) via JobForge')
+  .requiredOption('--tenant <id>', 'Tenant (organization) ID')
+  .requiredOption('--project <id>', 'Project (repository) ID')
+  .requiredOption('--bundle-id <id>', 'Bundle ID')
+  .option('--bundle-type <type>', 'Bundle type')
+  .option('--inputs <json>', 'Bundle inputs JSON', '{}')
+  .option('--execute', 'Execute the bundle (requires JOBFORGE_BUNDLE_EXECUTION_ENABLED=1)', false)
+  .action(async (options: JobForgeCommandOptions & { bundleId: string; bundleType?: string; inputs?: string; execute?: boolean }) => {
+    try {
+      const adapter = getJobForgeAdapter();
+      const result = await adapter.requestBundleExecution({
+        tenantId: options.tenant,
+        projectId: options.project,
+        bundleId: options.bundleId,
+        bundleType: options.bundleType,
+        inputs: parseJsonArgument(options.inputs),
+        execute: Boolean(options.execute),
+      });
+      console.log(JSON.stringify(result, null, 2));
+    } catch (error) {
+      console.error(`Error: ${safeCliError(error)}`);
+      process.exit(1);
+    }
   });
 
 // Cursor integration command
