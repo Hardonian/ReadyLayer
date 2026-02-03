@@ -10,11 +10,11 @@ export function Footer(): React.JSX.Element {
   return (
     <footer className="border-t border-border/20 bg-surface-code/50">
       <Container size="lg">
-        <div className="py-16 border-b border-border/20">
-          <div className="flex flex-col gap-6 max-w-sm">
+        <div className="py-8 border-b border-border/20">
+          <div className="flex flex-col gap-4 max-w-sm">
             <LogoWord size="sm" />
-            <p className="text-base font-body text-text-muted leading-relaxed">
-              Open-source governance framework for AI-generated code. Composable, deterministic, and audit-ready.
+            <p className="text-sm font-body text-text-muted leading-relaxed">
+              Open-source governance framework for AI-generated code.
             </p>
             <div className="flex gap-4 w-fit">
               <a
