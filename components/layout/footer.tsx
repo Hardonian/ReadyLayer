@@ -46,7 +46,7 @@ export function Footer(): React.JSX.Element {
           </div>
         </div>
 
-          <div className="py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
               <h4 className="font-display font-semibold text-lg mb-6">Product</h4>
               <ul className="space-y-3 text-base font-body">
