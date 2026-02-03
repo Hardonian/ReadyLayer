@@ -23,7 +23,6 @@ import {
 import { InteractivePRDemo } from './InteractivePRDemo'
 import { HeroImage } from '@/components/ui/optimized-image'
 import { cn } from '@/lib/utils'
-import { PUBLIC_NAV_ITEMS } from '@/lib/navigation'
 
 interface HeroProofProps {
   user?: { email?: string; user_metadata?: { full_name?: string } } | null
