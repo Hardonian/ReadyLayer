@@ -54,6 +54,20 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
+JobForge admin integration is **disabled by default** to avoid side effects. Enable explicitly:
+
+```env
+# Default: 0 (disabled)
+JOBFORGE_INTEGRATION_ENABLED=0
+
+# Default: 0 (gated)
+JOBFORGE_BUNDLE_EXECUTION_ENABLED=0
+
+# Optional explicit mapping of project -> tenant
+# Example: {"repo_123":"org_abc","repo_456":"org_def"}
+JOBFORGE_TENANT_PROJECT_MAP={}
+```
+
 ### 3. Run Worker
 
 ```bash
@@ -115,7 +129,7 @@ export async function POST(req: Request) {
 
 ### Built-in Connectors
 
-JobForge includes three production-ready connectors:
+JobForge includes production-ready connectors:
 
 #### 1. HTTP Request (`connector.http.request`)
 
@@ -170,6 +184,72 @@ await enqueueJob({
     format: ['json', 'html', 'csv'],
   },
 })
+```
+
+#### 4. Module Dry-Run (`connector.module.run`)
+
+Simulate module execution without side effects:
+
+```typescript
+await enqueueJob({
+  tenant_id: organizationId,
+  type: 'connector.module.run',
+  payload: {
+    module_name: 'policy-engine',
+    input: { dry_run: true },
+    dry_run: true,
+  },
+})
+```
+
+#### 5. Bundle Execution (`connector.bundle.execute`)
+
+Queue bundle execution plans (gated by `JOBFORGE_BUNDLE_EXECUTION_ENABLED`):
+
+```typescript
+await enqueueJob({
+  tenant_id: organizationId,
+  type: 'connector.bundle.execute',
+  payload: {
+    bundle_id: 'bundle-123',
+    bundle_type: 'evidence',
+    inputs: { scope: 'latest' },
+    execute: false,
+  },
+})
+```
+
+### Admin UI + CLI
+
+Use the admin interface to submit events, run dry-runs, inspect reports, and request bundle execution:
+
+- **UI:** `/dashboard/admin/jobforge`
+- **CLI:**
+
+```bash
+npx tsx cli/readylayer-cli.ts jobforge submit-event \\
+  --tenant <org-id> \\
+  --project <repo-id> \\
+  --target-url https://example.com/webhook \\
+  --event-type readiness.updated \\
+  --data '{\"bundle\":\"123\"}'
+
+npx tsx cli/readylayer-cli.ts jobforge module-dry-run \\
+  --tenant <org-id> \\
+  --project <repo-id> \\
+  --module policy-engine \\
+  --input '{\"preview\":true}'
+
+npx tsx cli/readylayer-cli.ts jobforge report \\
+  --tenant <org-id> \\
+  --project <repo-id> \\
+  --result-id <result-id>
+
+npx tsx cli/readylayer-cli.ts jobforge bundle-execute \\
+  --tenant <org-id> \\
+  --project <repo-id> \\
+  --bundle-id <bundle-id> \\
+  --inputs '{\"scope\":\"latest\"}'
 ```
 
 ### Querying Jobs
