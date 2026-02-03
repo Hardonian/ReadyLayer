@@ -77,7 +77,7 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
                     Deterministic checks
                   </Badge>
                 </div>
-                 <h1 className="text-4xl sm:text-5xl lg:text-7xl font-display font-bold tracking-tight mb-6 leading-tight">
+                 <h1 className="text-3xl sm:text-5xl lg:text-7xl font-display font-bold tracking-tight mb-6 leading-tight">
                    <span className="bg-gradient-to-r from-primary via-accent to-success bg-clip-text text-transparent animate-float">
                      Open-source governance
                    </span>
