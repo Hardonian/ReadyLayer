@@ -644,10 +644,7 @@ async function processPREvent(
         // Ingest test precedent into evidence index (idempotent, safe)
         if (isIngestEnabled() && testResult.testContent) {
           try {
-            const repo = await prisma.repository.findUnique({
-              where: { id: String(repository.id) },
-              select: { organizationId: true },
-            });
+            const repo = await getCachedRepository(String(repository.id));
 
             if (repo) {
               await ingestDocument({
@@ -679,10 +676,7 @@ async function processPREvent(
     // Run Doc Sync drift check on PR (before merge)
     // This checks for drift between code and docs, but doesn't generate new docs
     try {
-      const repo = await prisma.repository.findUnique({
-        where: { id: String(repository.id) },
-        select: { organizationId: true },
-      });
+      const repo = await getCachedRepository(String(repository.id));
 
       if (repo) {
         // Check for drift without generating new docs
@@ -740,10 +734,7 @@ async function processPREvent(
     // Ingest PR diff into evidence index (idempotent, safe)
     if (isIngestEnabled() && diff) {
     try {
-      const repo = await prisma.repository.findUnique({
-        where: { id: String(repository.id) },
-        select: { organizationId: true },
-      });
+      const repo = await getCachedRepository(String(repository.id));
 
       if (repo && diff.length > 0 && diff.length < 50000) { // Limit diff size
         await ingestDocument({
