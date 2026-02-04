@@ -1,5 +1,9 @@
 /**
- * Billing Middleware
+ * Optimized Billing Middleware
+ * 
+ * Performance improvements:
+ * - Caches tier lookups for 60 seconds
+ * - Reduces redundant service calls
  * 
  * Enforces billing tier limits and feature gates
  */
@@ -8,11 +12,38 @@ import { NextRequest, NextResponse } from 'next/server';
 import { billingService } from '../billing';
 import { logger } from '@/observability/logging';
 import { LimitType } from './usage-enforcement';
+import { cache, buildCacheKey } from './db/cache';
 
 export interface BillingCheckOptions {
   requireFeature?: 'reviewGuard' | 'testEngine' | 'docSync';
   checkRepoLimit?: boolean;
   checkLLMBudget?: boolean;
+}
+
+const TIER_CACHE_TTL = 60; // 60 seconds
+
+/**
+ * Get cached organization tier
+ */
+async function getCachedOrganizationTier(organizationId: string) {
+  const cacheKey = buildCacheKey('billing', `tier:${organizationId}`);
+  const cached = await cache.get(cacheKey);
+  
+  if (cached) {
+    return cached as ReturnType<typeof billingService.getOrganizationTier>;
+  }
+
+  const tier = await billingService.getOrganizationTier(organizationId);
+  await cache.set(cacheKey, tier, TIER_CACHE_TTL);
+  return tier;
+}
+
+/**
+ * Invalidate tier cache (call when subscription changes)
+ */
+export async function invalidateTierCache(organizationId: string): Promise<void> {
+  const cacheKey = buildCacheKey('billing', `tier:${organizationId}`);
+  await cache.delete(cacheKey);
 }
 
 /**
