@@ -460,11 +460,8 @@ async function processPREvent(
     }
   }
 
-  // Check billing limits before processing review
-  const repoRecord = await prisma.repository.findUnique({
-    where: { id: String(repository.id) },
-    select: { organizationId: true },
-  });
+  // Check billing limits before processing review (with caching)
+  const repoRecord = await getCachedRepository(String(repository.id));
 
   if (!repoRecord) {
     throw new Error(`Repository ${repository.id} not found`);
