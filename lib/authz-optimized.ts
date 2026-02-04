@@ -39,7 +39,7 @@ export async function canAccessRepositoryOptimized(
     const hasAccess = result[0]?.has_access === true;
     membershipCache.set(cacheKey, hasAccess, 30000);
     return hasAccess;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to original method on error
     try {
       const repository = await prisma.repository.findUnique({
@@ -93,7 +93,7 @@ export async function canAccessReviewOptimized(
     const hasAccess = result[0]?.has_access === true;
     membershipCache.set(cacheKey, hasAccess, 30000);
     return hasAccess;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to original method
     try {
       const review = await prisma.review.findUnique({
@@ -151,7 +151,7 @@ export async function canAccessRunOptimized(
     const hasAccess = result[0]?.has_access === true;
     membershipCache.set(cacheKey, hasAccess, 30000);
     return hasAccess;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to original method
     try {
       const run = await prisma.readyLayerRun.findUnique({
@@ -213,7 +213,7 @@ export async function canAccessRepositoriesBatch(
     }
 
     return accessMap;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to individual checks
     const accessMap = new Map<string, boolean>();
     for (const repoId of repositoryIds) {

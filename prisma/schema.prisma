@@ -785,6 +785,7 @@ model ModelPerformance {
   @@index([provider])
   @@index([timestamp])
   @@index([predictionId])
+  @@index([organizationId, modelId, provider, timestamp])
 }
 
 // Model Performance Aggregates (aggregated metrics per model)

@@ -5,8 +5,8 @@
  * This helps keep the public API surface clean and identifies dead code.
  */
 
-import { glob } from 'glob';
-import { readFile } from 'fs/promises';
+import path from 'node:path';
+import { readFile, readdir } from 'fs/promises';
 
 const IGNORE_PATTERNS = [
   // Config files
@@ -32,20 +32,45 @@ interface ExportInfo {
   line: number;
 }
 
+async function listTypeScriptFiles(rootDir: string): Promise<string[]> {
+  const entries = await readdir(rootDir, { withFileTypes: true });
+  const results: string[] = [];
+  const ignoredDirs = new Set(['node_modules', '.next', 'dist', 'build', 'out']);
+
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) {
+      continue;
+    }
+
+    const fullPath = path.join(rootDir, entry.name);
+    if (entry.isDirectory()) {
+      if (ignoredDirs.has(entry.name)) {
+        continue;
+      }
+      results.push(...await listTypeScriptFiles(fullPath));
+    } else if (entry.isFile()) {
+      if (fullPath.endsWith('.ts') || fullPath.endsWith('.tsx')) {
+        results.push(fullPath);
+      }
+    }
+  }
+
+  return results;
+}
+
 async function findUnusedExports(): Promise<ExportInfo[]> {
-  const tsFiles = await glob('**/*.{ts,tsx}', {
-    ignore: ['node_modules/**', '.next/**', 'dist/**'],
-  });
+  const tsFiles = await listTypeScriptFiles(process.cwd());
 
   // Parse all exports
   const allExports: ExportInfo[] = [];
   const allImports: Set<string> = new Set();
 
   for (const file of tsFiles) {
+    const relativePath = path.relative(process.cwd(), file);
     const content = await readFile(file, 'utf-8');
     
     // Skip ignored files
-    if (IGNORE_PATTERNS.some(pattern => pattern.test(file))) {
+    if (IGNORE_PATTERNS.some(pattern => pattern.test(relativePath))) {
       continue;
     }
 
@@ -56,7 +81,7 @@ async function findUnusedExports(): Promise<ExportInfo[]> {
       const line = content.substring(0, match.index).split('\n').length;
       allExports.push({
         name: match[1],
-        file,
+        file: relativePath,
         line,
       });
     }
@@ -69,10 +94,10 @@ async function findUnusedExports(): Promise<ExportInfo[]> {
       for (const exp of exports) {
         allExports.push({
           name: exp,
-          file,
-          line,
-        });
-      }
+        file: relativePath,
+        line,
+      });
+    }
     }
 
     // Find imports
@@ -97,7 +122,7 @@ async function findUnusedExports(): Promise<ExportInfo[]> {
   return unused;
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('Checking for unused exports...\n');
 
   const unused = await findUnusedExports();
@@ -131,7 +156,7 @@ async function main() {
   process.exit(1);
 }
 
-main().catch(err => {
-  console.error('Error checking unused exports:', err);
+main().catch((err: unknown) => {
+  console.error('Error checking unused exports:', err instanceof Error ? err.message : err);
   process.exit(1);
 });

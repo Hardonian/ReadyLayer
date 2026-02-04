@@ -1,5 +1,3 @@
-/* global fetch, process, console */
-
 import { spawn } from 'node:child_process'
 import { setTimeout as delay } from 'node:timers/promises'
 

@@ -11,9 +11,9 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { config } from 'dotenv';
+import { loadEnv } from './utils/load-env';
 
-config({ path: '.env.local' });
+loadEnv('.env.local');
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;

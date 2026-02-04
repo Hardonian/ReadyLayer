@@ -60,7 +60,7 @@ export class SelfLearningService {
    * P2-FIX: Helper for cursor-based pagination to prevent OOM with large datasets
    * Yields batches of records instead of loading all into memory
    */
-private async *fetchModelPerformanceInBatches(
+  private async *fetchModelPerformanceInBatches(
     where: { organizationId: string; modelId?: string; timestamp?: { gte: Date } },
     batchSize = 1000
   ): AsyncGenerator<Array<{
@@ -100,7 +100,7 @@ private async *fetchModelPerformanceInBatches(
         cost: number;
       }>;
 
-if (batch.length === 0) break;
+      if (batch.length === 0) break;
 
       const mapped: Array<{
         id: string;
@@ -206,26 +206,69 @@ if (batch.length === 0) break;
       where.modelId = modelId;
     }
 
-    // P2-FIX: Use cursor-based pagination to prevent OOM with large datasets
-    const allPerformances: Array<{
+    type ModelPerformanceSummaryRow = {
+      modelId: string;
+      provider: string;
+      _count: { _all: number };
+      _avg: {
+        responseTimeMs: number | null;
+        tokensUsed: number | null;
+        cost: Prisma.Decimal | number | null;
+      };
+    };
+
+    type ModelPerformanceSuccessRow = {
       modelId: string;
       provider: string;
       success: boolean;
-      responseTimeMs: number;
-      tokensUsed: number;
-      cost: number;
-    }> = [];
+      _count: { _all: number };
+    };
 
-    for await (const batch of this.fetchModelPerformanceInBatches(where)) {
-      allPerformances.push(...batch);
-      // Limit total records to reasonable size (prevent unbounded growth)
-      if (allPerformances.length >= 10000) {
-        break;
+    const [totals, successBreakdown] = (await prisma.$transaction([
+      prisma.modelPerformance.groupBy({
+        by: ['modelId', 'provider'],
+        where,
+        _count: { _all: true },
+        _avg: {
+          responseTimeMs: true,
+          tokensUsed: true,
+          cost: true,
+        },
+      }),
+      prisma.modelPerformance.groupBy({
+        by: ['modelId', 'provider', 'success'],
+        where,
+        _count: { _all: true },
+      }),
+    ])) as [ModelPerformanceSummaryRow[], ModelPerformanceSuccessRow[]];
+
+    const successCounts = new Map<string, number>();
+    for (const row of successBreakdown) {
+      if (row.success) {
+        successCounts.set(`${row.modelId}:${row.provider}`, row._count._all);
       }
     }
 
-    // Aggregate metrics
-    return this.aggregatePerformanceMetrics(allPerformances);
+    return totals.map((row) => {
+      const key = `${row.modelId}:${row.provider}`;
+      const total = row._count._all;
+      const successful = successCounts.get(key) ?? 0;
+
+      return {
+        modelId: row.modelId,
+        provider: row.provider,
+        totalRequests: total,
+        successfulRequests: successful,
+        failedRequests: total - successful,
+        averageResponseTime: row._avg.responseTimeMs ?? 0,
+        averageTokensUsed: row._avg.tokensUsed ?? 0,
+        averageCost: Number(row._avg.cost ?? 0),
+        accuracyScore: 0.8, // Would be calculated from feedback
+        confidenceScore: 0.7,
+        trustScore: 0.75,
+        lastUpdated: new Date(),
+      };
+    });
   }
 
   /**
@@ -389,42 +432,75 @@ if (batch.length === 0) break;
     modelId: string,
     provider: string
   ): Promise<void> {
-    const recentPerformances = await prisma.modelPerformance.findMany({
-      where: {
-        organizationId,
-        modelId,
-        provider,
-        timestamp: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-        },
+    const windowStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
+    const where = {
+      organizationId,
+      modelId,
+      provider,
+      timestamp: {
+        gte: windowStart,
       },
-    });
+    };
 
-    if (recentPerformances.length === 0) return;
+    type ModelPerformanceAggregateStats = {
+      _count: { _all: number };
+      _avg: {
+        responseTimeMs: number | null;
+        tokensUsed: number | null;
+        cost: Prisma.Decimal | number | null;
+      };
+    };
 
-    const total = recentPerformances.length;
-    const successful = recentPerformances.filter((p) => p.success).length;
-    const avgResponseTime =
-      recentPerformances.reduce((sum, p) => sum + p.responseTimeMs, 0) / total;
-    const avgTokens =
-      recentPerformances.reduce((sum, p) => sum + p.tokensUsed, 0) / total;
-    const avgCost = recentPerformances.reduce((sum, p) => sum + Number(p.cost), 0) / total;
+    type ModelPerformanceSuccessAggregateRow = {
+      success: boolean;
+      _count: { _all: number };
+    };
 
-    // Calculate accuracy from feedback
-    const feedbacks = await prisma.predictionFeedback.findMany({
-      where: {
-        predictionId: {
-          in: recentPerformances
-            .map((p) => p.predictionId)
-            .filter((id): id is string => id !== null),
+    const [overallStats, successBreakdown, feedbackStats] = (await prisma.$transaction([
+      prisma.modelPerformance.aggregate({
+        where,
+        _count: { _all: true },
+        _avg: {
+          responseTimeMs: true,
+          tokensUsed: true,
+          cost: true,
         },
-      },
-    });
+      }),
+      prisma.modelPerformance.groupBy({
+        by: ['success'],
+        where,
+        _count: { _all: true },
+      }),
+      prisma.$queryRaw<Array<{ total: bigint; correct: bigint }>>`
+        SELECT
+          COUNT(*)::bigint AS total,
+          COALESCE(SUM(CASE WHEN f."wasCorrect" THEN 1 ELSE 0 END), 0)::bigint AS correct
+        FROM "PredictionFeedback" f
+        JOIN "ModelPerformance" p ON f."predictionId" = p."predictionId"
+        WHERE p."organizationId" = ${organizationId}
+          AND p."modelId" = ${modelId}
+          AND p."provider" = ${provider}
+          AND p."timestamp" >= ${windowStart}
+      `,
+    ])) as [
+      ModelPerformanceAggregateStats,
+      ModelPerformanceSuccessAggregateRow[],
+      Array<{ total: bigint; correct: bigint }>
+    ];
 
-    const accuracyScore =
-      feedbacks.length > 0
-        ? feedbacks.filter((f) => f.wasCorrect).length / feedbacks.length
-        : 0.8; // Default if no feedback
+    const total = overallStats._count._all;
+    if (total === 0) return;
+
+    const successful =
+      successBreakdown.find((row) => row.success)?._count._all ?? 0;
+    const avgResponseTime = overallStats._avg.responseTimeMs ?? 0;
+    const avgTokens = overallStats._avg.tokensUsed ?? 0;
+    const avgCost = Number(overallStats._avg.cost ?? 0);
+
+    const feedbackSummary = feedbackStats[0];
+    const totalFeedback = feedbackSummary?.total ? Number(feedbackSummary.total) : 0;
+    const correctFeedback = feedbackSummary?.correct ? Number(feedbackSummary.correct) : 0;
+    const accuracyScore = totalFeedback > 0 ? correctFeedback / totalFeedback : 0.8;
 
     // Calculate confidence and trust scores
     const experienceFactor = Math.min(total / 100, 1);
@@ -474,54 +550,6 @@ if (batch.length === 0) break;
   }
 
   /**
-   * Aggregate performance metrics
-   */
-  private aggregatePerformanceMetrics(
-    performances: Array<{
-      modelId: string;
-      provider: string;
-      success: boolean;
-      responseTimeMs: number;
-      tokensUsed: number;
-      cost: number;
-    }>
-  ): ModelPerformanceMetrics[] {
-    const grouped = new Map<string, typeof performances>();
-
-    for (const perf of performances) {
-      const key = `${perf.modelId}:${perf.provider}`;
-      if (!grouped.has(key)) {
-        grouped.set(key, []);
-      }
-      grouped.get(key)!.push(perf);
-    }
-
-    return Array.from(grouped.entries()).map(([key, perfs]) => {
-      const [modelId, provider] = key.split(':');
-      const total = perfs.length;
-      const successful = perfs.filter((p) => p.success).length;
-      const avgResponseTime = perfs.reduce((sum, p) => sum + p.responseTimeMs, 0) / total;
-      const avgTokens = perfs.reduce((sum, p) => sum + p.tokensUsed, 0) / total;
-      const avgCost = perfs.reduce((sum, p) => sum + Number(p.cost), 0) / total;
-
-      return {
-        modelId,
-        provider,
-        totalRequests: total,
-        successfulRequests: successful,
-        failedRequests: total - successful,
-        averageResponseTime: avgResponseTime,
-        averageTokensUsed: avgTokens,
-        averageCost: avgCost,
-        accuracyScore: 0.8, // Would be calculated from feedback
-        confidenceScore: 0.7,
-        trustScore: 0.75,
-        lastUpdated: new Date(),
-      };
-    });
-  }
-
-  /**
    * Update confidence from feedback
    */
   private async updateConfidenceFromFeedback(feedback: PredictionFeedback): Promise<void> {
@@ -530,6 +558,12 @@ if (batch.length === 0) break;
       where: {
         predictionId: feedback.predictionId,
       },
+      select: {
+        organizationId: true,
+        modelId: true,
+        provider: true,
+      },
+      distinct: ['organizationId', 'modelId', 'provider'],
     });
 
     for (const perf of performances) {

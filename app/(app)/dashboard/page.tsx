@@ -284,34 +284,6 @@ const DashboardPage: React.FC = () => {
     fetchDashboardData()
   }, [fetchDashboardData])
 
-  // Memoized derived values for performance
-  const hasRepos = useMemo(() => repos.length > 0, [repos])
-  const hasReviews = useMemo(() => reviews.length > 0, [reviews])
-  const showUpgradePrompt = useMemo(() => 
-    usageStats ? (usageStats.percentageUsed ?? 0) > 80 : true,
-    [usageStats]
-  )
-  
-  // Memoized sorted repos (most recent first)
-  const sortedRepos = useMemo(() => 
-    [...repos].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [repos]
-  )
-  
-  // Memoized sorted reviews
-  const sortedReviews = useMemo(() => 
-    [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [reviews]
-  )
-  
-  // Memoized verification stats calculation
-  const verificationStats = useMemo(() => ({
-    checksRun: stats.totalReviews * 3,
-    issuesCaught: stats.blockedPRs,
-    lastVerified: reviews.length > 0 ? reviews[0].createdAt : null,
-    aiErrorsDetected: stats.blockedPRs,
-  }), [stats.totalReviews, stats.blockedPRs, reviews])
-
   if (loading) {
     return (
       <Container className="py-8">

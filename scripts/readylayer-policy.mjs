@@ -1,4 +1,3 @@
-/* global process */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -15,7 +14,6 @@ if (result.status !== 0) {
 }
 
 const decision = JSON.parse(readFileSync(outPath, 'utf8'));
-/* global URL */
 validateJson(
   decision,
   new URL('../contracts/policy_decision.schema.json', import.meta.url)

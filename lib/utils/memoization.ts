@@ -5,7 +5,7 @@
  * Optimized for high-frequency operations with TTL and LRU eviction.
  */
 
-import { logger } from '../observability/logging';
+import { logger } from '../../observability/logging';
 
 interface MemoizeOptions {
   ttlMs: number;
@@ -67,20 +67,15 @@ export function createMemoizedFunction<T extends (...args: unknown[]) => Promise
       cache.delete(oldestKey);
     }
 
-    try {
-      const result = await fn(...args) as ReturnType<T>;
-      
-      cache.set(key, {
-        value: result,
-        expiresAt: now + options.ttlMs,
-        lastAccessed: now,
-      });
+    const result = await fn(...args) as ReturnType<T>;
+    
+    cache.set(key, {
+      value: result,
+      expiresAt: now + options.ttlMs,
+      lastAccessed: now,
+    });
 
-      return result;
-    } catch (error) {
-      // Don't cache errors - let them retry
-      throw error;
-    }
+    return result;
   } as T;
 }
 
@@ -160,7 +155,11 @@ export function memoize<T>(options: MemoizeOptions) {
     propertyKey: string,
     descriptor: PropertyDescriptor
   ): PropertyDescriptor {
-    const originalMethod = descriptor.value;
+    if (typeof descriptor.value !== 'function') {
+      throw new Error(`@memoize can only be applied to methods. Received: ${typeof descriptor.value}`);
+    }
+
+    const originalMethod = descriptor.value as (...args: unknown[]) => Promise<T>;
     const cache = new Map<string, CacheEntry<T>>();
     const maxSize = options.maxSize ?? 1000;
 

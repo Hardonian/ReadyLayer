@@ -1,4 +1,3 @@
-/* global process, console */
 import { readFile } from 'node:fs/promises';
 
 const schemaPath = process.argv[2];
