@@ -188,10 +188,17 @@ export class RunPipelineService {
       let aiTouchedFiles: Array<{ path: string; confidence: number; methods: string[] }> = [];
       let aiTouchedDetected = false;
 
+      const triggerMetadata: RunRequest['triggerMetadata'] = request.triggerMetadata ?? {};
+      const triggerFiles = triggerMetadata.files ?? [];
+      const prNumber = triggerMetadata.prNumber ?? 0;
+      const prSha = triggerMetadata.prSha ?? 'sandbox';
+      const prTitle = triggerMetadata.prTitle ?? 'Sandbox Run';
+      const prBody = triggerMetadata.prBody ?? '';
+
       // Define which stages to run
-      const shouldRunReviewGuard = !request.config?.skipReviewGuard && request.triggerMetadata?.files;
-      const shouldRunTestEngine = !request.config?.skipTestEngine && request.triggerMetadata?.files;
-      const shouldRunDocSync = !request.config?.skipDocSync && request.triggerMetadata?.prSha;
+      const shouldRunReviewGuard = !request.config?.skipReviewGuard && triggerFiles.length > 0;
+      const shouldRunTestEngine = !request.config?.skipTestEngine && triggerFiles.length > 0;
+      const shouldRunDocSync = !request.config?.skipDocSync && Boolean(triggerMetadata.prSha);
 
       if (parallelExecution && (shouldRunReviewGuard || shouldRunTestEngine || shouldRunDocSync)) {
         // PARALLEL EXECUTION: Run independent stages concurrently
@@ -215,7 +222,7 @@ export class RunPipelineService {
           });
 
           // Create outbox intent (fire-and-forget)
-          if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+          if (request.repositoryId && triggerMetadata.prNumber && triggerMetadata.prSha) {
             outboxService.createIntent({
               runId: run.id,
               repositoryId: request.repositoryId,
@@ -223,8 +230,8 @@ export class RunPipelineService {
               update: {
                 runId: run.id,
                 repositoryId: request.repositoryId,
-                prNumber: request.triggerMetadata.prNumber,
-                prSha: request.triggerMetadata.prSha,
+                prNumber,
+                prSha,
                 stage: 'review_guard',
                 status: 'in_progress',
               },
@@ -249,7 +256,7 @@ export class RunPipelineService {
           });
 
           // Create outbox intent (fire-and-forget)
-          if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+          if (request.repositoryId && triggerMetadata.prNumber && triggerMetadata.prSha) {
             outboxService.createIntent({
               runId: run.id,
               repositoryId: request.repositoryId,
@@ -257,8 +264,8 @@ export class RunPipelineService {
               update: {
                 runId: run.id,
                 repositoryId: request.repositoryId,
-                prNumber: request.triggerMetadata.prNumber,
-                prSha: request.triggerMetadata.prSha,
+                prNumber,
+                prSha,
                 stage: 'test_engine',
                 status: 'in_progress',
               },
@@ -434,7 +441,11 @@ export class RunPipelineService {
             }
           } else {
             // Stage failed
-            log.error({ stage: stageName, error: result.reason }, 'Stage failed in parallel execution');
+            const failure =
+              result.reason instanceof Error
+                ? result.reason
+                : new Error(`Stage failure: ${String(result.reason)}`);
+            log.error({ stage: stageName, error: failure }, 'Stage failed in parallel execution');
             
             if (stageName === 'reviewGuard') {
               reviewGuardStatus = 'failed';
@@ -505,11 +516,11 @@ export class RunPipelineService {
           try {
             const reviewRequest: ReviewRequest = {
               repositoryId: request.repositoryId || 'sandbox',
-              prNumber: request.triggerMetadata.prNumber || 0,
-              prSha: request.triggerMetadata.prSha || 'sandbox',
-              prTitle: request.triggerMetadata.prTitle,
-              diff: request.triggerMetadata.diff,
-              files: request.triggerMetadata.files,
+              prNumber,
+              prSha,
+              prTitle,
+              diff: triggerMetadata.diff ?? '',
+              files: triggerFiles,
             };
 
             const reviewResult = await reviewGuardService.review(reviewRequest);
@@ -605,18 +616,18 @@ export class RunPipelineService {
 
           try {
             // Detect AI-touched files (with caching)
-            const cacheKey = `ai-touched:${request.repositoryId}:${request.triggerMetadata.prSha}`;
-            let cachedDetection = aiDetectionCache.get(cacheKey);
+            const cacheKey = `ai-touched:${request.repositoryId ?? 'sandbox'}:${prSha}`;
+            const cachedDetection = aiDetectionCache.get(cacheKey);
             
             if (!cachedDetection) {
               aiTouchedFiles = await testEngineService.detectAITouchedFiles(
                 request.repositoryId || 'sandbox',
-                request.triggerMetadata.files.map(f => ({
+                triggerFiles.map(f => ({
                   path: f.path,
                   content: f.content,
-                  commitMessage: request.triggerMetadata?.prTitle,
+                  commitMessage: prTitle,
                 })),
-                request.triggerMetadata?.prBody
+                prBody
               );
               
               aiTouchedDetected = aiTouchedFiles.length > 0;
@@ -640,13 +651,13 @@ export class RunPipelineService {
             // Generate tests for AI-touched files
             let testsGenerated = 0;
             for (const file of aiTouchedFiles) {
-              const fileContent = request.triggerMetadata.files?.find(f => f.path === file.path)?.content;
+              const fileContent = triggerFiles.find(f => f.path === file.path)?.content;
               if (fileContent) {
                 try {
                   const testRequest: TestGenerationRequest = {
                     repositoryId: request.repositoryId || 'sandbox',
-                    prNumber: request.triggerMetadata.prNumber,
-                    prSha: request.triggerMetadata.prSha || 'sandbox',
+                    prNumber,
+                    prSha,
                     filePath: file.path,
                     fileContent,
                   };
@@ -724,7 +735,7 @@ export class RunPipelineService {
             },
           });
 
-          if (request.repositoryId && request.triggerMetadata?.prNumber && request.triggerMetadata?.prSha) {
+          if (request.repositoryId && triggerMetadata.prNumber && triggerMetadata.prSha) {
             try {
               await outboxService.createIntent({
                 runId: run.id,
@@ -733,8 +744,8 @@ export class RunPipelineService {
                 update: {
                   runId: run.id,
                   repositoryId: request.repositoryId,
-                  prNumber: request.triggerMetadata.prNumber,
-                  prSha: request.triggerMetadata.prSha,
+                  prNumber,
+                  prSha,
                   stage: 'doc_sync',
                   status: 'in_progress',
                 },
@@ -747,7 +758,7 @@ export class RunPipelineService {
           try {
             const driftResult = await docSyncService.checkDrift(
               request.repositoryId || 'sandbox',
-              request.triggerMetadata.prSha || 'sandbox',
+              prSha,
               {
                 driftPrevention: { enabled: true, action: 'block', checkOn: 'pr' },
                 updateStrategy: 'pr',
@@ -968,6 +979,7 @@ export class RunPipelineService {
     log: ReturnType<typeof logger.child>
   ): Promise<StageResult> {
     const startedAt = new Date();
+    const stageLog = log.child({ runId, stage: 'review_guard' });
     
     try {
       const reviewRequest: ReviewRequest = {
@@ -993,7 +1005,7 @@ export class RunPipelineService {
         completedAt: new Date(),
       };
     } catch (error) {
-      log.error({ err: error, stage: 'reviewGuard' }, 'Review Guard stage failed');
+      stageLog.error({ err: error }, 'Review Guard stage failed');
       return {
         status: 'failed',
         startedAt,
@@ -1016,7 +1028,7 @@ export class RunPipelineService {
     try {
       // Check cache first
       const cacheKey = `ai-touched:${request.repositoryId}:${request.triggerMetadata?.prSha}`;
-      let cachedDetection = aiDetectionCache.get(cacheKey);
+      const cachedDetection = aiDetectionCache.get(cacheKey);
       
       let aiTouchedFiles: Array<{ path: string; confidence: number; methods: string[] }>;
       

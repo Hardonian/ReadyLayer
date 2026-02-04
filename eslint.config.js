@@ -75,7 +75,7 @@ if (reactHooksPlugin) jsPlugins['react-hooks'] = reactHooksPlugin
 
 if (Object.keys(jsPlugins).length > 0) {
   config.push({
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs,cjs}'],
     languageOptions: {
       globals: {
         ...globals.browser,

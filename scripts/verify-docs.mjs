@@ -83,7 +83,7 @@ function extractCommandsFromCodeBlocks(section) {
 function validateCommands(commands, scripts, failuresList) {
   const allowedStandalone = new Set(['git', 'cd', 'cp', 'mkdir', 'echo']);
   for (const command of commands) {
-    const [bin, ...rest] = command.split(/\s+/);
+    const [bin] = command.split(/\s+/);
     if (bin === 'npm') {
       validateNpmCommand(command, scripts, failuresList);
       continue;

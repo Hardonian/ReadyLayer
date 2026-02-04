@@ -8,16 +8,15 @@
  * - Uses in-memory cache for concurrent job counts
  */
 
-import { prisma } from '../prisma';
-import { billingService } from '../../billing';
-import { logger } from '../../observability/logging';
-import { cache, buildCacheKey } from './cache';
-import { SimpleCache } from '../utils/memoization';
+import { prisma } from './prisma';
+import { billingService } from '../billing';
+import { cache, buildCacheKey } from './db/cache';
+import { SimpleCache } from './utils/memoization';
 import { 
   LimitType, 
   LimitCheckResult, 
   UsageLimitExceededError 
-} from '../usage-enforcement';
+} from './usage-enforcement';
 
 // In-memory cache for high-frequency checks
 const usageCache = new SimpleCache<{
@@ -41,7 +40,9 @@ interface UsageStats {
 /**
  * Get organization tier with caching
  */
-async function getCachedOrganizationTier(organizationId: string) {
+async function getCachedOrganizationTier(
+  organizationId: string
+): Promise<ReturnType<typeof billingService.getOrganizationTier>> {
   const cacheKey = buildCacheKey('tier', organizationId);
   const cached = await cache.get<ReturnType<typeof billingService.getOrganizationTier>>(cacheKey);
   
@@ -287,7 +288,6 @@ export async function checkConcurrentJobsLimitOptimized(
  */
 export async function checkJobEnqueueOptimized(
   organizationId: string,
-  userId: string | null,
   jobType: string
 ): Promise<void> {
   // Check runs limit (for review/test jobs)

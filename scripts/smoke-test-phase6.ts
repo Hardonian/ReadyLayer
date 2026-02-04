@@ -8,8 +8,9 @@
  * - report.artifact.build
  */
 
-import { config } from 'dotenv';
-config();
+import { loadEnv } from './utils/load-env';
+
+loadEnv();
 
 import { createClient } from '@supabase/supabase-js';
 

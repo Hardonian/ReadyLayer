@@ -25,7 +25,9 @@ const TIER_CACHE_TTL = 60; // 60 seconds
 /**
  * Get cached organization tier
  */
-async function getCachedOrganizationTier(organizationId: string) {
+async function getCachedOrganizationTier(
+  organizationId: string
+): Promise<ReturnType<typeof billingService.getOrganizationTier>> {
   const cacheKey = buildCacheKey('billing', `tier:${organizationId}`);
   const cached = await cache.get(cacheKey);
   

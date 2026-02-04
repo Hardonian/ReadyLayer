@@ -15,8 +15,9 @@ async function convertSvgToWebp() {
   let sharp;
   try {
     sharp = require('sharp');
-  } catch (e) {
-    console.log('Installing sharp...');
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.log(`Installing sharp (reason: ${errorMessage})...`);
     require('child_process').execSync('npm install sharp --save-dev', { stdio: 'inherit' });
     sharp = require('sharp');
   }
