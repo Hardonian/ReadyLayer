@@ -22,8 +22,18 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run lint
-      - run: npm run type-check
+      - name: Lint
+        run: npm run lint
+        # Fail on any lint error
+      - name: Type Check
+        run: npm run type-check
+        # Fail on any type error
+      - name: Check Unused Exports
+        run: npx tsx scripts/check-unused-exports.ts
+        # Block merge on unused exports
+      - name: Check Unused Dependencies
+        run: npx tsx scripts/depcheck-audit.ts
+        continue-on-error: true
 
   unit-tests:
     name: Unit Tests
