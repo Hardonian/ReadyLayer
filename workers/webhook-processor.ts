@@ -29,7 +29,7 @@ import {
 } from '../lib/contracts/webhooks';
 import { ValidationError } from '../lib/errors';
 import { createHmac } from 'crypto';
-import { getCachedRepository, getCachedRepositories } from '../lib/db/repository-cache';
+import { getCachedRepository } from '../lib/db/repository-cache';
 
 /**
  * Validate webhook signature
@@ -565,10 +565,7 @@ async function processPREvent(
     // Ingest review result into evidence index (idempotent, safe)
     if (isIngestEnabled() && runResult.reviewGuardResult?.reviewId) {
       try {
-        const repo = await prisma.repository.findUnique({
-          where: { id: String(repository.id) },
-          select: { organizationId: true },
-        });
+        const repo = await getCachedRepository(String(repository.id));
 
         if (repo) {
           await ingestDocument({
