@@ -29,6 +29,7 @@ import {
 } from '../lib/contracts/webhooks';
 import { ValidationError } from '../lib/errors';
 import { createHmac } from 'crypto';
+import { getCachedRepository, getCachedRepositories } from '../lib/db/repository-cache';
 
 /**
  * Validate webhook signature
