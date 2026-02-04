@@ -107,10 +107,9 @@ export async function checkBillingLimits(
 
     // Check repository limit
     if (options.checkRepoLimit) {
-      const maxRepos = tier.features.maxRepos;
-      if (maxRepos !== -1) {
-        const currentRepoCount = await billingService.getCurrentRepoCount(organizationId);
-        if (currentRepoCount >= maxRepos) {
+      const canAdd = await billingService.canAddRepository(organizationId);
+      if (!canAdd) {
+        const tier = await getCachedOrganizationTier(organizationId);
         return NextResponse.json(
           {
             error: {
@@ -196,12 +195,15 @@ export async function checkBillingLimitsOrThrow(
   const { UsageLimitExceededError } = await import('./usage-enforcement');
   
   try {
+    // Get tier once (cached)
+    const tier = await getCachedOrganizationTier(organizationId);
+
     // Check feature access
     if (options.requireFeature) {
-      const canUse = await billingService.canUseFeature(organizationId, options.requireFeature);
+      const canUse = tier.features[options.requireFeature] === true;
       if (!canUse) {
         throw new UsageLimitExceededError(
-          LimitType.LLM_TOKENS_DAILY, // Using existing limit type as placeholder
+          LimitType.LLM_TOKENS_DAILY,
           0,
           0,
           `${options.requireFeature} is not available on your current plan. Please upgrade to access this feature.`,
@@ -214,9 +216,8 @@ export async function checkBillingLimitsOrThrow(
     if (options.checkRepoLimit) {
       const canAdd = await billingService.canAddRepository(organizationId);
       if (!canAdd) {
-        const tier = await billingService.getOrganizationTier(organizationId);
         throw new UsageLimitExceededError(
-          LimitType.LLM_TOKENS_DAILY, // Using existing limit type as placeholder
+          LimitType.LLM_TOKENS_DAILY,
           0,
           tier.features.maxRepos === -1 ? Infinity : tier.features.maxRepos,
           `Repository limit reached (${tier.features.maxRepos === -1 ? 'unlimited' : tier.features.maxRepos}). Please upgrade to add more repositories.`,
@@ -240,7 +241,7 @@ export async function checkBillingLimitsOrThrow(
     }
   } catch (error) {
     // Re-throw UsageLimitExceededError as-is
-    if (error instanceof UsageLimitExceededError) {
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'UsageLimitExceededError') {
       throw error;
     }
     // Log other errors but don't block (fail-open for billing check failures)
