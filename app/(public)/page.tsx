@@ -1,11 +1,8 @@
 import type { Metadata } from 'next'
 import dynamic from 'next/dynamic'
-import { HeroProof } from '@/components/landing'
+import { HeroProof, PipelineStrip } from '@/components/landing'
 
-const PipelineStrip = dynamic(
-  () => import('@/components/landing').then((mod) => ({ default: mod.PipelineStrip })),
-  { loading: () => <div className="h-24" /> }
-)
+// Below-fold components loaded dynamically to reduce initial bundle
 const ProofGrid = dynamic(
   () => import('@/components/landing').then((mod) => ({ default: mod.ProofGrid })),
   { loading: () => <div className="h-96" /> }

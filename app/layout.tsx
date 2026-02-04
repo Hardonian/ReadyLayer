@@ -87,6 +87,9 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
         <link rel="manifest" href="/manifest.json" />
+        {/* Preload critical fonts and images for LCP optimization */}
+        <link rel="preload" href="/logo-header.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/logo-seo.webp" as="image" type="image/webp" />
       </head>
       <body>
         <ThemeProvider>
