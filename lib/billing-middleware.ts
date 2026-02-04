@@ -86,9 +86,12 @@ export async function checkBillingLimits(
   options: BillingCheckOptions = {}
 ): Promise<NextResponse | null> {
   try {
+    // Get tier once for all checks (cached)
+    const tier = await getCachedOrganizationTier(organizationId);
+
     // Check feature access
     if (options.requireFeature) {
-      const canUse = await billingService.canUseFeature(organizationId, options.requireFeature);
+      const canUse = tier.features[options.requireFeature] === true;
       if (!canUse) {
         return NextResponse.json(
           {
@@ -104,9 +107,10 @@ export async function checkBillingLimits(
 
     // Check repository limit
     if (options.checkRepoLimit) {
-      const canAdd = await billingService.canAddRepository(organizationId);
-      if (!canAdd) {
-        const tier = await billingService.getOrganizationTier(organizationId);
+      const maxRepos = tier.features.maxRepos;
+      if (maxRepos !== -1) {
+        const currentRepoCount = await billingService.getCurrentRepoCount(organizationId);
+        if (currentRepoCount >= maxRepos) {
         return NextResponse.json(
           {
             error: {
