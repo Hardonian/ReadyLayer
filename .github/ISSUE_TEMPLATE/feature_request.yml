@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or enhancement for ReadyLayer
+description: Suggest an improvement or new capability
 title: "[Feature]: "
 labels: ["enhancement", "triage"]
 assignees: []
@@ -8,188 +8,52 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Thank you for suggesting a feature!**
+        **Thanks for the idea.**
 
-        ReadyLayer is open source first. Your feature request will be evaluated based on:
-        - Alignment with project goals (governance for AI-generated code)
-        - Benefit to the OSS community
-        - Technical feasibility
-        - Maintenance burden
-
-        **Before submitting:**
-        - Search existing issues and discussions to avoid duplicates
-        - Consider starting a [Discussion](https://github.com/Hardonian/ReadyLayer/discussions) first for exploratory ideas
-        - Check the [Roadmap](https://github.com/Hardonian/ReadyLayer/blob/main/ROADMAP.md)
+        Please focus on the problem first, then describe a solution.
 
   - type: textarea
     id: problem
     attributes:
-      label: Problem Statement
-      description: What problem does this feature solve? What use case does it enable?
-      placeholder: |
-        **User Story**: As a [role], I want to [action] so that [benefit].
-
-        **Current Pain**: Today, I have to manually [X] which is problematic because [Y].
+      label: Problem statement
+      description: What pain point are you trying to solve?
+      placeholder: "I can't do X because..."
     validations:
       required: true
 
   - type: textarea
-    id: solution
+    id: proposal
     attributes:
-      label: Proposed Solution
-      description: How would you like this feature to work?
-      placeholder: |
-        Describe your ideal solution:
-        - What would the user experience look like?
-        - What configuration or API would you expect?
-        - How would this integrate with existing features?
+      label: Proposed solution
+      description: How should ReadyLayer address the problem?
+      placeholder: "Add/change..."
     validations:
       required: true
 
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives Considered
-      description: What other solutions or workarounds have you considered?
-      placeholder: |
-        - Option A: [description]
-        - Option B: [description]
-        - Current workaround: [description]
-
-  - type: textarea
-    id: examples
-    attributes:
-      label: Examples
-      description: Show concrete examples of how this would work.
-      placeholder: |
-        **Example Configuration:**
-        ```yaml
-        # .readylayer/policy.yml
-        new_feature:
-          enabled: true
-          option: value
-        ```
-
-        **Example Output:**
-        ```
-        ✅ New feature detected and validated
-        ```
-      render: markdown
-
-  - type: dropdown
-    id: component
-    attributes:
-      label: Affected Component
-      description: Which part of ReadyLayer would this feature affect?
-      options:
-        - "Review Guard (security scanning)"
-        - "Test Engine (coverage analysis)"
-        - "Doc Sync (documentation validation)"
-        - "Policy Engine (rule evaluation)"
-        - "GitHub Action / CLI"
-        - "API / Webhooks"
-        - "UI / Dashboard"
-        - "Documentation"
-        - "Other / Multiple components"
+      label: Alternatives considered
+      description: What other options did you try or evaluate?
+      placeholder: "I also tried..."
     validations:
-      required: true
+      required: false
 
-  - type: dropdown
-    id: urgency
+  - type: textarea
+    id: scope
     attributes:
-      label: How important is this to you?
-      description: Help us prioritize (be honest!)
-      options:
-        - "Critical - Blocking my adoption of ReadyLayer"
-        - "High - Significant pain point in current workflow"
-        - "Medium - Would improve my experience"
-        - "Low - Nice to have"
+      label: Scope & impact
+      description: Who benefits and what areas of the repo are affected?
+      placeholder: "Impacts the CLI and runner..."
     validations:
-      required: true
-
-  - type: textarea
-    id: impact
-    attributes:
-      label: Who would benefit?
-      description: How many users would this help? What workflows would improve?
-      placeholder: |
-        - Teams using [specific technology/workflow]
-        - Users who need [specific capability]
-        - Estimated users affected: [rough guess]
-
-  - type: dropdown
-    id: oss-enterprise
-    attributes:
-      label: Should this be in OSS or Enterprise?
-      description: |
-        ReadyLayer is OSS-first. Most features belong in OSS.
-        See [OSS vs Enterprise Boundary](https://github.com/Hardonian/ReadyLayer/blob/main/docs/OSS_VS_ENTERPRISE_BOUNDARY.md)
-      options:
-        - "OSS (open source - governance/scanning/policy)"
-        - "Enterprise (operational convenience - SSO, SLA, multi-region)"
-        - "Both (core in OSS, convenience in Enterprise)"
-        - "Not sure"
-    validations:
-      required: true
-
-  - type: textarea
-    id: contribution
-    attributes:
-      label: Would you be willing to contribute?
-      description: |
-        Open source thrives on community contributions!
-        Would you be interested in implementing this feature?
-      placeholder: |
-        - [ ] Yes, I can implement this myself (with guidance)
-        - [ ] Yes, I can help with testing/review
-        - [ ] Yes, I can help with documentation
-        - [ ] No, but I can provide detailed requirements
-        - [ ] No, I'm just reporting the need
-
-  - type: textarea
-    id: additional
-    attributes:
-      label: Additional Context
-      description: |
-        Any other information:
-        - Screenshots or mockups
-        - Links to similar features in other tools
-        - Technical constraints or requirements
-        - Related issues or discussions
-      placeholder: "Other tools (like X) handle this by..."
+      required: false
 
   - type: checkboxes
     id: checklist
     attributes:
-      label: Pre-submission Checklist
-      description: Please verify these before submitting.
+      label: Pre-submission checklist
       options:
-        - label: I have searched for similar feature requests
+        - label: I searched existing issues and discussions for related requests.
           required: true
-        - label: This feature aligns with ReadyLayer's goal (governance for AI code)
+        - label: This request does not disclose sensitive data.
           required: true
-        - label: I have considered the OSS/Enterprise boundary
-          required: true
-        - label: I am willing to engage in discussion and provide feedback
-          required: false
-
-  - type: markdown
-    attributes:
-      value: |
-        ---
-
-        **What happens next?**
-
-        1. **Triage** (48 hours): Maintainers will review and label
-        2. **Discussion** (1-2 weeks): Community feedback, scope refinement
-        3. **Decision** (varies): Accepted, deferred, or closed with rationale
-        4. **Implementation** (varies): Community contribution or maintainer work
-
-        **Not all features will be accepted.** We prioritize:
-        - Governance for AI-generated code (core mission)
-        - Features that benefit the OSS community broadly
-        - Maintainability and long-term sustainability
-
-        **Want faster feedback?** Start a [Discussion](https://github.com/Hardonian/ReadyLayer/discussions) first!
-
-        **Thank you for helping shape ReadyLayer!** 🚀
