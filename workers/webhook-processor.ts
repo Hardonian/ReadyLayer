@@ -782,10 +782,7 @@ async function processMergeEvent(
     // Ingest doc convention into evidence index (idempotent, safe)
     if (isIngestEnabled() && docResult.content) {
       try {
-        const repo = await prisma.repository.findUnique({
-          where: { id: String(repository.id) },
-          select: { organizationId: true },
-        });
+        const repo = await getCachedRepository(String(repository.id));
 
         if (repo) {
           await ingestDocument({
@@ -828,11 +825,8 @@ async function processCIEvent(
   // This integrates with GitHub Actions coverage reports
   if (ciRun?.headSha && repository.id) {
     try {
-      // Get repository to find organization
-      const repo = await prisma.repository.findUnique({
-        where: { id: String(repository.id) },
-        select: { organizationId: true },
-      });
+      // Get repository to find organization (with caching)
+      const repo = await getCachedRepository(String(repository.id));
 
       if (!repo) {
         log.warn({ repositoryId: String(repository.id) }, 'Repository not found for CI event');
