@@ -33,6 +33,14 @@ output_dir/
     artifacts/
 ```
 
+## Artifact size metrics
+
+Capture artifact size metrics (useful for CI/ops baselining):
+
+```bash
+node scripts/runner-artifact-metrics.mjs output_dir
+```
+
 ## Schemas
 
 - Input: `schemas/runner_input.schema.json`
