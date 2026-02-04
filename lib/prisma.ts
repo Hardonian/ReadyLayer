@@ -48,13 +48,18 @@ function createPrismaClient(): PrismaClient {
     }),
   })
 
-  // Hook query events for metrics and slow query logging
+  // Hook query events for metrics and slow query logging (with sampling)
   if (process.env.NODE_ENV === 'production' || process.env.LOG_SLOW_QUERIES === 'true') {
+    // Metrics sampling - only record 10% of queries to reduce overhead
+    const SAMPLE_RATE = 0.1
+    let queryCount = 0
+
     // @ts-ignore
     client.$on('query', (e: { query: string; duration: number; params: string }) => {
       const durationMs = e.duration
+      queryCount++
 
-      // Log slow queries (> 1s)
+      // Always log slow queries (> 1s)
       if (durationMs > 1000) {
         logger.warn({
           query: e.query.substring(0, 200), // Truncate long queries
@@ -67,8 +72,10 @@ function createPrismaClient(): PrismaClient {
         })
       }
 
-      // Histogram for all queries
-      metrics.recordHistogram('prisma.query.duration', durationMs)
+      // Sample metrics for performance (only 10% of queries)
+      if (queryCount % 10 === 0) {
+        metrics.recordHistogram('prisma.query.duration', durationMs)
+      }
     })
 
     // @ts-ignore
