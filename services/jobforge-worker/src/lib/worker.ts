@@ -4,7 +4,12 @@
 
 import { JobForgeClient } from '../../../../lib/jobforge/sdk/src'
 import type { JobRow, JobContext } from '../../../../lib/jobforge/shared/src'
-import { DEFAULT_HEARTBEAT_INTERVAL_MS, DEFAULT_POLL_INTERVAL_MS } from '../../../../lib/jobforge/shared/src'
+import {
+  DEFAULT_HEARTBEAT_INTERVAL_MS,
+  DEFAULT_POLL_INTERVAL_MS,
+  MAX_BACKOFF_MS,
+  MIN_BACKOFF_MS,
+} from '../../../../lib/jobforge/shared/src'
 import { HandlerRegistry } from './registry'
 import { logger, type Logger } from './logger'
 import { randomUUID } from 'crypto'
@@ -14,6 +19,8 @@ export interface WorkerConfig {
   supabaseUrl: string
   supabaseKey: string
   pollIntervalMs?: number
+  maxPollIntervalMs?: number
+  pollJitterRatio?: number
   heartbeatIntervalMs?: number
   claimLimit?: number
 }
@@ -26,11 +33,16 @@ export class Worker {
   private running = false
   private shuttingDown = false
   private activeJobs = new Set<string>()
-  private heartbeatIntervals = new Map<string, NodeJS.Timeout>()
+  private heartbeatTimer: NodeJS.Timeout | null = null
+  private heartbeatInFlight = false
+  private idleBackoffMs: number
 
   constructor(config: WorkerConfig, registry: HandlerRegistry) {
+    const pollIntervalMs = config.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS
     this.config = {
-      pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
+      pollIntervalMs,
+      maxPollIntervalMs: Math.min(pollIntervalMs * 3, MAX_BACKOFF_MS),
+      pollJitterRatio: 0.2,
       heartbeatIntervalMs: DEFAULT_HEARTBEAT_INTERVAL_MS,
       claimLimit: 10,
       ...config,
@@ -43,12 +55,13 @@ export class Worker {
 
     this.registry = registry
     this.logger = logger.child({ worker_id: this.config.workerId })
+    this.idleBackoffMs = this.config.pollIntervalMs
   }
 
   /**
    * Run worker once (claim and process available jobs)
    */
-  async runOnce(): Promise<void> {
+  async runOnce(): Promise<number> {
     try {
       const jobs = await this.client.claimJobs({
         worker_id: this.config.workerId,
@@ -57,18 +70,21 @@ export class Worker {
 
       if (jobs.length === 0) {
         this.logger.debug('No jobs claimed')
-        return
+        return 0
       }
 
       this.logger.info(`Claimed ${jobs.length} jobs`)
 
       // Process jobs concurrently
       await Promise.allSettled(jobs.map((job) => this.processJob(job)))
+      return jobs.length
     } catch (error) {
       this.logger.error('Error in runOnce', {
         error: error instanceof Error ? error.message : String(error),
       })
     }
+
+    return 0
   }
 
   /**
@@ -84,10 +100,11 @@ export class Worker {
     this.setupShutdownHandlers()
 
     while (this.running && !this.shuttingDown) {
-      await this.runOnce()
+      const claimedJobs = await this.runOnce()
 
       if (!this.shuttingDown) {
-        await this.sleep(this.config.pollIntervalMs)
+        const delayMs = this.calculatePollDelay(claimedJobs)
+        await this.sleep(delayMs)
       }
     }
 
@@ -110,21 +127,7 @@ export class Worker {
     this.activeJobs.add(job.id)
     jobLogger.info('Processing job started')
 
-    // Setup heartbeat
-    const heartbeatInterval = setInterval(() => {
-      this.client
-        .heartbeatJob({
-          job_id: job.id,
-          worker_id: this.config.workerId,
-        })
-        .catch((error) => {
-          jobLogger.warn('Heartbeat failed', {
-            error: error instanceof Error ? error.message : String(error),
-          })
-        })
-    }, this.config.heartbeatIntervalMs)
-
-    this.heartbeatIntervals.set(job.id, heartbeatInterval)
+    this.ensureHeartbeatLoop()
 
     try {
       const registration = this.registry.get(job.type)
@@ -185,14 +188,10 @@ export class Worker {
         error: errorData,
       })
     } finally {
-      // Clean up heartbeat
-      const interval = this.heartbeatIntervals.get(job.id)
-      if (interval) {
-        clearInterval(interval)
-        this.heartbeatIntervals.delete(job.id)
-      }
-
       this.activeJobs.delete(job.id)
+      if (this.activeJobs.size === 0) {
+        this.stopHeartbeatLoop()
+      }
     }
   }
 
@@ -212,14 +211,80 @@ export class Worker {
       await this.sleep(1000)
     }
 
-    // Clear all heartbeat intervals
-    for (const interval of this.heartbeatIntervals.values()) {
-      clearInterval(interval)
-    }
+    this.stopHeartbeatLoop()
 
     this.logger.info('Worker stopped', {
       remaining_jobs: this.activeJobs.size,
     })
+  }
+
+  /**
+   * Shared heartbeat loop to avoid per-job timers
+   */
+  private ensureHeartbeatLoop(): void {
+    if (this.heartbeatTimer) {
+      return
+    }
+
+    this.heartbeatTimer = setInterval(() => {
+      void this.runHeartbeatTick()
+    }, this.config.heartbeatIntervalMs)
+  }
+
+  private stopHeartbeatLoop(): void {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer)
+      this.heartbeatTimer = null
+    }
+  }
+
+  private async runHeartbeatTick(): Promise<void> {
+    if (this.heartbeatInFlight || this.activeJobs.size === 0) {
+      return
+    }
+
+    this.heartbeatInFlight = true
+    const jobIds = Array.from(this.activeJobs)
+
+    await Promise.allSettled(
+      jobIds.map(async (jobId) => {
+        try {
+          await this.client.heartbeatJob({
+            job_id: jobId,
+            worker_id: this.config.workerId,
+          })
+        } catch (error) {
+          this.logger.warn('Heartbeat failed', {
+            job_id: jobId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        }
+      })
+    )
+
+    this.heartbeatInFlight = false
+  }
+
+  /**
+   * Calculate next poll delay with backoff and jitter.
+   */
+  private calculatePollDelay(claimedJobs: number): number {
+    if (claimedJobs > 0) {
+      this.idleBackoffMs = this.config.pollIntervalMs
+    } else {
+      this.idleBackoffMs = Math.min(
+        Math.max(this.idleBackoffMs * 2, this.config.pollIntervalMs),
+        this.config.maxPollIntervalMs
+      )
+    }
+
+    const jitterRatio = Math.max(0, this.config.pollJitterRatio)
+    const jitterWindow = this.idleBackoffMs * jitterRatio
+    const minDelay = Math.max(MIN_BACKOFF_MS, this.idleBackoffMs - jitterWindow)
+    const maxDelay = this.idleBackoffMs + jitterWindow
+    const delayRange = Math.max(0, maxDelay - minDelay)
+
+    return Math.floor(minDelay + Math.random() * delayRange)
   }
 
   /**

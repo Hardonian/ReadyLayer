@@ -50,3 +50,8 @@ jobs:
           node tools/ready-layer-runner/scripts/validate-output.mjs \
             tools/ready-layer-runner/schemas/runner_output.schema.json \
             tools/ready-layer-runner/fixtures/output/runner_output.json
+
+      - name: Capture runner artifact metrics
+        run: |
+          node tools/ready-layer-runner/scripts/runner-artifact-metrics.mjs \
+            tools/ready-layer-runner/fixtures/output

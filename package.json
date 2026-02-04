@@ -24,6 +24,8 @@
     "worker:py:docker:stop": "cd services/worker-py && docker-compose down",
     "jobs:smoke": "tsx scripts/smoke-test-worker.ts",
     "jobs:enqueue": "tsx scripts/enqueue-test-job.ts",
+    "bench:jobs:list": "tsx scripts/bench-jobs-list.ts",
+    "bench:queue:enqueue": "tsx scripts/bench-queue-enqueue.ts",
     "db:worker:setup": "psql \"$DATABASE_URL\" -f supabase/migrations/20260130000000_job_queue_phase1.sql",
     "db:worker:seed": "tsx scripts/seed-worker-jobs.ts",
     "worker:status": "tsx scripts/worker-status.ts",
@@ -61,6 +63,7 @@
     "jobforge:worker": "tsx services/jobforge-worker/src/cli.ts",
     "jobforge:enqueue": "tsx scripts/jobforge-enqueue-example.ts",
     "jobforge:smoke": "tsx scripts/jobforge-smoke-test.ts",
+    "runner:artifact-metrics": "node tools/ready-layer-runner/scripts/runner-artifact-metrics.mjs",
     "db:jobforge:migrate": "psql \"$DATABASE_URL\" -f supabase/migrations/20260131000000_jobforge_core.sql",
     "verify:docs": "node scripts/verify-docs.mjs"
   },
