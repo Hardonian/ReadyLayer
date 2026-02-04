@@ -1,0 +1,38 @@
+name: Question / Clarification
+description: Ask a question about using or extending ReadyLayer
+title: "[Question]: "
+labels: ["question"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For general support, consider GitHub Discussions. If you need an issue, please provide context below.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      placeholder: "How do I..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What have you tried so far? Include relevant files or commands.
+      placeholder: "I tried..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I searched existing issues/discussions.
+          required: true
+        - label: I removed any sensitive information.
+          required: true

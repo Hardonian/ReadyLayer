@@ -52,16 +52,17 @@
     "test:golden-path": "tsx scripts/test-golden-path.ts",
     "doctor": "tsx scripts/doctor.ts",
     "clean": "rm -rf .next node_modules/.cache dist",
-    "verify": "npm run lint && npm run type-check && npm test",
+    "verify": "npm run build && npm test && npm run verify:docs",
     "verify:fast": "npm run lint && npm run type-check",
-    "verify:full": "npm run lint && npm run type-check && npm test && npm run build",
+    "verify:full": "npm run build && npm test && npm run verify:docs",
     "readylayer:run": "node scripts/readylayer-runner.mjs",
     "readylayer:policy": "node scripts/readylayer-policy.mjs",
     "readylayer:sarif": "node scripts/readylayer-sarif.mjs",
     "jobforge:worker": "tsx services/jobforge-worker/src/cli.ts",
     "jobforge:enqueue": "tsx scripts/jobforge-enqueue-example.ts",
     "jobforge:smoke": "tsx scripts/jobforge-smoke-test.ts",
-    "db:jobforge:migrate": "psql \"$DATABASE_URL\" -f supabase/migrations/20260131000000_jobforge_core.sql"
+    "db:jobforge:migrate": "psql \"$DATABASE_URL\" -f supabase/migrations/20260131000000_jobforge_core.sql",
+    "verify:docs": "node scripts/verify-docs.mjs"
   },
   "overrides": {
     "glob": "^10.5.0"

@@ -8,86 +8,77 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Thank you for reporting a bug!**
+        **Thanks for reporting a bug.**
 
-        Please fill out this form to help us understand and reproduce the issue.
-
-        **Before submitting:**
+        Please:
         - Search existing issues to avoid duplicates
-        - Verify you're using the latest version
-        - Check the [documentation](https://github.com/Hardonian/ReadyLayer/tree/main/docs)
+        - Share the smallest repro steps you can
+        - Redact secrets before posting logs or screenshots
 
   - type: textarea
     id: description
     attributes:
-      label: Bug Description
-      description: A clear and concise description of what the bug is.
-      placeholder: "When I do X, Y happens instead of Z..."
+      label: Bug description
+      description: What happened and why is it a problem?
+      placeholder: "When I run X, Y happens instead of Z..."
     validations:
       required: true
 
   - type: textarea
     id: reproduction
     attributes:
-      label: Steps to Reproduce
-      description: Detailed steps to reproduce the behavior.
+      label: Steps to reproduce
+      description: Include exact commands or UI steps.
       placeholder: |
-        1. Go to '...'
-        2. Click on '...'
-        3. Scroll down to '...'
-        4. See error
+        1. ...
+        2. ...
+        3. ...
     validations:
       required: true
 
   - type: textarea
     id: expected
     attributes:
-      label: Expected Behavior
-      description: What you expected to happen.
-      placeholder: "I expected ReadyLayer to..."
+      label: Expected behavior
+      placeholder: "I expected..."
     validations:
       required: true
 
   - type: textarea
     id: actual
     attributes:
-      label: Actual Behavior
-      description: What actually happened (include error messages, screenshots, logs).
-      placeholder: "Instead, ReadyLayer..."
+      label: Actual behavior
+      placeholder: "Instead, ..."
     validations:
       required: true
 
   - type: dropdown
-    id: version
+    id: area
     attributes:
-      label: ReadyLayer Version
-      description: Which version of ReadyLayer are you using?
+      label: Affected area
       options:
-        - "1.0.0 (latest)"
-        - "main branch (development)"
-        - "Other (please specify in additional context)"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: deployment
-    attributes:
-      label: Deployment Type
-      description: How are you running ReadyLayer?
-      options:
-        - "Self-hosted (Docker)"
-        - "Self-hosted (Node.js)"
-        - "GitHub Action"
-        - "Local development"
-        - "Other (please specify)"
+        - Web app (Next.js UI/API)
+        - CLI
+        - Runner (Go)
+        - JobForge worker
+        - Docs
+        - Other
     validations:
       required: true
 
   - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      description: Git commit SHA or tag (if known).
+      placeholder: "main @ <sha>"
+    validations:
+      required: false
+
+  - type: input
     id: node-version
     attributes:
-      label: Node.js Version
-      description: "Run `node --version` to find this"
+      label: Node.js version
       placeholder: "v20.11.0"
     validations:
       required: false
@@ -95,94 +86,30 @@ body:
   - type: input
     id: os
     attributes:
-      label: Operating System
-      description: What OS are you using?
-      placeholder: "macOS 14.2, Ubuntu 22.04, Windows 11, etc."
-    validations:
-      required: false
-
-  - type: dropdown
-    id: git-provider
-    attributes:
-      label: Git Provider
-      description: Which git provider are you using?
-      options:
-        - "GitHub"
-        - "GitLab"
-        - "Bitbucket"
-        - "Other"
-        - "N/A"
+      label: Operating system
+      placeholder: "macOS 14, Ubuntu 22.04, Windows 11"
     validations:
       required: false
 
   - type: textarea
     id: logs
     attributes:
-      label: Relevant Logs
-      description: |
-        Include any relevant logs, error messages, or stack traces.
-        **Important**: Redact any secrets, API keys, or sensitive data.
+      label: Logs or screenshots
+      description: Redact secrets before sharing.
       placeholder: |
         ```
-        Error: ...
+        ...
         ```
       render: shell
-
-  - type: textarea
-    id: config
-    attributes:
-      label: Configuration
-      description: |
-        Share relevant configuration (policy YAML, environment variables, etc.)
-        **Important**: Redact any secrets or sensitive data.
-      placeholder: |
-        ```yaml
-        # .readylayer/policy.yml
-        version: "1.0"
-        review_guard:
-          enabled: true
-        ```
-      render: yaml
-
-  - type: textarea
-    id: additional
-    attributes:
-      label: Additional Context
-      description: |
-        Any other context about the problem:
-        - Screenshots or videos
-        - Related issues
-        - Workarounds you've tried
-        - Impact on your workflow
-      placeholder: "This bug affects..."
 
   - type: checkboxes
     id: checklist
     attributes:
-      label: Pre-submission Checklist
-      description: Please verify these before submitting.
+      label: Pre-submission checklist
       options:
-        - label: I have searched for similar issues and this is not a duplicate
+        - label: I searched existing issues and this is not a duplicate.
           required: true
-        - label: I have redacted all sensitive information (API keys, secrets, PII)
+        - label: I have redacted sensitive information.
           required: true
-        - label: I have included reproduction steps
+        - label: I included reproduction steps.
           required: true
-        - label: I am using the latest version (or specified version above)
-          required: false
-
-  - type: markdown
-    attributes:
-      value: |
-        ---
-
-        **What happens next?**
-
-        1. A maintainer will review within 48 hours
-        2. We'll add appropriate labels and priority
-        3. We may ask for more information
-        4. We'll update you on progress
-
-        **For security issues**: Please **DO NOT** file a public issue. Email security@readylayer.io instead.
-
-        **Thank you for helping improve ReadyLayer!** 🙏
