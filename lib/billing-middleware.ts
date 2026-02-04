@@ -320,7 +320,7 @@ export async function getOrganizationSpendingStatus(
       '@/lib/telemetry/llm-costs'
     );
 
-    const tier = await billingService.getOrganizationTier(organizationId);
+    const tier = await getCachedOrganizationTier(organizationId);
     const features = tier.features as { llmBudget?: number };
     const monthlyBudget = features.llmBudget || 500;
 
