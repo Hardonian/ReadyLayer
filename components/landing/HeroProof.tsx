@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Container } from '@/components/ui/container'
-import { Logo } from '@/components/ui/logo'
+
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
 import {
   Shield,
