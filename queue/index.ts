@@ -8,6 +8,7 @@ import { prisma } from '../lib/prisma';
 
 import { createClient } from 'redis';
 import { logger } from '../observability/logging';
+import { metrics } from '../observability/metrics';
 import { usageEnforcementService } from '../lib/usage-enforcement';
 
 import { toJsonValue } from '../lib/prisma-json';
@@ -248,12 +249,20 @@ const jobData = JSON.parse(result.element) as { id: string };
   }
 
   /**
-   * Process jobs from database (fallback)
+   * Process jobs from database (fallback) - BATCH OPTIMIZED
+   * 
+   * Improvements:
+   * - Fetches jobs in batches (50 instead of 10)
+   * - Processes multiple jobs concurrently (up to 5 at a time)
+   * - Uses batch status updates where possible
+   * - Reduces polling frequency on empty queues
    */
   private async processFromDatabase(
     queueName: string,
     handler: QueueHandler
   ): Promise<void> {
+    let emptyPollCount = 0;
+    
     while (true) {
       try {
         const jobs = await prisma.job.findMany({
@@ -262,17 +271,99 @@ const jobData = JSON.parse(result.element) as { id: string };
             status: { in: ['pending', 'retrying'] },
             scheduledAt: { lte: new Date() },
           },
-          take: 10,
+          take: 50, // Increased batch size
           orderBy: {
             scheduledAt: 'asc',
           },
         });
 
-        for (const job of jobs) {
-          await this.processJob(job.id, handler);
+        if (jobs.length === 0) {
+          emptyPollCount++;
+          // Exponential backoff on empty queue (max 30s)
+          const backoffMs = Math.min(1000 * Math.pow(1.5, emptyPollCount), 30000);
+          await this.sleep(backoffMs);
+          continue;
         }
 
-        await this.sleep(1000); // Poll every second
+        // Reset counter when jobs found
+        emptyPollCount = 0;
+
+        // Mark all jobs as processing in one batch
+        const jobIds = jobs.map(j => j.id);
+        await prisma.job.updateMany({
+          where: { id: { in: jobIds } },
+          data: {
+            status: 'processing',
+            startedAt: new Date(),
+          },
+        });
+
+        // Process jobs with limited concurrency (5 at a time)
+        const CONCURRENCY = 5;
+        const results: Array<{ jobId: string; success: boolean; error?: string }> = [];
+        
+        for (let i = 0; i < jobs.length; i += CONCURRENCY) {
+          const batch = jobs.slice(i, i + CONCURRENCY);
+          const batchResults = await Promise.all(
+            batch.map(async (job) => {
+              try {
+                const result = await handler(job.payload);
+                return { jobId: job.id, success: true, result };
+              } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                return { jobId: job.id, success: false, error: errorMessage };
+              }
+            })
+          );
+          results.push(...batchResults);
+        }
+
+        // Batch update completed jobs
+        const completedJobIds = results.filter(r => r.success).map(r => r.jobId);
+        if (completedJobIds.length > 0) {
+          await prisma.job.updateMany({
+            where: { id: { in: completedJobIds } },
+            data: {
+              status: 'completed',
+              completedAt: new Date(),
+            },
+          });
+          metrics.increment('jobs.batch.completed', { count: completedJobIds.length.toString() });
+        }
+
+        // Handle failed jobs (need individual updates for retry count)
+        const failedResults = results.filter(r => !r.success);
+        for (const failed of failedResults) {
+          const job = jobs.find(j => j.id === failed.jobId)!;
+          const retryCount = job.retryCount + 1;
+          
+          if (retryCount < job.maxRetries) {
+            const delay = Math.pow(2, retryCount) * 1000;
+            const scheduledAt = new Date(Date.now() + delay);
+            
+            await prisma.job.update({
+              where: { id: failed.jobId },
+              data: {
+                status: 'retrying',
+                retryCount,
+                error: failed.error,
+                scheduledAt,
+              },
+            });
+          } else {
+            await prisma.job.update({
+              where: { id: failed.jobId },
+              data: {
+                status: 'failed',
+                error: failed.error,
+                completedAt: new Date(),
+              },
+            });
+          }
+        }
+
+        // Short pause between batches
+        await this.sleep(100);
       } catch (error) {
         logger.error(error, 'Database queue processing error');
         await this.sleep(5000);
