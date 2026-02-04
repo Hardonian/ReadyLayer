@@ -51,7 +51,6 @@ function createPrismaClient(): PrismaClient {
   // Hook query events for metrics and slow query logging (with sampling)
   if (process.env.NODE_ENV === 'production' || process.env.LOG_SLOW_QUERIES === 'true') {
     // Metrics sampling - only record 10% of queries to reduce overhead
-    const SAMPLE_RATE = 0.1
     let queryCount = 0
 
     // @ts-ignore
