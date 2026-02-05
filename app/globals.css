@@ -83,7 +83,14 @@
     --radius-sm: 0.25rem;
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
     --radius: var(--radius-md);
+
+    /* PROVIDER COLORS - Brand colors for third-party integrations */
+    --provider-github: 138 76% 36%;      /* #238636 */
+    --provider-gitlab: 22 94% 53%;     /* #FC6D26 */
+    --provider-bitbucket: 215 100% 40%; /* #0052CC */
+    --provider-google: 217 91% 60%;     /* #4285F4 */
   }
 
   /**
@@ -139,6 +146,12 @@
     --info: 217 91% 65%;                    /* Info - brighter */
     --info-foreground: 0 0% 100%;           /* Text on info */
     --info-muted: 217 91% 15%;              /* Info background */
+
+    /* PROVIDER COLORS - Brand colors for third-party integrations */
+    --provider-github: 138 76% 40%;         /* Darker for dark mode */
+    --provider-gitlab: 22 94% 55%;
+    --provider-bitbucket: 215 100% 45%;
+    --provider-google: 217 91% 65%;
     
     /* LEGACY COMPATIBILITY */
     --background: var(--surface);
