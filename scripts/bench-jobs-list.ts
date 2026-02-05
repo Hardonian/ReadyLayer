@@ -24,7 +24,7 @@ const percentile = (values: number[], p: number): number => {
   return sorted[index]
 }
 
-const seedJobs = async () => {
+const seedJobs = async (): Promise<void> => {
   const now = new Date()
   const data = Array.from({ length: jobCount }, (_, index) => ({
     id: `bench_${benchmarkId}_${index}`,
@@ -42,7 +42,7 @@ const seedJobs = async () => {
   await prisma.job.createMany({ data })
 }
 
-const cleanupJobs = async () => {
+const cleanupJobs = async (): Promise<void> => {
   await prisma.job.deleteMany({
     where: {
       payload: {
@@ -53,7 +53,7 @@ const cleanupJobs = async () => {
   })
 }
 
-const run = async () => {
+const run = async (): Promise<void> => {
   if (seed) {
     console.log(`Seeding ${jobCount} jobs for organization ${organizationId}...`)
     await seedJobs()

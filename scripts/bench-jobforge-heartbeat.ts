@@ -65,7 +65,7 @@ const jobs: JobRow[] = Array.from({ length: 5 }, (_, index) => ({
   updated_at: now,
 }))
 
-const run = async () => {
+const run = async (): Promise<void> => {
   const start = Date.now()
   await Promise.all(jobs.map((job) => (worker as unknown as { processJob: (job: JobRow) => Promise<void> }).processJob(job)))
   const durationMs = Date.now() - start

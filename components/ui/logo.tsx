@@ -43,7 +43,7 @@ export function Logo({
   const isDark = theme === 'dark'
 
   return (
-    <picture className="overflow-visible block">
+    <picture className="block max-w-full overflow-visible">
       {variant === 'full' && (
         <>
           <source
@@ -55,9 +55,8 @@ export function Logo({
             alt="ReadyLayer"
             width={dimensions.w}
             height={dimensions.h}
-            className={`h-auto w-auto ${className}`}
+            className={`h-auto max-w-full w-auto ${className}`}
             priority
-            style={{ maxWidth: 'none', maxHeight: 'none' }}
           />
         </>
       )}
@@ -69,9 +68,8 @@ export function Logo({
             alt="ReadyLayer"
             width={dimensions.w}
             height={dimensions.h}
-            className={`h-auto w-auto ${isDark ? 'invert' : ''} ${className}`}
+            className={`h-auto max-w-full w-auto ${isDark ? 'invert' : ''} ${className}`}
             priority
-            style={{ maxWidth: 'none', maxHeight: 'none' }}
           />
         </>
       )}
@@ -83,9 +81,8 @@ export function Logo({
             alt="ReadyLayer"
             width={dimensions.w}
             height={dimensions.h}
-            className={`h-auto w-auto ${isDark ? 'invert' : ''} ${className}`}
+            className={`h-auto max-w-full w-auto ${isDark ? 'invert' : ''} ${className}`}
             priority
-            style={{ maxWidth: 'none', maxHeight: 'none' }}
           />
         </>
       )}
