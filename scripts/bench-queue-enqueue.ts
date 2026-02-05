@@ -39,22 +39,19 @@ const enqueueOnce = async (index: number): Promise<number> => {
   return performance.now() - start
 }
 
-const run = async () => {
+const run = async (): Promise<void> => {
   await queueService.initialize()
 
   const durations: number[] = []
-  let inFlight = 0
   let cursor = 0
 
   const scheduleNext = async (): Promise<void> => {
     if (cursor >= iterations) return
     const index = cursor
     cursor += 1
-    inFlight += 1
 
     const duration = await enqueueOnce(index)
     durations.push(duration)
-    inFlight -= 1
 
     if (cursor < iterations) {
       await scheduleNext()
