@@ -110,27 +110,50 @@ const config: Config = {
         gold: "#FFD700",
         platinum: "#E5E4E2",
         diamond: "#B9F2FF",
+
+        // PROVIDER TOKENS - Brand colors for third-party integrations
+        // Use these for GitHub/GitLab/Bitbucket OAuth buttons and badges
+        provider: {
+          github: "hsl(var(--provider-github))",
+          gitlab: "hsl(var(--provider-gitlab))",
+          bitbucket: "hsl(var(--provider-bitbucket))",
+          google: "hsl(var(--provider-google))",
+        },
+
+        // CHART COLORS - Pre-configured palette for data visualization
+        // WCAG AA compliant when used on white backgrounds
+        chart: {
+          primary: "#4F46E5",    // Indigo
+          success: "#10B981",    // Emerald
+          warning: "#F59E0B",    // Amber
+          danger: "#EF4444",     // Red
+          default: "#4F46E5",    // Alias for primary
+        },
       },
       fontFamily: {
-        // Stitch typography system - using CSS custom properties
-        display: ['var(--font-space-grotesk)', 'Inter', 'sans-serif'],
-        body: ['var(--font-inter)', 'Noto Sans', 'sans-serif'],
-        mono: ['var(--font-jetbrains-mono)', 'Fira Code', 'ui-monospace', 'monospace'],
+        // Typography system - using CSS custom properties
+        display: ['var(--font-display)', 'Inter', 'sans-serif'],
+        body: ['var(--font-body)', 'Noto Sans', 'sans-serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         sm: 'var(--radius-sm)',
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
         DEFAULT: 'var(--radius)',
       },
       boxShadow: {
         'surface-flat': 'none',
         'surface-raised': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
         'surface-overlay': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-        // Stitch shadow effects
         'glow': '0 0 40px -10px rgba(29, 100, 237, 0.3)',
         'glow-green': '0 0 40px -10px rgba(19, 236, 91, 0.3)',
         'code-preview': '0 4px 20px -4px rgba(0, 0, 0, 0.3)',
+        // Provider-specific shadows for OAuth buttons
+        'provider-github': '0 1px 3px 0 rgb(35 134 54 / 0.3)',
+        'provider-gitlab': '0 1px 3px 0 rgb(252 109 38 / 0.3)',
+        'provider-bitbucket': '0 1px 3px 0 rgb(0 82 204 / 0.3)',
       },
       animation: {
         // Stitch animation patterns

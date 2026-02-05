@@ -211,6 +211,15 @@ export function DonutChart({
   const cx = width / 2
   const cy = height / 2
 
+  /**
+   * Chart color palette - intentionally hardcoded for data visualization
+   * These are DATA colors representing semantic meaning in charts:
+   * - default: Primary data series (indigo)
+   * - success: Positive trends/outcomes (emerald)
+   * - warning: Cautionary signals (amber)
+   * - danger: Negative signals (red)
+   * See: docs/DESIGN_TOKENS.md
+   */
   const colorMap = {
     default: '#4F46E5',
     success: '#10B981',

@@ -29,9 +29,9 @@ interface HeroProofProps {
 }
 
 const integrationIcons = [
-  { name: 'GitHub', icon: Github, color: 'text-[#24292e] dark:text-white' },
-  { name: 'GitLab', icon: Gitlab, color: 'text-[#FC6D26]' },
-  { name: 'Bitbucket', icon: Code, color: 'text-[#0052CC]' },
+  { name: 'GitHub', icon: Github, color: 'text-[hsl(var(--provider-github))] dark:text-[hsl(var(--provider-github))]' },
+  { name: 'GitLab', icon: Gitlab, color: 'text-[hsl(var(--provider-gitlab))]' },
+  { name: 'Bitbucket', icon: Code, color: 'text-[hsl(var(--provider-bitbucket))]' },
 ]
 
 export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {

@@ -20,25 +20,25 @@ export function PlatformBadge({ provider, className }: PlatformBadgeProps): Reac
         return {
           icon: Github,
           label: 'GitHub',
-          className: 'bg-[#238636]/10 text-[#238636] border-[#238636]/20',
+          className: 'bg-[hsl(var(--provider-github)/0.1)] text-[hsl(var(--provider-github))] border-[hsl(var(--provider-github)/0.2)]',
         }
       case 'gitlab':
         return {
           icon: Gitlab,
           label: 'GitLab',
-          className: 'bg-[#fc6d26]/10 text-[#fc6d26] border-[#fc6d26]/20',
+          className: 'bg-[hsl(var(--provider-gitlab)/0.1)] text-[hsl(var(--provider-gitlab))] border-[hsl(var(--provider-gitlab)/0.2)]',
         }
       case 'bitbucket':
         return {
-          icon: Gitlab, // Bitbucket icon not in lucide-react, using GitLab as placeholder
+          icon: Gitlab,
           label: 'Bitbucket',
-          className: 'bg-[#0052cc]/10 text-[#0052cc] border-[#0052cc]/20',
+          className: 'bg-[hsl(var(--provider-bitbucket)/0.1)] text-[hsl(var(--provider-bitbucket))] border-[hsl(var(--provider-bitbucket)/0.2)]',
         }
       default:
         return {
           icon: Github,
           label: 'Git',
-          className: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+          className: 'bg-surface-muted text-text-muted border-border',
         }
     }
   }
