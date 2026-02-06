@@ -405,7 +405,7 @@ describe('Webhook Signature Security', () => {
 });
 
 describe('Webhook Idempotency Service', () => {
-  const { prisma } = vi.mocked(require('../lib/prisma'));
+  const { prisma } = vi.mocked(require('../../lib/prisma'));
 
   beforeEach(() => {
     vi.clearAllMocks();
