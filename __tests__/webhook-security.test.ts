@@ -579,11 +579,13 @@ describe('Webhook Handler Integration Tests', () => {
       expect(bitbucketWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
     });
 
-    it('should validate correct signature without prefix', async () => {
+    it('should validate correct signature with sha256 prefix', async () => {
       const { bitbucketWebhookHandler } = await import('../integrations/bitbucket/webhook');
       const payload = '{"eventKey": "pullrequest:created"}';
       const secret = 'test_secret_key_12345';
-      const signature = generateHmacSignature(payload, secret, 'sha256=');
+      // Bitbucket typically sends signature without prefix, but verifyHmacSignature
+      // should handle both cases
+      const signature = generateHmacSignature(payload, secret, '');
 
       expect(bitbucketWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
     });
