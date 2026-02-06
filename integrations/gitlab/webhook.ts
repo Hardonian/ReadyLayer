@@ -14,6 +14,7 @@
 
 import { prisma } from '../../lib/prisma';
 import { queueService } from '../../queue';
+import { secureCompare } from '../../lib/security/webhook-signature';
 
 export interface GitLabWebhookEvent {
   object_kind: string;
@@ -71,24 +72,10 @@ export interface NormalizedEvent {
 
 export class GitLabWebhookHandler {
   /**
-   * Validate webhook token (timing-attack resistant)
+   * Validate webhook token with timing-attack resistant comparison.
    */
-validateToken(_payload: string, token: string, secret: string): boolean {
-    // GitLab uses token-based validation
-    // Use timing-safe comparison to prevent timing attacks
-    const crypto = require('crypto') as { timingSafeEqual: (a: Buffer, b: Buffer) => boolean };
-    const timingSafeEqual = crypto.timingSafeEqual;
-
-    // Ensure both strings are the same length before comparison
-    if (token.length !== secret.length) {
-      return false;
-    }
-
-    try {
-      return timingSafeEqual(Buffer.from(token, 'utf8'), Buffer.from(secret, 'utf8'));
-    } catch {
-      return false;
-    }
+  validateToken(_payload: string, token: string, secret: string): boolean {
+    return secureCompare(token, secret);
   }
 
   /**

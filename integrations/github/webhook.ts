@@ -13,9 +13,9 @@
  
  
 
-import { createHmac } from 'crypto';
 import { prisma } from '../../lib/prisma';
 import { queueService } from '../../queue';
+import { verifyHmacSignature } from '../../lib/security/webhook-signature';
 
 export interface GitHubPullRequest {
   id: number;
@@ -65,14 +65,10 @@ export interface NormalizedEvent {
 
 export class GitHubWebhookHandler {
   /**
-   * Validate webhook signature
+   * Validate webhook signature with timing-attack resistant comparison.
    */
   validateSignature(payload: string, signature: string, secret: string): boolean {
-    const hmac = createHmac('sha256', secret);
-    hmac.update(payload);
-    const expectedSignature = `sha256=${hmac.digest('hex')}`;
-
-    return signature === expectedSignature;
+    return verifyHmacSignature(payload, signature, secret, 'sha256=');
   }
 
   /**

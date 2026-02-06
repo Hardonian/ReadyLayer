@@ -893,6 +893,42 @@ model PredictionFeedback {
   @@index([wasCorrect])
 }
 
+// ============================================================================
+// WEBHOOK IDEMPOTENCY MODEL
+// Ensures exactly-once processing of webhook events
+// ============================================================================
+
+model WebhookEvent {
+  id                String   @id @default(cuid())
+  eventId           String   @unique // Provider's unique event ID (e.g., GitHub delivery-id)
+  provider          String   // github, gitlab, bitbucket, stripe
+  eventType         String   // pull_request, merge_request, etc.
+  installationId    String   // Provider installation ID
+  repositoryId      String?  // Internal repository ID (if known)
+
+  // Idempotency tracking
+  status            String   @default("pending") // pending, processing, completed, failed, duplicate
+  processedAt       DateTime?
+  result            Json?    // Result of processing (for later lookup)
+  error             String?   @db.Text
+  retryCount        Int      @default(0)
+  lastRetryAt       DateTime?
+
+  // Signature info (for audit/debugging, not for re-verification)
+  signatureHash     String?   // First 16 chars of signature (for logging)
+
+  // Timing (for replay detection integration)
+  receivedAt        DateTime  @default(now())
+  eventTimestamp    DateTime? // Timestamp from the event itself (if available)
+
+  // Composite indexes for efficient lookups
+  @@index([provider, installationId])
+  @@index([provider, eventType])
+  @@index([status])
+  @@index([installationId, status])
+  @@index([receivedAt])
+}
+
 // Outbox Pattern for Provider Status Updates
 // Ensures idempotent delivery of status updates to git providers
 model OutboxIntent {
