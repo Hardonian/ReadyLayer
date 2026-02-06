@@ -3,6 +3,7 @@ import { githubWebhookHandler, GitHubWebhookEvent } from '../../../../integratio
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
 import { UsageLimitExceededError } from '../../../../lib/usage-enforcement';
+import { checkWebhookRateLimit, createWebhookRateLimitHeaders } from '../../../../lib/rate-limiting/webhook-limiter';
 import { z } from 'zod';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
@@ -149,6 +150,64 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Sanitize error message to prevent information disclosure
     // Internal details are logged but not exposed to caller
+    return NextResponse.json(
+      {
+        error: {
+          code: 'WEBHOOK_FAILED',
+          message: 'Webhook processing failed. Please check webhook configuration and try again.',
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+idation');
+      }
+    }
+
+    const eventData = parsed.data as GitHubWebhookEvent;
+
+    log.info({
+      eventType,
+      installationId,
+      action: eventData.action,
+    }, 'Received GitHub webhook');
+
+    await githubWebhookHandler.handleEvent(eventData, installationId, signature, payload);
+
+    metrics.increment('webhooks.received', { provider: GITHUB_WEBHOOK_PROVIDER, event: eventType });
+
+    return NextResponse.json({ received: true }, { status: 200 });
+  } catch (error) {
+    log.error(error, 'Webhook handling failed');
+    metrics.increment('webhooks.failed', { provider: GITHUB_WEBHOOK_PROVIDER });
+
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid webhook signature')) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'INVALID_SIGNATURE',
+              message: 'Webhook signature validation failed',
+            },
+          },
+          { status: 401 }
+        );
+      }
+
+      if (error.message.includes('Installation not found')) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'INSTALLATION_NOT_FOUND',
+              message: 'GitHub App installation not found',
+            },
+          },
+          { status: 404 }
+        );
+      }
+    }
+
     return NextResponse.json(
       {
         error: {

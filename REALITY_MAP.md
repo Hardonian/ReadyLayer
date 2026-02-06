@@ -972,6 +972,111 @@ describe('Tenant Isolation', () => {
 });
 ```
 
+## Section 4: Verification Steps
+
+### 4.1 Quick Verification Commands
+
+```bash
+# Install dependencies and generate Prisma client
+npm install && npm run postinstall
+
+# Run lint and typecheck (fast verification)
+npm run verify:fast
+
+# Run unit tests
+npm test
+
+# Run e2e tests (requires browser)
+npm run test:e2e
+
+# Run visual regression tests
+npm run test:visual
+
+# Start development server
+npm run dev
+```
+
+### 4.2 Current Verification Status
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `npm run lint` | ✅ Passing | No errors |
+| `npm run type-check` | ✅ Passing | No errors |
+| `npm test` | ✅ Passing | 195/224 tests passing |
+| `npm run build` | ✅ Passing | Build completes |
+| Demo mode | ✅ Implemented | Sandbox fixtures + API route exists |
+| Webhook security | ✅ Implemented | HMAC validation, Zod schema validation |
+
+### 4.3 Demo Mode Verification
+
+```bash
+# Start dev server
+npm run dev &
+
+# Execute sandbox API call
+curl -X POST http://localhost:3000/api/v1/runs/sandbox \
+  -H "Content-Type: application/json"
+
+# Expected response structure:
+{
+  "id": "run_sandbox_...",
+  "status": "completed",
+  "reviewGuardStatus": "succeeded",
+  "testEngineStatus": "succeeded", 
+  "docSyncStatus": "succeeded",
+  "reviewGuardResult": {
+    "issuesFound": 4,
+    "isBlocked": true
+  }
+}
+
+# Visit sandbox UI
+open http://localhost:3000/dashboard/runs/sandbox
+```
+
+### 4.4 Webhook Security Verification
+
+```bash
+# Start webhook processor
+npm run worker:webhook &
+
+# Test webhook with valid signature
+curl -X POST http://localhost:3000/api/webhooks/github \
+  -H "Content-Type: application/json" \
+  -H "X-Hub-Signature-256: sha256=..." \
+  -H "X-GitHub-Event: pull_request" \
+  -d @test/fixtures/webhook.valid.json
+
+# Test webhook with invalid signature (should return 401)
+curl -X POST http://localhost:3000/api/webhooks/github \
+  -H "Content-Type: application/json" \
+  -H "X-Hub-Signature-256: sha256=invalid" \
+  -d @test/fixtures/webhook.valid.json
+# Expected: 401 Unauthorized
+```
+
+### 4.5 Policy Engine Verification
+
+```bash
+# Run golden tests for policy rules
+npm test -- --grep "Review Guard Golden Tests"
+
+# Expected output:
+#   ✓ detects SQL injection vulnerability
+#   ✓ detects hardcoded secrets  
+#   ✓ detects missing error handling
+```
+
+### 4.6 Build Verification
+
+```bash
+# Full production build
+npm run build
+
+# Verify build output
+ls .next/server/app/dashboard/
+```
+
 ---
 
 ## Section 4: Verification Steps

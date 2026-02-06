@@ -1,0 +1,97 @@
+/**
+ * Demo Mode API Route
+ *
+ * Executes the full ReadyLayer pipeline against deterministic fixtures
+ * without requiring external credentials. Returns real findings, tests, and docs.
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { demoPipelineService } from '@/lib/demo/pipeline';
+
+const DEMO_MODE_ENABLED = process.env.DEMO_MODE_ENABLED === 'true';
+
+export async function GET(): Promise<NextResponse> {
+  if (!DEMO_MODE_ENABLED) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'DEMO_MODE_DISABLED',
+          message: 'Demo mode is not enabled. Set DEMO_MODE_ENABLED=true to use this endpoint.',
+        },
+      },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const result = await demoPipelineService.executeFullPipeline();
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      requestId: result.runId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'DEMO_PIPELINE_FAILED',
+          message: 'Demo mode pipeline execution failed',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!DEMO_MODE_ENABLED) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'DEMO_MODE_DISABLED',
+          message: 'Demo mode is not enabled. Set DEMO_MODE_ENABLED=true to use this endpoint.',
+        },
+      },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { checkIds } = body as { checkIds?: string[] };
+
+    const fullResult = await demoPipelineService.executeFullPipeline();
+
+    let result: typeof fullResult;
+
+    if (checkIds && Array.isArray(checkIds) && checkIds.length > 0) {
+      result = {
+        ...fullResult,
+        checks: fullResult.checks.filter((c: { id: string }) => checkIds.includes(c.id)),
+      };
+    } else {
+      result = fullResult;
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      requestId: result.runId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: {
+          code: 'DEMO_PIPELINE_FAILED',
+          message: 'Demo mode pipeline execution failed',
+          details: error instanceof Error ? error.message : 'Unknown error',
+        },
+      },
+      { status: 500 }
+    );
+  }
+}
