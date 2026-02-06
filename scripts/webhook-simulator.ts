@@ -49,7 +49,7 @@ console.log(`Action: ${options.action}`);
 console.log(`Iterations: ${COUNT}`);
 console.log('='.repeat(60));
 
-async function generateGitHubPayload(action: string = 'opened') {
+async function generateGitHubPayload(action: string = 'opened'): Promise<string> {
   return JSON.stringify({
     action,
     pull_request: {
@@ -75,7 +75,7 @@ async function generateGitHubPayload(action: string = 'opened') {
   });
 }
 
-async function generateSignature(payload: string, secret: string, provider: string) {
+async function generateSignature(payload: string, secret: string, provider: string): Promise<string> {
   if (provider === 'github') {
     return generateHmacSignature(payload, secret, 'sha256=');
   }
@@ -86,7 +86,7 @@ async function generateSignature(payload: string, secret: string, provider: stri
   return secret;
 }
 
-async function simulateDuplicateDeliveries(provider: string, _secret: string) {
+async function simulateDuplicateDeliveries(provider: string, _secret: string): Promise<{ processed: number; duplicates: number; errors: number; }> {
   console.log('\n--- Duplicate Delivery Simulation ---');
 
   const results = {
@@ -144,7 +144,7 @@ async function simulateDuplicateDeliveries(provider: string, _secret: string) {
   return results;
 }
 
-async function simulateSignatureValidationFailures(provider: string, secret: string) {
+async function simulateSignatureValidationFailures(provider: string, secret: string): Promise<{ valid: number; invalidSignature: number; tamperedPayload: number; }> {
   console.log('\n--- Signature Validation Failure Simulation ---');
 
   const results = {
@@ -185,7 +185,7 @@ async function simulateSignatureValidationFailures(provider: string, secret: str
   return results;
 }
 
-async function simulateReplayAttacks(provider: string, _secret: string) {
+async function simulateReplayAttacks(provider: string, _secret: string): Promise<{ firstRequest: number; replayRejected: number; differentNonceAccepted: number; }> {
   console.log('\n--- Replay Attack Simulation ---');
 
   await webhookReplayProtection.clearAllReplayCache();
@@ -223,7 +223,7 @@ async function simulateReplayAttacks(provider: string, _secret: string) {
   return results;
 }
 
-async function simulateStaleTimestamps(provider: string, _secret: string) {
+async function simulateStaleTimestamps(provider: string, _secret: string): Promise<{ freshAccepted: number; staleRejected: number; futureRejected: number; }> {
   console.log('\n--- Stale Timestamp Simulation ---');
 
   await webhookReplayProtection.clearAllReplayCache();
@@ -265,7 +265,7 @@ async function simulateStaleTimestamps(provider: string, _secret: string) {
   return results;
 }
 
-async function simulateConcurrentProcessing(provider: string, _secret: string) {
+async function simulateConcurrentProcessing(provider: string, _secret: string): Promise<{ total: number; handlerCalls: number; duplicates: number; }> {
   console.log('\n--- Concurrent Processing Simulation ---');
 
   const eventId = `concurrent_${randomUUID()}`;
@@ -302,7 +302,7 @@ async function simulateConcurrentProcessing(provider: string, _secret: string) {
   };
 }
 
-async function runAllTests() {
+async function runAllTests(): Promise<void> {
   const providers = ['github', 'gitlab', 'bitbucket'];
   const actions = ['duplicate', 'signature', 'replay', 'stale', 'concurrent'];
 
@@ -351,7 +351,7 @@ async function runAllTests() {
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     if (options.action === 'all') {
       await runAllTests();

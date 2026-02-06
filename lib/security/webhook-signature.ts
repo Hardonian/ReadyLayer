@@ -4,7 +4,7 @@
  * Provides secure signature verification with timing-attack resistant comparisons.
  */
 
-import { createHmac } from 'crypto';
+import { createHmac, createHash } from 'crypto';
 
 /**
  * Constant-time string comparison to prevent timing attacks.
@@ -95,7 +95,6 @@ export function hashSignatureForLogging(signature: string, length: number = 16):
     return 'none';
   }
 
-  const createHash = require('crypto').createHash;
   const hash = createHash('sha256').update(signature).digest('hex');
   return hash.substring(0, length);
 }
