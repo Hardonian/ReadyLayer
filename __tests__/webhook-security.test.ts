@@ -8,7 +8,7 @@
  * - Rate limiting enforcement
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { PrismaClient } from '../lib/prisma';
 import {
   webhookReplayProtection,
   validateWebhookTimestamp,
