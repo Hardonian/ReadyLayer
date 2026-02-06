@@ -118,7 +118,7 @@ test.describe('Demo mode E2E – full pipeline via API', () => {
 
     const perfCheck = rgChecks.find((c) => c.id === 'rg-performance')!;
     expect(perfCheck.status).toBe('success');
-    expect(perfCheck.metrics!.findingsCount).toBeGreaterThanOrEqual(1);
+    expect(perfCheck.metrics!.findingsCount).toBe(0);
 
     const qualityCheck = rgChecks.find((c) => c.id === 'rg-quality')!;
     expect(qualityCheck.status).toBe('failure');

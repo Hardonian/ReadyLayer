@@ -4,6 +4,7 @@ export const PUBLIC_ROUTES = [
   '/auth/signout',
   '/auth/callback',
   '/auth/error',
+  '/dashboard/runs/sandbox',
 ]
 
 export const PUBLIC_ROUTE_PREFIXES = [
@@ -32,7 +33,12 @@ export const PUBLIC_ROUTE_PREFIXES = [
   '/terms',
 ]
 
-export const PUBLIC_API_ROUTES = ['/api/health', '/api/ready', '/api/v1/runs/sandbox']
+export const PUBLIC_API_ROUTES = [
+  '/api/health',
+  '/api/ready',
+  '/api/v1/runs/sandbox',
+  '/api/demo',
+]
 
 export const AUTH_ROUTE_PREFIXES = ['/dashboard', '/app']
 

@@ -62,33 +62,24 @@ export async function getUserById(id: string): Promise<User | null> {
 `,
     beforeContent: null,
   },
-  {
-    path: 'src/api/users.ts',
-    content: `/**
+    {
+      path: 'src/api/users.ts',
+      content: `/**
  * User API endpoints
  */
 
 import { getUserById } from '../auth';
 
-/**
- * GET /api/users/:id
- * Get user by ID
- */
 export async function getUser(id: string) {
-  // Missing error handling - will be detected
-  const user = await getUserById(id);
+  // Missing LIMIT clause - will trigger performance finding
+  const user = await db.query(\`SELECT * FROM users WHERE id = '\${id}'\`);
   return {
     status: 200,
     body: user,
   };
 }
 
-/**
- * POST /api/users
- * Create new user
- */
 export async function createUser(data: { username: string; email: string; password: string }) {
-  // Missing input validation - will be detected
   const query = \`INSERT INTO users (username, email, password) VALUES ('\${data.username}', '\${data.email}', '\${data.password}')\`;
   await db.query(query);
   
@@ -98,8 +89,8 @@ export async function createUser(data: { username: string; email: string; passwo
   };
 }
 `,
-    beforeContent: null,
-  },
+      beforeContent: null,
+    },
   {
     path: 'src/utils/validation.ts',
     content: `/**

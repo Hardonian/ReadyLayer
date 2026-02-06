@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { demoPipelineService, DEMO_FROZEN_TIMESTAMP } from '@/lib/demo/pipeline';
 
-const DEMO_MODE_ENABLED = process.env.DEMO_MODE_ENABLED === 'true';
+const DEMO_MODE_ENABLED = process.env.NODE_ENV !== 'production';
 
 export async function GET(): Promise<NextResponse> {
   if (!DEMO_MODE_ENABLED) {

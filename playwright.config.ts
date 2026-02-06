@@ -148,10 +148,16 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: process.env.PLAYWRIGHT_TEST_BASE_URL ? '' : 'pnpm dev',
+    command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    env: process.env.DEMO_MODE_ENABLED
+      ? {
+          DEMO_MODE_ENABLED: 'true',
+          NODE_ENV: 'development',
+        }
+      : undefined,
   },
 
   /* Snapshot configuration for visual regression */
