@@ -64,6 +64,13 @@ export interface DemoPipelineResult {
 
 const DEMO_RUN_ID = process.env.DEMO_RUN_ID ?? `demo_${sandboxPRMetadata.prSha}`;
 
+/**
+ * Frozen timestamp for deterministic demo results.
+ * Every demo run produces the same timestamp so assertions and snapshots are stable.
+ */
+export const DEMO_FROZEN_TIMESTAMP = '2024-01-15T10:30:00.000Z';
+export const DEMO_FROZEN_DATE = '2024-01-15';
+
 function generateDeterministicFindingId(checkId: string, index: number): string {
   return `${checkId}_finding_${index}`;
 }
@@ -408,7 +415,7 @@ const response = await fetch('/api/users', {
         {
           type: 'changelog',
           summary: 'Added changelog entry',
-          content: `## [1.0.0] - ${new Date().toISOString().split('T')[0]}
+          content: `## [1.0.0] - ${DEMO_FROZEN_DATE}
 
 ### Added
 - Initial sandbox demo implementation
@@ -466,7 +473,7 @@ const response = await fetch('/api/users', {
 
       return {
         runId: DEMO_RUN_ID,
-        timestamp: new Date().toISOString(),
+        timestamp: DEMO_FROZEN_TIMESTAMP,
         pr: {
           number: sandboxPRMetadata.prNumber,
           sha: sandboxPRMetadata.prSha,

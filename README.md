@@ -57,21 +57,67 @@ npm run dev
 Open http://localhost:3000
 
 ## Demo Mode
-ReadyLayer includes a demo mode that showcases the full governance pipeline without requiring external credentials or a real repository.
+ReadyLayer includes a deterministic demo mode that showcases the full governance pipeline without requiring external credentials, a database, or a real repository. Every run produces identical results so the output is safe to snapshot in tests and CI.
+
+### Running demo mode locally
 
 ```bash
-# Enable demo mode
+# Start the dev server in demo mode (no secrets needed)
+npm run demo:start
+
+# Or set the flag yourself
 DEMO_MODE_ENABLED=true npm run dev
 ```
 
-**Demo Mode Features:**
-- **Review Guard**: Security scans (SQL injection, hardcoded secrets), performance checks, quality scans
-- **Test Engine**: Unit test generation with coverage analysis
-- **Doc Sync**: OpenAPI specification generation, README updates, changelog entries
+Open http://localhost:3000 and navigate to **Dashboard > Runs > Sandbox Demo**, or call the API directly:
 
-**API Endpoints:**
-- `GET /api/demo` - Execute full demo pipeline
-- `POST /api/demo` - Execute with optional check filtering (`{ checkIds: ['rg-security', 'te-unit'] }`)
+```bash
+# Full pipeline
+curl http://localhost:3000/api/demo | jq .
+
+# Filter to specific checks
+curl -X POST http://localhost:3000/api/demo \
+  -H 'Content-Type: application/json' \
+  -d '{"checkIds":["rg-security","te-unit"]}' | jq .
+```
+
+### What the demo covers
+
+| Stage | Findings |
+|---|---|
+| **Review Guard – Security** | SQL injection (critical), hardcoded secret (high) |
+| **Review Guard – Performance** | Missing pagination (medium) |
+| **Review Guard – Quality** | Unsafe regex / ReDoS (critical) |
+| **Test Engine** | 3 unit test scaffolds generated, +5 % coverage delta |
+| **Doc Sync** | OpenAPI spec, README update, changelog entry |
+
+The pipeline decision is **blocked** because critical findings are present.
+
+### Seeding the database for demo mode
+
+If you have a database running, you can populate it with deterministic demo records:
+
+```bash
+DEMO_MODE_ENABLED=true npm run prisma:seed
+```
+
+This creates a demo organization, user, repository, and a completed run record using fixed IDs and timestamps.
+
+### Running demo E2E tests
+
+The demo E2E tests exercise the full pipeline via the real Next.js server with Playwright. They require **zero external secrets**.
+
+```bash
+# Run demo E2E locally (builds, starts server, runs tests)
+npm run demo:e2e
+```
+
+CI runs the demo E2E tests automatically (see `.github/workflows/ci.yml`, job `demo-e2e`).
+
+### API Endpoints
+
+- `GET /api/demo` – Execute the full deterministic demo pipeline
+- `POST /api/demo` – Execute with optional check filtering: `{ "checkIds": ["rg-security", "te-unit"] }`
 
 ## Architecture Overview
 - `app/`: Next.js App Router pages, API routes, and UI surfaces.  
