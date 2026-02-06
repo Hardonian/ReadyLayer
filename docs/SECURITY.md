@@ -92,10 +92,23 @@
 - HMAC-SHA256 signature validation
 - Raw body preservation for signature verification
 - Installation-based authentication
+- **Replay protection**: Timestamp validation and nonce-based request deduplication
+- **Rate limiting**: 100 requests per minute per GitHub installation
+
+**Webhook Headers:**
+```
+X-ReadyLayer-Timestamp: <unix_timestamp>     // Request timestamp for replay protection
+X-ReadyLayer-Nonce: <timestamp:random>       // Unique nonce for each request
+```
+
+**Replay Protection:**
+- Requests older than 5 minutes are rejected
+- Each unique (signature, nonce) pair is tracked to prevent replay attacks
+- Redis-backed cache with in-memory fallback for availability
 
 **Evidence:**
-- `integrations/github/webhook.ts` — Signature validation
-- `app/api/webhooks/github/route.ts` — Webhook handler
+- `lib/security/webhook-replay.ts` — Replay protection service
+- `app/api/webhooks/github/route.ts` — Webhook handler with security hardening
 
 ### 6. API Security
 

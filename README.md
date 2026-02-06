@@ -56,6 +56,23 @@ npm run dev
 
 Open http://localhost:3000
 
+## Demo Mode
+ReadyLayer includes a demo mode that showcases the full governance pipeline without requiring external credentials or a real repository.
+
+```bash
+# Enable demo mode
+DEMO_MODE_ENABLED=true npm run dev
+```
+
+**Demo Mode Features:**
+- **Review Guard**: Security scans (SQL injection, hardcoded secrets), performance checks, quality scans
+- **Test Engine**: Unit test generation with coverage analysis
+- **Doc Sync**: OpenAPI specification generation, README updates, changelog entries
+
+**API Endpoints:**
+- `GET /api/demo` - Execute full demo pipeline
+- `POST /api/demo` - Execute with optional check filtering (`{ checkIds: ['rg-security', 'te-unit'] }`)
+
 ## Architecture Overview
 - `app/`: Next.js App Router pages, API routes, and UI surfaces.  
 - `lib/`: shared business logic (auth helpers, JobForge client, secrets redaction).  

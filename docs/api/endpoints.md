@@ -347,6 +347,81 @@ GET /api/v1/metrics/performance
 GET /api/v1/metrics/errors
 ```
 
+## 🎮 Demo Mode
+
+### `GET /api/demo`
+Execute the full ReadyLayer governance pipeline against deterministic fixtures. No credentials required.
+
+**Requires:** `DEMO_MODE_ENABLED=true` environment variable
+
+**Response:**
+```typescript
+interface DemoResponse {
+  success: true;
+  data: {
+    runId: string;
+    timestamp: string;
+    pr: {
+      number: number;
+      sha: string;
+      title: string;
+    };
+    checks: DemoCheckResult[];
+    decision: {
+      status: 'ready' | 'blocked';
+      reason?: string;
+    };
+    artifacts: DemoArtifact[];
+  };
+  requestId: string;
+  timestamp: string;
+}
+
+interface DemoCheckResult {
+  id: string;
+  name: string;
+  category: 'review-guard' | 'test-engine' | 'doc-sync';
+  status: 'success' | 'failure' | 'error';
+  duration: number;
+  findings?: DemoFinding[];
+  metrics?: {
+    findingsCount?: number;
+    testsGenerated?: number;
+    coverageDelta?: number;
+    docsUpdated?: number;
+  };
+  artifacts?: DemoArtifact[];
+}
+
+interface DemoArtifact {
+  type: 'openapi' | 'readme' | 'changelog' | 'test';
+  summary: string;
+  content: string;
+}
+```
+
+**Example:**
+```bash
+curl http://localhost:3000/api/demo
+```
+
+### `POST /api/demo`
+Execute demo pipeline with optional check filtering.
+
+**Request Body:**
+```typescript
+{
+  checkIds?: string[];  // Optional filter: ['rg-security', 'rg-performance', 'rg-quality', 'te-unit', 'te-coverage', 'ds-openapi', 'ds-readme', 'ds-changelog']
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/api/demo \
+  -H "Content-Type: application/json" \
+  -d '{"checkIds": ["rg-security", "te-unit"]}'
+```
+
 ## 🔌 Client Libraries
 
 ### JavaScript/TypeScript
