@@ -16,6 +16,8 @@ export * from '../types/service'
 
 // Webhook schemas
 export * from './webhooks'
+export * from './github-webhook'
+export * from './health'
 
 // Re-export for convenience
 export { z } from 'zod'

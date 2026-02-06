@@ -43,6 +43,23 @@ ReadyLayer provides governance tooling for AI-assisted software delivery. It shi
 - **Tokens/Styles**: `tailwind.config.ts` + `app/globals.css` for CSS custom properties
 - **Tests**: `__tests__/` for unit tests, `e2e/` for visual/functional tests
 
+## 2.1 Safe-to-Edit Zones (Default)
+
+These areas are safe for additive changes without cross-cutting refactors:
+- `app/` (API routes + UI pages)
+- `components/` (UI + domain components)
+- `lib/` (shared utilities, contracts, validation)
+- `services/` (service layer orchestrations)
+- `workers/` (background processors)
+- `scripts/` (ops and demo scripts)
+- `docs/` (runbooks, invariants, architecture docs)
+- `.github/workflows/` (CI gates, quality checks)
+
+Avoid large-scale refactors in:
+- `prisma/` (schema + migrations)
+- `tools/ready-layer-runner/` (Go runner)
+- `sdk/` (public SDK contracts)
+
 ## 3. Golden Rules (Invariants)
 
 - **No secrets**: Never commit `.env` files, API keys, or credentials. Use `lib/secrets/` utilities for redaction.
@@ -101,10 +118,21 @@ ReadyLayer provides governance tooling for AI-assisted software delivery. It shi
 | `npm run verify` | Full verification | build + test + docs check |
 | `npm run verify:fast` | Fast verification | lint + typecheck only |
 | `npm run doctor` | System health check | `scripts/doctor.ts` |
+| `npm run demo:setup` | Prepare demo mode fixtures | |
+| `npm run demo:reset` | Reset demo sandbox state | |
+| `npm run demo:start` | Start dev server in demo mode | |
 | `npm run prisma:migrate` | Run database migrations | |
 | `npm run prisma:studio` | Open Prisma Studio | |
 | `npm run worker:webhook` | Start webhook worker | |
 | `npm run worker:job` | Start job processor worker | |
+
+## 5.1 Command Canon (Preferred Order)
+
+1. `npm install`
+2. `npm run verify:fast`
+3. `npm test`
+4. `npm run build`
+5. `npm run middleware:smoke` (or `npm run demo:start` for demo validation)
 
 **CI workflows** (`.github/workflows/`):
 - `ci.yml`: Main CI pipeline
@@ -150,6 +178,13 @@ Before committing, verify:
 - Validation: `lib/env.ts` (schema validation with zod)
 - Never log or expose secrets; use `lib/secrets/` utilities
 - Access via `process.env` only; no hardcoded keys
+
+## 7.5 Agent Guardrails
+
+- Do not weaken auth checks or bypass `requireAuth`.
+- Do not silence errors to pass lint/test; fix root causes.
+- Do not commit generated artifacts or `.env` files.
+- Keep demo mode deterministic and resettable.
 
 ## 8. PR / Commit Standards
 

@@ -10,6 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { demoPipelineService } from '@/lib/demo/pipeline';
+import { sandboxPRMetadata } from '@/content/demo/sandboxFixtures';
 
 describe('Demo Mode Pipeline', () => {
   describe('executeFullPipeline', () => {
@@ -100,9 +101,10 @@ describe('Demo Mode Pipeline', () => {
       const result1 = await demoPipelineService.executeFullPipeline();
       const result2 = await demoPipelineService.executeFullPipeline();
 
-      // Run IDs should be different (generated from Date.now())
-      expect(result1.runId).toMatch(/^demo_\d+_sandbox$/);
-      expect(result2.runId).toMatch(/^demo_\d+_sandbox$/);
+      // Run IDs should be deterministic and consistent across runs
+      const expectedRunId = `demo_${sandboxPRMetadata.prSha}`;
+      expect(result1.runId).toBe(expectedRunId);
+      expect(result2.runId).toBe(expectedRunId);
 
       // Check that both have the expected structure
       expect(result1.checks.length).toBe(result2.checks.length);

@@ -1,0 +1,26 @@
+{
+  "action": "opened",
+  "repository": {
+    "id": 123456,
+    "full_name": "octo-org/demo-repo"
+  },
+  "pull_request": {
+    "number": 42,
+    "title": "Add demo endpoint",
+    "head": {
+      "sha": "abc123def456",
+      "ref": "feature/demo-endpoint"
+    },
+    "base": {
+      "ref": "main"
+    },
+    "merged": false,
+    "merge_commit_sha": null
+  },
+  "installation": {
+    "id": 987654
+  },
+  "sender": {
+    "login": "octocat"
+  }
+}

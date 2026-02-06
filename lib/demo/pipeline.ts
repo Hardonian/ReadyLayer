@@ -9,6 +9,7 @@
  */
 
 import { sandboxFiles, sandboxPRMetadata } from '../../content/demo/sandboxFixtures';
+import { startHotPathTracker } from '../../observability/hot-path';
 
 export interface DemoFinding {
   id: string;
@@ -61,7 +62,7 @@ export interface DemoPipelineResult {
   artifacts: DemoArtifact[];
 }
 
-const DEMO_RUN_ID = `demo_${Date.now()}_sandbox`;
+const DEMO_RUN_ID = process.env.DEMO_RUN_ID ?? `demo_${sandboxPRMetadata.prSha}`;
 
 function generateDeterministicFindingId(checkId: string, index: number): string {
   return `${checkId}_finding_${index}`;
@@ -182,19 +183,6 @@ export class DemoPipelineService {
       metrics: { findingsCount: 0 },
     };
 
-    for (const file of sandboxFiles) {
-      const findings = analyzeCodeForSecurity(file.path, file.content);
-      securityCheck.findings!.push(...findings);
-    }
-
-    securityCheck.metrics!.findingsCount = securityCheck.findings!.length;
-    if (securityCheck.findings!.length > 0) {
-      securityCheck.status = securityCheck.findings!.some((f) => f.severity === 'critical')
-        ? 'failure'
-        : 'success';
-    }
-    results.push(securityCheck);
-
     const performanceCheck: DemoCheckResult = {
       id: 'rg-performance',
       name: 'Review Guard - Performance scan',
@@ -204,14 +192,6 @@ export class DemoPipelineService {
       findings: [],
       metrics: { findingsCount: 0 },
     };
-
-    for (const file of sandboxFiles) {
-      const findings = analyzeCodeForPerformance(file.path, file.content);
-      performanceCheck.findings!.push(...findings);
-    }
-
-    performanceCheck.metrics!.findingsCount = performanceCheck.findings!.length;
-    results.push(performanceCheck);
 
     const qualityCheck: DemoCheckResult = {
       id: 'rg-quality',
@@ -224,11 +204,31 @@ export class DemoPipelineService {
     };
 
     for (const file of sandboxFiles) {
-      if (file.path.endsWith('validation.ts')) {
-        const findings = analyzeCodeForSecurity(file.path, file.content);
-        qualityCheck.findings!.push(...findings);
+      const securityFindings = analyzeCodeForSecurity(file.path, file.content);
+      if (securityFindings.length > 0) {
+        securityCheck.findings!.push(...securityFindings);
+      }
+
+      const performanceFindings = analyzeCodeForPerformance(file.path, file.content);
+      if (performanceFindings.length > 0) {
+        performanceCheck.findings!.push(...performanceFindings);
+      }
+
+      if (file.path.endsWith('validation.ts') && securityFindings.length > 0) {
+        qualityCheck.findings!.push(...securityFindings);
       }
     }
+
+    securityCheck.metrics!.findingsCount = securityCheck.findings!.length;
+    if (securityCheck.findings!.length > 0) {
+      securityCheck.status = securityCheck.findings!.some((f) => f.severity === 'critical')
+        ? 'failure'
+        : 'success';
+    }
+    results.push(securityCheck);
+
+    performanceCheck.metrics!.findingsCount = performanceCheck.findings!.length;
+    results.push(performanceCheck);
 
     qualityCheck.metrics!.findingsCount = qualityCheck.findings!.length;
     if (qualityCheck.findings!.length > 0) {
@@ -431,42 +431,57 @@ const response = await fetch('/api/users', {
   }
 
   async executeFullPipeline(): Promise<DemoPipelineResult> {
-    const [reviewGuardResults, testEngineResults, docSyncResults] = await Promise.all([
-      this.executeReviewGuard(),
-      this.executeTestEngine(),
-      this.executeDocSync(),
-    ]);
+    const tracker = startHotPathTracker({
+      requestId: DEMO_RUN_ID,
+      route: '/api/demo',
+      operation: 'demo_pipeline',
+    });
 
-    const allChecks = [...reviewGuardResults, ...testEngineResults, ...docSyncResults];
-    const allArtifacts = [
-      ...(testEngineResults.flatMap((r) => r.artifacts || []) as DemoArtifact[]),
-      ...(docSyncResults.flatMap((r) => r.artifacts || []) as DemoArtifact[]),
-    ];
+    try {
+      const [reviewGuardResults, testEngineResults, docSyncResults] = await Promise.all([
+        this.executeReviewGuard(),
+        this.executeTestEngine(),
+        this.executeDocSync(),
+      ]);
 
-    const criticalFailures = reviewGuardResults.filter(
-      (r) => r.status === 'failure' && r.findings?.some((f) => f.severity === 'critical')
-    );
+      const allChecks = [...reviewGuardResults, ...testEngineResults, ...docSyncResults];
+      const allArtifacts = [
+        ...(testEngineResults.flatMap((r) => r.artifacts || []) as DemoArtifact[]),
+        ...(docSyncResults.flatMap((r) => r.artifacts || []) as DemoArtifact[]),
+      ];
 
-    const decision: DemoPipelineResult['decision'] =
-      criticalFailures.length > 0
-        ? {
-            status: 'blocked',
-            reason: `Critical findings must be resolved before merging. Run again after fixing security issues.`,
-          }
-        : { status: 'ready' };
+      const criticalFailures = reviewGuardResults.filter(
+        (r) => r.status === 'failure' && r.findings?.some((f) => f.severity === 'critical')
+      );
 
-    return {
-      runId: DEMO_RUN_ID,
-      timestamp: new Date().toISOString(),
-      pr: {
-        number: sandboxPRMetadata.prNumber,
-        sha: sandboxPRMetadata.prSha,
-        title: sandboxPRMetadata.prTitle,
-      },
-      checks: allChecks,
-      decision,
-      artifacts: allArtifacts,
-    };
+      const decision: DemoPipelineResult['decision'] =
+        criticalFailures.length > 0
+          ? {
+              status: 'blocked',
+              reason: `Critical findings must be resolved before merging. Run again after fixing security issues.`,
+            }
+          : { status: 'ready' };
+
+      tracker.finish('ok', { checks: allChecks.length, artifacts: allArtifacts.length });
+
+      return {
+        runId: DEMO_RUN_ID,
+        timestamp: new Date().toISOString(),
+        pr: {
+          number: sandboxPRMetadata.prNumber,
+          sha: sandboxPRMetadata.prSha,
+          title: sandboxPRMetadata.prTitle,
+        },
+        checks: allChecks,
+        decision,
+        artifacts: allArtifacts,
+      };
+    } catch (error) {
+      tracker.finish('error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
   }
 }
 

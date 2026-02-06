@@ -4,41 +4,9 @@ import { webhookReplayProtection, validateWebhookTimestamp, validateWebhookNonce
 import { checkRateLimit, RateLimitConfig } from '../../../../lib/rate-limiting/redis-rate-limiter';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
-import { z } from 'zod';
+import { gitHubWebhookEventSchema } from '../../../../lib/contracts/github-webhook';
 
 export const runtime = 'nodejs';
-
-export const GitHubWebhookEventSchema = z.object({
-  action: z.string(),
-  repository: z
-    .object({
-      id: z.number().optional(),
-      full_name: z.string(),
-    })
-    .optional(),
-  pull_request: z
-    .object({
-      number: z.number(),
-      title: z.string(),
-      head: z.object({
-        sha: z.string(),
-        ref: z.string(),
-      }),
-      base: z.object({
-        ref: z.string(),
-      }),
-      merged: z.boolean().optional(),
-      merge_commit_sha: z.string().nullable().optional(),
-    })
-    .optional(),
-  check_run: z.unknown().optional(),
-  workflow_run: z.unknown().optional(),
-  installation: z
-    .object({
-      id: z.number(),
-    })
-    .optional(),
-}).passthrough();
 
 const WEBHOOK_RATE_LIMIT: RateLimitConfig = {
   windowMs: 60000,
@@ -122,7 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const parsed = GitHubWebhookEventSchema.safeParse(event);
+    const parsed = gitHubWebhookEventSchema.safeParse(event);
     if (!parsed.success) {
       return NextResponse.json(
         {

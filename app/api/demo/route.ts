@@ -62,13 +62,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     let checkIds: string[] | undefined;
     try {
-      /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
-      const body = await request.json();
-      /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+      const body = (await request.json()) as { checkIds?: unknown } | null;
       if (body && typeof body === 'object' && 'checkIds' in body) {
-        /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
-        checkIds = Array.isArray(body.checkIds) ? (body.checkIds as unknown[]).filter((v): v is string => typeof v === 'string') : undefined;
-        /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+        const rawCheckIds = body.checkIds;
+        checkIds = Array.isArray(rawCheckIds)
+          ? rawCheckIds.filter((value): value is string => typeof value === 'string')
+          : undefined;
       }
     } catch {
       checkIds = undefined;
