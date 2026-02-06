@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { demoPipelineService } from '@/lib/demo/pipeline';
+import { demoPipelineService, DEMO_FROZEN_TIMESTAMP, DEMO_FROZEN_DATE } from '@/lib/demo/pipeline';
 import { sandboxPRMetadata } from '@/content/demo/sandboxFixtures';
 
 describe('Demo Mode Pipeline', () => {
@@ -106,6 +106,10 @@ describe('Demo Mode Pipeline', () => {
       expect(result1.runId).toBe(expectedRunId);
       expect(result2.runId).toBe(expectedRunId);
 
+      // Timestamps should be frozen
+      expect(result1.timestamp).toBe(DEMO_FROZEN_TIMESTAMP);
+      expect(result2.timestamp).toBe(DEMO_FROZEN_TIMESTAMP);
+
       // Check that both have the expected structure
       expect(result1.checks.length).toBe(result2.checks.length);
       expect(result1.checks.map((c) => c.id).sort()).toEqual(result2.checks.map((c) => c.id).sort());
@@ -196,7 +200,7 @@ describe('Demo Mode Pipeline', () => {
       expect(readmeArtifact?.content).toContain('API Documentation');
     });
 
-    it('should generate changelog entries', async () => {
+    it('should generate changelog entries with frozen date', async () => {
       const results = await demoPipelineService.executeDocSync();
       const changelogCheck = results.find((c) => c.id === 'ds-changelog');
 
@@ -206,6 +210,7 @@ describe('Demo Mode Pipeline', () => {
       const changelogArtifact = changelogCheck?.artifacts?.find((a) => a.type === 'changelog');
       expect(changelogArtifact).toBeDefined();
       expect(changelogArtifact?.content).toContain('##');
+      expect(changelogArtifact?.content).toContain(`## [1.0.0] - ${DEMO_FROZEN_DATE}`);
     });
   });
 

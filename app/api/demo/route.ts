@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { demoPipelineService } from '@/lib/demo/pipeline';
+import { demoPipelineService, DEMO_FROZEN_TIMESTAMP } from '@/lib/demo/pipeline';
 
 const DEMO_MODE_ENABLED = process.env.DEMO_MODE_ENABLED === 'true';
 
@@ -30,7 +30,7 @@ export async function GET(): Promise<NextResponse> {
       success: true,
       data: result,
       requestId: result.runId,
-      timestamp: new Date().toISOString(),
+      timestamp: DEMO_FROZEN_TIMESTAMP,
     });
   } catch (error) {
     return NextResponse.json(
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       success: true,
       data: result,
       requestId: result.runId,
-      timestamp: new Date().toISOString(),
+      timestamp: DEMO_FROZEN_TIMESTAMP,
     });
   } catch (error) {
     return NextResponse.json(
