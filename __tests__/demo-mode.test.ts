@@ -173,7 +173,7 @@ describe('Demo Mode Pipeline', () => {
 
       const openapiArtifact = openapiCheck?.artifacts?.find((a) => a.type === 'openapi');
       expect(openapiArtifact).toBeDefined();
-Artifact?.content).      expect(openapitoContain('openapi:');
+      expect(openapiArtifact?.content).toContain('openapi:');
       expect(openapiArtifact?.content).toContain('/api/users');
     });
 
