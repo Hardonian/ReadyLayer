@@ -93,7 +93,8 @@ describe('Webhook Replay Protection', () => {
     });
 
     it('should reject nonce without colon separator', () => {
-      expect(() => validateWebhookNonce('no_colon')).toThrow('Invalid nonce format');
+      // Use a long enough nonce to pass length check but missing colon
+      expect(() => validateWebhookNonce('1234567890_no_colon')).toThrow('Invalid nonce format');
     });
 
     it('should reject too short nonce', () => {
