@@ -25,6 +25,7 @@ import { outboxService } from '../outbox';
 import { randomUUID } from 'crypto';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
+import { startHotPathTracker } from '../../observability/hot-path';
 import { createAuditLog, AuditActions } from '../../lib/audit';
 import { toJsonValue, toNullableJsonValue } from '../../lib/prisma-json';
 import { SimpleCache } from '../../lib/utils/memoization';
@@ -1157,21 +1158,41 @@ export class RunPipelineService {
    * Create a sandbox run (demo mode)
    */
   async createSandboxRun(): Promise<RunResult> {
-    const sandboxId = `sandbox_demo_${Date.now()}`;
-    
-    const { sandboxFiles, sandboxPRMetadata } = await import('../../content/demo/sandboxFixtures');
+    try {
+      const { sandboxFiles, sandboxPRMetadata } = await import('../../content/demo/sandboxFixtures');
+      const sandboxId = process.env.DEMO_SANDBOX_ID ?? `sandbox_${sandboxPRMetadata.prSha}`;
+      const tracker = startHotPathTracker({
+        requestId: sandboxId,
+        route: '/api/v1/runs/sandbox',
+        operation: 'sandbox_run',
+      });
 
-    return this.executeRun({
-      sandboxId,
-      trigger: 'sandbox',
-      triggerMetadata: {
-        prNumber: sandboxPRMetadata.prNumber,
-        prSha: sandboxPRMetadata.prSha,
-        prTitle: sandboxPRMetadata.prTitle,
-        diff: sandboxPRMetadata.diff,
-        files: sandboxFiles,
-      },
-    });
+      const result = await this.executeRun({
+        sandboxId,
+        trigger: 'sandbox',
+        triggerMetadata: {
+          prNumber: sandboxPRMetadata.prNumber,
+          prSha: sandboxPRMetadata.prSha,
+          prTitle: sandboxPRMetadata.prTitle,
+          diff: sandboxPRMetadata.diff,
+          files: sandboxFiles,
+        },
+      });
+
+      tracker.recordDbCall();
+      tracker.finish('ok', { status: result.status });
+
+      return result;
+    } catch (error) {
+      startHotPathTracker({
+        requestId: 'sandbox_run_failed',
+        route: '/api/v1/runs/sandbox',
+        operation: 'sandbox_run',
+      }).finish('error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
   }
 }
 

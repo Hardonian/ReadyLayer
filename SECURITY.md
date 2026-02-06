@@ -28,6 +28,30 @@ Security fixes are applied to the `main` branch. If you are running a fork, plea
 - **Keep dependencies updated** and follow guidance from `npm audit`.
 - **Validate external inputs** in new API endpoints or CLI commands.
 
+## Threat Model Summary
+
+**Primary assets**
+- Governance run results, evidence bundles, and audit logs
+- Installation tokens and webhook secrets
+- Customer source code accessed via integrations
+
+**Key threat actors**
+- External attackers targeting webhook endpoints or public API routes
+- Misconfigured integrations (invalid secrets, missing scopes)
+- Insider abuse of privileged API keys or admin roles
+
+**Primary risks**
+- Webhook spoofing or replay
+- Unauthorized access to organization data
+- Leakage of secrets in logs or audit trails
+- Denial-of-service on public endpoints
+
+**Mitigations**
+- Raw-body signature verification and replay protection on webhooks
+- RBAC enforcement for all authenticated routes
+- Structured error responses with sanitized output
+- Rate limiting on public endpoints with in-memory fallback
+
 ## Deployment Guidance
 
 If you deploy ReadyLayer yourself:
@@ -81,6 +105,12 @@ X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1699900000
 ```
 
+#### Upgrade Path
+
+For production scale, use Redis-backed rate limiting by setting `REDIS_URL`. The system
+automatically falls back to in-memory limiting when Redis is unavailable, but the
+distributed limiter is strongly recommended for multi-instance deployments.
+
 ### Security Headers
 
 All API responses include security-related headers:
@@ -96,6 +126,12 @@ Sensitive operations:
 - **Database**: Uses connection pooling with credentials from environment
 - **Redis**: Optional for rate limiting and caching
 - **Webhooks**: Use per-installation webhook secrets
+
+## Secrets Hygiene
+
+- Secrets are loaded exclusively from environment variables.
+- Logging utilities redact sensitive values where possible.
+- Demo mode and fixtures contain no real tokens or credentials.
 
 ## Audit Trail
 

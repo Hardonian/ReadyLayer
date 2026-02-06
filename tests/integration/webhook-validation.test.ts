@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GitHubWebhookEventSchema } from '../../app/api/webhooks/github/route';
+import { gitHubWebhookEventSchema } from '../../lib/contracts/github-webhook';
 import { GitLabWebhookEventSchema } from '../../app/api/webhooks/gitlab/route';
 import { StripeEventSchema } from '../../app/api/webhooks/stripe/route';
 import { BlockedPRNotificationSchema } from '../../app/api/webhooks/slack/blocked-pr/route';
@@ -7,7 +7,7 @@ import { SlackEventPayloadSchema } from '../../integrations/slack/events/route';
 
 describe('Webhook Validation Schemas', () => {
   it('accepts a minimal GitHub webhook payload', () => {
-    const result = GitHubWebhookEventSchema.safeParse({
+    const result = gitHubWebhookEventSchema.safeParse({
       action: 'opened',
       repository: { full_name: 'org/repo' },
       pull_request: {
