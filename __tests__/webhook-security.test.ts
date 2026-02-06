@@ -9,7 +9,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { PrismaClient } from '../lib/prisma';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const prismaModule = require('../lib/prisma');
 import {
   webhookReplayProtection,
   validateWebhookTimestamp,
