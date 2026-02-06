@@ -2,17 +2,33 @@
  * Webhook Security Tests
  *
  * Tests for webhook security hardening:
+ * - Signature verification with timing-safe comparison
+ * - Idempotency service
  * - Replay protection validation
  * - Rate limiting enforcement
- * - Signature verification
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   webhookReplayProtection,
   validateWebhookTimestamp,
   validateWebhookNonce,
 } from '../lib/security/webhook-replay';
+import { secureCompare, verifyHmacSignature, generateHmacSignature, validateWebhookSecret } from '../lib/security/webhook-signature';
+import { webhookIdempotencyService } from '../lib/webhook-idempotency';
+
+// Mock Prisma
+vi.mock('../lib/prisma', () => ({
+  prisma: {
+    webhookEvent: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
+      count: vi.fn(),
+    },
+  },
+}));
 
 describe('Webhook Replay Protection', () => {
   const TEST_PROVIDER = 'test-github';
@@ -264,6 +280,324 @@ describe('Webhook Rate Limiting Integration', () => {
       expect(result.allowed).toBe(true);
       expect(result.remaining).toBeGreaterThanOrEqual(0);
       expect(result.resetAt).toBeGreaterThan(Date.now());
+    });
+  });
+});
+
+describe('Webhook Signature Security', () => {
+  const TEST_PAYLOAD = '{"action": "opened", "pull_request": {"number": 1}}';
+  const TEST_SECRET = 'test_webhook_secret_12345';
+
+  describe('secureCompare', () => {
+    it('should return true for identical strings', () => {
+      expect(secureCompare('test', 'test')).toBe(true);
+    });
+
+    it('should return false for different strings', () => {
+      expect(secureCompare('test', 'TEST')).toBe(false);
+    });
+
+    it('should return false for different length strings', () => {
+      expect(secureCompare('test', 'testing')).toBe(false);
+    });
+
+    it('should handle empty strings', () => {
+      expect(secureCompare('', '')).toBe(true);
+      expect(secureCompare('test', '')).toBe(false);
+    });
+
+    it('should handle non-string inputs', () => {
+      expect(secureCompare(null as unknown as string, 'test')).toBe(false);
+      expect(secureCompare('test', undefined as unknown as string)).toBe(false);
+    });
+
+    it('should handle long strings', () => {
+      const long1 = 'a'.repeat(10000);
+      const long2 = 'a'.repeat(10000);
+      const long3 = 'b'.repeat(10000);
+
+      expect(secureCompare(long1, long2)).toBe(true);
+      expect(secureCompare(long1, long3)).toBe(false);
+    });
+  });
+
+  describe('verifyHmacSignature', () => {
+    it('should verify valid signature with prefix', () => {
+      const signature = generateHmacSignature(TEST_PAYLOAD, TEST_SECRET, 'sha256=');
+      expect(verifyHmacSignature(TEST_PAYLOAD, signature, TEST_SECRET, 'sha256=')).toBe(true);
+    });
+
+    it('should verify valid signature without prefix', () => {
+      const signature = generateHmacSignature(TEST_PAYLOAD, TEST_SECRET, '');
+      expect(verifyHmacSignature(TEST_PAYLOAD, signature, TEST_SECRET, '')).toBe(true);
+    });
+
+    it('should reject invalid signature', () => {
+      const invalidSignature = 'sha256=invalid_signature_that_does_not_match';
+      expect(verifyHmacSignature(TEST_PAYLOAD, invalidSignature, TEST_SECRET, 'sha256=')).toBe(false);
+    });
+
+    it('should reject signature from different secret', () => {
+      const signature = generateHmacSignature(TEST_PAYLOAD, 'different_secret', 'sha256=');
+      expect(verifyHmacSignature(TEST_PAYLOAD, signature, TEST_SECRET, 'sha256=')).toBe(false);
+    });
+
+    it('should reject signature for modified payload', () => {
+      const signature = generateHmacSignature(TEST_PAYLOAD, TEST_SECRET, 'sha256=');
+      const modifiedPayload = '{"action": "closed"}';
+      expect(verifyHmacSignature(modifiedPayload, signature, TEST_SECRET, 'sha256=')).toBe(false);
+    });
+
+    it('should reject empty inputs', () => {
+      expect(verifyHmacSignature('', 'sig', 'secret')).toBe(false);
+      expect(verifyHmacSignature('payload', '', 'secret')).toBe(false);
+      expect(verifyHmacSignature('payload', 'sig', '')).toBe(false);
+    });
+  });
+
+  describe('generateHmacSignature', () => {
+    it('should generate consistent signature', () => {
+      const sig1 = generateHmacSignature(TEST_PAYLOAD, TEST_SECRET);
+      const sig2 = generateHmacSignature(TEST_PAYLOAD, TEST_SECRET);
+      expect(sig1).toBe(sig2);
+    });
+
+    it('should generate different signatures for different payloads', () => {
+      const sig1 = generateHmacSignature('payload1', TEST_SECRET);
+      const sig2 = generateHmacSignature('payload2', TEST_SECRET);
+      expect(sig1).not.toBe(sig2);
+    });
+
+    it('should generate different signatures for different secrets', () => {
+      const sig1 = generateHmacSignature(TEST_PAYLOAD, 'secret1');
+      const sig2 = generateHmacSignature(TEST_PAYLOAD, 'secret2');
+      expect(sig1).not.toBe(sig2);
+    });
+
+    it('should generate 64-character hex digest', () => {
+      const signature = generateHmacSignature(TEST_PAYLOAD, TEST_SECRET, '');
+      expect(signature.length).toBe(64);
+      expect(/^[a-f0-9]+$/.test(signature)).toBe(true);
+    });
+  });
+
+  describe('validateWebhookSecret', () => {
+    it('should accept valid secrets', () => {
+      expect(validateWebhookSecret('a'.repeat(16))).toBe(true);
+      expect(validateWebhookSecret('complex_Secret!123')).toBe(true);
+    });
+
+    it('should reject short secrets', () => {
+      expect(validateWebhookSecret('short')).toBe(false);
+      expect(validateWebhookSecret('123456789012345')).toBe(false);
+    });
+
+    it('should reject empty or null', () => {
+      expect(validateWebhookSecret('')).toBe(false);
+      expect(validateWebhookSecret(null as unknown as string)).toBe(false);
+    });
+
+    it('should reject known weak secrets', () => {
+      expect(validateWebhookSecret('webhook_secret')).toBe(false);
+      expect(validateWebhookSecret('test_secret')).toBe(false);
+    });
+  });
+});
+
+describe('Webhook Idempotency Service', () => {
+  const { prisma } = vi.mocked(require('../lib/prisma'));
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('processWebhook', () => {
+    const mockHandler = vi.fn().mockResolvedValue({ processed: true });
+
+    it('should process new webhook event', async () => {
+      prisma.webhookEvent.findUnique.mockResolvedValue(null);
+      prisma.webhookEvent.create.mockResolvedValue({
+        id: 'event_1',
+        eventId: 'evt_123',
+        status: 'pending',
+      });
+      prisma.webhookEvent.update.mockResolvedValue({});
+
+      const result = await webhookIdempotencyService.processWebhook({
+        eventId: 'evt_123',
+        provider: 'github',
+        eventType: 'pull_request',
+        installationId: 'inst_456',
+        handler: mockHandler,
+      });
+
+      expect(result.isDuplicate).toBe(false);
+      expect(result.status).toBe('completed');
+      expect(result.result).toEqual({ processed: true });
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return duplicate result for already completed event', async () => {
+      prisma.webhookEvent.findUnique.mockResolvedValue({
+        id: 'event_1',
+        eventId: 'evt_123',
+        status: 'completed',
+        result: { previous: 'result' },
+      });
+
+      const result = await webhookIdempotencyService.processWebhook({
+        eventId: 'evt_123',
+        provider: 'github',
+        eventType: 'pull_request',
+        installationId: 'inst_456',
+        handler: mockHandler,
+      });
+
+      expect(result.isDuplicate).toBe(true);
+      expect(result.status).toBe('duplicate');
+      expect(result.result).toEqual({ previous: 'result' });
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
+
+    it('should allow retry for failed event', async () => {
+      prisma.webhookEvent.findUnique.mockResolvedValue({
+        id: 'event_1',
+        eventId: 'evt_123',
+        status: 'failed',
+        retryCount: 1,
+        error: 'Previous error',
+      });
+
+      const result = await webhookIdempotencyService.processWebhook({
+        eventId: 'evt_123',
+        provider: 'github',
+        eventType: 'pull_request',
+        installationId: 'inst_456',
+        handler: mockHandler,
+      });
+
+      expect(result.isDuplicate).toBe(false);
+      expect(result.status).toBe('pending');
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return error when handler fails', async () => {
+      prisma.webhookEvent.findUnique.mockResolvedValue(null);
+      prisma.webhookEvent.create.mockResolvedValue({
+        id: 'event_1',
+        eventId: 'evt_123',
+        status: 'pending',
+        retryCount: 0,
+      });
+      prisma.webhookEvent.update.mockResolvedValue({});
+
+      const errorHandler = vi.fn().mockRejectedValue(new Error('Processing failed'));
+
+      const result = await webhookIdempotencyService.processWebhook({
+        eventId: 'evt_123',
+        provider: 'github',
+        eventType: 'pull_request',
+        installationId: 'inst_456',
+        handler: errorHandler,
+      });
+
+      expect(result.isDuplicate).toBe(false);
+      expect(result.status).toBe('failed');
+      expect(result.error).toBe('Processing failed');
+    });
+  });
+
+  describe('isAlreadyProcessed', () => {
+    it('should return true for completed events', async () => {
+      prisma.webhookEvent.findUnique.mockResolvedValue({
+        eventId: 'evt_123',
+        status: 'completed',
+      });
+
+      const result = await webhookIdempotencyService.isAlreadyProcessed('evt_123');
+      expect(result).toBe(true);
+    });
+
+    it('should return false for pending events', async () => {
+      prisma.webhookEvent.findUnique.mockResolvedValue({
+        eventId: 'evt_123',
+        status: 'pending',
+      });
+
+      const result = await webhookIdempotencyService.isAlreadyProcessed('evt_123');
+      expect(result).toBe(false);
+    });
+
+    it('should return false for non-existent events', async () => {
+      prisma.webhookEvent.findUnique.mockResolvedValue(null);
+
+      const result = await webhookIdempotencyService.isAlreadyProcessed('evt_nonexistent');
+      expect(result).toBe(false);
+    });
+  });
+});
+
+describe('Webhook Handler Integration Tests', () => {
+  describe('GitHub Handler', () => {
+    const { githubWebhookHandler } = require('../integrations/github/webhook');
+
+    it('should validate correct signature', () => {
+      const payload = '{"action": "opened"}';
+      const secret = 'test_secret_key_12345';
+      const signature = generateHmacSignature(payload, secret, 'sha256=');
+
+      expect(githubWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
+    });
+
+    it('should reject incorrect signature', () => {
+      const payload = '{"action": "opened"}';
+      const result = githubWebhookHandler.validateSignature(payload, 'sha256=wrong', 'some_secret');
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('GitLab Handler', () => {
+    const { gitlabWebhookHandler } = require('../integrations/gitlab/webhook');
+
+    it('should validate correct token', () => {
+      expect(gitlabWebhookHandler.validateToken('payload', 'valid_token', 'valid_token')).toBe(true);
+    });
+
+    it('should reject incorrect token', () => {
+      expect(gitlabWebhookHandler.validateToken('payload', 'wrong_token', 'correct_token')).toBe(false);
+    });
+
+    it('should handle different length tokens', () => {
+      expect(gitlabWebhookHandler.validateToken('payload', 'short', 'much_longer_token')).toBe(false);
+    });
+  });
+
+  describe('Bitbucket Handler', () => {
+    const { bitbucketWebhookHandler } = require('../integrations/bitbucket/webhook');
+
+    it('should validate correct signature with prefix', () => {
+      const payload = '{"eventKey": "pullrequest:created"}';
+      const secret = 'test_secret_key_12345';
+      const signature = generateHmacSignature(payload, secret, '');
+
+      expect(bitbucketWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
+    });
+
+    it('should validate correct signature without prefix', () => {
+      const payload = '{"eventKey": "pullrequest:created"}';
+      const secret = 'test_secret_key_12345';
+      const signature = generateHmacSignature(payload, secret, 'sha256=');
+
+      expect(bitbucketWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
+    });
+
+    it('should reject incorrect signature', () => {
+      const result = bitbucketWebhookHandler.validateSignature(
+        '{"eventKey": "created"}',
+        'wrong_signature',
+        'some_secret'
+      );
+      expect(result).toBe(false);
     });
   });
 });
