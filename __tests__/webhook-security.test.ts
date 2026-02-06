@@ -567,15 +567,15 @@ describe('Webhook Handler Integration Tests', () => {
       expect(gitlabWebhookHandler.validateToken('payload', 'wrong_token', 'correct_token')).toBe(false);
     });
 
-    it('should handle different length tokens', () => {
+    it('should handle different length tokens', async () => {
+      const { gitlabWebhookHandler } = await import('../integrations/gitlab/webhook');
       expect(gitlabWebhookHandler.validateToken('payload', 'short', 'much_longer_token')).toBe(false);
     });
   });
 
   describe('Bitbucket Handler', () => {
-    const { bitbucketWebhookHandler } = require('../integrations/bitbucket/webhook');
-
-    it('should validate correct signature with prefix', () => {
+    it('should validate correct signature with prefix', async () => {
+      const { bitbucketWebhookHandler } = await import('../integrations/bitbucket/webhook');
       const payload = '{"eventKey": "pullrequest:created"}';
       const secret = 'test_secret_key_12345';
       const signature = generateHmacSignature(payload, secret, '');
@@ -583,7 +583,8 @@ describe('Webhook Handler Integration Tests', () => {
       expect(bitbucketWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
     });
 
-    it('should validate correct signature without prefix', () => {
+    it('should validate correct signature without prefix', async () => {
+      const { bitbucketWebhookHandler } = await import('../integrations/bitbucket/webhook');
       const payload = '{"eventKey": "pullrequest:created"}';
       const secret = 'test_secret_key_12345';
       const signature = generateHmacSignature(payload, secret, 'sha256=');
@@ -591,7 +592,8 @@ describe('Webhook Handler Integration Tests', () => {
       expect(bitbucketWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
     });
 
-    it('should reject incorrect signature', () => {
+    it('should reject incorrect signature', async () => {
+      const { bitbucketWebhookHandler } = await import('../integrations/bitbucket/webhook');
       const result = bitbucketWebhookHandler.validateSignature(
         '{"eventKey": "created"}',
         'wrong_signature',
