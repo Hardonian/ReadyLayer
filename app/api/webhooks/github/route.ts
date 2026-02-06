@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { githubWebhookHandler, GitHubWebhookEvent } from '../../../../integrations/github/webhook';
+import { webhookReplayProtection, validateWebhookTimestamp, validateWebhookNonce } from '../../../../lib/security/webhook-replay';
+import { checkRateLimit, RateLimitConfig } from '../../../../lib/rate-limiting/redis-rate-limiter';
 import { logger } from '../../../../observability/logging';
 import { metrics } from '../../../../observability/metrics';
-import { UsageLimitExceededError } from '../../../../lib/usage-enforcement';
-import { checkWebhookRateLimit, createWebhookRateLimitHeaders } from '../../../../lib/rate-limiting/webhook-limiter';
 import { z } from 'zod';
 
-// Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
 
 export const GitHubWebhookEventSchema = z.object({
@@ -41,19 +40,23 @@ export const GitHubWebhookEventSchema = z.object({
     .optional(),
 }).passthrough();
 
-/**
- * POST /api/webhooks/github
- * Handle GitHub webhooks
- * Requires Node runtime for signature verification
- */
+const WEBHOOK_RATE_LIMIT: RateLimitConfig = {
+  windowMs: 60000,
+  maxRequests: 100,
+};
+
+const GITHUB_WEBHOOK_PROVIDER = 'github';
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
+  const log = logger.child({ requestId, handler: 'webhook-github' });
 
   try {
     const signature = request.headers.get('x-hub-signature-256') || '';
     const eventType = request.headers.get('x-github-event') || '';
     const installationId = request.headers.get('x-github-installation-id') || '';
+    const timestamp = request.headers.get('x-hub-signature-256-timestamp') || '';
+    const nonce = request.headers.get('x-hub-signature-256-nonce') || '';
 
     if (!signature || !eventType || !installationId) {
       return NextResponse.json(
@@ -64,6 +67,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           },
         },
         { status: 400 }
+      );
+    }
+
+    const rateLimitResult = await checkRateLimit(
+      `webhook:${installationId}`,
+      WEBHOOK_RATE_LIMIT
+    );
+
+    if (!rateLimitResult.allowed) {
+      metrics.increment('webhooks.rate_limited', { provider: GITHUB_WEBHOOK_PROVIDER });
+      return NextResponse.json(
+        {
+          error: {
+            code: 'RATE_LIMIT_EXCEEDED',
+            message: 'Too many webhook requests. Please try again later.',
+            resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+          },
+        },
+        { status: 429 }
       );
     }
 
@@ -113,55 +135,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
     }
-    const eventData = parsed.data as GitHubWebhookEvent;
 
-    log.info({
-      eventType,
-      installationId,
-      action: eventData.action,
-    }, 'Received GitHub webhook');
+    if (timestamp && nonce) {
+      try {
+        const ts = validateWebhookTimestamp(timestamp);
+        const validatedNonce = validateWebhookNonce(nonce);
 
-    // Handle event (pass raw payload for signature verification)
-    await githubWebhookHandler.handleEvent(eventData, installationId, signature, payload);
+        const isReplay = await webhookReplayProtection.isReplay(
+          GITHUB_WEBHOOK_PROVIDER,
+          signature,
+          ts,
+          validatedNonce
+        );
 
-    metrics.increment('webhooks.received', { provider: 'github', event: eventType });
-
-    return NextResponse.json({ received: true }, { status: 200 });
-  } catch (error) {
-    log.error(error, 'Webhook handling failed');
-    metrics.increment('webhooks.failed', { provider: 'github' });
-
-    // Handle usage limit errors with proper status codes
-    if (error instanceof UsageLimitExceededError) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'USAGE_LIMIT_EXCEEDED',
-            message: error.message,
-            limitType: error.limitType,
-            current: error.current,
-            limit: error.limit,
-            remaining: error.limit - error.current,
-          },
-        },
-        { status: error.httpStatus }
-      );
-    }
-
-    // Sanitize error message to prevent information disclosure
-    // Internal details are logged but not exposed to caller
-    return NextResponse.json(
-      {
-        error: {
-          code: 'WEBHOOK_FAILED',
-          message: 'Webhook processing failed. Please check webhook configuration and try again.',
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
-idation');
+        if (isReplay) {
+          log.warn({ eventType, installationId }, 'Webhook replay detected');
+          metrics.increment('webhooks.replay_detected', { provider: GITHUB_WEBHOOK_PROVIDER });
+          return NextResponse.json(
+            {
+              error: {
+                code: 'REPLAY_DETECTED',
+                message: 'Webhook request is a replay of a previously seen request',
+              },
+            },
+            { status: 400 }
+          );
+        }
+      } catch {
+        log.warn({}, 'Failed to validate timestamp/nonce, proceeding with signature-only validation');
       }
     }
 
