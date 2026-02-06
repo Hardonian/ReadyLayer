@@ -405,6 +405,7 @@ describe('Webhook Signature Security', () => {
 });
 
 describe('Webhook Idempotency Service', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { prisma } = vi.mocked(require('../lib/prisma'));
 
   beforeEach(() => {
