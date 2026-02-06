@@ -60,8 +60,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const body = await request.json().catch(() => ({}));
-    const { checkIds } = body as { checkIds?: string[] };
+    let checkIds: string[] | undefined;
+    try {
+      const body = await request.json();
+      checkIds = body?.checkIds;
+    } catch {
+      checkIds = undefined;
+    }
 
     const fullResult = await demoPipelineService.executeFullPipeline();
 
