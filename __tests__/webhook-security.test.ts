@@ -9,8 +9,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const prismaModule = require('../lib/prisma');
 import {
   webhookReplayProtection,
   validateWebhookTimestamp,
@@ -19,42 +17,20 @@ import {
 import { secureCompare, verifyHmacSignature, generateHmacSignature, validateWebhookSecret } from '../lib/security/webhook-signature';
 import { webhookIdempotencyService } from '../lib/webhook-idempotency';
 
-// Mock Prisma
-vi.mock('../lib/prisma', () => ({
-  prisma: {
-    webhookEvent: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      deleteMany: vi.fn(),
-      count: vi.fn(),
-    },
-  },
-}));
-
-// Get typed access to the mocked prisma
-type MockedPrisma = {
+// Mock Prisma - must be before imports that use mockPrisma
+const mockPrisma = {
   webhookEvent: {
-    findUnique: ReturnType<typeof vi.fn>;
-    create: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
-    deleteMany: ReturnType<typeof vi.fn>;
-    count: ReturnType<typeof vi.fn>;
-  };
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    deleteMany: vi.fn(),
+    count: vi.fn(),
+  },
 };
 
-// Helper to get mocked prisma in tests
-function getMockedPrisma(): MockedPrisma {
-  return {
-    webhookEvent: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      deleteMany: vi.fn(),
-      count: vi.fn(),
-    },
-  };
-}
+vi.mock('../lib/mockPrisma', () => ({
+  mockPrisma: mockPrisma,
+}));
 
 describe('Webhook Replay Protection', () => {
   const TEST_PROVIDER = 'test-github';
@@ -431,9 +407,6 @@ describe('Webhook Signature Security', () => {
 });
 
 describe('Webhook Idempotency Service', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { prisma } = vi.mocked(require('../lib/prisma'));
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -442,13 +415,13 @@ describe('Webhook Idempotency Service', () => {
     const mockHandler = vi.fn().mockResolvedValue({ processed: true });
 
     it('should process new webhook event', async () => {
-      prisma.webhookEvent.findUnique.mockResolvedValue(null);
-      prisma.webhookEvent.create.mockResolvedValue({
+      mockPrisma.webhookEvent.findUnique.mockResolvedValue(null);
+      mockPrisma.webhookEvent.create.mockResolvedValue({
         id: 'event_1',
         eventId: 'evt_123',
         status: 'pending',
       });
-      prisma.webhookEvent.update.mockResolvedValue({});
+      mockPrisma.webhookEvent.update.mockResolvedValue({});
 
       const result = await webhookIdempotencyService.processWebhook({
         eventId: 'evt_123',
@@ -465,7 +438,7 @@ describe('Webhook Idempotency Service', () => {
     });
 
     it('should return duplicate result for already completed event', async () => {
-      prisma.webhookEvent.findUnique.mockResolvedValue({
+      mockPrisma.webhookEvent.findUnique.mockResolvedValue({
         id: 'event_1',
         eventId: 'evt_123',
         status: 'completed',
@@ -487,7 +460,7 @@ describe('Webhook Idempotency Service', () => {
     });
 
     it('should allow retry for failed event', async () => {
-      prisma.webhookEvent.findUnique.mockResolvedValue({
+      mockPrisma.webhookEvent.findUnique.mockResolvedValue({
         id: 'event_1',
         eventId: 'evt_123',
         status: 'failed',
@@ -509,14 +482,14 @@ describe('Webhook Idempotency Service', () => {
     });
 
     it('should return error when handler fails', async () => {
-      prisma.webhookEvent.findUnique.mockResolvedValue(null);
-      prisma.webhookEvent.create.mockResolvedValue({
+      mockPrisma.webhookEvent.findUnique.mockResolvedValue(null);
+      mockPrisma.webhookEvent.create.mockResolvedValue({
         id: 'event_1',
         eventId: 'evt_123',
         status: 'pending',
         retryCount: 0,
       });
-      prisma.webhookEvent.update.mockResolvedValue({});
+      mockPrisma.webhookEvent.update.mockResolvedValue({});
 
       const errorHandler = vi.fn().mockRejectedValue(new Error('Processing failed'));
 
@@ -536,7 +509,7 @@ describe('Webhook Idempotency Service', () => {
 
   describe('isAlreadyProcessed', () => {
     it('should return true for completed events', async () => {
-      prisma.webhookEvent.findUnique.mockResolvedValue({
+      mockPrisma.webhookEvent.findUnique.mockResolvedValue({
         eventId: 'evt_123',
         status: 'completed',
       });
@@ -546,7 +519,7 @@ describe('Webhook Idempotency Service', () => {
     });
 
     it('should return false for pending events', async () => {
-      prisma.webhookEvent.findUnique.mockResolvedValue({
+      mockPrisma.webhookEvent.findUnique.mockResolvedValue({
         eventId: 'evt_123',
         status: 'pending',
       });
@@ -556,7 +529,7 @@ describe('Webhook Idempotency Service', () => {
     });
 
     it('should return false for non-existent events', async () => {
-      prisma.webhookEvent.findUnique.mockResolvedValue(null);
+      mockPrisma.webhookEvent.findUnique.mockResolvedValue(null);
 
       const result = await webhookIdempotencyService.isAlreadyProcessed('evt_nonexistent');
       expect(result).toBe(false);
@@ -566,9 +539,8 @@ describe('Webhook Idempotency Service', () => {
 
 describe('Webhook Handler Integration Tests', () => {
   describe('GitHub Handler', () => {
-    const { githubWebhookHandler } = require('../integrations/github/webhook');
-
-    it('should validate correct signature', () => {
+    it('should validate correct signature', async () => {
+      const { githubWebhookHandler } = await import('../integrations/github/webhook');
       const payload = '{"action": "opened"}';
       const secret = 'test_secret_key_12345';
       const signature = generateHmacSignature(payload, secret, 'sha256=');
@@ -576,7 +548,8 @@ describe('Webhook Handler Integration Tests', () => {
       expect(githubWebhookHandler.validateSignature(payload, signature, secret)).toBe(true);
     });
 
-    it('should reject incorrect signature', () => {
+    it('should reject incorrect signature', async () => {
+      const { githubWebhookHandler } = await import('../integrations/github/webhook');
       const payload = '{"action": "opened"}';
       const result = githubWebhookHandler.validateSignature(payload, 'sha256=wrong', 'some_secret');
       expect(result).toBe(false);
@@ -584,13 +557,13 @@ describe('Webhook Handler Integration Tests', () => {
   });
 
   describe('GitLab Handler', () => {
-    const { gitlabWebhookHandler } = require('../integrations/gitlab/webhook');
-
-    it('should validate correct token', () => {
+    it('should validate correct token', async () => {
+      const { gitlabWebhookHandler } = await import('../integrations/gitlab/webhook');
       expect(gitlabWebhookHandler.validateToken('payload', 'valid_token', 'valid_token')).toBe(true);
     });
 
-    it('should reject incorrect token', () => {
+    it('should reject incorrect token', async () => {
+      const { gitlabWebhookHandler } = await import('../integrations/gitlab/webhook');
       expect(gitlabWebhookHandler.validateToken('payload', 'wrong_token', 'correct_token')).toBe(false);
     });
 
