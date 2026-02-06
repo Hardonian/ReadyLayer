@@ -32,6 +32,30 @@ vi.mock('../lib/prisma', () => ({
   },
 }));
 
+// Get typed access to the mocked prisma
+type MockedPrisma = {
+  webhookEvent: {
+    findUnique: ReturnType<typeof vi.fn>;
+    create: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    deleteMany: ReturnType<typeof vi.fn>;
+    count: ReturnType<typeof vi.fn>;
+  };
+};
+
+// Helper to get mocked prisma in tests
+function getMockedPrisma(): MockedPrisma {
+  return {
+    webhookEvent: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
+      count: vi.fn(),
+    },
+  };
+}
+
 describe('Webhook Replay Protection', () => {
   const TEST_PROVIDER = 'test-github';
   const TEST_SIGNATURE = 'sha256=test_signature_1234567890abcdef';
