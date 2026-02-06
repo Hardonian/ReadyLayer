@@ -268,13 +268,13 @@ export class TenantScopedReviewSignalRepository extends TenantScopedRepository<a
   }
 }
 
-export class TenantScopedReadinessScoreSnapshotRepository extends TenantScopedRepository<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
+export class TenantScopedReadinessScoreSnapshotRepository extends TenantScopedRepository<any> {
   constructor(tenantContext: TenantContext) {
     super('readinessScoreSnapshot', tenantContext);
   }
 }
 
-export class TenantScopedAIRiskExposureIndexRepository extends TenantScopedRepository<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
+export class TenantScopedAIRiskExposureIndexRepository extends TenantScopedRepository<any> {
   constructor(tenantContext: TenantContext) {
     super('aiRiskExposureIndex', tenantContext);
   }
@@ -283,7 +283,7 @@ export class TenantScopedAIRiskExposureIndexRepository extends TenantScopedRepos
 /**
  * Factory for creating tenant-scoped repositories
  */
-export function createScopedRepository( // eslint-disable-line @typescript-eslint/no-explicit-any
+export function createScopedRepository(
   model: TenantedModel,
   tenantContext: TenantContext
 ): TenantScopedRepository<any> {
