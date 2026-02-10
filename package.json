@@ -69,7 +69,9 @@
     "jobforge:smoke": "tsx scripts/jobforge-smoke-test.ts",
     "runner:artifact-metrics": "node tools/ready-layer-runner/scripts/runner-artifact-metrics.mjs",
     "db:jobforge:migrate": "psql \"$DATABASE_URL\" -f supabase/migrations/20260131000000_jobforge_core.sql",
-    "verify:docs": "node scripts/verify-docs.mjs"
+    "verify:docs": "node scripts/verify-docs.mjs",
+    "bench:cli:hot-path": "tsx scripts/bench-cli-hot-path.ts",
+    "mcp:smoke": "tsx scripts/mcp-smoke.ts"
   },
   "overrides": {
     "glob": "^10.5.0"

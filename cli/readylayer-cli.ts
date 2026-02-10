@@ -14,13 +14,34 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import { createConsoleAdapter, createLogger } from '../lib/cli/logger';
-import { getJobForgeAdapter } from '../lib/jobforge/adapter';
-import { redactSecrets } from '../lib/secrets/redaction';
+import { performance } from 'perf_hooks';
 
 const program = new Command();
-const log = createLogger('cli');
-const console = createConsoleAdapter(log);
+const cliStart = performance.now();
+
+let redactorPromise: Promise<typeof import('../lib/secrets/redaction')> | null = null;
+
+function cliLog(message: string): void {
+  process.stdout.write(`${message}\n`);
+}
+
+function cliError(message: string): void {
+  process.stderr.write(`${message}\n`);
+}
+
+async function getRedactor(): Promise<typeof import('../lib/secrets/redaction')> {
+  redactorPromise ??= import('../lib/secrets/redaction');
+  return redactorPromise;
+}
+
+function emitPerf(label: string): void {
+  if (process.env.READYLAYER_CLI_PERF !== '1') {
+    return;
+  }
+
+  const elapsed = (performance.now() - cliStart).toFixed(2);
+  process.stderr.write(`[perf] ${label} ${elapsed}ms\n`);
+}
 
 interface LLMProvider {
   name: string;
@@ -41,6 +62,12 @@ interface JobForgeCommandOptions {
   project: string;
 }
 
+async function getJobForgeAdapterLazy(): Promise<import('../lib/jobforge/adapter').JobForgeAdapter> {
+  const { getJobForgeAdapter } = await import('../lib/jobforge/adapter');
+  return getJobForgeAdapter();
+}
+
+
 function parseJsonArgument(value?: string): Record<string, unknown> {
   if (!value) return {};
   const parsed = JSON.parse(value) as unknown;
@@ -50,8 +77,9 @@ function parseJsonArgument(value?: string): Record<string, unknown> {
   return parsed as Record<string, unknown>;
 }
 
-function safeCliError(error: unknown): string {
+async function safeCliError(error: unknown): Promise<string> {
   const message = error instanceof Error ? error.message : String(error);
+  const { redactSecrets } = await getRedactor();
   return redactSecrets(message, { logDetections: false }).redacted;
 }
 
@@ -89,13 +117,13 @@ async function reviewFile(filePath: string, options: ReviewOptions): Promise<voi
   
   if (!config.apiKey) {
      
-    console.error('Error: READYLAYER_API_KEY not set. Set it in .readylayer.json or environment.');
+    cliError('Error: READYLAYER_API_KEY not set. Set it in .readylayer.json or environment.');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
      
-    console.error(`Error: File not found: ${filePath}`);
+    cliError(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
 
@@ -104,11 +132,11 @@ async function reviewFile(filePath: string, options: ReviewOptions): Promise<voi
 
   if (!repositoryId) {
      
-    console.error('Error: Repository ID required. Use --repository or set in .readylayer.json');
+    cliError('Error: Repository ID required. Use --repository or set in .readylayer.json');
     process.exit(1);
   }
 
-  console.log(`Reviewing ${filePath}...`);
+  cliLog(`Reviewing ${filePath}...`);
 
   try {
     const response = await fetch(`${config.apiUrl}/api/v1/reviews`, {
@@ -129,7 +157,7 @@ async function reviewFile(filePath: string, options: ReviewOptions): Promise<voi
        
       const error = await response.json() as { error?: { message?: string } };
        
-      console.error(`Error: ${error.error?.message ?? response.statusText}`);
+      cliError(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
@@ -149,30 +177,30 @@ async function reviewFile(filePath: string, options: ReviewOptions): Promise<voi
         isBlocked?: boolean;
       };
     };
-    console.log('\nReview Results:');
-    console.log(`Status: ${result.data?.status ?? 'unknown'}`);
-    console.log(`Issues Found: ${result.data?.issuesCount ?? 0}`);
+    cliLog('\nReview Results:');
+    cliLog(`Status: ${result.data?.status ?? 'unknown'}`);
+    cliLog(`Issues Found: ${result.data?.issuesCount ?? 0}`);
     
     if (result.data?.issues && result.data.issues.length > 0) {
-      console.log('\nIssues:');
+      cliLog('\nIssues:');
       result.data.issues.forEach((issue, index) => {
-        console.log(`\n${index + 1}. ${issue.severity.toUpperCase()}: ${issue.ruleId}`);
-        console.log(`   File: ${issue.file}:${issue.line}`);
-        console.log(`   Message: ${issue.message}`);
+        cliLog(`\n${index + 1}. ${issue.severity.toUpperCase()}: ${issue.ruleId}`);
+        cliLog(`   File: ${issue.file}:${issue.line}`);
+        cliLog(`   Message: ${issue.message}`);
         if (issue.fix) {
-          console.log(`   Fix: ${issue.fix}`);
+          cliLog(`   Fix: ${issue.fix}`);
         }
       });
     }
 
     if (result.data?.isBlocked) {
-      console.log('\n⚠️  PR would be blocked due to policy violations');
+      cliLog('\n⚠️  PR would be blocked due to policy violations');
       process.exit(1);
     } else {
-      console.log('\n✅ Review passed');
+      cliLog('\n✅ Review passed');
     }
   } catch (error) {
-    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    cliError(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
   }
 }
@@ -189,13 +217,13 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
   
   if (!config.apiKey) {
      
-    console.error('Error: READYLAYER_API_KEY not set');
+    cliError('Error: READYLAYER_API_KEY not set');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
      
-    console.error(`Error: File not found: ${filePath}`);
+    cliError(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
 
@@ -204,11 +232,11 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
 
   if (!repositoryId) {
      
-    console.error('Error: Repository ID required');
+    cliError('Error: Repository ID required');
     process.exit(1);
   }
 
-  console.log(`Generating tests for ${filePath}...`);
+  cliLog(`Generating tests for ${filePath}...`);
 
   try {
     const response = await fetch(`${config.apiUrl}/api/v1/test/generate`, {
@@ -229,7 +257,7 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
        
       const error = await response.json() as { error?: { message?: string } };
        
-      console.error(`Error: ${error.error?.message ?? response.statusText}`);
+      cliError(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
@@ -245,14 +273,14 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
     if (result.data?.testContent) {
       const outputPath = options.output ?? result.data.placement ?? `${filePath}.test.ts`;
       fs.writeFileSync(outputPath, result.data.testContent);
-      console.log(`\n✅ Tests generated: ${outputPath}`);
-      console.log(`Framework: ${result.data.framework ?? 'unknown'}`);
-      console.log(`Placement: ${result.data.placement ?? 'unknown'}`);
+      cliLog(`\n✅ Tests generated: ${outputPath}`);
+      cliLog(`Framework: ${result.data.framework ?? 'unknown'}`);
+      cliLog(`Placement: ${result.data.placement ?? 'unknown'}`);
     } else {
-      console.log('\n⚠️  No tests generated');
+      cliLog('\n⚠️  No tests generated');
     }
   } catch (error) {
-    console.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    cliError(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     process.exit(1);
   }
 }
@@ -262,7 +290,7 @@ function initConfig(): void {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   
   if (fs.existsSync(configPath)) {
-    console.log('.readylayer.json already exists');
+    cliLog('.readylayer.json already exists');
     return;
   }
 
@@ -322,7 +350,7 @@ function initConfig(): void {
 function finishConfig(config: ReadyLayerConfig, rl: readline.Interface): void {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-  console.log(`\n✅ Configuration saved to ${configPath}`);
+  cliLog(`\n✅ Configuration saved to ${configPath}`);
   rl.close();
 }
 
@@ -357,7 +385,7 @@ program
   .description('Show current configuration')
   .action(() => {
     const config = loadConfig();
-    console.log(JSON.stringify(config, null, 2));
+    cliLog(JSON.stringify(config, null, 2));
   });
 
 const jobforge = program
@@ -376,7 +404,7 @@ jobforge
   .option('--timeout-ms <ms>', 'Timeout in milliseconds', '10000')
   .action(async (options: JobForgeCommandOptions & { targetUrl: string; eventType: string; data?: string; secretRef?: string; timeoutMs?: string }) => {
     try {
-      const adapter = getJobForgeAdapter();
+      const adapter = await getJobForgeAdapterLazy();
       const result = await adapter.submitEvent({
         tenantId: options.tenant,
         projectId: options.project,
@@ -386,9 +414,9 @@ jobforge
         secretRef: options.secretRef,
         timeoutMs: options.timeoutMs ? Number(options.timeoutMs) : undefined,
       });
-      console.log(JSON.stringify(result, null, 2));
+      cliLog(JSON.stringify(result, null, 2));
     } catch (error) {
-      console.error(`Error: ${safeCliError(error)}`);
+      cliError(`Error: ${await safeCliError(error)}`);
       process.exit(1);
     }
   });
@@ -402,16 +430,16 @@ jobforge
   .option('--input <json>', 'Module input JSON', '{}')
   .action(async (options: JobForgeCommandOptions & { module: string; input?: string }) => {
     try {
-      const adapter = getJobForgeAdapter();
+      const adapter = await getJobForgeAdapterLazy();
       const result = await adapter.runModuleDryRun({
         tenantId: options.tenant,
         projectId: options.project,
         moduleName: options.module,
         input: parseJsonArgument(options.input),
       });
-      console.log(JSON.stringify(result, null, 2));
+      cliLog(JSON.stringify(result, null, 2));
     } catch (error) {
-      console.error(`Error: ${safeCliError(error)}`);
+      cliError(`Error: ${await safeCliError(error)}`);
       process.exit(1);
     }
   });
@@ -424,15 +452,15 @@ jobforge
   .requiredOption('--result-id <id>', 'JobForge result ID')
   .action(async (options: JobForgeCommandOptions & { resultId: string }) => {
     try {
-      const adapter = getJobForgeAdapter();
+      const adapter = await getJobForgeAdapterLazy();
       const result = await adapter.getReport({
         tenantId: options.tenant,
         projectId: options.project,
         resultId: options.resultId,
       });
-      console.log(JSON.stringify(result, null, 2));
+      cliLog(JSON.stringify(result, null, 2));
     } catch (error) {
-      console.error(`Error: ${safeCliError(error)}`);
+      cliError(`Error: ${await safeCliError(error)}`);
       process.exit(1);
     }
   });
@@ -448,7 +476,7 @@ jobforge
   .option('--execute', 'Execute the bundle (requires JOBFORGE_BUNDLE_EXECUTION_ENABLED=1)', false)
   .action(async (options: JobForgeCommandOptions & { bundleId: string; bundleType?: string; inputs?: string; execute?: boolean }) => {
     try {
-      const adapter = getJobForgeAdapter();
+      const adapter = await getJobForgeAdapterLazy();
       const result = await adapter.requestBundleExecution({
         tenantId: options.tenant,
         projectId: options.project,
@@ -457,9 +485,9 @@ jobforge
         inputs: parseJsonArgument(options.inputs),
         execute: Boolean(options.execute),
       });
-      console.log(JSON.stringify(result, null, 2));
+      cliLog(JSON.stringify(result, null, 2));
     } catch (error) {
-      console.error(`Error: ${safeCliError(error)}`);
+      cliError(`Error: ${await safeCliError(error)}`);
       process.exit(1);
     }
   });
@@ -471,7 +499,7 @@ program
   .command('install')
   .description('Install Cursor integration')
   .action(() => {
-    console.log('Installing Cursor integration...');
+    cliLog('Installing Cursor integration...');
     // Create Cursor config file
     const cursorConfig = {
       readyLayer: {
@@ -482,7 +510,7 @@ program
     const cursorConfigPath = path.join(process.cwd(), '.cursor', 'readylayer.json');
     fs.mkdirSync(path.dirname(cursorConfigPath), { recursive: true });
     fs.writeFileSync(cursorConfigPath, JSON.stringify(cursorConfig, null, 2));
-    console.log('✅ Cursor integration installed');
+    cliLog('✅ Cursor integration installed');
   });
 
 // Tabnine integration command
@@ -492,7 +520,7 @@ program
   .command('install')
   .description('Install Tabnine agent integration')
   .action(() => {
-    console.log('Installing Tabnine agent integration...');
+    cliLog('Installing Tabnine agent integration...');
     // Create Tabnine config
     const tabnineConfig = {
       readyLayer: {
@@ -504,7 +532,31 @@ program
     const tabnineConfigPath = path.join(process.cwd(), '.tabnine', 'readylayer.json');
     fs.mkdirSync(path.dirname(tabnineConfigPath), { recursive: true });
     fs.writeFileSync(tabnineConfigPath, JSON.stringify(tabnineConfig, null, 2));
-    console.log('✅ Tabnine agent integration installed');
+    cliLog('✅ Tabnine agent integration installed');
   });
 
+
+
+const mcp = program
+  .command('mcp')
+  .description('Model Context Protocol server and diagnostics');
+
+mcp
+  .command('serve')
+  .description('Start MCP server over stdio')
+  .action(async () => {
+    const { startMcpServer } = await import('../lib/mcp/server');
+    await startMcpServer();
+  });
+
+mcp
+  .command('ping')
+  .description('Quick MCP handshake smoke test')
+  .action(async () => {
+    const { runMcpPing } = await import('../lib/mcp/ping');
+    const result = await runMcpPing();
+    cliLog(JSON.stringify(result, null, 2));
+  });
+
+emitPerf('ready');
 program.parse(process.argv);
