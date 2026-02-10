@@ -264,6 +264,9 @@ export const GET = createRouteHandler(
               provider: true,
             },
           },
+          _count: {
+            select: { provenancePacks: true },
+          },
         },
       }),
       prisma.readyLayerRun.count({ where }),
@@ -313,6 +316,7 @@ export const GET = createRouteHandler(
         docSyncCompletedAt: r.docSyncCompletedAt,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
+        hasProvenance: r._count.provenancePacks > 0,
         repository: r.repository ? {
           id: r.repository.id,
           name: r.repository.name,

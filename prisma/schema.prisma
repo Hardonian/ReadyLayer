@@ -66,6 +66,7 @@ model Organization {
   oauthStates    OAuthState[]
   jobs          Job[]
   trustVerifications TrustVerification[]
+  provenancePacks ProvenancePack[]
 
   @@index([slug])
 }
@@ -118,6 +119,7 @@ model Repository {
   tokenUsage    TokenUsage[]
   runs          ReadyLayerRun[]
   governanceRuns GovernanceRun[]
+  provenancePacks ProvenancePack[]
 
   @@unique([fullName, provider])
   @@index([organizationId])
@@ -365,6 +367,7 @@ model ReadyLayerRun {
   
   auditLogs    AuditLog[]
   jobs         Job[]
+  provenancePacks ProvenancePack[]
 
   @@index([correlationId])
   @@index([repositoryId])
@@ -845,12 +848,67 @@ model DataRetentionPolicy {
   anonymizePII   Boolean  @default(true)
   allowAggregation Boolean @default(true)
   aggregationWindow Int   @default(30) // Days
+  provenanceRetentionDays Int @default(180)
+  provenanceMaxPayloadKB Int @default(512)
+  provenanceRedactionDefault String @default("safe")
+  provenanceAllowRawStorage Boolean @default(false)
+  provenanceEnabled Boolean @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+}
+
+
+
+model ProvenancePack {
+  id                String   @id @default(cuid())
+  organizationId    String
+  repositoryId      String?
+  runId             String?
+  prNumber          Int?
+  prSha             String?
+  correlationId     String?
+  source            String
+  sourceSystem      String
+  agent             Json
+  redactionLevel    String   @default("safe")
+  payloadEncrypted  Boolean  @default(false)
+  payload           Json
+  payloadHash       String
+  promptHashes      Json?
+  toolCallSummary   Json?
+  safeSummary       Json?
+  createdAt         DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  repository   Repository?  @relation(fields: [repositoryId], references: [id], onDelete: SetNull)
+  run          ReadyLayerRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+  artifacts    ProvenanceArtifact[]
+
+  @@index([organizationId, createdAt])
+  @@index([repositoryId, prNumber])
+  @@index([runId])
+  @@index([correlationId])
+  @@index([payloadHash])
+}
+
+model ProvenanceArtifact {
+  id               String   @id @default(cuid())
+  provenancePackId String
+  kind             String
+  mimeType         String
+  content          String?  @db.Text
+  jsonContent      Json?
+  contentHash      String
+  createdAt        DateTime @default(now())
+
+  provenancePack ProvenancePack @relation(fields: [provenancePackId], references: [id], onDelete: Cascade)
+
+  @@index([provenancePackId])
+  @@index([kind])
 }
 
 // User Consent (GDPR consent tracking)

@@ -8,7 +8,7 @@ import { parseJsonBody } from '../../../../lib/api-route-helpers';
 // P2-FIX: Use Zod schema for consistent validation (matches pattern in other routes)
 const createApiKeySchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
-  scopes: z.array(z.enum(['read', 'write', 'admin'])).min(1, 'At least one scope is required'),
+  scopes: z.array(z.enum(['read', 'write', 'admin', 'provenance:write'])).min(1, 'At least one scope is required'),
   expiresAt: z.string().datetime().optional(),
 });
 

@@ -46,6 +46,7 @@ interface Run {
   docSyncStatus: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped'
   aiTouchedDetected: boolean
   gatesPassed: boolean
+  hasProvenance?: boolean
   startedAt: string
   completedAt?: string
   repository?: {
@@ -428,6 +429,11 @@ export default function RunsPage(): React.JSX.Element {
                             {run.aiTouchedDetected && (
                               <span className="text-xs px-2 py-0.5 bg-accent-muted text-accent rounded">
                                 AI-touched detected
+                              </span>
+                            )}
+                            {run.hasProvenance && (
+                              <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded">
+                                Provenance
                               </span>
                             )}
                           </div>

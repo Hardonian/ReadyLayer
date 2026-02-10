@@ -41,6 +41,8 @@ ReadyLayer is designed to sit alongside your source control and CI/CD workflows:
 - CLI for review/test operations and JobForge administration (`cli/readylayer-cli.ts`).  
 - JobForge queue implementation and workers (`lib/jobforge`, `services/jobforge-worker`).  
 - Policy and SARIF helper scripts (`scripts/readylayer-*.mjs`).
+- AI Provenance Packs (internal + external) with hashed payloads, redaction controls, and pack-level drill-down views.
+- Deterministic evidence ZIP export that merges run/stage evidence, provenance artifacts, and policy checksums.
 
 ## Quick Start
 **Prerequisites:** Node.js 20, Postgres, Supabase project keys, and at least one LLM API key (OpenAI or Anthropic).

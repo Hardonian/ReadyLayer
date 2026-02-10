@@ -29,6 +29,7 @@ import { startHotPathTracker } from '../../observability/hot-path';
 import { createAuditLog, AuditActions } from '../../lib/audit';
 import { toJsonValue, toNullableJsonValue } from '../../lib/prisma-json';
 import { SimpleCache } from '../../lib/utils/memoization';
+import { ingestProvenance } from '../../lib/provenance-service';
 
 // Cache for AI-touched detection results (30 second TTL)
 const aiDetectionCache = new SimpleCache<{ files: Array<{ path: string; confidence: number; methods: string[] }>; timestamp: number }>(30000);
@@ -898,6 +899,39 @@ export class RunPipelineService {
         }
       }
 
+
+
+      if (request.repositoryId) {
+        const orgId = await this.getOrganizationId(request.repositoryId);
+        if (orgId) {
+          await ingestProvenance({
+            organizationId: orgId,
+            repositoryId: request.repositoryId,
+            runId: run.id,
+            correlationId,
+            prNumber: request.triggerMetadata?.prNumber,
+            prSha: request.triggerMetadata?.prSha,
+            source: 'internal',
+            sourceSystem: 'readylayer',
+            redactionLevel: 'safe',
+            agent: { name: 'readylayer-pipeline', version: '1.0.0', provider: 'internal' },
+            payload: {
+              metadata: {
+                aiTouchedDetected,
+                aiTouchedFiles,
+                stages: {
+                  reviewGuardStatus,
+                  testEngineStatus,
+                  docSyncStatus,
+                },
+              },
+              prompts: [],
+              transcript: '',
+              toolCalls: [],
+            },
+          });
+        }
+      }
       // Audit log
       try {
         await createAuditLog({
