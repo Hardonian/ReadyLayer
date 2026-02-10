@@ -246,6 +246,21 @@ export class ProviderStatusService {
       // Build annotations from issues
       const annotations = update.issues ? issuesToAnnotations(update.issues) : undefined;
 
+
+      let provenanceLine = '';
+      if (update.stage === 'complete') {
+        const latestPack = await prisma.provenancePack.findFirst({
+          where: { runId: update.runId },
+          orderBy: { createdAt: 'desc' },
+          select: { payloadHash: true },
+        });
+        if (latestPack) {
+          provenanceLine = `
+AI Provenance Pack: present (hash ${latestPack.payloadHash.slice(0, 16)}...) • ${runUrl}`;
+          checkRunSummary = `${checkRunSummary}${provenanceLine}`.slice(0, 65000);
+        }
+      }
+
       // Build check run details
       const checkRunDetails: CheckRunDetails = {
         name: checkRunName,
@@ -284,7 +299,7 @@ export class ProviderStatusService {
             {
               state: statusState,
               description: checkRunSummary.substring(0, 140), // GitHub limit
-              context: 'readylayer/review',
+              context: provenanceLine ? 'readylayer/provenance' : 'readylayer/review',
               targetUrl: runUrl,
             },
             installation.accessToken

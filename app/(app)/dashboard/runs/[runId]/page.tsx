@@ -126,6 +126,16 @@ interface RunDetails {
   artifacts?: Artifact[]
   auditLog?: AuditLogEntry[]
   providerLink?: string
+  hasProvenance?: boolean
+  provenancePacks?: Array<{
+    id: string
+    sourceSystem: string
+    source: string
+    redactionLevel: string
+    payloadHash: string
+    safeSummary?: { promptCount?: number; transcriptChars?: number; toolCalls?: number }
+    createdAt: string
+  }>
 }
 
 export default function RunDetailsPage(): React.JSX.Element {
@@ -587,6 +597,32 @@ export default function RunDetailsPage(): React.JSX.Element {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Provenance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {!run.provenancePacks || run.provenancePacks.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No provenance attached. Use the provenance ingest API to attach upstream agent context.</div>
+            ) : (
+              run.provenancePacks.map((pack) => (
+                <div key={pack.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">{pack.sourceSystem} • {pack.source}</div>
+                    <div className="text-xs text-muted-foreground">{new Date(pack.createdAt).toLocaleString()}</div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Redaction: {pack.redactionLevel} • Hash: {pack.payloadHash}</div>
+                  <div className="text-xs text-muted-foreground">Prompts: {pack.safeSummary?.promptCount || 0} • Tool calls: {pack.safeSummary?.toolCalls || 0}</div>
+                  <div className="flex items-center gap-3">
+                    <Link href={`/dashboard/provenance/${pack.id}`} className="text-primary text-sm hover:underline">View pack</Link>
+                    <a href={`/api/provenance/v1/packs/${pack.id}/export`} className="text-primary text-sm hover:underline" target="_blank" rel="noopener noreferrer">Download Evidence ZIP</a>
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
 
         {/* Audit Log */}
         {run.auditLog && run.auditLog.length > 0 && (

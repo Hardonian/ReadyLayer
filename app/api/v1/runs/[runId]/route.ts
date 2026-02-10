@@ -90,6 +90,21 @@ export const GET = createRouteHandler(
       }
     }
 
+
+
+    const provenancePacks = await prisma.provenancePack.findMany({
+      where: { runId: run.id },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        sourceSystem: true,
+        source: true,
+        redactionLevel: true,
+        payloadHash: true,
+        safeSummary: true,
+        createdAt: true,
+      },
+    });
     // Get findings from review if available
     let findings: Array<{
       ruleId: string;
@@ -194,6 +209,8 @@ export const GET = createRouteHandler(
       artifacts,
       auditLog: run.auditLogs,
       providerLink,
+      provenancePacks,
+      hasProvenance: provenancePacks.length > 0,
     });
   },
   { authz: { requiredScopes: ['read'] } }
