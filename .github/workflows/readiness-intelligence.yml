@@ -21,7 +21,7 @@ jobs:
       estimated_duration: ${{ steps.impact.outputs.estimated_duration }}
       should_run_full_suite: ${{ steps.impact.outputs.should_run_full_suite }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -112,7 +112,7 @@ jobs:
     needs: analyze-impact
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -125,7 +125,7 @@ jobs:
     needs: analyze-impact
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -138,7 +138,7 @@ jobs:
     needs: analyze-impact
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -151,7 +151,7 @@ jobs:
     needs: analyze-impact
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -165,7 +165,7 @@ jobs:
     if: needs.analyze-impact.outputs.risk_level != 'LOW'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -178,7 +178,7 @@ jobs:
     needs: [analyze-impact, test-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -202,7 +202,7 @@ jobs:
     if: needs.analyze-impact.outputs.risk_level != 'LOW'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -224,7 +224,7 @@ jobs:
     if: needs.analyze-impact.outputs.risk_level == 'CRITICAL'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -240,7 +240,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -273,7 +273,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Python
         uses: actions/setup-python@v5

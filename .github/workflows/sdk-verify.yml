@@ -26,7 +26,7 @@ jobs:
       run:
         working-directory: sdk/typescript
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -68,7 +68,7 @@ jobs:
       run:
         working-directory: sdk/python
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -106,7 +106,7 @@ jobs:
       run:
         working-directory: sdk/go
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -136,7 +136,7 @@ jobs:
       run:
         working-directory: sdk/java
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -170,7 +170,7 @@ jobs:
       run:
         working-directory: sdk/csharp
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check File Structure
         run: |
@@ -193,7 +193,7 @@ jobs:
     name: OpenAPI Consistency
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Verify OpenAPI Spec
         run: |
@@ -245,7 +245,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
