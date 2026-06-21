@@ -96,7 +96,7 @@
     "@tanstack/react-query-devtools": "^5.91.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
-    "commander": "^14.0.2",
+    "commander": "^15.0.0",
     "framer-motion": "^12.26.2",
     "js-yaml": "^4.1.0",
     "lucide-react": "^0.562.0",
