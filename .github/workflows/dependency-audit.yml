@@ -12,17 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 8
-
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Dependency audit (depcheck)
-        run: pnpm tsx scripts/depcheck-audit.ts
+        run: npx tsx scripts/depcheck-audit.ts
