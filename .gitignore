@@ -51,8 +51,7 @@ logs/bug-triage/*.md
 logs/mcp/*.log
 !logs/mcp/README.md
 
-# Package manager lockfiles - use npm only
-pnpm-lock.yaml
+# Package manager lockfiles
 yarn.lock
 bun.lockb
 
