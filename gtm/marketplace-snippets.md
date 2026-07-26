@@ -259,7 +259,7 @@ ReadyLayer automatically reviews, tests, and documents AI-generated code before 
 ## Common Elements
 
 ### Value Proposition
-**AI writes the code. ReadyLayer makes it production-ready.**
+**AI writes the code. ReadyLayer makes the evidence and risks visible before merge.**
 
 ### Key Benefits
 1. **Security:** Catch vulnerabilities before production
@@ -277,7 +277,7 @@ ReadyLayer automatically reviews, tests, and documents AI-generated code before 
 - AI-aware analysis (understands AI-generated patterns)
 - Integrated workflow (PRs, CI, IDEs)
 - No code retention (privacy-first)
-- Production-ready (not a prototype)
+- Review-ready evidence (deployment readiness remains an owner decision)
 
 ### Call to Action
 **Start your 14-day free trial. No credit card required.**

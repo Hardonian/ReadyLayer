@@ -110,7 +110,7 @@ ReadyLayer detects AI-touched files and generates tests using your framework.
 ReadyLayer updates API specs and documentation on merge.
 
 ### Step 5: Merge with Confidence
-Code is production-ready, with tests and docs in sync.
+Code is review-ready with visible findings, evidence, and test/documentation checks; the owning team still decides whether it is production-ready.
 
 **Visual:** Flow diagram showing the process
 
@@ -236,7 +236,7 @@ A: Yes. ReadyLayer offers a 14-day free trial with full feature access. No credi
 ## CTA Section
 
 ### Headline
-**Ready to make AI-generated code production-ready?**
+**Ready to make AI-generated code easier to verify before merge?**
 
 ### Subheadline
 Start your 14-day free trial. No credit card required.
