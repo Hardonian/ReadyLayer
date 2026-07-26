@@ -17,4 +17,5 @@ Remaining high findings are transitive (`brace-expansion`, `flatted`, `minimatch
 
 - Evidence endpoint targeted test: PASS — 1 file, 2 tests.
 - `npm run lint -- --max-warnings=0`: PASS.
-- `npm run type-check`: BLOCKED by pre-existing/unrelated Stripe API typing mismatch at `services/billing/stripe-webhook-handler.ts:17` (`"2026-02-25.clover"` is not assignable to installed Stripe type `"2025-12-15.clover"`).
+- `npm run type-check`: PASS after aligning the Stripe API version with the installed SDK in `services/billing/stripe-webhook-handler.ts`.
+- Full `npm test`: PASS; Vitest emitted expected negative-path invariant logs and one non-fatal mock-hoisting warning.
