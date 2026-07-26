@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+# The repository intentionally contains redacted examples and test fixtures.
+# This excludes only explicit placeholder markers, never real-looking values.
+[[allowlists]]
+description = "redacted placeholders in docs and security tests"
+regexes = [
+  '''(?i)REDACTED''',
+  '''\*{3,}''',
+  '''your-domain\.com''',
+  '''localhost:3000'''
+]
