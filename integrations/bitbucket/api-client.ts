@@ -134,7 +134,16 @@ export interface BitbucketAPIClient {
 }
 
 export class BitbucketAPIClientImpl implements BitbucketAPIClient {
-  private baseUrl = 'https://api.bitbucket.org/2.0';
+  private readonly baseUrl = 'https://api.bitbucket.org/2.0';
+  private readonly apiOrigin = new URL(this.baseUrl).origin;
+
+  private trustedURL(rawURL: string): string {
+    const url = new URL(rawURL);
+    if (url.protocol !== 'https:' || url.origin !== this.apiOrigin) {
+      throw new Error('Refusing to send Bitbucket credentials to an untrusted origin');
+    }
+    return url.toString();
+  }
 
   /**
    * Get PR details
@@ -151,7 +160,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pullrequests/${prId}/diff`;
     
     try {
-      const response = await fetch(url, {
+      const response = await fetch(this.trustedURL(url), {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'text/plain',
@@ -232,7 +241,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     token: string
   ): Promise<string> {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/src/${ref}/${path}`;
-    const response = await fetch(url, {
+    const response = await fetch(this.trustedURL(url), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -341,7 +350,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
 
     // Download artifacts (Bitbucket returns a redirect URL)
     const artifactsUrl = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pipelines/${pipelineUuid}/steps/${stepWithArtifacts.uuid}/artifacts`;
-    const response = await fetch(artifactsUrl, {
+    const response = await fetch(this.trustedURL(artifactsUrl), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -368,7 +377,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const response = await fetch(url, {
+        const response = await fetch(this.trustedURL(url), {
           ...options,
           headers: {
             ...options.headers,
