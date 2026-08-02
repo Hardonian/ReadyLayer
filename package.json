@@ -114,7 +114,7 @@
     "react-dom": "^19.2.3",
     "recharts": "^3.6.0",
     "redis": "^5.10.0",
-    "stripe": "^20.2.0",
+    "stripe": "^22.4.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.5",
     "zustand": "^5.0.10"
