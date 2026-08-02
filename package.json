@@ -82,7 +82,7 @@
   },
   "dependencies": {
     "@babel/parser": "^7.28.6",
-    "@babel/types": "^7.28.6",
+    "@babel/types": "^8.0.4",
     "@octokit/app": "^16.1.2",
     "@octokit/rest": "^22.0.1",
     "@radix-ui/react-avatar": "^1.0.4",
