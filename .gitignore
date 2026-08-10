@@ -366,3 +366,11 @@ JobForge-main.zip
 .tmp/
 *.zip
 nul
+__pycache__/
+node_modules/
+build/
+.pytest_cache/
+.idea/
+.vscode/
+*.pyc
+*.log
