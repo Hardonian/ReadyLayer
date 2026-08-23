@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { POST as shadowModePost } from '@/app/api/v1/shadow-mode/route';
-import { GET as failureIntelGet, POST as failureIntelPost } from '@/app/api/v1/failure-intelligence/route';
-import { GET as privacyGet, POST as privacyPost } from '@/app/api/v1/privacy/route';
-import { POST as driftPost } from '@/app/api/v1/drift/route';
-import { GET as modelVersioningGet, POST as modelVersioningPost } from '@/app/api/v1/model-versioning/route';
+import { POST as shadowModePost } from '../../app/api/v1/shadow-mode/route';
+import { GET as failureIntelGet, POST as failureIntelPost } from '../../app/api/v1/failure-intelligence/route';
+import { GET as privacyGet, POST as privacyPost } from '../../app/api/v1/privacy/route';
+import { POST as driftPost } from '../../app/api/v1/drift/route';
+import { GET as modelVersioningGet, POST as modelVersioningPost } from '../../app/api/v1/model-versioning/route';
 
 // Mock auth module
 vi.mock('@/lib/auth', () => ({
