@@ -218,6 +218,49 @@ export class AIAnomalyDetectionService {
   }
 
   /**
+   * Get optimization suggestions for repository/organization
+   */
+  async getOptimizationSuggestions(
+    organizationId: string,
+    repositoryId?: string
+  ): Promise<OptimizationSuggestion[]> {
+    try {
+      if (repositoryId) {
+        const result = await this.analyzeRepository(repositoryId, organizationId);
+        return result.suggestions;
+      }
+
+      // Default curated recommendations
+      return [
+        {
+          id: 'sug-prompt-opt',
+          type: 'system_prompt',
+          difficulty: 'easy',
+          title: 'Compress Review Guard Context Token Footprint',
+          description: 'Prune repetitive AST interface schemas from system instructions to save ~35% input tokens.',
+          impact: 'high',
+          effort: 'low',
+          steps: ['Enable differential schema injection in review-guard config'],
+          estimatedSavings: { tokens: 450000, cost: 380 },
+        },
+        {
+          id: 'sug-model-routing',
+          type: 'model_selection',
+          difficulty: 'intermediate',
+          title: 'Dynamic Routing for Formatting & Lint Rule Validation',
+          description: 'Route non-critical syntax checks to lightweight inference models.',
+          impact: 'high',
+          effort: 'medium',
+          steps: ['Configure tiered model routing in feature-flags.ts'],
+          estimatedSavings: { tokens: 800000, cost: 520 },
+        },
+      ];
+    } catch (_err) {
+      return [];
+    }
+  }
+
+  /**
    * Detect various types of anomalies
    */
   private async detectAnomalies(

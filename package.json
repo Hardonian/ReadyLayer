@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "postinstall": "prisma generate",
-    "prepare": "husky install || true",
+    "prepare": "node -e \"if (process.env.NODE_ENV !== 'production') { try { require('child_process').execSync('husky install', {stdio:'ignore'}) } catch(e){} }\"",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

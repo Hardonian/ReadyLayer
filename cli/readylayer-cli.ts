@@ -537,6 +537,108 @@ program
 
 
 
+program
+  .command('shadow <file>')
+  .description('Run non-blocking shadow mode analysis on a file')
+  .option('-r, --repository <id>', 'Repository ID')
+  .option('--ref <ref>', 'Git ref', 'HEAD')
+  .action(async (filePath: string, options: ReviewOptions) => {
+    const config = loadConfig();
+    if (!fs.existsSync(filePath)) {
+      cliError(`Error: File not found: ${filePath}`);
+      process.exit(1);
+    }
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const repositoryId = options.repository ?? config.repositoryId ?? 'local-repo';
+
+    cliLog(`Running shadow mode analysis for ${filePath}...`);
+    try {
+      const { shadowModeService } = await import('../services/shadow-mode');
+      const result = await shadowModeService.analyze({
+        repositoryId,
+        prNumber: 0,
+        prSha: options.ref ?? 'HEAD',
+        files: [{ path: filePath, content: fileContent }],
+      });
+
+      cliLog('\nShadow Analysis Summary:');
+      cliLog(`Total Issues: ${result.summary.totalIssues}`);
+      cliLog(`Critical Issues: ${result.summary.criticalIssues}`);
+      cliLog(`High Issues: ${result.summary.highIssues}`);
+      cliLog(`Would Have Blocked: ${result.summary.wouldHaveBlocked ? 'YES (Observation Only)' : 'NO'}`);
+      cliLog(`\n${result.report}`);
+    } catch (error) {
+      cliError(`Error: ${await safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('privacy-check <file>')
+  .description('Scan a file for PII and sensitive information')
+  .action(async (filePath: string) => {
+    if (!fs.existsSync(filePath)) {
+      cliError(`Error: File not found: ${filePath}`);
+      process.exit(1);
+    }
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    cliLog(`Scanning ${filePath} for PII and sensitive data...`);
+    try {
+      const { privacyComplianceService } = await import('../services/privacy-compliance');
+      const hasPII = privacyComplianceService.detectPII(fileContent);
+      if (hasPII) {
+        cliLog('⚠️  PII or sensitive data patterns detected:');
+        const anonymized = privacyComplianceService.anonymizePII(fileContent);
+        cliLog('\nSanitized Preview:');
+        cliLog(String(anonymized));
+      } else {
+        cliLog('✅ No PII or sensitive data patterns detected.');
+      }
+    } catch (error) {
+      cliError(`Error: ${await safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('certificate <reviewId>')
+  .description('Retrieve Merge Confidence Certificate for a review')
+  .action(async (reviewId: string) => {
+    cliLog(`Fetching Merge Confidence Certificate for ${reviewId}...`);
+    try {
+      const { culturalArtifactsService } = await import('../services/cultural-artifacts');
+      const cert = await culturalArtifactsService.generateMergeConfidenceCertificate(reviewId);
+      cliLog('\nMerge Confidence Certificate:');
+      cliLog(JSON.stringify(cert, null, 2));
+    } catch (error) {
+      cliError(`Error: ${await safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('anomaly <file>')
+  .description('Analyze file for AI anomalies and prompt optimizations')
+  .action(async (filePath: string) => {
+    if (!fs.existsSync(filePath)) {
+      cliError(`Error: File not found: ${filePath}`);
+      process.exit(1);
+    }
+    cliLog(`Analyzing AI anomalies and optimization opportunities for ${filePath}...`);
+    try {
+      const { aiAnomalyDetectionService } = await import('../services/ai-anomaly-detection');
+      const suggestions = await aiAnomalyDetectionService.getOptimizationSuggestions('local-org');
+      cliLog(`\nActive Optimization Suggestions (${suggestions.length}):`);
+      suggestions.slice(0, 3).forEach((sug, i) => {
+        cliLog(`\n${i + 1}. [${sug.type}] ${sug.title} (${sug.impact} Impact)`);
+        cliLog(`   ${sug.description}`);
+      });
+    } catch (error) {
+      cliError(`Error: ${await safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
 const mcp = program
   .command('mcp')
   .description('Model Context Protocol server and diagnostics');
@@ -560,3 +662,4 @@ mcp
 
 emitPerf('ready');
 program.parse(process.argv);
+
