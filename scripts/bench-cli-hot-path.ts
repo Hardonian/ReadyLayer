@@ -6,9 +6,18 @@ interface BenchResult {
   exit: number | null;
 }
 
+function getTsxCliPath(): string {
+  try {
+    return require.resolve('tsx/cli');
+  } catch {
+    return 'node_modules/tsx/dist/cli.mjs';
+  }
+}
+
 function bench(args: string[]): BenchResult {
   const start = process.hrtime.bigint();
-  const result = spawnSync('npx', ['tsx', 'cli/readylayer-cli.ts', ...args], {
+  const tsxCliPath = getTsxCliPath();
+  const result = spawnSync(process.execPath, [tsxCliPath, 'cli/readylayer-cli.ts', ...args], {
     encoding: 'utf8',
     env: {
       ...process.env,

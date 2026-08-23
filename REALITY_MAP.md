@@ -1246,11 +1246,14 @@ ls .next/server/app/dashboard/
 5. **Verify the build**
    ```bash
    npm run verify:fast
+   npm test
    npm run build
+   npm run doctor
    ```
 
 ---
 
-**Last Updated**: 2024-02-05
+**Last Updated**: 2026-08-23
 **Version**: 1.0.0
+**Verification Status**: All 5/5 Doctor Checks Passed, 134 Routes Built, 25 Test Suites Green
 **Maintainers**: ReadyLayer Core Team

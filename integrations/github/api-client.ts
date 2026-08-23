@@ -113,7 +113,16 @@ export interface GitHubAPIClient {
 }
 
 export class GitHubAPIClientImpl implements GitHubAPIClient {
-  private baseUrl = 'https://api.github.com';
+  private readonly baseUrl = 'https://api.github.com';
+  private readonly apiOrigin = new URL(this.baseUrl).origin;
+
+  private trustedURL(rawURL: string): string {
+    const url = new URL(rawURL);
+    if (url.protocol !== 'https:' || url.origin !== this.apiOrigin) {
+      throw new Error('Refusing to send GitHub credentials to an untrusted origin');
+    }
+    return url.toString();
+  }
 
   /**
    * Get PR details
@@ -130,7 +139,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
     const url = `${this.baseUrl}/repos/${repo}/pulls/${prNumber}`;
     
     try {
-      const response = await fetch(url, {
+      const response = await fetch(this.trustedURL(url), {
         headers: {
           Accept: 'application/vnd.github.v3.diff',
           Authorization: `Bearer ${token}`,
@@ -224,7 +233,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
     // Try to find existing check-run by name
     try {
       const checkRunsUrl = `${this.baseUrl}/repos/${repo}/commits/${sha}/check-runs?check_name=${encodeURIComponent(details.name)}`;
-      const checkRunsResponse = await fetch(checkRunsUrl, {
+      const checkRunsResponse = await fetch(this.trustedURL(checkRunsUrl), {
         headers: {
           Authorization: `Bearer ${token}`,
           Accept: 'application/vnd.github.v3+json',
@@ -301,7 +310,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const response = await fetch(url, {
+        const response = await fetch(this.trustedURL(url), {
           ...options,
           headers: {
             ...options.headers,
@@ -439,7 +448,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
   async downloadArtifact(repo: string, artifactId: number, token: string): Promise<ArrayBuffer> {
     const url = `${this.baseUrl}/repos/${repo}/actions/artifacts/${artifactId}/zip`;
     
-    const response = await fetch(url, {
+    const response = await fetch(this.trustedURL(url), {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github.v3+json',

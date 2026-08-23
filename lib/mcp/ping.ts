@@ -42,9 +42,18 @@ async function request(
   return Promise.race([receive, deadline]);
 }
 
+function getTsxCliPath(): string {
+  try {
+    return require.resolve('tsx/cli');
+  } catch {
+    return path.resolve(process.cwd(), 'node_modules/tsx/dist/cli.mjs');
+  }
+}
+
 export async function runMcpPing(timeoutMs = 2000): Promise<Record<string, unknown>> {
   const cliPath = path.resolve(process.cwd(), 'cli/readylayer-cli.ts');
-  const child = spawn('npx', ['tsx', cliPath, 'mcp', 'serve'], {
+  const tsxCliPath = getTsxCliPath();
+  const child = spawn(process.execPath, [tsxCliPath, cliPath, 'mcp', 'serve'], {
     stdio: ['pipe', 'pipe', 'pipe'],
   });
 
