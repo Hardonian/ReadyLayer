@@ -111,7 +111,10 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Graceful shutdown with connection draining
+let isShuttingDown = false
 async function gracefulShutdown(): Promise<void> {
+  if (isShuttingDown) return
+  isShuttingDown = true
   logger.info('Disconnecting Prisma client...')
 
   try {

@@ -146,8 +146,8 @@ export class PrivacyComplianceService {
   /**
    * Detect if data contains PII
    */
-  private detectPII(data: Record<string, unknown>): boolean {
-    const dataStr = JSON.stringify(data);
+  detectPII(data: string | Record<string, unknown>): boolean {
+    const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
     
     // Check for common PII patterns
     const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;

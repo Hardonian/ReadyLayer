@@ -705,4 +705,5 @@ export class ModelRegistry {
   }
 }
 
-export default { ModelVersionManager, ABTestManager, ModelRegistry };
+export const modelRegistry = new ModelRegistry();
+export default { ModelVersionManager, ABTestManager, ModelRegistry, modelRegistry };
