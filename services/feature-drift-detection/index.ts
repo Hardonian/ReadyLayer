@@ -542,4 +542,5 @@ export class FeatureDriftDetector {
   }
 }
 
-export default { FeatureDriftDetector };
+export const featureDriftDetector = new FeatureDriftDetector();
+export default { FeatureDriftDetector, featureDriftDetector };
