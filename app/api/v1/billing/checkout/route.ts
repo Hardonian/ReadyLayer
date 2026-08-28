@@ -1,6 +1,6 @@
 /**
  * Billing Checkout API
- * 
+ *
  * POST /api/v1/billing/checkout - Create Stripe checkout session
  */
 
@@ -33,8 +33,8 @@ function getStripeClient(): Stripe {
  * Check if Stripe is configured
  */
 function isStripeConfigured(): boolean {
-  return !!process.env.STRIPE_SECRET_KEY && 
-         !!process.env.STRIPE_PRICE_ID_GROWTH && 
+  return !!process.env.STRIPE_SECRET_KEY &&
+         !!process.env.STRIPE_PRICE_ID_GROWTH &&
          !!process.env.STRIPE_PRICE_ID_SCALE;
 }
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validationResult = checkoutSchema.safeParse(bodyResult.data);
     if (!validationResult.success) {
       return errorResponse(

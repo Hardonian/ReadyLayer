@@ -1,6 +1,6 @@
 /**
  * Integrations Index
- * 
+ *
  * Central export point for all integrations
  * Using explicit exports to avoid naming conflicts
  */
@@ -10,7 +10,7 @@ export { githubWebhookHandler, type GitHubWebhookEvent, type NormalizedEvent as 
 export { githubAPIClient, type WorkflowRun, type WorkflowArtifact, type WorkflowDispatchInputs } from './github/api-client';
 export type { CheckRunAnnotation as GitHubCheckRunAnnotation, CheckRunDetails as GitHubCheckRunDetails } from './github/api-client';
 
-// GitLab exports  
+// GitLab exports
 export { gitlabWebhookHandler, type NormalizedEvent as GitLabNormalizedEvent } from './gitlab/webhook';
 export { gitlabAPIClient, type Pipeline as GitLabPipeline, type PipelineVariable as GitLabPipelineVariable } from './gitlab/api-client';
 

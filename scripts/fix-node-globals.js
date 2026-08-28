@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Fix Node.js Globals in JS/MJS Files
- * 
+ *
  * Automatically adds global declarations for Node.js built-in globals (process, URL, etc.)
  * in .mjs and .js files that use them but lack proper declarations.
- * 
+ *
  * This resolves ESLint warnings: "X is not defined"
- * 
+ *
  * Usage: node scripts/fix-node-globals.js
  */
 
@@ -72,7 +72,7 @@ function hasGlobalDeclaration(content) {
   // Look for /* global ... */ comment
   const globalCommentPattern = /\/\*\s*global\s+([^*]+?)\s*\*\//g;
   if (globalCommentPattern.test(content)) return true;
-  
+
   return false;
 }
 
@@ -100,31 +100,31 @@ function findUsedGlobals(content) {
 function fixFileGlobals(filePath) {
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
-    
+
     // Skip if file doesn't use Node globals
     if (!usesNodeGlobals(content)) {
       return { fixed: false, reason: 'No Node.js globals used' };
     }
-    
+
     // Skip if file already has global declarations
     if (hasGlobalDeclaration(content)) {
       return { fixed: false, reason: 'Already has global declarations' };
     }
-    
+
     // Find which globals are actually used
     const usedGlobals = findUsedGlobals(content);
-    
+
     // Generate global declaration comment
     if (usedGlobals.length === 0) {
       return { fixed: false, reason: 'No globals detected' };
     }
-    
+
     const globalComment = generateGlobalComment(usedGlobals);
-    
+
     // Add global comment at the top of the file (after shebang if present)
     let newContent = content;
     const firstLineEnd = content.indexOf('\n');
-    
+
     if (content.startsWith('#!')) {
       // Insert after shebang
       newContent = content.substring(0, firstLineEnd + 1) + globalComment + content.substring(firstLineEnd + 1);
@@ -132,9 +132,9 @@ function fixFileGlobals(filePath) {
       // Insert at the very beginning
       newContent = globalComment + content;
     }
-    
+
     fs.writeFileSync(filePath, newContent, 'utf-8');
-    
+
     console.log(`✓ Fixed: ${filePath} (added: ${usedGlobals.join(', ')})`);
     return { fixed: true, reason: 'Added global declarations' };
   } catch (error) {
@@ -148,21 +148,21 @@ function fixFileGlobals(filePath) {
  */
 function main() {
   console.log('🔍 Scanning for files that need Node.js global declarations...\n');
-  
+
   const rootDir = path.resolve(__dirname, '..');
-  
+
   // Find all .mjs and .js files
   const files = [];
   for (const pattern of FILE_PATTERNS) {
     const matches = glob.sync(pattern, { cwd: rootDir, absolute: false });
     files.push(...matches);
   }
-  
+
   // Deduplicate files
   const uniqueFiles = [...new Set(files)];
-  
+
   console.log(`📊 Found ${uniqueFiles.length} total files\n`);
-  
+
   // Process each file
   const results = {
     fixed: 0,
@@ -170,18 +170,18 @@ function main() {
     errors: 0,
     details: [],
   };
-  
+
   for (const file of uniqueFiles) {
     // Check if file should be skipped
     if (shouldSkip(file)) {
       results.skipped++;
       continue;
     }
-    
+
     const filePath = path.join(rootDir, file);
     const result = fixFileGlobals(filePath);
     const relativePath = path.relative(rootDir, filePath);
-    
+
     if (result.fixed) {
       results.fixed++;
       results.details.push({
@@ -191,12 +191,12 @@ function main() {
     } else {
       results.skipped++;
     }
-    
+
     if (result.reason?.startsWith('Error:')) {
       results.errors++;
     }
   }
-  
+
   // Print summary
   console.log('\n' + '='.repeat(60));
   console.log('📈 Summary:');
@@ -205,7 +205,7 @@ function main() {
   console.log('  ✗ Errors:', results.errors);
   console.log('  📊 Total:', results.details.length + results.skipped);
   console.log('='.repeat(60) + '\n');
-  
+
   if (results.fixed > 0) {
     console.log('✅ Completed. Fixed files need to be committed:');
     results.details.forEach(detail => {
@@ -214,7 +214,7 @@ function main() {
   } else {
     console.log('✅ All files already have proper global declarations!');
   }
-  
+
   // Exit with appropriate code
   process.exit(results.details.length > 0 ? 1 : 0);
 }

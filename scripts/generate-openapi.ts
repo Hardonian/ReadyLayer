@@ -2,7 +2,7 @@
 
 /**
  * OpenAPI Spec Generator
- * 
+ *
  * Generates OpenAPI 3.1.0 specification from Zod schemas
  * Run with: pnpm tsx scripts/generate-openapi.ts
  */

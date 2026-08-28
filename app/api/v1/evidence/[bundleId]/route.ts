@@ -1,6 +1,6 @@
 /**
  * Evidence Bundle Detail API
- * 
+ *
  * GET    /api/v1/evidence/:bundleId - Get evidence bundle
  * GET    /api/v1/evidence/:bundleId/export - Export evidence JSON
  */

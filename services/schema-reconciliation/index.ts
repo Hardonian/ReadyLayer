@@ -1,9 +1,9 @@
 /**
  * Schema Reconciliation Service
- * 
+ *
  * Validates that database schema changes match application code assumptions
  * Prevents schema drift that causes runtime errors
- * 
+ *
  * Based on founder pain event: Schema drift causing production issues
  */
 
@@ -236,7 +236,7 @@ export class SchemaReconciliationService {
       if (operations.has('findMany') || operations.has('findFirst')) {
         const tableName = this.modelToTableName(modelName);
         const schemaChange = schemaChanges.find(c => c.table === tableName);
-        
+
         if (schemaChange && (!schemaChange.indexes || schemaChange.indexes.length === 0)) {
           issues.push({
             ruleId: 'founder.schema-drift',
@@ -278,7 +278,7 @@ export class SchemaReconciliationService {
         const modelName = this.tableToModelName(change.table);
         if (codeModelUsage.has(modelName)) {
           // Check if this looks like a user-facing table that needs RLS
-          if (change.table.includes('user') || 
+          if (change.table.includes('user') ||
               change.table.includes('organization') ||
               change.table.includes('repository')) {
             issues.push({

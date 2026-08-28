@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
  * Asset Generation Script
- * 
+ *
  * This script creates placeholder WebP images for development.
  * For production, replace with actual AI-generated images.
- * 
+ *
  * Uses Canvas API to generate simple SVG-based illustrations.
  */
 
@@ -303,24 +303,24 @@ const ASSETS = [
 
 function generateAssets() {
   console.log('Generating visual assets...\n');
-  
+
   let created = 0;
   let skipped = 0;
-  
+
   for (const asset of ASSETS) {
     const outputPath = path.join(OUTPUT_DIR, asset.filename);
-    
+
     if (fs.existsSync(outputPath)) {
       console.log(`Skipping: ${asset.filename} (already exists)`);
       skipped++;
       continue;
     }
-    
+
     fs.writeFileSync(outputPath, asset.content);
     console.log(`Created: ${asset.filename}`);
     created++;
   }
-  
+
   console.log(`\nSummary:`);
   console.log(`  Created: ${created}`);
   console.log(`  Skipped: ${skipped}`);

@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, LoadingState } from '@/compon
 import { Container } from '@/components/ui/container'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
-import { 
-  Shield, 
-  Users, 
-  Code, 
+import {
+  Shield,
+  Users,
+  Code,
   GitBranch,
   TrendingUp,
   CheckCircle2,

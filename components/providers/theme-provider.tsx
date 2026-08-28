@@ -4,7 +4,7 @@ import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from 'ne
 
 /**
  * ThemeProvider - Wraps next-themes with proper configuration
- * 
+ *
  * Features:
  * - System preference detection
  * - Persisted user choice (localStorage)

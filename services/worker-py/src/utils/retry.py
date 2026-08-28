@@ -21,7 +21,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 class RetryConfig:
     """Configuration for retry behavior."""
-    
+
     def __init__(
         self,
         max_attempts: int = 3,
@@ -42,13 +42,13 @@ def with_retry(
     exceptions: tuple = (Exception,),
 ) -> Callable[[F], F]:
     """Decorator for retry with exponential backoff.
-    
+
     Args:
         max_attempts: Maximum number of retry attempts
         base_delay: Base delay in seconds for exponential backoff
         max_delay: Maximum delay between retries
         exceptions: Tuple of exception types to retry on
-    
+
     Returns:
         Decorated function with retry logic
     """
@@ -63,9 +63,9 @@ def with_retry(
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
-        
+
         return wrapper  # type: ignore
-    
+
     return decorator
 
 
@@ -75,12 +75,12 @@ def calculate_backoff_delay(
     max_delay: float = 300.0,
 ) -> float:
     """Calculate exponential backoff delay.
-    
+
     Args:
         attempt: Current attempt number (0-indexed)
         base: Exponential base
         max_delay: Maximum delay in seconds
-    
+
     Returns:
         Delay in seconds
     """

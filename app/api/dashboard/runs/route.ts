@@ -1,6 +1,6 @@
 /**
  * Dashboard Runs Snapshot API
- * 
+ *
  * GET /api/dashboard/runs - Get runs snapshot
  */
 

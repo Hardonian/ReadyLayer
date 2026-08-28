@@ -47,14 +47,14 @@
 interface ReviewConfig {
   // REQUIRED: Cannot be disabled
   fail_on_critical: true; // Hard-coded, not configurable
-  
+
   // DEFAULT: Can disable with explicit override (requires admin approval)
   fail_on_high: boolean; // Default: true, override requires admin role
-  
+
   // OPTIONAL: Never blocks by default
   fail_on_medium: boolean; // Default: false
   fail_on_low: boolean; // Default: false
-  
+
   // Severity overrides (requires admin approval)
   severity_overrides: {
     [rule_id: string]: "critical" | "high" | "medium" | "low" | "ignore";
@@ -80,15 +80,15 @@ interface ReviewConfig {
 - **LLM failures MUST block PR** with explicit error:
   ```
   ⚠️ ReadyLayer Review Failed
-  
+
   Cause: LLM analysis unavailable
   Reason: OpenAI API rate limit exceeded
   Impact: Cannot complete AI-aware security analysis
-  
+
   Required Action:
   1. Wait 60 seconds and push a new commit to retry
   2. Or contact support@readylayer.com if issue persists
-  
+
   This PR is BLOCKED until analysis completes.
   ```
 - **No silent fallback** to static analysis only
@@ -107,14 +107,14 @@ interface ReviewConfig {
 - **Partial failures MUST be explicit:**
   ```
   ⚠️ ReadyLayer Review Partially Completed
-  
+
   Analyzed: 5 files
   Failed: 2 files
-  
+
   Failed Files:
   - src/auth.ts (Reason: Parse error at line 42)
   - src/utils.ts (Reason: Unsupported language feature)
-  
+
   This PR is BLOCKED until all files can be analyzed.
   ```
 - **No silent partial success**
@@ -192,9 +192,9 @@ PR blocked until resolved.
 ```markdown
 ⚠️ **Security Issue: SQL Injection Risk**
 
-**Rule:** security.sql-injection  
-**Severity:** Critical  
-**File:** src/auth.ts  
+**Rule:** security.sql-injection
+**Severity:** Critical
+**File:** src/auth.ts
 **Line:** 42
 
 **Issue:**
@@ -261,7 +261,7 @@ function validateConfig(config: ReviewConfig): ValidationResult {
       fix: "Remove 'fail_on_critical: false' from config or set to true."
     };
   }
-  
+
   // High enforcement requires admin approval if disabled
   if (config.fail_on_high === false && !hasAdminRole()) {
     return {
@@ -270,7 +270,7 @@ function validateConfig(config: ReviewConfig): ValidationResult {
       fix: "Contact org admin to approve high-issue override."
     };
   }
-  
+
   // Severity overrides require admin approval
   if (Object.keys(config.severity_overrides).length > 0 && !hasAdminRole()) {
     return {
@@ -279,7 +279,7 @@ function validateConfig(config: ReviewConfig): ValidationResult {
       fix: "Contact org admin to approve rule overrides."
     };
   }
-  
+
   return { valid: true };
 }
 ```
@@ -301,13 +301,13 @@ function validateConfig(config: ReviewConfig): ValidationResult {
 - **AI uncertain → Block, require explicit review**
   ```
   ⚠️ ReadyLayer Review: AI Uncertainty
-  
+
   AI analysis returned uncertain result for:
   - src/auth.ts:42 (Potential security issue, confidence: 60%)
-  
+
   Action Required:
   Manual review required. AI cannot determine if this is a security issue.
-  
+
   This PR is BLOCKED until manual review confirms safety.
   ```
 

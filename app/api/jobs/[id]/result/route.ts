@@ -1,6 +1,6 @@
 /**
  * Job Result API Route
- * 
+ *
  * GET /api/jobs/[id]/result - Get job result
  */
 
@@ -49,24 +49,24 @@ export async function GET(
         await canAccessOrganization(user.id, job.organizationId);
 
       if (!hasAccess) {
-        log.warn({ 
-          jobId, 
-          userId: user.id, 
-          jobOrgId: job.organizationId 
+        log.warn({
+          jobId,
+          userId: user.id,
+          jobOrgId: job.organizationId
         }, 'User attempted to access job result from different organization');
-        
+
         return NextResponse.json(
           { error: { code: 'FORBIDDEN', message: 'Access denied to this job result' } },
           { status: 403 }
         );
       }
     } else if (job.userId && job.userId !== user.id) {
-      log.warn({ 
-        jobId, 
-        userId: user.id, 
-        jobUserId: job.userId 
+      log.warn({
+        jobId,
+        userId: user.id,
+        jobUserId: job.userId
       }, 'User attempted to access job result they do not own');
-      
+
       return NextResponse.json(
         { error: { code: 'FORBIDDEN', message: 'Access denied to this job result' } },
         { status: 403 }
@@ -85,13 +85,13 @@ export async function GET(
 
     // Return result with graceful degradation message if still queued
     const response = transformJobResultForApi(result);
-    
+
     // Add helpful message for queued jobs (worker might be offline)
     if (result.status === 'queued' || result.status === 'running') {
       return NextResponse.json({
         data: {
           ...response,
-          message: result.status === 'queued' 
+          message: result.status === 'queued'
             ? 'Job is queued and will be processed soon. Processing may take longer if workers are busy.'
             : 'Job is currently being processed.',
         },
@@ -106,12 +106,12 @@ export async function GET(
     log.error({ error, jobId: (await params).id }, 'Failed to fetch job result');
 
     return NextResponse.json(
-      { 
-        error: { 
-          code: 'INTERNAL_ERROR', 
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
           message: 'Failed to fetch job result. Please try again later.',
           context: { traceId: requestId }
-        } 
+        }
       },
       { status: 500 }
     );

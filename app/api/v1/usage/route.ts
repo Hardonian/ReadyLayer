@@ -1,6 +1,6 @@
 /**
  * Usage Stats API Route
- * 
+ *
  * GET /api/v1/usage - Get current usage statistics for organization
  */
 

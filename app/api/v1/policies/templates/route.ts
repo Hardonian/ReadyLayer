@@ -1,7 +1,7 @@
 /**
  * GET /api/v1/policies/templates
  * List available policy templates
- * 
+ *
  * POST /api/v1/policies/templates
  * Create a new policy template
  */
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validation = createTemplateSchema.safeParse(bodyResult.data);
 
     if (!validation.success) {

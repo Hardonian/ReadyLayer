@@ -26,7 +26,7 @@ export interface EmptyStateProps {
 
 /**
  * Empty State Component
- * 
+ *
  * Must:
  * - Explain purpose
  * - Show example or next action

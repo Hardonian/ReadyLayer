@@ -10,7 +10,7 @@ describe('Webhook Processor', () => {
     it('should validate GitHub webhook signature', async () => {
       const payload = JSON.stringify({ action: 'opened', pull_request: {} });
       const secret = 'test-secret';
-      
+
       // Generate valid signature
       const crypto = await import('crypto');
       const signature = crypto

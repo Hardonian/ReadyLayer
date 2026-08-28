@@ -11,14 +11,14 @@ export interface PageWrapperProps extends HTMLMotionProps<'div'> {
 
 /**
  * Page Wrapper Component
- * 
+ *
  * Provides consistent page-level motion and layout
  * Respects reduced motion preferences
  */
-export function PageWrapper({ 
-  children, 
+export function PageWrapper({
+  children,
   className,
-  ...props 
+  ...props
 }: PageWrapperProps): React.JSX.Element {
   return (
     <motion.div

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ReadyLayer CLI
- * 
+ *
  * Command-line interface for ReadyLayer with support for:
  * - Codex (OpenAI)
  * - Claude (Anthropic)
@@ -90,7 +90,7 @@ function loadConfig(): ReadyLayerConfig {
   const envApiUrl = process.env.READYLAYER_API_URL || 'https://api.readylayer.com';
 
   if (fs.existsSync(configPath)) {
-     
+
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Partial<ReadyLayerConfig>;
     return {
       apiKey: (config.apiKey as string | undefined) || envApiKey || '',
@@ -114,15 +114,15 @@ interface ReviewOptions {
 // Review file
 async function reviewFile(filePath: string, options: ReviewOptions): Promise<void> {
   const config = loadConfig();
-  
+
   if (!config.apiKey) {
-     
+
     cliError('Error: READYLAYER_API_KEY not set. Set it in .readylayer.json or environment.');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
-     
+
     cliError(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
@@ -131,7 +131,7 @@ async function reviewFile(filePath: string, options: ReviewOptions): Promise<voi
   const repositoryId = options.repository ?? config.repositoryId;
 
   if (!repositoryId) {
-     
+
     cliError('Error: Repository ID required. Use --repository or set in .readylayer.json');
     process.exit(1);
   }
@@ -154,14 +154,14 @@ async function reviewFile(filePath: string, options: ReviewOptions): Promise<voi
     });
 
     if (!response.ok) {
-       
+
       const error = await response.json() as { error?: { message?: string } };
-       
+
       cliError(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
-     
+
     const result = await response.json() as {
       data?: {
         status?: string;
@@ -180,7 +180,7 @@ async function reviewFile(filePath: string, options: ReviewOptions): Promise<voi
     cliLog('\nReview Results:');
     cliLog(`Status: ${result.data?.status ?? 'unknown'}`);
     cliLog(`Issues Found: ${result.data?.issuesCount ?? 0}`);
-    
+
     if (result.data?.issues && result.data.issues.length > 0) {
       cliLog('\nIssues:');
       result.data.issues.forEach((issue, index) => {
@@ -214,15 +214,15 @@ interface TestOptions {
 // Generate tests
 async function generateTests(filePath: string, options: TestOptions): Promise<void> {
   const config = loadConfig();
-  
+
   if (!config.apiKey) {
-     
+
     cliError('Error: READYLAYER_API_KEY not set');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
-     
+
     cliError(`Error: File not found: ${filePath}`);
     process.exit(1);
   }
@@ -231,7 +231,7 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
   const repositoryId = options.repository ?? config.repositoryId;
 
   if (!repositoryId) {
-     
+
     cliError('Error: Repository ID required');
     process.exit(1);
   }
@@ -254,14 +254,14 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
     });
 
     if (!response.ok) {
-       
+
       const error = await response.json() as { error?: { message?: string } };
-       
+
       cliError(`Error: ${error.error?.message ?? response.statusText}`);
       process.exit(1);
     }
 
-     
+
     const result = await response.json() as {
       data?: {
         testContent?: string;
@@ -269,7 +269,7 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
         framework?: string;
       };
     };
-    
+
     if (result.data?.testContent) {
       const outputPath = options.output ?? result.data.placement ?? `${filePath}.test.ts`;
       fs.writeFileSync(outputPath, result.data.testContent);
@@ -288,7 +288,7 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
 // Initialize config
 function initConfig(): void {
   const configPath = path.join(process.cwd(), '.readylayer.json');
-  
+
   if (fs.existsSync(configPath)) {
     cliLog('.readylayer.json already exists');
     return;
@@ -306,18 +306,18 @@ function initConfig(): void {
 
   rl.question('ReadyLayer API Key: ', (apiKey) => {
     config.apiKey = apiKey;
-    
+
     rl.question('Repository ID (optional): ', (repoId) => {
       if (repoId) {
         config.repositoryId = repoId;
       }
-      
+
       rl.question('LLM Provider (codex/claude/ollama/none): ', (provider) => {
         if (provider && provider !== 'none') {
           config.llmProvider = {
             name: provider,
           };
-          
+
           if (provider === 'codex') {
             rl.question('OpenAI API Key: ', (key) => {
               config.llmProvider!.apiKey = key;

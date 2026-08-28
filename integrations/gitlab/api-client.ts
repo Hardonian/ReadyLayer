@@ -1,6 +1,6 @@
 /**
  * GitLab API Client
- * 
+ *
  * Wrapper for GitLab REST API with rate limiting and retries
  */
 
@@ -86,7 +86,7 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
    */
   async getMRDiff(repo: string, mrIid: number, token: string): Promise<string> {
     const url = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/merge_requests/${mrIid}/diffs`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
@@ -101,7 +101,7 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
         throw new Error(`GitLab API error: ${response.status} ${errorText}`);
       }
 
-       
+
       const diffs = await response.json() as Array<{
         old_path: string;
         new_path: string;
@@ -231,7 +231,7 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
   ): Promise<Blob> {
     // First, get the job ID
     const jobsUrl = `${this.baseUrl}/projects/${encodeURIComponent(repo)}/pipelines/${pipelineId}/jobs`;
-     
+
     const jobs = await this.request<Array<{ name: string; id: number }>>(jobsUrl, token);
     const job = Array.isArray(jobs) ? jobs.find((j) => j.name === jobName) : null;
 
@@ -287,7 +287,7 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-             
+
             const errorData = await response.json() as { message?: string };
             errorMessage = errorData.message ?? errorMessage;
           } catch {
@@ -297,14 +297,14 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
         }
 
         try {
-           
+
           return await response.json() as T;
         } catch {
           throw new Error('Failed to parse GitLab API response as JSON');
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-        
+
         if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
           if (attempt < maxRetries - 1) {
             const delay = Math.pow(2, attempt) * 1000;
@@ -313,7 +313,7 @@ export class GitLabAPIClientImpl implements GitLabAPIClient {
           }
           throw new Error('GitLab API request timed out after retries');
         }
-        
+
         if (attempt < maxRetries - 1 && this.isRetryableError(lastError)) {
           const delay = Math.pow(2, attempt) * 1000;
           await this.sleep(delay);

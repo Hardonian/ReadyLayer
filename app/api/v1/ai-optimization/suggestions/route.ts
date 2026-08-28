@@ -1,6 +1,6 @@
 /**
  * AI Optimization Suggestions API
- * 
+ *
  * GET /api/v1/ai-optimization/suggestions - List saved suggestions
  * PATCH /api/v1/ai-optimization/suggestions/:id - Update suggestion status
  */

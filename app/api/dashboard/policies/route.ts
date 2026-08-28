@@ -1,6 +1,6 @@
 /**
  * Dashboard Policies Snapshot API
- * 
+ *
  * GET /api/dashboard/policies - Get policy management snapshot
  */
 

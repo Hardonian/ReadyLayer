@@ -40,14 +40,14 @@ function enforceCoverage(coverage: CoverageMetrics, config: TestConfig): Enforce
   if (config.coverage.threshold < 80) {
     throw new Error("Coverage threshold cannot be below 80%. Minimum enforced: 80%");
   }
-  
+
   if (config.coverage.fail_on_below === false) {
     throw new Error("fail_on_below cannot be disabled. Coverage enforcement is required.");
   }
-  
+
   const threshold = config.coverage.threshold;
   const metric = coverage[config.coverage.metric];
-  
+
   if (metric.percentage < threshold) {
     return {
       passed: false,
@@ -62,7 +62,7 @@ function enforceCoverage(coverage: CoverageMetrics, config: TestConfig): Enforce
       }
     };
   }
-  
+
   return {
     passed: true,
     blocked: false,
@@ -89,19 +89,19 @@ function enforceCoverage(coverage: CoverageMetrics, config: TestConfig): Enforce
 - **Test generation failures MUST block PR** with explicit error:
   ```
   ⚠️ ReadyLayer Test Generation Failed
-  
+
   Cause: Cannot generate tests for AI-touched files
   Reason: LLM API rate limit exceeded
   Impact: Cannot ensure test coverage for AI-generated code
-  
+
   Files Affected:
   - src/auth.ts (AI-touched, no tests generated)
   - src/utils.ts (AI-touched, no tests generated)
-  
+
   Required Action:
   1. Wait 60 seconds and push a new commit to retry
   2. Or contact support@readylayer.com if issue persists
-  
+
   This PR is BLOCKED until tests are generated.
   ```
 - **No silent fallback** (cannot merge without tests)
@@ -191,10 +191,10 @@ interface AITouchedFile {
 
 function detectAITouchedFiles(diff: Diff, config: AIDetectionConfig): AITouchedFile[] {
   const files: AITouchedFile[] = [];
-  
+
   for (const file of diff.files) {
     const detection = detectAI(file, config);
-    
+
     if (detection.confidence >= config.confidence_threshold) {
       files.push({
         path: file.path,
@@ -205,7 +205,7 @@ function detectAITouchedFiles(diff: Diff, config: AIDetectionConfig): AITouchedF
       });
     }
   }
-  
+
   return files;
 }
 ```
@@ -309,26 +309,26 @@ interface TestConfig {
   framework: string; // Auto-detect if not specified
   placement: "co-located" | "separate" | "mirror" | "custom";
   test_dir?: string; // Required if placement: "separate"
-  
+
   ai_detection: {
     methods: ("commit_message" | "author" | "pattern" | "metadata")[];
     confidence_threshold: number; // Default: 0.7, minimum: 0.5
     require_multiple_methods: boolean; // Default: false
   };
-  
+
   coverage: {
     threshold: number; // REQUIRED: Minimum 80, cannot go below
     metric: "lines" | "branches" | "functions"; // Required
     enforce_on: "pr" | "merge" | "both"; // Required
     fail_on_below: true; // REQUIRED: Cannot be false
   };
-  
+
   generation: {
     include_edge_cases: boolean; // Default: true
     include_error_cases: boolean; // Default: true
     match_existing_style: boolean; // Default: true
   };
-  
+
   excluded_paths: string[]; // Default: ["**/vendor/**", "**/node_modules/**"]
 }
 
@@ -341,7 +341,7 @@ function validateTestConfig(config: TestConfig): ValidationResult {
       fix: `Set coverage.threshold to at least 80 (current: ${config.coverage.threshold})`
     };
   }
-  
+
   // fail_on_below cannot be disabled
   if (config.coverage.fail_on_below === false) {
     return {
@@ -350,7 +350,7 @@ function validateTestConfig(config: TestConfig): ValidationResult {
       fix: "Remove 'fail_on_below: false' from config or set to true."
     };
   }
-  
+
   // Confidence threshold cannot be below 0.5
   if (config.ai_detection.confidence_threshold < 0.5) {
     return {
@@ -358,7 +358,7 @@ function validateTestConfig(config: TestConfig): ValidationResult {
       fix: `Set ai_detection.confidence_threshold to at least 0.5 (current: ${config.ai_detection.confidence_threshold})`
     };
   }
-  
+
   return { valid: true };
 }
 ```

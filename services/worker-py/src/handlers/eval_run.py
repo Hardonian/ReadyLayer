@@ -9,16 +9,16 @@ logger = get_logger(__name__)
 @register_handler
 class EvalRunHandler(BaseHandler):
     """Handler for eval.run job type.
-    
+
     Runs evaluation workflows on datasets or models.
     Safe no-op unless evaluation config exists.
     """
-    
+
     job_type = "eval.run"
-    
+
     def validate_payload(self, payload: dict) -> dict:
         """Validate eval.run payload.
-        
+
         Expected payload:
             - eval_id: str - Evaluation configuration ID
             - target_type: str - 'dataset', 'model', 'pipeline'
@@ -30,23 +30,23 @@ class EvalRunHandler(BaseHandler):
         for field in required:
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
-        
+
         valid_types = ["dataset", "model", "pipeline", "experiment"]
         if payload["target_type"] not in valid_types:
             raise ValueError(
                 f"Invalid target_type: {payload['target_type']}. "
                 f"Must be one of: {valid_types}"
             )
-        
+
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         """Execute evaluation workflow.
-        
+
         Args:
             payload: Validated payload
             context: Execution context with worker_id
-        
+
         Returns:
             JobResult with evaluation results
         """
@@ -55,7 +55,7 @@ class EvalRunHandler(BaseHandler):
         target_id = payload["target_id"]
         metrics = payload["metrics"]
         reference_data = payload.get("reference_data")
-        
+
         logger.info(
             "Starting evaluation",
             eval_id=eval_id,
@@ -63,7 +63,7 @@ class EvalRunHandler(BaseHandler):
             target_id=target_id,
             metric_count=len(metrics),
         )
-        
+
         # Safe no-op: If no metrics specified, return empty result
         if not metrics:
             logger.info("No metrics specified, returning empty result")
@@ -77,7 +77,7 @@ class EvalRunHandler(BaseHandler):
                     "message": "No metrics specified for evaluation",
                 }
             )
-        
+
         # Stub: Simulate evaluation
         # In production, this would:
         # 1. Load target (dataset/model/pipeline)
@@ -85,7 +85,7 @@ class EvalRunHandler(BaseHandler):
         # 3. Compute each metric
         # 4. Aggregate results
         # 5. Compare against benchmarks
-        
+
         computed_metrics = {}
         for metric in metrics:
             # Stub: Return synthetic scores
@@ -94,9 +94,9 @@ class EvalRunHandler(BaseHandler):
                 "threshold": 0.80,
                 "passed": True,
             }
-        
+
         all_passed = all(m.get("passed", False) for m in computed_metrics.values())
-        
+
         result_data = {
             "eval_id": eval_id,
             "target_type": target_type,
@@ -108,14 +108,14 @@ class EvalRunHandler(BaseHandler):
             "has_reference": bool(reference_data),
             "worker_id": context.get("worker_id"),
         }
-        
+
         logger.info(
             "Evaluation complete",
             eval_id=eval_id,
             metrics_count=len(computed_metrics),
             status=result_data["status"],
         )
-        
+
         return JobResult(
             success=True,
             data=result_data,

@@ -28,7 +28,7 @@ export interface ErrorStateProps {
 
 /**
  * Error State Component
- * 
+ *
  * Must:
  * - Reduce anxiety
  * - Never blame the user
@@ -62,11 +62,11 @@ export function ErrorState({
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.2 }}
         >
-          <ErrorStateIllustration 
-            src={illustration} 
-            alt={illustrationAlt} 
-            width={400} 
-            height={320} 
+          <ErrorStateIllustration
+            src={illustration}
+            alt={illustrationAlt}
+            width={400}
+            height={320}
           />
         </motion.div>
       ) : (

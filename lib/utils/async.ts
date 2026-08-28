@@ -1,6 +1,6 @@
 /**
  * Async Utilities
- * 
+ *
  * Safe async operations with timeouts and error handling
  */
 
@@ -79,17 +79,17 @@ export async function withConcurrencyLimit<T>(
   fn: (item: T) => Promise<void>
 ): Promise<void> {
   const executing: Promise<void>[] = [];
-  
+
   for (const item of items) {
     const promise = fn(item).then(() => {
       executing.splice(executing.indexOf(promise), 1);
     });
     executing.push(promise);
-    
+
     if (executing.length >= limit) {
       await Promise.race(executing);
     }
   }
-  
+
   await Promise.all(executing);
 }

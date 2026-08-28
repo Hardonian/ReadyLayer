@@ -1,9 +1,9 @@
 /**
  * Stricter ESLint Configuration
- * 
+ *
  * This file contains stricter lint rules that can be enabled once
  * all warnings in the lib/ directory are cleared.
- * 
+ *
  * To enable:
  * 1. Fix all warnings in lib/ directory
  * 2. Copy contents of this file to eslint.config.js

@@ -1,6 +1,6 @@
 /**
  * Usage Enforcement Validation Script
- * 
+ *
  * Validates code structure, logic, and error handling without requiring database
  */
 
@@ -281,21 +281,21 @@ function main(): void {
   validate('Validation 14: Error codes use 429/402, never 500', () => {
     const enforcementContent = readFile('lib/usage-enforcement.ts');
     const apiContent = readFile('lib/api-route-helpers.ts');
-    
+
     const has429 = enforcementContent.includes('429') || apiContent.includes('429');
     const has402 = enforcementContent.includes('402') || apiContent.includes('402');
-    
+
     // Check that limit errors don't default to 500
     const has500Default = enforcementContent.includes('httpStatus: number = 500');
-    
+
     if (!has429 || !has402) {
       return 'Missing 429 or 402 status codes';
     }
-    
+
     if (has500Default) {
       return 'Usage limit errors should not default to 500';
     }
-    
+
     return true;
   });
 
@@ -303,7 +303,7 @@ function main(): void {
   validate('Validation 15: Fail-open/closed policy implemented', () => {
     const content = readFile('billing/index.ts');
     const enforcementContent = readFile('lib/usage-enforcement.ts');
-    
+
     const checks = [
       content.includes('failOpenOnLimit'),
       enforcementContent.includes('failOpenOnLimit'),

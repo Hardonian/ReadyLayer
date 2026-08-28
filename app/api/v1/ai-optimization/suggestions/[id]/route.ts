@@ -1,6 +1,6 @@
 /**
  * AI Optimization Suggestion API
- * 
+ *
  * PATCH /api/v1/ai-optimization/suggestions/:id - Update suggestion status
  */
 
@@ -37,7 +37,7 @@ export async function PATCH(
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const body = bodyResult.data as { status?: string };
     const { status } = body;
 

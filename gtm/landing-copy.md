@@ -190,17 +190,17 @@ ReadyLayer doesn't replace your workflow. It integrates seamlessly with your exi
 
 **Testimonial 1:**
 > "ReadyLayer caught a critical SQL injection vulnerability that would have made it to production. It's like having a security expert review every PR."
-> 
+>
 > — Sarah Chen, Staff Engineer, Acme Corp
 
 **Testimonial 2:**
 > "We went from 60% to 85% test coverage in 3 months, all automated. ReadyLayer generates tests faster than we could write them."
-> 
+>
 > — Mike Rodriguez, Engineering Manager, TechCo
 
 **Testimonial 3:**
 > "Our API docs finally stay in sync with code. No more support tickets asking 'where's the API doc for this endpoint?'"
-> 
+>
 > — David Kim, Platform Engineer, StartupXYZ
 
 ### Logos

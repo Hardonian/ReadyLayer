@@ -130,9 +130,9 @@ class ReadinessEngine:
         """Parse Playwright results from report directory."""
         report_dir = self.project_root / "playwright-report"
         test_results_dir = self.project_root / "test-results"
-        
+
         findings: List[Finding] = []
-        
+
         if report_dir.exists():
             output = ToolOutput(
                 tool="playwright",
@@ -144,7 +144,7 @@ class ReadinessEngine:
                 },
             )
             findings.extend(self.parsers["playwright"].parse(output))
-        
+
         return findings
 
     def generate_outputs(

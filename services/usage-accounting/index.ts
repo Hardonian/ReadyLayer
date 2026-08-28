@@ -1,6 +1,6 @@
 /**
  * Usage Accounting Service
- * 
+ *
  * Tracks token usage per run/stage for billing and analytics
  */
 

@@ -27,7 +27,7 @@ export function usePersona(): UsePersonaResult {
         // In production, this would call the persona detection API
         // For now, we'll use a simple heuristic or default to founder
         // This is a placeholder - actual implementation would call /api/v1/persona/detect
-        
+
         // Mock: Default to founder for now
         // In production, this would be determined by analyzing user's repositories
         setPersona('founder')

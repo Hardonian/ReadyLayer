@@ -1,6 +1,6 @@
 /**
  * Budget Service
- * 
+ *
  * Manages organization/repo/stage budgets and enforces limits
  */
 

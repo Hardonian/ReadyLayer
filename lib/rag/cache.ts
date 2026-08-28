@@ -1,6 +1,6 @@
 /**
  * Semantic Cache for RAG Queries
- * 
+ *
  * Caches query results to avoid redundant embedding/retrieval calls
  */
 

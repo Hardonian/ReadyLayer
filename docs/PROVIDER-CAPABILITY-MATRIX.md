@@ -34,7 +34,7 @@ ReadyLayer integrates with GitHub, GitLab, and Bitbucket to provide native PR/MR
 - **API:** `GET /repos/{owner}/{repo}/commits/{sha}/check-runs`
 - **Available:** Check run name, status, conclusion, annotations (up to 50), output summary
 - **Rate Limit:** Same as PR metadata
-- **Constraints:** 
+- **Constraints:**
   - Maximum 50 annotations per check run
   - Annotations require file path and line numbers
   - Check runs are commit-scoped, not PR-scoped
@@ -63,7 +63,7 @@ ReadyLayer integrates with GitHub, GitLab, and Bitbucket to provide native PR/MR
 - **API:** `POST /repos/{owner}/{repo}/statuses/{sha}`
 - **Can Post:** State (success, failure, pending, error), description, context, target_url
 - **Rate Limit:** Same as inbound
-- **Constraints:** 
+- **Constraints:**
   - One status per context per commit
   - Can be required by branch protection rules
   - Description max 140 characters (truncated in UI)

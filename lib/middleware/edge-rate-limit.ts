@@ -1,6 +1,6 @@
 /**
  * Edge-Safe Rate Limiting
- * 
+ *
  * In-memory rate limiting for Edge runtime (middleware)
  * No Redis dependency - uses simple Map-based storage
  */

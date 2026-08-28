@@ -1,6 +1,6 @@
 /**
  * Git Provider Adapter
- * 
+ *
  * Provider-agnostic abstraction for Git host operations
  */
 
@@ -63,7 +63,7 @@ class GitHubAdapter implements GitProviderAdapter {
     // GitHub uses workflow_dispatch
     // For MVP, we'll use a default workflow ID
     const workflowId = '.github/workflows/readylayer-tests.yml';
-    
+
     await githubAPIClient.dispatchWorkflow(
       repo,
       workflowId,

@@ -1,9 +1,9 @@
 /**
  * Redis-Backed RAG Cache
- * 
+ *
  * Persistent, cross-instance cache for RAG queries with in-memory fallback.
  * Dramatically reduces redundant LLM and embedding API calls.
- * 
+ *
  * Features:
  * - Redis primary cache (persistent, shared across instances)
  * - In-memory fallback (if Redis unavailable)

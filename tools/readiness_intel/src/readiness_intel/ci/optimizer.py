@@ -99,7 +99,7 @@ class TestSelector:
         changed_files: List[str],
     ) -> TestSelection:
         """Select tests based on risk analysis."""
-        
+
         # Determine base tier from risk level
         risk_to_tier = {
             RiskLevel.CRITICAL: TestTier.FULL_REGRESSION,
@@ -107,30 +107,30 @@ class TestSelector:
             RiskLevel.MEDIUM: TestTier.E2E,
             RiskLevel.LOW: TestTier.UNIT,
         }
-        
+
         base_tier = risk_to_tier[impact_analysis.overall_risk]
-        
+
         # Customize based on file changes
         selected_tests = self._customize_tests(
             base_tier,
             changed_files,
             impact_analysis.file_predictions
         )
-        
+
         # Calculate duration
         duration = self._calculate_duration(selected_tests)
-        
+
         # Determine what to skip
         all_tests = self.TEST_SUITES[TestTier.FULL_REGRESSION]["tests"]
         tests_to_skip = [t for t in all_tests if t not in selected_tests]
-        
+
         # Generate explanation
         explanation = self._generate_explanation(
             impact_analysis,
             base_tier,
             selected_tests
         )
-        
+
         return TestSelection(
             tier=base_tier,
             tests_to_run=selected_tests,
@@ -148,10 +148,10 @@ class TestSelector:
     ) -> List[str]:
         """Customize test selection based on specific file changes."""
         base_tests = self.TEST_SUITES[base_tier]["tests"].copy()
-        
+
         # Add targeted tests based on file types
         additional_tests = []
-        
+
         for file_path in changed_files:
             if "app/(app)/" in file_path:
                 additional_tests.extend(["e2e:dashboard", "e2e:auth"])
@@ -167,23 +167,23 @@ class TestSelector:
                 additional_tests.extend(["api:tests", "stress:api"])
             if "e2e" in file_path:
                 additional_tests.extend(["e2e:full"])
-        
+
         # Check file predictions for specific test recommendations
         for prediction in file_predictions:
             for test in prediction.recommended_tests:
                 if test not in additional_tests:
                     additional_tests.append(test)
-        
+
         # Merge and deduplicate
         combined = list(dict.fromkeys(base_tests + additional_tests))
-        
+
         return combined
 
     def _calculate_duration(self, tests: List[str]) -> float:
         """Estimate CI duration for selected tests."""
         # Rough estimation based on test types
         duration = 0.0
-        
+
         for test in tests:
             if "lint" in test or "typecheck" in test:
                 duration += 1
@@ -201,7 +201,7 @@ class TestSelector:
                 duration += 15
             else:
                 duration += 3
-        
+
         return duration
 
     def _generate_explanation(
@@ -212,18 +212,18 @@ class TestSelector:
     ) -> str:
         """Generate human-readable explanation for test selection."""
         parts = []
-        
+
         parts.append(
             f"Test tier selected: {tier.value.upper()} "
             f"(risk level: {impact_analysis.overall_risk.value})"
         )
-        
+
         if impact_analysis.invariant_risks:
             parts.append(
                 f"At-risk invariants ({len(impact_analysis.invariant_risks)}): "
                 f"{', '.join(impact_analysis.invariant_risks[:3])}"
             )
-        
+
         high_risk_files = [
             p.target for p in impact_analysis.file_predictions
             if p.risk_level in [RiskLevel.CRITICAL, RiskLevel.HIGH]
@@ -232,9 +232,9 @@ class TestSelector:
             parts.append(
                 f"High-risk files driving test selection: {', '.join(high_risk_files[:3])}"
             )
-        
+
         parts.append(f"Selected {len(selected_tests)} test jobs")
-        
+
         return "; ".join(parts)
 
 
@@ -254,20 +254,20 @@ class CIOptimizer:
         impact_analysis: ChangeImpactAnalysis,
     ) -> Dict[str, Any]:
         """Generate CI optimization configuration for a PR."""
-        
+
         # Select tests
         changed_files = [f.path for f in impact_analysis.files_changed]
         test_selection = self.test_selector.select_tests(
             impact_analysis,
             changed_files
         )
-        
+
         # Generate GitHub Actions matrix
         matrix = self._generate_matrix(test_selection)
-        
+
         # Generate skip conditions
         skip_conditions = self._generate_skip_conditions(test_selection)
-        
+
         result = {
             "risk_level": impact_analysis.overall_risk.value,
             "risk_confidence": impact_analysis.risk_confidence,
@@ -281,18 +281,18 @@ class CIOptimizer:
             "invariant_risks": impact_analysis.invariant_risks,
             "predicted_readiness_delta": impact_analysis.predicted_readiness_delta,
         }
-        
+
         # Write to file
         output_file = self.output_dir / "ci-optimization.json"
         with open(output_file, 'w') as f:
             json.dump(result, f, indent=2)
-        
+
         return result
 
     def _generate_matrix(self, test_selection: TestSelection) -> Dict[str, Any]:
         """Generate GitHub Actions matrix configuration."""
         include = []
-        
+
         # Map tests to matrix entries
         test_mapping = {
             "lint": {"name": "Lint", "cmd": "npm run lint"},
@@ -311,17 +311,17 @@ class CIOptimizer:
             "stress:api": {"name": "Stress - API", "cmd": "npm run test:stress:api"},
             "stress:workers": {"name": "Stress - Workers", "cmd": "npm run test:stress:workers"},
         }
-        
+
         for test in test_selection.tests_to_run:
             if test in test_mapping:
                 include.append(test_mapping[test])
-        
+
         return {"include": include}
 
     def _generate_skip_conditions(self, test_selection: TestSelection) -> Dict[str, bool]:
         """Generate conditions for skipping tests."""
         all_tests = TestSelector.TEST_SUITES[TestTier.FULL_REGRESSION]["tests"]
-        
+
         return {
             test: test in test_selection.tests_to_skip
             for test in all_tests
@@ -338,10 +338,10 @@ class CIOptimizer:
         """Estimate time/cost savings from optimization."""
         full_duration = TestSelector.TEST_SUITES[TestTier.FULL_REGRESSION]["duration"]
         selected_duration = test_selection.estimated_duration_minutes
-        
+
         savings_minutes = full_duration - selected_duration
         savings_percent = (savings_minutes / full_duration) * 100 if full_duration > 0 else 0
-        
+
         return {
             "full_suite_duration": full_duration,
             "selected_duration": selected_duration,

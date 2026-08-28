@@ -1,6 +1,6 @@
 /**
  * API route for Python job status polling
- * 
+ *
  * GET /api/python-jobs/[jobId] - Get job status and results
  */
 

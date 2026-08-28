@@ -1,6 +1,6 @@
 /**
  * Jobs Module
- * 
+ *
  * Server-side job management with tenant isolation.
  * Provides enqueue, status polling, and result retrieval.
  */
@@ -37,7 +37,7 @@ export interface JobData {
 
 /**
  * Enqueue a new job
- * 
+ *
  * @param params - Job parameters
  * @returns Job ID
  */
@@ -59,7 +59,7 @@ export async function enqueueJob({
   maxRetries?: number;
 }): Promise<string> {
   const traceId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-  
+
   logger.info({
     msg: 'Enqueueing job',
     traceId,
@@ -132,7 +132,7 @@ export async function enqueueJob({
 
 /**
  * Get a single job by ID
- * 
+ *
  * @param jobId - Job ID
  * @returns Job data or null
  */
@@ -166,7 +166,7 @@ export async function getJob(jobId: string): Promise<JobData | null> {
 
 /**
  * List jobs for a tenant
- * 
+ *
  * @param params - Filter parameters
  * @returns Array of jobs
  */
@@ -229,7 +229,7 @@ export async function listJobs({
 
 /**
  * Get job result
- * 
+ *
  * @param jobId - Job ID
  * @returns Result data or null if not completed
  */
@@ -263,7 +263,7 @@ export async function getJobResult(jobId: string): Promise<{
 
 /**
  * Cancel a queued or running job
- * 
+ *
  * @param jobId - Job ID
  * @param tenantId - Tenant ID for verification
  * @returns Success status

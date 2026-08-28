@@ -1,6 +1,6 @@
 /**
  * Metrics API
- * 
+ *
  * GET /api/v1/metrics - Get readiness metrics
  */
 

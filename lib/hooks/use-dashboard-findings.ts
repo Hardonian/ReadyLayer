@@ -1,6 +1,6 @@
 /**
  * Dashboard Findings Hook
- * 
+ *
  * Fetches findings inbox with real-time updates
  */
 

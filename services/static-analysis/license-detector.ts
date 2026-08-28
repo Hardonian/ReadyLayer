@@ -1,9 +1,9 @@
 /**
  * License Detector
- * 
+ *
  * Scans files for license headers and detects restrictive licenses.
  * Essential for OSS maintainers to prevent license violations.
- * 
+ *
  * Detects:
  * - GPL (Copyleft) - v2, v3
  * - AGPL (Affero GPL) - most restrictive

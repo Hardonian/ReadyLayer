@@ -1,6 +1,6 @@
 /**
  * Installations API Route
- * 
+ *
  * GET /api/v1/installations - List installations (tenant-isolated)
  */
 

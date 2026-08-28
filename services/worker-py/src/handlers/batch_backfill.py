@@ -1,7 +1,7 @@
 """Batch backfill handler - Reprocess bounded time range / dataset slice.
 
 This handler supports reprocessing data for a specific time range,
-useful for backfilling historical data, re-running analysis on 
+useful for backfilling historical data, re-running analysis on
 specific date ranges, or repairing data after schema changes.
 
 Deterministic: Same inputs produce identical outputs.
@@ -24,32 +24,32 @@ logger = get_logger(__name__)
 @register_handler
 class BatchBackfillHandler(BaseHandler):
     """Handler for batch.backfill job type.
-    
+
     Reprocesses a bounded time range or dataset slice for a tenant.
     Supports dry-run mode for safe testing.
-    
+
     Real tables connected:
     - Review: Reprocess review guard results
     - TestRun: Reprocess test execution data
     - Violation: Reprocess security violations
     - ReadyLayerRun: Reprocess pipeline runs
     """
-    
+
     job_type = "batch.backfill"
-    
+
     # Supported entity types for backfill
     SUPPORTED_ENTITIES = [
         "reviews",
-        "test_runs", 
+        "test_runs",
         "violations",
         "docs",
         "readylayer_runs",
         "governance_runs",
     ]
-    
+
     def validate_payload(self, payload: dict) -> dict:
         """Validate batch.backfill payload.
-        
+
         Expected payload:
             - tenant_id (organization_id): str - Organization to backfill
             - entity: str - Entity type to backfill (e.g., 'reviews', 'test_runs')
@@ -64,7 +64,7 @@ class BatchBackfillHandler(BaseHandler):
         for field in required:
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
-        
+
         # Validate entity type
         entity = payload["entity"]
         if entity not in self.SUPPORTED_ENTITIES:
@@ -72,38 +72,38 @@ class BatchBackfillHandler(BaseHandler):
                 f"Unsupported entity: {entity}. "
                 f"Must be one of: {self.SUPPORTED_ENTITIES}"
             )
-        
+
         # Validate dates
         try:
             from_date = datetime.fromisoformat(payload["from_date"].replace('Z', '+00:00'))
             to_date = datetime.fromisoformat(payload["to_date"].replace('Z', '+00:00'))
         except (ValueError, AttributeError) as e:
             raise ValueError(f"Invalid date format: {e}. Use ISO format (YYYY-MM-DDTHH:MM:SS)")
-        
+
         # Validate date range
         if from_date >= to_date:
             raise ValueError("from_date must be before to_date")
-        
+
         max_range = timedelta(days=365)
         if to_date - from_date > max_range:
             raise ValueError("Date range cannot exceed 365 days")
-        
+
         # Set defaults
         payload["dry_run"] = payload.get("dry_run", True)
         payload["limit"] = min(int(payload.get("limit", 1000)), 5000)  # Cap at 5000
         payload["cursor"] = payload.get("cursor")
-        payload["idempotency_key"] = payload.get("idempotency_key", 
+        payload["idempotency_key"] = payload.get("idempotency_key",
             self._generate_idempotency_key(payload["tenant_id"], entity, from_date, to_date))
-        
+
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         """Execute batch backfill.
-        
+
         Args:
             payload: Validated payload with backfill parameters
             context: Execution context with worker_id
-        
+
         Returns:
             JobResult with backfill summary
         """
@@ -115,7 +115,7 @@ class BatchBackfillHandler(BaseHandler):
         limit = payload["limit"]
         cursor = payload["cursor"]
         idempotency_key = payload["idempotency_key"]
-        
+
         logger.info(
             "Starting batch backfill",
             tenant_id=tenant_id,
@@ -126,7 +126,7 @@ class BatchBackfillHandler(BaseHandler):
             limit=limit,
             idempotency_key=idempotency_key,
         )
-        
+
         try:
             with get_cursor() as cursor_obj:
                 # Check idempotency
@@ -147,7 +147,7 @@ class BatchBackfillHandler(BaseHandler):
                                 "previous_result": existing["result"],
                             }
                         )
-                
+
                 # Execute backfill based on entity type
                 if entity == "reviews":
                     result = self._backfill_reviews(
@@ -178,13 +178,13 @@ class BatchBackfillHandler(BaseHandler):
                         success=False,
                         error=f"Unsupported entity: {entity}",
                     )
-                
+
                 # Store idempotency record if not dry run
                 if not dry_run and result["success"]:
                     self._store_idempotency(
                         cursor_obj, idempotency_key, tenant_id, entity, result
                     )
-                
+
                 # Build final result
                 final_result = {
                     "tenant_id": tenant_id,
@@ -197,7 +197,7 @@ class BatchBackfillHandler(BaseHandler):
                     "worker_id": context.get("worker_id"),
                     **result,
                 }
-                
+
                 logger.info(
                     "Batch backfill complete",
                     tenant_id=tenant_id,
@@ -205,7 +205,7 @@ class BatchBackfillHandler(BaseHandler):
                     processed=result.get("processed", 0),
                     dry_run=dry_run,
                 )
-                
+
                 return JobResult(
                     success=result.get("success", True),
                     data=final_result,
@@ -217,7 +217,7 @@ class BatchBackfillHandler(BaseHandler):
                         }
                     }
                 )
-                
+
         except Exception as e:
             logger.error(
                 "Batch backfill failed",
@@ -230,19 +230,19 @@ class BatchBackfillHandler(BaseHandler):
                 success=False,
                 error=f"Batch backfill failed: {str(e)}",
             )
-    
-    def _generate_idempotency_key(self, tenant_id: str, entity: str, 
+
+    def _generate_idempotency_key(self, tenant_id: str, entity: str,
                                    from_date: datetime, to_date: datetime) -> str:
         """Generate deterministic idempotency key."""
         content = f"{tenant_id}:{entity}:{from_date.isoformat()}:{to_date.isoformat()}"
         return hashlib.sha256(content.encode()).hexdigest()[:32]
-    
+
     def _check_idempotency(self, cursor, key: str) -> Optional[dict]:
         """Check if backfill was already completed."""
         cursor.execute(
             """
             SELECT result, created_at as completed_at
-            FROM job_results 
+            FROM job_results
             WHERE job_id = %s AND result->>'status' = 'completed'
             ORDER BY created_at DESC
             LIMIT 1
@@ -252,13 +252,13 @@ class BatchBackfillHandler(BaseHandler):
         row = cursor.fetchone()
         if row:
             return {
-                "result": row["result"] if isinstance(row["result"], dict) 
+                "result": row["result"] if isinstance(row["result"], dict)
                          else json.loads(row["result"]),
                 "completed_at": row["completed_at"].isoformat() if row["completed_at"] else None,
             }
         return None
-    
-    def _store_idempotency(self, cursor, key: str, tenant_id: str, 
+
+    def _store_idempotency(self, cursor, key: str, tenant_id: str,
                            entity: str, result: dict) -> None:
         """Store idempotency record."""
         cursor.execute(
@@ -280,8 +280,8 @@ class BatchBackfillHandler(BaseHandler):
                 }),
             ),
         )
-    
-    def _backfill_reviews(self, cursor, tenant_id: str, from_date: datetime, 
+
+    def _backfill_reviews(self, cursor, tenant_id: str, from_date: datetime,
                           to_date: datetime, limit: int, dry_run: bool) -> dict:
         """Backfill Review data."""
         # Count total in range
@@ -299,7 +299,7 @@ class BatchBackfillHandler(BaseHandler):
             (tenant_id, from_date, to_date),
         )
         stats = cursor.fetchone()
-        
+
         result = {
             "success": True,
             "processed": stats["total"] or 0,
@@ -309,14 +309,14 @@ class BatchBackfillHandler(BaseHandler):
             "updated": 0,
             "errors": 0,
         }
-        
+
         if not dry_run:
             # Example: Update summary fields if needed
             # This is where actual backfill logic would go
             result["updated"] = 0  # Would count actual updates
-        
+
         return result
-    
+
     def _backfill_test_runs(self, cursor, tenant_id: str, from_date: datetime,
                             to_date: datetime, limit: int, dry_run: bool) -> dict:
         """Backfill TestRun data."""
@@ -334,7 +334,7 @@ class BatchBackfillHandler(BaseHandler):
             (tenant_id, from_date, to_date),
         )
         stats = cursor.fetchone()
-        
+
         return {
             "success": True,
             "processed": stats["total"] or 0,
@@ -343,7 +343,7 @@ class BatchBackfillHandler(BaseHandler):
             "updated": 0,
             "errors": 0,
         }
-    
+
     def _backfill_violations(self, cursor, tenant_id: str, from_date: datetime,
                              to_date: datetime, limit: int, dry_run: bool) -> dict:
         """Backfill Violation data."""
@@ -363,7 +363,7 @@ class BatchBackfillHandler(BaseHandler):
             (tenant_id, from_date, to_date),
         )
         stats = cursor.fetchone()
-        
+
         return {
             "success": True,
             "processed": stats["total"] or 0,
@@ -376,7 +376,7 @@ class BatchBackfillHandler(BaseHandler):
             "updated": 0,
             "errors": 0,
         }
-    
+
     def _backfill_docs(self, cursor, tenant_id: str, from_date: datetime,
                        to_date: datetime, limit: int, dry_run: bool) -> dict:
         """Backfill Doc data."""
@@ -395,7 +395,7 @@ class BatchBackfillHandler(BaseHandler):
             (tenant_id, from_date, to_date),
         )
         stats = cursor.fetchone()
-        
+
         return {
             "success": True,
             "processed": stats["total"] or 0,
@@ -405,7 +405,7 @@ class BatchBackfillHandler(BaseHandler):
             "updated": 0,
             "errors": 0,
         }
-    
+
     def _backfill_readylayer_runs(self, cursor, tenant_id: str, from_date: datetime,
                                   to_date: datetime, limit: int, dry_run: bool) -> dict:
         """Backfill ReadyLayerRun data."""
@@ -424,7 +424,7 @@ class BatchBackfillHandler(BaseHandler):
             (tenant_id, from_date, to_date),
         )
         stats = cursor.fetchone()
-        
+
         return {
             "success": True,
             "processed": stats["total"] or 0,
@@ -434,7 +434,7 @@ class BatchBackfillHandler(BaseHandler):
             "updated": 0,
             "errors": 0,
         }
-    
+
     def _backfill_governance_runs(self, cursor, tenant_id: str, from_date: datetime,
                                   to_date: datetime, limit: int, dry_run: bool) -> dict:
         """Backfill GovernanceRun data."""
@@ -453,7 +453,7 @@ class BatchBackfillHandler(BaseHandler):
             (tenant_id, from_date, to_date),
         )
         stats = cursor.fetchone()
-        
+
         return {
             "success": True,
             "processed": stats["total"] or 0,

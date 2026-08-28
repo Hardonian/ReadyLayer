@@ -18,7 +18,7 @@ const reviewSchema = z.object({
 /**
  * POST /api/v1/ide/review
  * Review a file for IDE/CLI integration
- * 
+ *
  * Lightweight endpoint for IDE extensions and CLI tools
  */
 export async function POST(request: NextRequest) {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (!parseResult.success) {
       return parseResult.response;
     }
-    
+
     const bodyResult = await validateBody(
       parseResult.data,
       reviewSchema

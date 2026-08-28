@@ -2,7 +2,7 @@
 
 /**
  * CI Health Check
- * 
+ *
  * Validates deployment health after staging/production deploy
  * Run with: pnpm tsx scripts/ci-health-check.ts
  */

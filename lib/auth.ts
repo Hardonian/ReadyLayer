@@ -1,6 +1,6 @@
 /**
  * Authentication Utilities
- * 
+ *
  * OAuth, API Keys, JWT authentication and authorization
  */
 
@@ -31,12 +31,12 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<AuthUs
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    
+
     if (!supabaseUrl || !supabaseAnonKey) {
       logger.warn('Supabase environment variables not configured');
       return null;
     }
-    
+
     const supabase = createServerClient(
       supabaseUrl,
       supabaseAnonKey,

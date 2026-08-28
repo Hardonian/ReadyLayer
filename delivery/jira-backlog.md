@@ -9,9 +9,9 @@ Epics are organized by week and feature area. Each epic contains multiple storie
 ## Epic 1: Infrastructure Setup
 
 ### Story 1.1: Set Up Monorepo Structure
-**Type:** Task  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Task
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -36,9 +36,9 @@ Set up monorepo structure with TypeScript, Node.js, and proper package organizat
 ---
 
 ### Story 1.2: Configure Docker and Docker Compose
-**Type:** Task  
-**Priority:** Critical  
-**Assignee:** DevOps Engineer  
+**Type:** Task
+**Priority:** Critical
+**Assignee:** DevOps Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -63,9 +63,9 @@ Set up Docker and Docker Compose for local development environment.
 ---
 
 ### Story 1.3: Set Up PostgreSQL Database Schema
-**Type:** Task  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Task
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -90,9 +90,9 @@ Design and implement PostgreSQL database schema for users, orgs, repos, reviews,
 ---
 
 ### Story 1.4: Set Up Redis for Caching and Queues
-**Type:** Task  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Task
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -117,9 +117,9 @@ Set up Redis for caching and message queues (background jobs).
 ---
 
 ### Story 1.5: Configure CI/CD Pipeline
-**Type:** Task  
-**Priority:** Critical  
-**Assignee:** DevOps Engineer  
+**Type:** Task
+**Priority:** Critical
+**Assignee:** DevOps Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -146,9 +146,9 @@ Set up GitHub Actions CI/CD pipeline for testing, linting, and deployment.
 ## Epic 2: Authentication & Authorization
 
 ### Story 2.1: Implement GitHub OAuth Flow
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -173,9 +173,9 @@ Implement GitHub OAuth 2.0 flow for user authentication.
 ---
 
 ### Story 2.2: Implement API Key Management
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -200,9 +200,9 @@ Implement API key generation, validation, and management.
 ---
 
 ### Story 2.3: Implement Basic RBAC
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -229,9 +229,9 @@ Implement basic role-based access control (owner, admin, member, viewer).
 ## Epic 3: API Service Foundation
 
 ### Story 3.1: Set Up Fastify Server
-**Type:** Task  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Task
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -256,9 +256,9 @@ Set up Fastify server with basic middleware and routing.
 ---
 
 ### Story 3.2: Implement Health Check Endpoints
-**Type:** Task  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Task
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 1
 
 **Description:**
@@ -283,9 +283,9 @@ Implement health check endpoints for monitoring and load balancers.
 ## Epic 4: GitHub Integration
 
 ### Story 4.1: Implement GitHub Webhook Handler
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -310,9 +310,9 @@ Implement webhook handler for GitHub events (PR opened, updated, merged, CI comp
 ---
 
 ### Story 4.2: Implement GitHub API Client
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -339,9 +339,9 @@ Implement GitHub API client for PRs, comments, status checks, file contents.
 ---
 
 ### Story 4.3: Implement GitHub App Installation Flow
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -368,9 +368,9 @@ Implement GitHub App installation flow (OAuth, installation storage, webhook con
 ## Epic 5: Code Parser Service
 
 ### Story 5.1: Implement AST Parsing for TypeScript/JavaScript
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -395,9 +395,9 @@ Implement AST parsing for TypeScript/JavaScript using Babel.
 ---
 
 ### Story 5.2: Implement Diff Parsing
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -424,9 +424,9 @@ Implement diff parsing (unified diff format) to extract file changes.
 ## Epic 6: Review Guard (MVP)
 
 ### Story 6.1: Implement Diff Ingestion
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -451,9 +451,9 @@ Implement diff ingestion and context building for review analysis.
 ---
 
 ### Story 6.2: Implement Basic Rule Engine
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -478,9 +478,9 @@ Implement basic rule engine with 5-10 security and quality rules.
 ---
 
 ### Story 6.3: Implement PR Comment Generation
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -505,9 +505,9 @@ Implement PR comment generation (inline comments and summary).
 ---
 
 ### Story 6.4: Implement Status Check Updates
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 2
 
 **Description:**
@@ -534,9 +534,9 @@ Implement status check updates (success/failure based on issues found).
 ## Epic 7: LLM Service
 
 ### Story 7.1: Implement OpenAI API Client
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -561,9 +561,9 @@ Implement OpenAI API client for code analysis and test generation.
 ---
 
 ### Story 7.2: Implement Prompt Template Management
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -588,9 +588,9 @@ Implement prompt template management for code review, test generation, doc gener
 ---
 
 ### Story 7.3: Implement Response Caching
-**Type:** Feature  
-**Priority:** Medium  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Medium
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -617,9 +617,9 @@ Implement caching for LLM responses to reduce costs and improve performance.
 ## Epic 8: AI Detection
 
 ### Story 8.1: Implement Commit Message Analysis
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -642,9 +642,9 @@ Implement AI detection via commit message analysis.
 ---
 
 ### Story 8.2: Implement Author Detection
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -669,9 +669,9 @@ Implement AI detection via commit author analysis.
 ## Epic 9: Test Engine (MVP)
 
 ### Story 9.1: Implement Test Framework Detection
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -696,9 +696,9 @@ Implement test framework detection (Jest for MVP).
 ---
 
 ### Story 9.2: Implement Test Generation
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -723,9 +723,9 @@ Implement test generation using LLM for AI-touched files.
 ---
 
 ### Story 9.3: Implement Test Placement
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -750,9 +750,9 @@ Implement test placement (co-located for MVP).
 ## Epic 10: Coverage Calculation
 
 ### Story 10.1: Implement Coverage Report Parsing
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -777,9 +777,9 @@ Implement coverage report parsing (lcov format).
 ---
 
 ### Story 10.2: Implement Coverage Threshold Enforcement
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 3
 
 **Description:**
@@ -806,9 +806,9 @@ Implement coverage threshold enforcement (fail CI if below threshold).
 ## Epic 11: Doc Sync (MVP)
 
 ### Story 11.1: Implement API Endpoint Extraction
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -833,9 +833,9 @@ Implement API endpoint extraction for Express.js.
 ---
 
 ### Story 11.2: Implement OpenAPI Spec Generation
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -860,9 +860,9 @@ Implement OpenAPI 3.1 spec generation from extracted endpoints.
 ---
 
 ### Story 11.3: Implement Merge-Triggered Updates
-**Type:** Feature  
-**Priority:** Critical  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** Critical
+**Assignee:** Backend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -889,9 +889,9 @@ Implement documentation updates on merge (commit or PR).
 ## Epic 12: Configuration System
 
 ### Story 12.1: Implement `.readylayer.yml` Parsing
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -916,9 +916,9 @@ Implement parsing and validation of `.readylayer.yml` configuration files.
 ---
 
 ### Story 12.2: Implement Config API Endpoints
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Backend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Backend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -945,9 +945,9 @@ Implement API endpoints for reading and updating configuration.
 ## Epic 13: Dashboard (Basic)
 
 ### Story 13.1: Implement Repo List Page
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Frontend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Frontend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -972,9 +972,9 @@ Implement basic repo list page showing connected repositories.
 ---
 
 ### Story 13.2: Implement Repo Detail Page
-**Type:** Feature  
-**Priority:** High  
-**Assignee:** Frontend Engineer  
+**Type:** Feature
+**Priority:** High
+**Assignee:** Frontend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -1002,9 +1002,9 @@ Implement repo detail page showing reviews, tests, docs, and config.
 ## Epic 14: Documentation & Launch Prep
 
 ### Story 14.1: Write API Documentation
-**Type:** Task  
-**Priority:** High  
-**Assignee:** Technical Writer / Backend Engineer  
+**Type:** Task
+**Priority:** High
+**Assignee:** Technical Writer / Backend Engineer
 **Sprint:** Week 4
 
 **Description:**
@@ -1029,9 +1029,9 @@ Write comprehensive API documentation (OpenAPI spec + guides).
 ---
 
 ### Story 14.2: Write User Documentation
-**Type:** Task  
-**Priority:** High  
-**Assignee:** Technical Writer / Product Manager  
+**Type:** Task
+**Priority:** High
+**Assignee:** Technical Writer / Product Manager
 **Sprint:** Week 4
 
 **Description:**

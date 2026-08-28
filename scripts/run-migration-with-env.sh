@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run Installation Token Migration
-# 
+#
 # Usage:
 #   ./scripts/run-migration-with-env.sh
 #

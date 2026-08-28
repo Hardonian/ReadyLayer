@@ -1,6 +1,6 @@
 /**
  * Job Status API Route
- * 
+ *
  * GET /api/jobs/[id] - Get job status and details
  */
 
@@ -49,12 +49,12 @@ export async function GET(
         await canAccessOrganization(user.id, job.organizationId);
 
       if (!hasAccess) {
-        log.warn({ 
-          jobId, 
-          userId: user.id, 
-          jobOrgId: job.organizationId 
+        log.warn({
+          jobId,
+          userId: user.id,
+          jobOrgId: job.organizationId
         }, 'User attempted to access job from different organization');
-        
+
         return NextResponse.json(
           { error: { code: 'FORBIDDEN', message: 'Access denied to this job' } },
           { status: 403 }
@@ -62,12 +62,12 @@ export async function GET(
       }
     } else if (job.userId && job.userId !== user.id) {
       // If no organization, only job owner can access
-      log.warn({ 
-        jobId, 
-        userId: user.id, 
-        jobUserId: job.userId 
+      log.warn({
+        jobId,
+        userId: user.id,
+        jobUserId: job.userId
       }, 'User attempted to access job they do not own');
-      
+
       return NextResponse.json(
         { error: { code: 'FORBIDDEN', message: 'Access denied to this job' } },
         { status: 403 }
@@ -83,12 +83,12 @@ export async function GET(
     log.error({ error, jobId: (await params).id }, 'Failed to fetch job status');
 
     return NextResponse.json(
-      { 
-        error: { 
-          code: 'INTERNAL_ERROR', 
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
           message: 'Failed to fetch job status. Please try again later.',
           context: { traceId: requestId }
-        } 
+        }
       },
       { status: 500 }
     );

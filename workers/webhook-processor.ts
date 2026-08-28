@@ -53,7 +53,7 @@ export function validateWebhookSignature(
     }
 
     const [algorithm, signatureValue] = parts;
-    
+
     // Supported algorithms
     if (algorithm !== 'sha256' && algorithm !== 'sha1') {
       return false;
@@ -91,7 +91,7 @@ export async function processWebhook(
   try {
     // Transform event to WebhookEvent format based on type
     const webhookEvent = transformEventToWebhookEvent(eventType, event);
-    
+
     if (!webhookEvent) {
       return { success: false, message: `Unsupported event type: ${eventType}` };
     }
@@ -115,7 +115,7 @@ function transformEventToWebhookEvent(
   if (eventType === 'pull_request') {
     const action = event.action as string;
     const pr = event.pull_request as Record<string, unknown> | undefined;
-    
+
     if (!pr) {
       return null;
     }
@@ -151,7 +151,7 @@ function transformEventToWebhookEvent(
 
   if (eventType === 'push') {
     const repo = event.repository as Record<string, unknown> | undefined;
-    
+
     return {
       type: 'merge.completed',
       installation: {
@@ -287,7 +287,7 @@ function transformEventToWebhookEvent(
 /**
  * Generate suggested fix as unified diff (minimal, safe fixes only)
  * Only generates fixes for trivial deterministic issues
- * 
+ *
  * Note: Currently, GitHub check runs include fix suggestions in annotation raw_details.
  * This function is kept for potential future use (e.g., creating patch files).
  */
@@ -311,7 +311,7 @@ function generateSuggestedFix(issue: Issue, fileContent: string): string | null 
 
   const lines = fileContent.split('\n');
   const lineIndex = issue.line - 1;
-  
+
   if (lineIndex < 0 || lineIndex >= lines.length) {
     return null;
   }
@@ -594,13 +594,13 @@ async function processPREvent(
     }
   } catch (error) {
     log.error(error, 'ReadyLayer Run failed');
-    
+
     // Check if this is a usage limit error
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const isUsageLimitError = errorMessage.includes('Usage limit exceeded') || 
+    const isUsageLimitError = errorMessage.includes('Usage limit exceeded') ||
                               errorMessage.includes('usage limit') ||
                               errorMessage.includes('Billing limit exceeded');
-    
+
     // Create check run with error status
     try {
       await prAdapter.createOrUpdateCheckRun(

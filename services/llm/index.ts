@@ -504,7 +504,7 @@ export class LLMService {
     }
 
     // During build time, skip validation
-    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' ||
                         process.env.NEXT_PHASE === 'phase-development-build' ||
                         typeof window === 'undefined' && !process.env.DATABASE_URL;
 

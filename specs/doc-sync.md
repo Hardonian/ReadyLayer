@@ -455,20 +455,20 @@ interface DriftReport {
 docs:
   enabled: true
   framework: "express" # Auto-detect if not specified
-  
+
   openapi:
     version: "3.1.0"
     output_path: "docs/openapi.yaml"
     enhance_with_llm: true
-  
+
   markdown:
     enabled: true
     output_path: "docs/api.md"
     template: "default" # default, custom
-  
+
   update_strategy: "pr" # commit, pr, artifact
   branch: "main"
-  
+
   storage:
     type: "github_releases" # github_releases, s3, registry, webhook
     repo: "acme/api-docs"
@@ -476,12 +476,12 @@ docs:
     # type: "s3"
     # bucket: "api-docs"
     # path: "openapi.yaml"
-  
+
   drift_prevention:
     enabled: true
     action: "auto_update" # auto_update, alert, block
     check_on: "pr" # pr, merge, both
-  
+
   excluded_paths:
     - "**/vendor/**"
     - "**/node_modules/**"

@@ -93,14 +93,14 @@ jobs:
   run-worker:
     runs-on: ubuntu-latest
     timeout-minutes: 4  # Must be less than interval
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: astral-sh/setup-uv@v3
         with:
           version: '0.5.x'
-      
+
       - name: Run worker batch
         working-directory: services/worker-py
         env:
@@ -283,8 +283,8 @@ ALERT_PAGERDUTY_KEY=your-integration-key
 
 ```sql
 -- Jobs by status
-SELECT status, COUNT(*) 
-FROM "Job" 
+SELECT status, COUNT(*)
+FROM "Job"
 WHERE "createdAt" > NOW() - INTERVAL '1 hour'
 GROUP BY status;
 

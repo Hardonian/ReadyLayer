@@ -1,6 +1,6 @@
 /**
  * Dashboard API Schemas
- * 
+ *
  * Type-safe contracts for snapshot + delta APIs
  */
 

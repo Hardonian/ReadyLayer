@@ -9,10 +9,10 @@ import { fadeIn } from '@/lib/design/motion'
  * Loading Spinner
  * Calm, professional spinner for async operations
  */
-export function LoadingSpinner({ 
+export function LoadingSpinner({
   className,
   size = 'md',
-}: { 
+}: {
   className?: string
   size?: 'sm' | 'md' | 'lg'
 }): React.JSX.Element {
@@ -49,10 +49,10 @@ export function LoadingSpinner({
  * Loading State Container
  * Provides consistent loading UI with optional message
  */
-export function LoadingState({ 
+export function LoadingState({
   message = 'Loading...',
   className,
-}: { 
+}: {
   message?: string
   className?: string
 }): React.JSX.Element {
@@ -96,10 +96,10 @@ export function Skeleton({
  * Skeleton Text
  * For loading text content
  */
-export function SkeletonText({ 
+export function SkeletonText({
   lines = 3,
   className,
-}: { 
+}: {
   lines?: number
   className?: string
 }): React.JSX.Element {

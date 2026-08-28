@@ -1,6 +1,6 @@
 /**
  * Dashboard PRs Hook
- * 
+ *
  * Fetches PR queue with real-time updates
  */
 

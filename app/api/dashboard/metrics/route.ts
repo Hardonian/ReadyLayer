@@ -1,12 +1,12 @@
 /**
  * Optimized Dashboard Metrics Snapshot API
- * 
+ *
  * Performance improvements:
  * - Uses database-level aggregations with groupBy (no more in-memory processing)
  * - Caches snapshot for 60 seconds
  * - Reduces data transfer with targeted selects
  * - Parallel query execution
- * 
+ *
  * GET /api/dashboard/metrics - Get aggregated metrics snapshot
  */
 
@@ -86,12 +86,12 @@ export const GET = createRouteHandler(
         reviewStats,
         violationStats,
         aiTouchedStats,
-        
+
         // Trends - Hourly aggregations
         hourlyRuns,
         hourlyReviews,
         hourlyViolations,
-        
+
         // Hot repos - Pre-aggregated by repository
         repoMetrics,
       ] = await Promise.all([
@@ -134,13 +134,13 @@ export const GET = createRouteHandler(
 
         // Hourly run trends (using raw query for efficiency)
         prisma.$queryRaw<Array<{ hour: string; count: number; ai_touched: number }>>`
-          SELECT 
+          SELECT
             DATE_TRUNC('hour', "createdAt") as hour,
             COUNT(*) as count,
             SUM(CASE WHEN "aiTouchedDetected" = true THEN 1 ELSE 0 END) as ai_touched
           FROM "ReadyLayerRun"
           WHERE "repositoryId" IN (
-            SELECT id FROM "Repository" 
+            SELECT id FROM "Repository"
             WHERE "organizationId" = ${organizationId}
             ${repositoryId ? prisma.$queryRaw`AND id = ${repositoryId}` : prisma.$queryRaw``}
           )
@@ -151,14 +151,14 @@ export const GET = createRouteHandler(
 
         // Hourly review trends
         prisma.$queryRaw<Array<{ hour: string; opened: number; merged: number; blocked: number }>>`
-          SELECT 
+          SELECT
             DATE_TRUNC('hour', "createdAt") as hour,
             COUNT(*) as opened,
             SUM(CASE WHEN status = 'completed' AND "isBlocked" = false THEN 1 ELSE 0 END) as merged,
             SUM(CASE WHEN "isBlocked" = true THEN 1 ELSE 0 END) as blocked
           FROM "Review"
           WHERE "repositoryId" IN (
-            SELECT id FROM "Repository" 
+            SELECT id FROM "Repository"
             WHERE "organizationId" = ${organizationId}
             ${repositoryId ? prisma.$queryRaw`AND id = ${repositoryId}` : prisma.$queryRaw``}
           )
@@ -169,13 +169,13 @@ export const GET = createRouteHandler(
 
         // Hourly violation trends by severity
         prisma.$queryRaw<Array<{ hour: string; severity: string; count: number }>>`
-          SELECT 
+          SELECT
             DATE_TRUNC('hour', "detectedAt") as hour,
             severity,
             COUNT(*) as count
           FROM "Violation"
           WHERE "repositoryId" IN (
-            SELECT id FROM "Repository" 
+            SELECT id FROM "Repository"
             WHERE "organizationId" = ${organizationId}
             ${repositoryId ? prisma.$queryRaw`AND id = ${repositoryId}` : prisma.$queryRaw``}
           )
@@ -193,7 +193,7 @@ export const GET = createRouteHandler(
           critical: number
         }>>`
           WITH review_stats AS (
-            SELECT 
+            SELECT
               r.id as "repositoryId",
               r."fullName" as "repositoryName",
               COUNT(*) as total,
@@ -206,14 +206,14 @@ export const GET = createRouteHandler(
             GROUP BY r.id, r."fullName"
           ),
           violation_stats AS (
-            SELECT 
+            SELECT
               v."repositoryId",
               SUM(CASE WHEN v.severity = 'critical' THEN 1 ELSE 0 END) as critical
             FROM "Violation" v
             WHERE v."detectedAt" >= ${startTime}
             GROUP BY v."repositoryId"
           )
-          SELECT 
+          SELECT
             rs."repositoryId",
             rs."repositoryName",
             rs.total,
@@ -241,7 +241,7 @@ export const GET = createRouteHandler(
       const meanTimeToUnblockResult = await prisma.$queryRaw<[{
         meanTimeMinutes: number
       }]>`
-        SELECT 
+        SELECT
           AVG(
             EXTRACT(EPOCH FROM (rev."completedAt" - rev."createdAt")) / 60
           ) as "meanTimeMinutes"

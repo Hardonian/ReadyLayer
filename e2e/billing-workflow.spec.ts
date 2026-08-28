@@ -1,6 +1,6 @@
 /**
  * Billing Workflow E2E Tests
- * 
+ *
  * Tests complete billing scenarios:
  * - Free tier usage and limits
  * - Upgrade flow

@@ -1,6 +1,6 @@
 /**
  * Readiness Command Center Dashboard
- * 
+ *
  * Makes ReadyLayer operationally indispensable with:
  * - AI-touched diff percentage
  * - Risk score trend

@@ -1,6 +1,6 @@
 /**
  * Provider Status Service
- * 
+ *
  * Posts status updates to git providers (GitHub, GitLab, Bitbucket)
  * during ReadyLayer run stages to provide native PR/MR presence.
  */
@@ -54,7 +54,7 @@ export interface StageStatusUpdate {
  */
 function issuesToAnnotations(issues: Issue[]): CheckRunAnnotation[] {
   const annotations: CheckRunAnnotation[] = [];
-  
+
   for (const issue of issues.slice(0, 50)) { // GitHub limit is 50
     let annotationLevel: 'notice' | 'warning' | 'failure';
     switch (issue.severity) {
@@ -131,7 +131,7 @@ export class ProviderStatusService {
    */
   async postStatusUpdate(update: StageStatusUpdate): Promise<void> {
     const log = logger.child({ runId: update.runId, stage: update.stage });
-    
+
     try {
       // Get repository and installation
       const repository = await prisma.repository.findUnique({
@@ -186,7 +186,7 @@ export class ProviderStatusService {
       if (update.stage === 'complete') {
         checkRunName = 'ReadyLayer';
         checkRunTitle = 'ReadyLayer Run';
-        
+
         // Aggregate summary from all stages
         const parts: string[] = [];
         if (update.details?.reviewGuard) {
@@ -292,7 +292,7 @@ AI Provenance Pack: present (hash ${latestPack.payloadHash.slice(0, 16)}...) •
           const statusState = update.conclusion === 'success' ? 'success' :
                              update.conclusion === 'failure' ? 'failure' :
                              update.conclusion === 'cancelled' ? 'error' : 'pending';
-          
+
           await prAdapter.updateStatusCheck(
             repository.fullName,
             update.prSha,

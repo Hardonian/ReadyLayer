@@ -155,12 +155,12 @@ function validateScopes(userScopes: string[], requiredScopes: string[]): boolean
 export async function GET(req: Request) {
   const token = extractToken(req);
   const user = await decodeJWT(token);
-  
+
   // Require read:repos and read:policies
   if (!validateScopes(user.scopes, ['read:repos', 'read:policies'])) {
     return Response.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
-  
+
   // Proceed with request
 }
 ```
@@ -238,7 +238,7 @@ const authUrl = `https://github.com/login/oauth/authorize?${new URLSearchParams(
 // Callback handler
 export async function GET(req: Request) {
   const { code, state } = await req.json();
-  
+
   // Validate state parameter
   if (!validateState(state)) {
     return Response.json({ error: 'Invalid state' }, { status: 400 });
@@ -246,13 +246,13 @@ export async function GET(req: Request) {
 
   // Exchange code for access token
   const githubUser = await exchangeCodeForUser(code);
-  
+
   // Create or update user in database
   const user = await upsertUser(githubUser);
-  
+
   // Generate ReadyLayer token
   const token = generateToken(user, getDefaultScopes(user.role));
-  
+
   return Response.json({
     success: true,
     data: { token, user: sanitizeUser(user) }
@@ -278,7 +278,7 @@ async function logSecurityEvent(event: SecurityEvent) {
   await db.securityEvent.create({
     data: event
   });
-  
+
   // Send to external monitoring (optional)
   if (process.env.WEBHOOK_URL) {
     await fetch(process.env.WEBHOOK_URL, {
@@ -298,16 +298,16 @@ const rateLimit = new Map<string, { count: number; resetTime: number }>();
 function checkRateLimit(userId: string, limit: number, window: number): boolean {
   const now = Date.now();
   const userLimit = rateLimit.get(userId);
-  
+
   if (!userLimit || now > userLimit.resetTime) {
     rateLimit.set(userId, { count: 1, resetTime: now + window });
     return true;
   }
-  
+
   if (userLimit.count >= limit) {
     return false;
   }
-  
+
   userLimit.count++;
   return true;
 }
@@ -322,7 +322,7 @@ function checkRateLimit(userId: string, limit: number, window: number): boolean 
 - [x] Token expiration and refresh
 - [x] Secure token storage (httpOnly cookies)
 
-### Authorization  
+### Authorization
 - [x] Role-based access control
 - [x] Scope-based permissions
 - [x] Middleware protection
@@ -336,7 +336,7 @@ function checkRateLimit(userId: string, limit: number, window: number): boolean 
 
 ### Security Headers
 - [x] XSS protection
-- [x] Clickjacking protection  
+- [x] Clickjacking protection
 - [x] Content type protection
 - [x] Transport security
 - [x] CSP headers

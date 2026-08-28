@@ -1,6 +1,6 @@
 /**
  * LLM Costs Tracking
- * 
+ *
  * Tracks all LLM API calls, tokens used, and costs by organization.
  * Supports multiple LLM providers (OpenAI, Claude, etc.)
  */
@@ -251,7 +251,7 @@ export function getOrganizationCosts(organizationId: string): LLMCostsData {
     costsByModel[call.model] = (costsByModel[call.model] || 0) + call.costUSD;
   }
 
-  const cacheHitRate = totalCalls > 0 
+  const cacheHitRate = totalCalls > 0
     ? Math.round((cachedCalls.length / totalCalls) * 100) / 100
     : 0;
 

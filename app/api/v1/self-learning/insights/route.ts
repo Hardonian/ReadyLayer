@@ -1,6 +1,6 @@
 /**
  * Self-Learning Insights API
- * 
+ *
  * GET /api/v1/self-learning/insights - Get aggregated insights and predictions
  */
 

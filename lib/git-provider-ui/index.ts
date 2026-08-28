@@ -1,6 +1,6 @@
 /**
  * Git Provider UI Adapter
- * 
+ *
  * Provides transposable UI components that adapt to different Git providers
  * (GitHub, GitLab, Bitbucket) for seamless integration into their workflows
  */
@@ -265,7 +265,7 @@ export function formatProviderComment(
   }
 ): string {
   const emoji = provider === 'github' ? '🔍' : provider === 'gitlab' ? '🔒' : '✅'
-  
+
   let comment = `${emoji} **${content.title}**\n\n`
   comment += `${content.body}\n\n`
 

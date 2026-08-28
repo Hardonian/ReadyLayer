@@ -28,7 +28,7 @@ export function AppLayout({ children }: { children: React.ReactNode }): React.JS
 
   React.useEffect(() => {
     const supabase = createSupabaseClient()
-    
+
     const getUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()

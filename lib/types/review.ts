@@ -1,9 +1,9 @@
 /**
  * Review & Review Guard Type Definitions
- * 
+ *
  * Centralized types for all review-related data structures.
  * Exports both Zod schemas and inferred TypeScript types for type-safe validation.
- * 
+ *
  * ARCHITECTURE:
  * - Schemas provide runtime validation (server & client)
  * - Inferred types provide compile-time safety

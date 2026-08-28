@@ -1,13 +1,13 @@
 #!/usr/bin/env tsx
 /**
  * ReadyLayer Doctor Script
- * 
+ *
  * Runs all checks locally that CI runs:
  * - Lint
  * - Type check
  * - Build
  * - Database schema validation
- * 
+ *
  * Usage: npm run doctor
  */
 
@@ -31,7 +31,7 @@ function runCheck(
 ): CheckResult {
   console.log(`\n🔍 Running: ${name}...`);
   const startTime = Date.now();
-  
+
   try {
     execSync(command, {
       stdio: 'inherit',

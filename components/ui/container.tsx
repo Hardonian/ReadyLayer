@@ -18,14 +18,14 @@ const sizeClasses = {
 
 /**
  * Container Component
- * 
+ *
  * Consistent horizontal padding and max-width
  */
-export function Container({ 
-  children, 
+export function Container({
+  children,
   className,
   size = 'lg',
-  ...props 
+  ...props
 }: ContainerProps): React.JSX.Element {
   return (
     <div

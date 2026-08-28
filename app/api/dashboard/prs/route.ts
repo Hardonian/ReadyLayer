@@ -1,6 +1,6 @@
 /**
  * Dashboard PRs Snapshot API
- * 
+ *
  * GET /api/dashboard/prs - Get PR queue snapshot
  */
 

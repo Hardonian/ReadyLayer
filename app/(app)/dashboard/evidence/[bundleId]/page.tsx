@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -21,8 +21,8 @@ import {
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { fadeIn } from '@/lib/design/motion'
-import { 
-  FileSearch, 
+import {
+  FileSearch,
   ArrowLeft,
   Download,
   ExternalLink,

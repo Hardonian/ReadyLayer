@@ -1,6 +1,6 @@
 /**
  * Policy Inheritance System
- * 
+ *
  * Manages policy inheritance from organization to repository level
  * with override capabilities and conflict resolution
  */

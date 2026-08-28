@@ -1,6 +1,6 @@
 /**
  * Validation Script for Founder-Specific Safeguards
- * 
+ *
  * Tests that all founder-specific rules are working correctly
  */
 
@@ -29,7 +29,7 @@ export async function middleware(request: Request) {
 `;
     const issues = await staticAnalysisService.analyze('middleware.ts', edgeCode);
     const edgeIssues = issues.filter(i => i.ruleId === 'founder.edge-runtime');
-    
+
     if (edgeIssues.length > 0) {
       console.log('  ✅ PASSED: Edge runtime rule detected Node-only import');
       passed++;
@@ -52,7 +52,7 @@ function processData(data: any): any {
 `;
     const issues = await staticAnalysisService.analyze('test.ts', typeErosionCode);
     const typeIssues = issues.filter(i => i.ruleId === 'founder.type-erosion');
-    
+
     if (typeIssues.length > 0) {
       console.log('  ✅ PASSED: Type erosion rule detected unnecessary any types');
       passed++;
@@ -78,7 +78,7 @@ export function main() {
 `;
     const issues = await staticAnalysisService.analyze('test.ts', unusedImportCode);
     const importIssues = issues.filter(i => i.ruleId === 'founder.unused-imports');
-    
+
     if (importIssues.length > 0) {
       console.log('  ✅ PASSED: Unused imports rule detected unused import');
       passed++;
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
 `;
     const issues = await staticAnalysisService.analyze('api/route.ts', authBugCode);
     const authIssues = issues.filter(i => i.ruleId === 'founder.auth-patterns');
-    
+
     if (authIssues.length > 0) {
       console.log('  ✅ PASSED: Auth pattern rule detected userId from body');
       passed++;
@@ -127,7 +127,7 @@ export async function fetchData() {
 `;
     const issues = await staticAnalysisService.analyze('test.ts', missingErrorHandlingCode);
     const errorIssues = issues.filter(i => i.ruleId === 'founder.error-handling');
-    
+
     if (errorIssues.length > 0) {
       console.log('  ✅ PASSED: Error handling rule detected missing try/catch');
       passed++;
@@ -173,7 +173,7 @@ export async function fetchData() {
   // Summary
   console.log('\n' + '='.repeat(50));
   console.log(`Summary: ${passed} passed, ${failed} failed`);
-  
+
   if (failed === 0) {
     console.log('✅ All critical tests passed!');
     process.exit(0);

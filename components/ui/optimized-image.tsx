@@ -18,7 +18,7 @@ export interface OptimizedImageProps {
 
 /**
  * Optimized Image Component
- * 
+ *
  * Principles:
  * - Uses Next.js Image for automatic optimization
  * - Explicit width/height to prevent CLS

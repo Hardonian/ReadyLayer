@@ -97,11 +97,11 @@ def get_cursor(cursor_factory=RealDictCursor):
 
 def fetch_pending_jobs(limit: int = 10) -> List[Job]:
     """Fetch pending Python jobs from the queue.
-    
+
     Respects tenant isolation - jobs include organizationId in payload.
     """
     query = """
-        SELECT 
+        SELECT
             id, type, status, payload, result, error,
             retry_count as "retryCount", max_retries as "maxRetries",
             repository_id as "repositoryId", user_id as "userId", run_id as "runId"
@@ -113,11 +113,11 @@ def fetch_pending_jobs(limit: int = 10) -> List[Job]:
         LIMIT %s
         FOR UPDATE SKIP LOCKED
     """
-    
+
     with get_cursor() as cursor:
         cursor.execute(query, (PYTHON_JOB_TYPES, limit))
         rows = cursor.fetchall()
-    
+
     jobs = []
     for row in rows:
         jobs.append(Job(
@@ -133,7 +133,7 @@ def fetch_pending_jobs(limit: int = 10) -> List[Job]:
             user_id=row["userId"],
             run_id=row["runId"],
         ))
-    
+
     return jobs
 
 
@@ -145,7 +145,7 @@ def mark_job_processing(job_id: str) -> bool:
         WHERE id = %s AND status = 'pending'
         RETURNING id
     """
-    
+
     with get_cursor() as cursor:
         cursor.execute(query, (job_id,))
         return cursor.fetchone() is not None
@@ -159,20 +159,20 @@ def mark_job_completed(job_id: str, result: Dict[str, Any], metrics: Optional[Di
     }
     if metrics:
         full_result["metrics"] = metrics
-    
+
     query = """
         UPDATE "Job"
-        SET 
+        SET
             status = 'completed',
             result = %s,
             completed_at = NOW(),
             updated_at = NOW()
         WHERE id = %s
     """
-    
+
     with get_cursor() as cursor:
         cursor.execute(query, (json.dumps(full_result), job_id))
-    
+
     logger.info("Job completed", job_id=job_id, result_keys=list(result.keys()))
 
 
@@ -183,7 +183,7 @@ def mark_job_failed(job_id: str, error: str, retry_count: int, max_retries: int)
         delay_seconds = 2 ** retry_count
         query = """
             UPDATE "Job"
-            SET 
+            SET
                 status = 'retrying',
                 retry_count = %s,
                 error = %s,
@@ -191,10 +191,10 @@ def mark_job_failed(job_id: str, error: str, retry_count: int, max_retries: int)
                 updated_at = NOW()
             WHERE id = %s
         """
-        
+
         with get_cursor() as cursor:
             cursor.execute(query, (retry_count, error, delay_seconds, job_id))
-        
+
         logger.warning(
             "Job failed, will retry",
             job_id=job_id,
@@ -208,17 +208,17 @@ def mark_job_failed(job_id: str, error: str, retry_count: int, max_retries: int)
         # Max retries exceeded
         query = """
             UPDATE "Job"
-            SET 
+            SET
                 status = 'failed',
                 error = %s,
                 completed_at = NOW(),
                 updated_at = NOW()
             WHERE id = %s
         """
-        
+
         with get_cursor() as cursor:
             cursor.execute(query, (error, job_id))
-        
+
         logger.error(
             "Job failed permanently after max retries",
             job_id=job_id,
@@ -236,7 +236,7 @@ def get_queue_depth() -> int:
             AND type = ANY(%s)
             AND scheduled_at <= NOW()
     """
-    
+
     with get_cursor() as cursor:
         cursor.execute(query, (PYTHON_JOB_TYPES,))
         row = cursor.fetchone()
@@ -247,13 +247,13 @@ def get_health_status() -> Dict[str, Any]:
     """Get health status for monitoring."""
     try:
         queue_depth = get_queue_depth()
-        
+
         # Check database connectivity
         with get_connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute("SELECT 1")
                 cursor.fetchone()
-        
+
         return {
             "status": "healthy",
             "queue_depth": queue_depth,
@@ -273,6 +273,6 @@ def setup_signal_handlers():
         logger.info(f"Received signal {signum}, shutting down gracefully...")
         close_pool()
         exit(0)
-    
+
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)

@@ -15,7 +15,7 @@ interface PolicyWidgetProps {
 
 /**
  * Policy Widget for Repository Page
- * 
+ *
  * Shows policy status in repository view
  * Adapts to Git provider UI
  */

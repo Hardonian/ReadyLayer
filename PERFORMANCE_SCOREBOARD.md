@@ -77,7 +77,7 @@ npx lighthouse http://localhost:3000 --output=json --output-path=./perf/homepage
 const PipelineStrip = dynamic(() => import('@/components/landing').then(...))
 const ProofGrid = dynamic(...)  // etc.
 ```
-**Impact**: 
+**Impact**:
 - Multiple chunk downloads
 - Waterfall loading pattern
 - Skeleton flash during hydration
@@ -85,11 +85,11 @@ const ProofGrid = dynamic(...)  // etc.
 
 #### Issue 2: Dashboard Heavy Client-Side Fetching
 **Location**: `app/(app)/dashboard/page.tsx`
-**Evidence**: 
+**Evidence**:
 - 4 parallel API calls on mount (`/api/v1/repos`, `/api/v1/reviews`, `/api/v1/usage`, etc.)
 - No server-side prefetching
 - All data fetched after hydration
-**Impact**: 
+**Impact**:
 - Loading spinner visible for extended period
 - Multiple network round trips
 - Poor Time to Interactive
@@ -97,7 +97,7 @@ const ProofGrid = dynamic(...)  // etc.
 
 #### Issue 3: No Image Preloading for LCP Element
 **Location**: `app/layout.tsx`
-**Evidence**: 
+**Evidence**:
 - Multiple favicon/icon links but no preload for hero image
 - Logo is likely LCP element on homepage
 **Impact**: LCP delay
@@ -105,7 +105,7 @@ const ProofGrid = dynamic(...)  // etc.
 
 #### Issue 4: Large Static Images Without Optimization
 **Location**: `public/`
-**Evidence**: 
+**Evidence**:
 - `logo-header.png`: 385KB (should be WebP/AVIF)
 - `logo-seo.png`: 231KB
 - `icon-512x512.png`: 434KB
@@ -114,7 +114,7 @@ const ProofGrid = dynamic(...)  // etc.
 
 #### Issue 5: Heavy Animation Library (framer-motion)
 **Location**: Throughout dashboard components
-**Evidence**: 
+**Evidence**:
 - Used extensively in dashboard page
 - Adds ~40KB gzipped to bundle
 **Impact**: Main thread blocking, slower INP
@@ -258,9 +258,9 @@ npx lighthouse http://localhost:3000 --preset=mobile
 
 1. **`/dashboard/repos`** - Repository list page with pagination
    - Likely issues: Large lists, no virtualization, heavy table rendering
-   
+
 2. **`/open-source`** - Marketing page for open source
    - Likely issues: Similar to homepage, dynamic content loading
-   
+
 3. **`/dashboard/policies`** - Policy management interface
    - Likely issues: Complex forms, heavy client-side state

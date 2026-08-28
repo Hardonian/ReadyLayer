@@ -33,7 +33,7 @@ jobs:
     defaults:
       run:
         working-directory: services/worker-py
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -78,7 +78,7 @@ jobs:
     name: 🗄️ Migration Validation
     runs-on: ubuntu-latest
     needs: python-quality
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -125,7 +125,7 @@ jobs:
     name: 🔥 Worker Smoke Test
     runs-on: ubuntu-latest
     needs: migration-check
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -169,7 +169,7 @@ jobs:
     defaults:
       run:
         working-directory: services/worker-py
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -205,7 +205,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [migration-check, docker-build]
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-    
+
     services:
       postgres:
         image: postgres:15-alpine
@@ -270,7 +270,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [python-quality, migration-check, smoke-test, docker-build, integration-test]
     if: always()
-    
+
     steps:
       - name: Generate summary
         run: |

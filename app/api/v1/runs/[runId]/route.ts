@@ -1,6 +1,6 @@
 /**
  * Run Details API Route
- * 
+ *
  * GET /api/v1/runs/:runId - Get run details
  */
 
@@ -114,7 +114,7 @@ export const GET = createRouteHandler(
       message: string;
       fix?: string;
     }> = [];
-    
+
     if (run.review?.issuesFound) {
       // Parse issues from review.issuesFound (JSON array)
       try {
@@ -162,7 +162,7 @@ export const GET = createRouteHandler(
     if (run.repository && run.review?.prNumber) {
       const { provider, fullName } = run.repository;
       const prNumber = run.review.prNumber;
-      
+
       if (provider === 'github') {
         providerLink = `https://github.com/${fullName}/pull/${prNumber}`;
       } else if (provider === 'gitlab') {

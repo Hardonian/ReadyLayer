@@ -1,6 +1,6 @@
 /**
  * Installation Token Helpers
- * 
+ *
  * Wrappers for Prisma Installation operations that handle encryption
  * Uses new crypto module with key rotation support
  */
@@ -25,7 +25,7 @@ export async function createInstallationWithEncryptedToken(
 
   try {
     const encryptedToken = encryptToken(data.accessToken);
-    
+
     return prisma.installation.create({
       data: {
         ...data,
@@ -57,7 +57,7 @@ export async function updateInstallationToken(
 
   try {
     const encryptedToken = encryptToken(accessToken);
-    
+
     return prisma.installation.update({
       where: { id: installationId },
       data: {

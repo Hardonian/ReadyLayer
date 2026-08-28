@@ -1,6 +1,6 @@
 /**
  * Slack OAuth Installation Endpoint
- * 
+ *
  * Handles Slack OAuth flow for workspace installation
  */
 

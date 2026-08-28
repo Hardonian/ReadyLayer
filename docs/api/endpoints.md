@@ -282,16 +282,16 @@ interface WebSocketEvent {
 // Review progress
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  
+
   switch (data.type) {
     case 'review.started':
       console.log('Review started:', data.payload.reviewId);
       break;
-      
+
     case 'review.progress':
       console.log('Progress:', data.payload.percentage, data.payload.currentStep);
       break;
-      
+
     case 'review.completed':
       console.log('Review completed:', data.payload.results);
       break;
@@ -343,7 +343,7 @@ GET /api/v1/version
 ### Metrics
 ```
 GET /api/v1/metrics/usage
-GET /api/v1/metrics/performance  
+GET /api/v1/metrics/performance
 GET /api/v1/metrics/errors
 ```
 

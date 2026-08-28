@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -16,8 +16,8 @@ import {
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
-import { 
-  Shield, 
+import {
+  Shield,
   ArrowLeft,
   Save,
 } from 'lucide-react'
@@ -75,7 +75,7 @@ export default function EditRulePage() {
 
         const data = (await response.json()) as { rules?: PolicyRule[] }
         const foundRule = data.rules?.find((r) => r.ruleId === ruleId)
-        
+
         if (!foundRule) {
           setError('Rule not found')
           setLoading(false)

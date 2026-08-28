@@ -24,11 +24,11 @@ class TypeScriptParser(BaseParser):
 
     def parse(self, output: ToolOutput) -> List[Finding]:
         findings: List[Finding] = []
-        
+
         if output.exit_code == 0 and not output.raw_output.strip():
             # No type errors
             return findings
-        
+
         for match in self.TSC_PATTERN.finditer(output.raw_output):
             path = match.group('path').strip()
             line = int(match.group('line'))
@@ -36,10 +36,10 @@ class TypeScriptParser(BaseParser):
             severity_str = match.group('severity')
             code = match.group('code')
             message = match.group('message')
-            
+
             # Type errors are always blockers - they prevent the build
             severity = Severity.BLOCKER if severity_str == 'error' else Severity.HIGH
-            
+
             finding = Finding(
                 rule_id=code,
                 category=Category.TYPE,
@@ -61,7 +61,7 @@ class TypeScriptParser(BaseParser):
                 tool="typescript",
             )
             findings.append(finding)
-        
+
         # If no specific errors found but exit code is non-zero
         if output.exit_code != 0 and not findings:
             findings.append(
@@ -76,7 +76,7 @@ class TypeScriptParser(BaseParser):
                     tool="typescript",
                 )
             )
-        
+
         return findings
 
     def _get_remediation(self, code: str, message: str) -> str:

@@ -1,6 +1,6 @@
 /**
  * API Helper Utilities
- * 
+ *
  * Type-safe utilities for handling API responses
  */
 

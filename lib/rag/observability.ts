@@ -1,6 +1,6 @@
 /**
  * RAG Observability
- * 
+ *
  * Structured logging for RAG operations
  */
 

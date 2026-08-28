@@ -6,7 +6,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const response = NextResponse.next()
     const supabase = createSupabaseRouteHandlerClient(request, response)
-    
+
     try {
       await supabase.auth.signOut()
     } catch (error) {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         } : error,
       })
     }
-    
+
     return NextResponse.redirect(new URL('/auth/signin', request.url))
   } catch (error) {
     logger.error(error, 'Sign out route failed')

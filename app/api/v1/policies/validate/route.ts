@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validation = validatePolicySchema.safeParse(bodyResult.data);
 
     if (!validation.success) {

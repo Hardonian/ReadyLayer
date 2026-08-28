@@ -1,6 +1,6 @@
 /**
  * Embeddings Providers
- * 
+ *
  * OpenAI embeddings provider and disabled fallback
  */
 
@@ -18,7 +18,7 @@ export class OpenAIEmbeddingsProvider implements EmbeddingsProvider {
   constructor() {
     this.apiKey = env.OPENAI_API_KEY || '';
     this.model = env.RAG_EMBED_MODEL || 'text-embedding-3-small';
-    
+
     // Set dimensions based on model
     if (this.model.includes('3-large')) {
       this.dimensions = 3072;
@@ -77,7 +77,7 @@ export class OpenAIEmbeddingsProvider implements EmbeddingsProvider {
 
 /**
  * Disabled Embeddings Provider
- * 
+ *
  * Returns empty embeddings, triggers lexical fallback
  */
 export class DisabledEmbeddingsProvider implements EmbeddingsProvider {
@@ -100,7 +100,7 @@ export class DisabledEmbeddingsProvider implements EmbeddingsProvider {
  */
 export function getEmbeddingsProvider(): EmbeddingsProvider {
   const provider = env.RAG_PROVIDER || 'disabled';
-  
+
   if (provider === 'openai') {
     const openaiProvider = new OpenAIEmbeddingsProvider();
     if (openaiProvider.isAvailable()) {

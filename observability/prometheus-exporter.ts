@@ -1,9 +1,9 @@
 /**
  * Prometheus Exporter
- * 
+ *
  * Exports application metrics to Prometheus or compatible backends.
  * Enables production-grade monitoring and alerting.
- * 
+ *
  * Supports:
  * - Prometheus push gateway
  * - Datadog StatsD

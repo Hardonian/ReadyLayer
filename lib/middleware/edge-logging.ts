@@ -1,6 +1,6 @@
 /**
  * Edge-Safe Logging
- * 
+ *
  * Minimal logging for Edge runtime (middleware)
  * Uses console only - no Node.js dependencies
  */

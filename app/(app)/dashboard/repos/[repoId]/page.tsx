@@ -35,7 +35,7 @@ interface RepoMetrics {
 
 /**
  * Repository Detail Page
- * 
+ *
  * Shows repository details, configuration, and analytics
  */
 export default function RepositoryDetailPage(): React.JSX.Element {
@@ -54,7 +54,7 @@ export default function RepositoryDetailPage(): React.JSX.Element {
     async function fetchRepo() {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
+
       if (!url || !key) {
         setError('Configuration not available')
         setLoading(false)
@@ -108,7 +108,7 @@ export default function RepositoryDetailPage(): React.JSX.Element {
           const reviews = reviewsData.reviews || []
           const reviewsTyped = reviews
           const blockedPRs = reviewsTyped.filter((r) => r.isBlocked).length
-          const totalIssues = reviewsTyped.reduce((sum: number, r) => 
+          const totalIssues = reviewsTyped.reduce((sum: number, r) =>
             sum + (r.summary?.critical || 0) + (r.summary?.high || 0) + (r.summary?.medium || 0) + (r.summary?.low || 0), 0
           )
           const criticalIssues = reviewsTyped.reduce((sum: number, r) => sum + (r.summary?.critical || 0), 0)
@@ -137,10 +137,10 @@ export default function RepositoryDetailPage(): React.JSX.Element {
 
   const handleToggleEnabled = async () => {
     if (toggling) return // Prevent double-submit
-    
+
     const newEnabled = !enabled
     setToggling(true)
-    
+
     // Optimistic update
     setEnabled(newEnabled)
 
@@ -172,7 +172,7 @@ export default function RepositoryDetailPage(): React.JSX.Element {
         invalidate(CACHE_KEYS.REPO(repoId))
         invalidate(CACHE_KEYS.REPOS)
         invalidate(CACHE_KEYS.DASHBOARD)
-        
+
         toast({
           variant: 'success',
           title: newEnabled ? 'Repository enabled' : 'Repository disabled',

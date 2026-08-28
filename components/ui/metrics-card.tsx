@@ -28,10 +28,10 @@ export function MetricsCard({
   className,
   glass = true,
 }: MetricsCardProps): React.JSX.Element {
-  const trendColor = change?.trend === 'up' 
-    ? 'text-success' 
-    : change?.trend === 'down' 
-    ? 'text-destructive' 
+  const trendColor = change?.trend === 'up'
+    ? 'text-success'
+    : change?.trend === 'down'
+    ? 'text-destructive'
     : 'text-text-muted'
 
   return (
@@ -48,8 +48,8 @@ export function MetricsCard({
           <div className="text-3xl font-bold text-text-primary">{value}</div>
           {change && (
             <div className={cn('text-xs font-medium', trendColor)}>
-              {change.trend === 'up' && '↑'} 
-              {change.trend === 'down' && '↓'} 
+              {change.trend === 'up' && '↑'}
+              {change.trend === 'down' && '↓'}
               {change.value > 0 && '+'}
               {change.value}% {change.label}
             </div>

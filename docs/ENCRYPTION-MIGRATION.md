@@ -128,7 +128,7 @@ To rotate encryption keys:
 
 ### Error: "Failed to decrypt token"
 
-**Solution**: 
+**Solution**:
 - Verify encryption key matches the one used to encrypt
 - Check key format (should be base64-encoded 32 bytes)
 - Ensure key version matches (if using `READY_LAYER_KEYS`)

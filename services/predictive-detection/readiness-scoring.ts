@@ -1,10 +1,10 @@
 /**
  * Predictive Readiness Scoring
- * 
+ *
  * P1: Time series forecasting for readiness predictions
  * Uses exponential smoothing and trend analysis to predict
  * future readiness scores based on historical patterns.
- * 
+ *
  * Features:
  * - Holt-Winters exponential smoothing with trend
  * - Seasonal decomposition for cyclical patterns
@@ -80,10 +80,10 @@ export class PredictiveReadinessScorer {
     );
 
     const startTime = Date.now();
-    
+
     // Initialize Holt-Winters components
     const smoothed = this.initializeHoltWinters(sorted);
-    
+
     // Generate forecasts
     const forecasts: ReadinessForecast[] = [];
     const lastPoint = sorted[sorted.length - 1];
@@ -92,18 +92,18 @@ export class PredictiveReadinessScorer {
 
     for (let i = 1; i <= this.config.horizon; i++) {
       const forecastTimestamp = new Date(lastTimestamp + i * dayMs);
-      
+
       // Calculate forecast
       const seasonalIndex = (sorted.length + i - 1) % this.config.seasonalityPeriod;
       const predictedValue = smoothed.level + i * smoothed.trend + (smoothed.seasonal[seasonalIndex] || 0);
-      
+
       // Clamp to 0-100 range
       const clampedValue = Math.max(0, Math.min(100, predictedValue));
-      
+
       // Calculate confidence interval
       const stdError = this.calculateStandardError(sorted, smoothed);
       const margin = this.calculateMarginOfError(stdError, i);
-      
+
       forecasts.push({
         timestamp: forecastTimestamp,
         predictedScore: Math.round(clampedValue * 100) / 100,
@@ -119,7 +119,7 @@ export class PredictiveReadinessScorer {
 
     const forecastTime = Date.now() - startTime;
     metrics.recordHistogram('readiness_forecast_duration', forecastTime);
-    metrics.increment('readiness_forecast_generated', { 
+    metrics.increment('readiness_forecast_generated', {
       horizon: this.config.horizon.toString(),
     });
 
@@ -150,7 +150,7 @@ export class PredictiveReadinessScorer {
 
     // Generate forecast for the period we have actuals for
     const forecast = this.forecast(historicalData);
-    
+
     // Calculate forecast errors
     const errors: number[] = [];
     for (const actual of actualValues) {
@@ -176,7 +176,7 @@ export class PredictiveReadinessScorer {
     return {
       needsRetraining,
       driftScore: mape,
-      reason: needsRetraining 
+      reason: needsRetraining
         ? `MAPE (${(mape * 100).toFixed(1)}%) exceeds threshold (${(threshold * 100).toFixed(1)}%)`
         : 'Model accuracy within acceptable range',
     };
@@ -209,7 +209,7 @@ export class PredictiveReadinessScorer {
     const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    
+
     // Calculate R-squared for strength
     const yMean = sumY / n;
     const ssTotal = y.reduce((sum, yi) => sum + Math.pow(yi - yMean, 2), 0);
@@ -217,7 +217,7 @@ export class PredictiveReadinessScorer {
       const predicted = slope * x[i] + (sumY - slope * sumX) / n;
       return sum + Math.pow(yi - predicted, 2);
     }, 0);
-    
+
     const rSquared = ssTotal > 0 ? 1 - ssResidual / ssTotal : 0;
     const strength = Math.sqrt(Math.abs(rSquared));
 
@@ -259,19 +259,19 @@ export class PredictiveReadinessScorer {
     for (let i = seasonLength; i < n; i++) {
       const value = data[i].value;
       const seasonalIndex = i % seasonLength;
-      
+
       // Update level
-      const newLevel = this.config.alpha * (value - seasonal[seasonalIndex]) + 
+      const newLevel = this.config.alpha * (value - seasonal[seasonalIndex]) +
                        (1 - this.config.alpha) * (level + trend);
-      
+
       // Update trend
-      trend = this.config.beta * (newLevel - level) + 
+      trend = this.config.beta * (newLevel - level) +
                        (1 - this.config.beta) * trend;
-      
+
       // Update seasonal
-      seasonal[seasonalIndex] = this.config.gamma * (value - newLevel) + 
+      seasonal[seasonalIndex] = this.config.gamma * (value - newLevel) +
                                 (1 - this.config.gamma) * seasonal[seasonalIndex];
-      
+
       // Update smoothed values
       // (Not storing full history for efficiency)
     }
@@ -289,9 +289,9 @@ export class PredictiveReadinessScorer {
 
   private calculateMarginOfError(stdError: number, horizon: number): number {
     // z-score for confidence level
-    const zScore = this.config.confidenceLevel === 0.95 ? 1.96 : 
+    const zScore = this.config.confidenceLevel === 0.95 ? 1.96 :
                    this.config.confidenceLevel === 0.99 ? 2.576 : 1.645;
-    
+
     // Error increases with forecast horizon
     return zScore * stdError * Math.sqrt(horizon);
   }
@@ -341,7 +341,7 @@ export class PredictiveReadinessScorer {
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
     const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
     const volatility = Math.sqrt(variance);
-    
+
     factors.push({
       name: 'Volatility',
       contribution: volatility > 10 ? -0.2 : 0,
@@ -420,7 +420,7 @@ export class ReadinessPredictionService {
       timestamp: h.date,
       value: h.score,
     }));
-    
+
     const actual: TimeSeriesPoint[] = actualScores.map(a => ({
       timestamp: a.date,
       value: a.score,

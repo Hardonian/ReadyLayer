@@ -1,6 +1,6 @@
 /**
  * Self-Learning Feedback API
- * 
+ *
  * POST /api/v1/self-learning/feedback - Record feedback on predictions
  */
 
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validationResult = feedbackSchema.safeParse(bodyResult.data);
 
     if (!validationResult.success) {

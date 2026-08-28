@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -16,10 +16,10 @@ import {
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
-import { 
-  Shield, 
-  CheckCircle2, 
-  AlertTriangle, 
+import {
+  Shield,
+  CheckCircle2,
+  AlertTriangle,
   XCircle,
   MessageSquare,
   Clock,
@@ -84,7 +84,7 @@ export default function ReviewDetailPage(): React.JSX.Element {
     async function fetchReview() {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
+
       if (!url || !key) {
         setError('Configuration not available')
         setLoading(false)
@@ -113,7 +113,7 @@ export default function ReviewDetailPage(): React.JSX.Element {
 
         const data = (await response.json()) as Review
         setReview(data)
-        
+
         // Mock comments for now - in production, fetch from API
         setComments([
           {
@@ -125,7 +125,7 @@ export default function ReviewDetailPage(): React.JSX.Element {
             resolved: false,
           },
         ])
-        
+
         setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load review')

@@ -36,16 +36,16 @@ def test_database_connection():
 def test_queue_operations():
     """Test basic queue operations."""
     logger.info("Testing queue operations...")
-    
+
     try:
         # Check queue depth
         depth = get_queue_depth()
         logger.info(f"✓ Queue depth: {depth}")
-        
+
         # Fetch jobs (may be empty)
         jobs = fetch_pending_jobs(limit=1)
         logger.info(f"✓ Fetched {len(jobs)} pending jobs")
-        
+
         return True
     except Exception as e:
         logger.error(f"✗ Queue operations failed: {e}")
@@ -55,7 +55,7 @@ def test_queue_operations():
 def test_config():
     """Test configuration loading."""
     logger.info("Testing configuration...")
-    
+
     try:
         logger.info(f"✓ Log level: {settings.log_level}")
         logger.info(f"✓ Poll interval: {settings.poll_interval_seconds}s")
@@ -73,34 +73,34 @@ def main():
     logger.info("=" * 50)
     logger.info("Python Workhorse Smoke Test")
     logger.info("=" * 50)
-    
+
     results = []
-    
+
     try:
         # Test 1: Configuration
         results.append(("Configuration", test_config()))
-        
+
         # Test 2: Database
         results.append(("Database Connection", test_database_connection()))
-        
+
         # Test 3: Queue
         results.append(("Queue Operations", test_queue_operations()))
-        
+
     finally:
         close_pool()
-    
+
     # Summary
     logger.info("=" * 50)
     logger.info("Test Summary")
     logger.info("=" * 50)
-    
+
     all_passed = True
     for name, passed in results:
         status = "✓ PASS" if passed else "✗ FAIL"
         logger.info(f"{status}: {name}")
         if not passed:
             all_passed = False
-    
+
     if all_passed:
         logger.info("All tests passed!")
         sys.exit(0)

@@ -1,6 +1,6 @@
 /**
  * Reviews API Routes
- * 
+ *
  * POST /api/v1/reviews - Create a new review
  * GET /api/v1/reviews - List reviews (tenant-isolated)
  */
@@ -60,7 +60,7 @@ const reviewFieldsSchema = z.enum([
 
 const createReviewSchema = z.object({
   repositoryId: z.string().min(1),
-  prNumber: z.union([z.string(), z.number()]).transform((val) => 
+  prNumber: z.union([z.string(), z.number()]).transform((val) =>
     typeof val === 'number' ? val : parseInt(String(val), 10)
   ),
   prSha: z.string().min(1),

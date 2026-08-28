@@ -1,6 +1,6 @@
 /**
  * Log Shipper
- * 
+ *
  * Forwards structured logs to external backends for aggregation and analysis.
  * Supports CloudWatch, Datadog, Loggly, Splunk, and HTTP endpoints.
  */

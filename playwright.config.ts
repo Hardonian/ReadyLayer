@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Visual Regression & E2E Test Configuration
- * 
+ *
  * Projects:
  * - chromium/firefox/webkit: Functional E2E tests
  * - Mobile Chrome/Safari: Mobile functional tests

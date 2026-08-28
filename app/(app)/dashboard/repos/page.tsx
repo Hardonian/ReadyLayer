@@ -4,9 +4,9 @@ import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
+import {
+  Card,
+  CardContent,
   Button,
   ErrorState,
   LoadingState,
@@ -14,9 +14,9 @@ import {
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { 
-  GitBranch, 
-  CheckCircle2, 
+import {
+  GitBranch,
+  CheckCircle2,
   Plus,
   Search,
   Settings,
@@ -42,7 +42,7 @@ export default function RepositoriesPage(): React.JSX.Element {
     async function fetchRepos() {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
+
       if (!url || !key) {
         setError('Configuration not available')
         setLoading(false)
@@ -86,8 +86,8 @@ export default function RepositoriesPage(): React.JSX.Element {
     fetchRepos()
   }, [])
 
-  const filteredRepos = repos.filter((repo) => 
-    searchQuery === '' || 
+  const filteredRepos = repos.filter((repo) =>
+    searchQuery === '' ||
     repo.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     repo.provider.toLowerCase().includes(searchQuery.toLowerCase())

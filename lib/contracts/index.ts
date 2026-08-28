@@ -1,6 +1,6 @@
 /**
  * Centralized Contract Exports
- * 
+ *
  * Single place to import all Zod schemas and types.
  * Enables consistent validation across client and server.
  */

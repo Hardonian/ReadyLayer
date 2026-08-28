@@ -1,6 +1,6 @@
 /**
  * Git Provider UI Components
- * 
+ *
  * Transposable components that adapt to Git provider workflows
  */
 

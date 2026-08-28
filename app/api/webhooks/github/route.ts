@@ -59,7 +59,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     let payload: string;
     let event: unknown;
-    
+
     try {
       payload = await request.text();
     } catch (error) {

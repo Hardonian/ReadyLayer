@@ -1,6 +1,6 @@
 /**
  * AI Anomaly Detection Service
- * 
+ *
  * Detects AI anomalies: drift, context token waste, repeated mistakes
  * Provides optimization suggestions for system prompts and fine-tuning
  * Tailored to developer technical ability and stack
@@ -280,10 +280,10 @@ export class AIAnomalyDetectionService {
     // Detect patterns where same rule fires frequently
     for (const [ruleId, ruleViolations] of ruleGroups.entries()) {
       if (ruleViolations.length >= 5) {
-        const timeSpan = ruleViolations[0].detectedAt.getTime() - 
+        const timeSpan = ruleViolations[0].detectedAt.getTime() -
                          ruleViolations[ruleViolations.length - 1].detectedAt.getTime();
         const days = timeSpan / (1000 * 60 * 60 * 24);
-        
+
         if (days < 7 && ruleViolations.length >= 5) {
           anomalies.push({
             type: 'context_slip',
@@ -367,7 +367,7 @@ export class AIAnomalyDetectionService {
     reviews: Array<{ id: string; createdAt: Date }>
   ): Promise<TokenWasteAnalysis> {
     const totalTokensUsed = costTracking.reduce((sum, ct) => sum + ct.units, 0);
-    
+
     // Estimate context vs output tokens (rough approximation)
     const contextTokens = Math.floor(totalTokensUsed * 0.7); // Assume 70% context
     const outputTokens = Math.floor(totalTokensUsed * 0.3); // Assume 30% output
@@ -439,7 +439,7 @@ export class AIAnomalyDetectionService {
       if (ruleViolations.length >= 3) {
         const files = [...new Set(ruleViolations.map(v => v.file))];
         const severity = ruleViolations[0].severity as RepeatedMistake['severity'];
-        
+
         mistakes.push({
           ruleId,
           count: ruleViolations.length,
@@ -760,7 +760,7 @@ const fineTunedModel = await openai.fineTuning.jobs.create({
 async function continuousFineTuning() {
   const mistakes = await getRecentMistakes();
   const corrections = await generateCorrections(mistakes);
-  
+
   if (mistakes.length > threshold) {
     await fineTuneModel({
       data: prepareTrainingData(mistakes, corrections),
@@ -833,7 +833,7 @@ async function continuousFineTuning() {
     // Infer technical level from violation patterns
     const hasTypeIssues = violations.some(v => v.ruleId.includes('type'));
     const hasSecurityIssues = violations.some(v => v.severity === 'critical');
-    
+
     let technicalLevel: DeveloperProfile['technicalLevel'] = 'intermediate';
     if (hasSecurityIssues && hasTypeIssues) {
       technicalLevel = 'beginner';

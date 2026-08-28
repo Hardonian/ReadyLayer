@@ -1,6 +1,6 @@
 /**
  * Usage Enforcement Service
- * 
+ *
  * Enforces plan-based usage limits with proper error handling
  * and audit logging
  */

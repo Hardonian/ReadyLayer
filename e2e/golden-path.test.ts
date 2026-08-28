@@ -1,9 +1,9 @@
 /**
  * Golden Path E2E Test
- * 
+ *
  * The ONE deterministic test that encodes the core ReadyLayer flow.
  * This test must NEVER break - it validates the entire activation path.
- * 
+ *
  * Golden Path:
  * 1. Create sandbox run (demo mode)
  * 2. Verify run record created
@@ -79,7 +79,7 @@ describe.skipIf(!hasDatabase)('Golden Path: ReadyLayer Activation Flow', () => {
     });
 
     expect(run).toBeDefined();
-    
+
     // Verify all stages have statuses
     expect(run?.reviewGuardStatus).toBeDefined();
     expect(run?.testEngineStatus).toBeDefined();
@@ -114,7 +114,7 @@ describe.skipIf(!hasDatabase)('Golden Path: ReadyLayer Activation Flow', () => {
     // Verify review guard result exists
     if (run?.reviewGuardStatus === 'succeeded' || run?.reviewGuardStatus === 'failed') {
       expect(run.reviewGuardResult).toBeDefined();
-      
+
       if (run.reviewGuardResult) {
         const result = run.reviewGuardResult as { issuesFound?: number };
         expect(result.issuesFound).toBeDefined();
@@ -125,7 +125,7 @@ describe.skipIf(!hasDatabase)('Golden Path: ReadyLayer Activation Flow', () => {
     // Verify audit logs exist
     expect(run?.auditLogs).toBeDefined();
     expect(Array.isArray(run?.auditLogs)).toBe(true);
-    
+
     // At least one audit log should exist
     if (run?.auditLogs && run.auditLogs.length > 0) {
       const auditLog = run.auditLogs[0];
@@ -196,11 +196,11 @@ describe.skipIf(!hasDatabase)('Golden Path: ReadyLayer Activation Flow', () => {
 
     // Validate against schema
     const validation = validateResponse(apiResponse, runResponseSchema);
-    
+
     if (!validation.success) {
       console.error('Contract validation failed:', validation.issues.errors);
     }
-    
+
     expect(validation.success).toBe(true);
   });
 
@@ -240,12 +240,12 @@ describe.skipIf(!hasDatabase)('Golden Path: ReadyLayer Activation Flow', () => {
 
     // New run should have its own intents
     expect(rerunIntentCount).toBeGreaterThan(0);
-    
+
     // Original run's intent count should be unchanged
     const finalIntentCount = await prisma.outboxIntent.count({
       where: { runId: sandboxRunId },
     });
-    
+
     expect(finalIntentCount).toBe(initialIntentCount);
   });
 });

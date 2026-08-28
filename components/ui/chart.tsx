@@ -5,13 +5,13 @@ import { cn } from '@/lib/utils'
 
 /**
  * Chart Primitives
- * 
+ *
  * Simple, accessible chart components for metrics visualization.
  * Built with semantic HTML and ARIA attributes.
- * 
+ *
  * NOTE: For production charts with advanced features (tooltips, zooming, etc.),
  * consider integrating a library like recharts or visx.
- * 
+ *
  * These primitives are suitable for simple dashboards and metrics cards.
  */
 

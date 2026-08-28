@@ -101,7 +101,7 @@ export async function POST(
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validation = applyTemplateSchema.safeParse(bodyResult.data);
 
     if (!validation.success) {
@@ -149,7 +149,7 @@ export async function POST(
 
     // Parse template source
     const parsedTemplate: unknown = JSON.parse(template.source);
-    
+
     // Type guard for PolicyDocument
     function isPolicyDocument(value: unknown): value is PolicyDocument {
       return (
@@ -193,7 +193,7 @@ export async function POST(
         log.warn({ ruleData }, 'Skipping rule with invalid ruleId');
         continue;
       }
-      
+
       const typedRule = ruleData as PolicyRule;
       await prisma.policyRule.create({
         data: {

@@ -45,35 +45,35 @@ def ingest(
 ):
     """Ingest readiness artifacts and build historical dataset."""
     console.print(f"[bold blue]Ingesting readiness artifacts from {artifacts_path}...[/]")
-    
+
     pipeline = ArtifactIngestionPipeline(artifacts_path, repo_path)
-    
+
     # Ingest from directory
     findings = pipeline.ingest_from_directory()
-    
+
     # Optionally ingest from git history
     if repo_path:
         console.print(f"[blue]Ingesting from git history (last {since_days} days)...[/]")
         git_findings = pipeline.ingest_from_git_history(since_days)
         findings.extend(git_findings)
-    
+
     # Build analyzer
     analyzer = HistoricalAnalyzer(findings)
     dataset = analyzer.build_dataset(project)
-    
+
     # Show stats
     stats = pipeline.get_stats()
     console.print(f"[green]Loaded {stats['loaded']} artifacts with {stats['errors']} errors[/]")
     console.print(f"[green]Total findings: {len(findings)}[/]")
     console.print(f"[green]Unique files with issues: {len(dataset.file_profiles)}[/]")
     console.print(f"[green]Unique authors: {len(dataset.author_profiles)}[/]")
-    
+
     # Save dataset if output specified
     if output:
         with open(output, 'w') as f:
             json.dump(dataset.model_dump(), f, indent=2, default=str)
         console.print(f"[green]Dataset saved to {output}[/]")
-    
+
     return dataset
 
 
@@ -90,32 +90,32 @@ def scorecard(
 ):
     """Generate readiness scorecard from historical data."""
     console.print(f"[bold blue]Generating readiness scorecard...[/]")
-    
+
     # Load dataset
     with open(dataset_path) as f:
         from readiness_intel.models import HistoricalDataset
         data = json.load(f)
         dataset = HistoricalDataset(**data)
-    
+
     # Load current readiness if provided
     current_verdict = None
     if readiness:
         with open(readiness) as f:
             data = json.load(f)
             current_verdict = ReadinessVerdict(**data)
-    
+
     # Generate scorecard
     generator = ScorecardGenerator(dataset)
     scorecard_data = generator.generate(current_verdict)
-    
+
     # Export
     generator.export_json(scorecard_data, output_json)
     generator.export_markdown(scorecard_data, output_md)
-    
+
     console.print(f"[green]Scorecard exported:[/]")
     console.print(f"  JSON: {output_json}")
     console.print(f"  Markdown: {output_md}")
-    
+
     # Display summary
     display_scorecard_summary(scorecard_data)
 
@@ -136,16 +136,16 @@ def analyze(
 ):
     """Analyze impact of code changes."""
     console.print(f"[bold blue]Analyzing change impact...[/]")
-    
+
     # Load dataset
     with open(dataset_path) as f:
         from readiness_intel.models import HistoricalDataset
         data = json.load(f)
         dataset = HistoricalDataset(**data)
-    
+
     # Create analyzer
     analyzer = ChangeImpactAnalyzer(dataset, repo_path)
-    
+
     # Get diff
     if commit_sha:
         files_changed = analyzer.diff_parser.parse_from_git(commit_sha)
@@ -159,15 +159,15 @@ def analyze(
             text=True
         )
         files_changed = analyzer.diff_parser.parse_diff(result.stdout)
-    
+
     if not files_changed:
         console.print("[yellow]No changes detected[/]")
         return
-    
+
     # Analyze
     author = author or "unknown"
     impact = analyzer.analyze_pr(files_changed, commit_sha or "HEAD", branch, author)
-    
+
     # Display results
     display_impact_analysis(impact)
 
@@ -183,22 +183,22 @@ def optimize(
 ):
     """Optimize CI based on change impact analysis."""
     console.print(f"[bold blue]Optimizing CI configuration...[/]")
-    
+
     # Load impact analysis
     with open(impact_path) as f:
         from readiness_intel.models import ChangeImpactAnalysis
         data = json.load(f)
         impact = ChangeImpactAnalysis(**data)
-    
+
     # Create optimizer
     optimizer = CIOptimizer(output_dir)
-    
+
     # Generate optimization
     result = optimizer.optimize_for_pr(impact)
-    
+
     # Display results
     display_ci_optimization(result)
-    
+
     # Write GitHub Actions output if requested
     if github_output:
         with open(github_output, 'a') as f:
@@ -214,15 +214,15 @@ def display_scorecard_summary(scorecard):
     table = Table(title="Readiness Scorecard Summary")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
-    
+
     table.add_row("Readiness Score", f"{scorecard.current_readiness_score:.1f}/100")
     table.add_row("Status", scorecard.current_status)
     table.add_row("Trend", f"{scorecard.trend_direction} ({scorecard.trend_confidence:.0%} confidence)")
     table.add_row("Historical Runs", str(scorecard.total_historical_runs))
     table.add_row("Confidence Interval", f"[{scorecard.confidence_interval[0]:.1f}, {scorecard.confidence_interval[1]:.1f}]")
-    
+
     console.print(table)
-    
+
     # Risk areas
     if scorecard.predicted_risk_areas:
         console.print("\n[bold yellow]Predicted Risk Areas:[/]")
@@ -240,7 +240,7 @@ def display_impact_analysis(impact):
         "LOW": "green",
     }
     risk_color = risk_colors.get(impact.overall_risk.value, "white")
-    
+
     console.print(Panel(
         f"[bold {risk_color}]Risk Level: {impact.overall_risk.value}[/]\n"
         f"Confidence: {impact.risk_confidence:.0%}\n"
@@ -249,10 +249,10 @@ def display_impact_analysis(impact):
         title="Change Impact Analysis",
         border_style=risk_color
     ))
-    
+
     console.print("\n[bold]Explanation:[/]")
     console.print(impact.explanation)
-    
+
     # High risk files
     high_risk = [p for p in impact.file_predictions if p.risk_level.value in ["CRITICAL", "HIGH"]]
     if high_risk:
@@ -266,23 +266,23 @@ def display_ci_optimization(result):
     table = Table(title="CI Optimization")
     table.add_column("Setting", style="cyan")
     table.add_column("Value", style="green")
-    
+
     table.add_row("Risk Level", result['risk_level'])
     table.add_row("Test Tier", result['test_tier'])
     table.add_row("Estimated Duration", f"{result['estimated_duration_minutes']:.0f} min")
     table.add_row("Tests to Run", str(len(result['tests_to_run'])))
     table.add_row("Tests to Skip", str(len(result['tests_to_skip'])))
-    
+
     console.print(table)
-    
+
     # Calculate savings
     full_duration = 45  # Full suite
     savings = full_duration - result['estimated_duration_minutes']
     savings_pct = (savings / full_duration) * 100
-    
+
     if savings > 0:
         console.print(f"\n[green]Estimated savings: {savings:.0f} minutes ({savings_pct:.0f}%)[/]")
-    
+
     console.print(f"\n[dim]{result['explanation']}[/]")
 
 

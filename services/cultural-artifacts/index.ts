@@ -80,13 +80,13 @@ interface ReviewRecord {
 
 /**
  * Cultural Lock-In Artifacts Service
- * 
+ *
  * Generates artifacts that make ReadyLayer indispensable and visible.
  */
 export class CulturalArtifactsService {
   /**
    * Generate Merge Confidence Certificate
-   * 
+   *
    * Creates a certificate that proves a PR was reviewed by ReadyLayer.
    * Absence of this certificate indicates unreviewed code.
    */

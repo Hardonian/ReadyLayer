@@ -1,6 +1,6 @@
 /**
  * Migrate Installation Tokens to Encrypted Format
- * 
+ *
  * Encrypts all plaintext installation tokens using the new crypto module.
  * Safe to run multiple times (idempotent).
  */

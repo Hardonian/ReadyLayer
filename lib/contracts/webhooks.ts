@@ -1,9 +1,9 @@
 /**
  * Webhook Payload Schemas
- * 
+ *
  * Comprehensive Zod schemas for all webhook event types.
  * Used for validation in webhook processors.
- * 
+ *
  * ARCHITECTURE:
  * - Discriminated union for different webhook types
  * - Each provider (GitHub, GitLab, Bitbucket) has normalized payloads

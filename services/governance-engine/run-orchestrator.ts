@@ -1,6 +1,6 @@
 /**
  * Governance Run Orchestrator
- * 
+ *
  * Orchestrates governance runs: single-model and opencode-baseline modes.
  * Executes LLM governance tasks, normalizes outputs, stores results with governance signals.
  */

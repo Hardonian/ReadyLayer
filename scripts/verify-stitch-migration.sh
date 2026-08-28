@@ -14,7 +14,7 @@ echo "--------------------------------------"
 echo "✅ Checking file structure..."
 files_to_check=(
     "app/layout.tsx"
-    "components/ui/error-boundary.tsx" 
+    "components/ui/error-boundary.tsx"
     "components/ui/index.ts"
     "app/globals.css"
     "tailwind.config.ts"

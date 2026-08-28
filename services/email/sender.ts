@@ -1,6 +1,6 @@
 /**
  * Email Service Adapter
- * 
+ *
  * Sends emails via SendGrid or Postmark
  */
 

@@ -1,6 +1,6 @@
 /**
  * Doc Sync Service
- * 
+ *
  * Automatic documentation and API spec generation
  * Enforces drift prevention (blocks by default)
  */
@@ -105,10 +105,10 @@ interface OpenApiOperation {
 
 /**
  * Doc Sync Service
- * 
+ *
  * Automatic documentation and API spec generation with drift prevention.
  * Enforces drift prevention (cannot disable) and blocks PRs by default when drift detected.
- * 
+ *
  * Key Features:
  * - Framework auto-detection (Express, Fastify, Flask, Django)
  * - Endpoint extraction from code
@@ -116,12 +116,12 @@ interface OpenApiOperation {
  * - LLM enhancement (optional, graceful degradation)
  * - Drift detection (missing/changed endpoints)
  * - Policy-driven blocking
- * 
+ *
  * **Enforcement-First Behavior:**
  * - Drift prevention always enabled (cannot disable)
  * - Default action is 'block' (can change to 'auto_update' or 'alert')
  * - Doc generation failures don't block merge (fail-open)
- * 
+ *
  * @example
  * ```typescript
  * const result = await docSyncService.generateDocs({
@@ -134,7 +134,7 @@ interface OpenApiOperation {
 export class DocSyncService {
   /**
    * Generate documentation (OpenAPI or Markdown) from code.
-   * 
+   *
    * **Process:**
    * 1. Validates config (drift prevention always enabled)
    * 2. Detects API framework (Express, Fastify, etc.)
@@ -145,17 +145,17 @@ export class DocSyncService {
    * 7. Checks for drift (missing/changed endpoints)
    * 8. Evaluates against policy (may block if drift detected)
    * 9. Creates evidence bundle for audit trail
-   * 
+   *
    * **Enforcement:**
    * - Drift prevention always enabled (enforced)
    * - Default action is 'block' (can be changed to 'auto_update' or 'alert')
    * - Doc generation failures don't block merge (fail-open)
-   * 
+   *
    * @param request - Doc generation request with repository and format
    * @returns Doc generation result with content and drift status
    * @throws {Error} If drift prevention is disabled (validation error)
    * @throws {Error} If doc generation fails (non-blocking, but logged)
-   * 
+   *
    * @example
    * ```typescript
    * const result = await docSyncService.generateDocs({
@@ -218,7 +218,7 @@ export class DocSyncService {
         where: { id: request.repositoryId },
         select: { organizationId: true },
       });
-      
+
       if (!repo) {
         throw new Error(`Repository ${request.repositoryId} not found`);
       }
@@ -331,22 +331,22 @@ export class DocSyncService {
 
   /**
    * Check for drift between code and documentation.
-   * 
+   *
    * Compares current code endpoints with documented endpoints to detect:
    * - Missing endpoints (in code, not in docs)
    * - Extra endpoints (in docs, not in code)
    * - Changed endpoints (parameters or response changed)
-   * 
+   *
    * **Policy-Aware:**
    * - Missing endpoints: High severity finding
    * - Changed endpoints: Medium severity finding
    * - Policy evaluation determines if blocks
-   * 
+   *
    * @param repositoryId - Repository ID
    * @param ref - Branch or commit SHA to check
    * @param config - Optional config (uses defaults if not provided)
    * @returns Drift check result with missing/extra/changed endpoints and blocking status
-   * 
+   *
    * @example
    * ```typescript
    * const drift = await docSyncService.checkDrift('repo_123', 'main', {
@@ -355,7 +355,7 @@ export class DocSyncService {
    *     action: 'block'
    *   }
    * });
-   * 
+   *
    * if (drift.isBlocked) {
    *   console.log('Drift detected:', drift.missingEndpoints);
    * }
@@ -450,7 +450,7 @@ export class DocSyncService {
       where: { id: repositoryId },
       select: { organizationId: true },
     });
-    
+
     if (!repo) {
       throw new Error(`Repository ${repositoryId} not found`);
     }
@@ -591,7 +591,7 @@ export class DocSyncService {
       if (isQueryEnabled()) {
         // Get repository ID from endpoints if available
         const repoId = endpoints.length > 0 ? endpoints[0].file?.split('/')[0] : undefined;
-        
+
         try {
           const evidenceQueries = [
             `prior API docs patterns`,

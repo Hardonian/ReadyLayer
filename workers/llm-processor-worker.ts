@@ -1,12 +1,12 @@
 /**
  * LLM Processor Worker
- * 
+ *
  * Background worker for asynchronous LLM enrichment of reviews.
  * - Processes queued LLM enrichment jobs
  * - Handles timeouts and retries
  * - Updates review with enriched issues
  * - Tracks metrics for observability
- * 
+ *
  * Run: node -r tsx workers/llm-processor-worker.ts
  */
 

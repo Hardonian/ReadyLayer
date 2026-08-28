@@ -1,6 +1,6 @@
 /**
  * Python job enqueue API for TypeScript/Next.js
- * 
+ *
  * This module provides a clean interface for enqueueing Python-specific
  * jobs from the Next.js application.
  */
@@ -38,7 +38,7 @@ export interface PythonJobPayload {
 
 /**
  * Enqueue a Python job
- * 
+ *
  * @param type - The Python job type
  * @param payload - Job parameters including organizationId
  * @returns Job ID that can be used to poll for status

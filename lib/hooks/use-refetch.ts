@@ -5,11 +5,11 @@ import { useCache, CACHE_KEYS } from './use-cache'
 
 /**
  * Hook for refetching data when cache is invalidated
- * 
+ *
  * Usage:
  * ```tsx
  * const { refetch } = useRefetch()
- * 
+ *
  * useEffect(() => {
  *   const handleInvalidate = () => refetch()
  *   window.addEventListener('cache-invalidate', handleInvalidate)

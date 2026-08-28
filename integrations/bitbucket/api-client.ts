@@ -1,6 +1,6 @@
 /**
  * Bitbucket API Client
- * 
+ *
  * Wrapper for Bitbucket REST API with rate limiting and retries
  */
 
@@ -149,7 +149,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
    */
   async getPRDiff(workspace: string, repoSlug: string, prId: number, token: string): Promise<string> {
     const url = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pullrequests/${prId}/diff`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
@@ -331,10 +331,10 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
     // Bitbucket Pipelines artifacts are accessed via steps
     const stepsUrl = `${this.baseUrl}/repositories/${workspace}/${repoSlug}/pipelines/${pipelineUuid}/steps/`;
     const steps = await this.request<BitbucketPipelineStepsResponse>(stepsUrl, token);
-    
+
     // Find the step with artifacts (usually the test step)
     const stepWithArtifacts = steps.values?.find((step) => step.state?.name === 'COMPLETED');
-    
+
     if (!stepWithArtifacts) {
       throw new Error(`No completed steps found in pipeline ${pipelineUuid}`);
     }
@@ -388,7 +388,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-             
+
             const errorData = await response.json() as { error?: { message?: string } };
             errorMessage = errorData.error?.message ?? errorMessage;
           } catch {
@@ -398,14 +398,14 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
         }
 
         try {
-           
+
           return await response.json() as T;
         } catch {
           throw new Error('Failed to parse Bitbucket API response as JSON');
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-        
+
         if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
           if (attempt < maxRetries - 1) {
             const delay = Math.pow(2, attempt) * 1000;
@@ -414,7 +414,7 @@ export class BitbucketAPIClientImpl implements BitbucketAPIClient {
           }
           throw new Error('Bitbucket API request timed out after retries');
         }
-        
+
         if (attempt < maxRetries - 1 && this.isRetryableError(lastError)) {
           const delay = Math.pow(2, attempt) * 1000;
           await this.sleep(delay);

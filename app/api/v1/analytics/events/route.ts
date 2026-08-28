@@ -1,6 +1,6 @@
 /**
  * Analytics Events Collection Endpoint
- * 
+ *
  * Collects conversion and engagement events from the frontend
  * for analysis and conversion rate optimization (CRO).
  */

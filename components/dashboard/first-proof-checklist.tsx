@@ -55,12 +55,12 @@ export function FirstProofChecklist({
       <CardContent>
         <div className="space-y-3">
           {items.map((item, index) => {
-            const Icon = item.status === 'completed' ? CheckCircle2 : 
+            const Icon = item.status === 'completed' ? CheckCircle2 :
                         item.status === 'failed' ? AlertCircle : Circle
             const iconColor = item.status === 'completed' ? 'text-green-500' :
                              item.status === 'failed' ? 'text-red-500' :
                              'text-muted-foreground'
-            
+
             return (
               <motion.div
                 key={item.id}

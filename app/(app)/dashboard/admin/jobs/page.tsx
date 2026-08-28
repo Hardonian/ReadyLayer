@@ -4,18 +4,18 @@ import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { 
-  Loader2, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Clock,
   AlertCircle,
   RefreshCw,
   Play,
@@ -102,7 +102,7 @@ export default function JobsAdminPage(): React.JSX.Element {
       }
 
       const response = await fetch(`/api/jobs?${params.toString()}`)
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch jobs')
       }

@@ -1,6 +1,6 @@
 /**
  * Secrets Management
- * 
+ *
  * Centralized secrets encryption/decryption
  * Uses new crypto module with key rotation support
  */

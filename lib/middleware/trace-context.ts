@@ -1,9 +1,9 @@
 /**
  * Distributed Tracing Context
- * 
+ *
  * Adds OpenTelemetry tracing to correlate requests across serverless functions,
  * workers, and database operations.
- * 
+ *
  * Provides:
  * - Trace ID propagation across services
  * - Span tracking for request flows

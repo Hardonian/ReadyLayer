@@ -1,6 +1,6 @@
 /**
  * Review Guard Service
- * 
+ *
  * AI-aware code review and risk analysis
  * Enforces blocking by default for critical/high issues
  */
@@ -67,17 +67,17 @@ export interface ReviewResult {
 
 /**
  * Review Guard Service
- * 
+ *
  * Provides AI-aware code review and risk analysis for pull requests.
  * Enforces blocking by default for critical/high issues based on policy configuration.
- * 
+ *
  * Key Features:
  * - Deterministic static analysis with founder-specific rules
  * - AI-powered analysis with RAG evidence integration
  * - Policy-driven evaluation with waiver support
  * - Complete audit trail via evidence bundles
  * - Token usage tracking for cost control
- * 
+ *
  * @example
  * const result = await reviewGuardService.review({
  *   repositoryId: 'repo_123',
@@ -85,7 +85,7 @@ export interface ReviewResult {
  *   prSha: 'abc123',
  *   files: [{ path: 'src/index.ts', content: '...' }]
  * });
- * 
+ *
  * if (result.isBlocked) {
  *   console.log('PR blocked:', result.blockedReason);
  * }
@@ -93,26 +93,26 @@ export interface ReviewResult {
 export class ReviewGuardService {
   /**
    * Review a pull request for security vulnerabilities, quality issues, and potential bugs.
-   * 
+   *
    * This is the main entry point for code review. It performs:
    * 1. Static analysis (deterministic rules)
    * 2. AI analysis (LLM-powered, with RAG evidence)
    * 3. Schema reconciliation (for migration files)
    * 4. Policy evaluation (determines blocking)
    * 5. Evidence bundle creation (audit trail)
-   * 
+   *
    * **Enforcement-First Behavior:**
    * - Critical issues ALWAYS block (cannot disable)
    * - High/Medium/Low blocking determined by policy
    * - LLM failures block PR (fail-secure)
    * - Parse errors block PR (fail-secure)
-   * 
+   *
    * @param request - Review request with PR metadata and files to review
    * @returns Review result with issues, summary, and blocking status
    * @throws {UsageLimitExceededError} If billing limits exceeded (preserves HTTP status)
    * @throws {Error} If LLM analysis fails (PR blocked)
    * @throws {Error} If file parsing fails (PR blocked)
-   * 
+   *
    * @example
    * const result = await reviewGuardService.review({
    *   repositoryId: 'repo_123',
@@ -188,7 +188,7 @@ export class ReviewGuardService {
       }
 
       // FOUNDER-SPECIFIC: Schema reconciliation check
-      const migrationFiles = filesToReview.filter(f => 
+      const migrationFiles = filesToReview.filter(f =>
         f.path.includes('migration') || f.path.includes('migrations') || f.path.endsWith('.sql')
       );
       if (migrationFiles.length > 0) {
@@ -497,7 +497,7 @@ export class ReviewGuardService {
           select: { organizationId: true },
         });
         const organizationId = repo?.organizationId || '';
-        
+
         const { createAuditLog, AuditActions } = await import('../../lib/audit');
         await createAuditLog({
           organizationId,
@@ -543,7 +543,7 @@ export class ReviewGuardService {
    * Currently not used - reserved for future AI-based analysis
    */
   // @ts-ignore - Reserved for future implementation
-   
+
   private async analyzeWithAI(
     filePath: string,
     content: string,
@@ -668,7 +668,7 @@ export class ReviewGuardService {
     try {
       // Estimate input tokens (rough: ~4 chars per token)
       const estimatedInputTokens = Math.ceil(prompt.length / 4);
-      
+
       // Calculate waste percentage (simplified - would need more sophisticated analysis)
       const totalTokens = response.tokensUsed;
       const wastePercentage = totalTokens > 50000 ? 20 : totalTokens > 20000 ? 10 : 5;
@@ -689,7 +689,7 @@ export class ReviewGuardService {
       });
 
       // Record model performance for self-learning
-      await selfLearningService.recordModelPerformance(organizationId, response.model, 
+      await selfLearningService.recordModelPerformance(organizationId, response.model,
         response.model.includes('claude') ? 'anthropic' : 'openai', {
         success: true,
         responseTime: 0, // Would track actual response time
@@ -735,7 +735,7 @@ export class ReviewGuardService {
 
   /**
    * Generate deterministic review ID signature
-   * 
+   *
    * Creates a signature that proves the review was performed with a specific
    * policy version. Same inputs + same policy = same signature.
    */
@@ -754,12 +754,12 @@ export class ReviewGuardService {
    */
   private detectLanguage(files: Array<{ path: string; content: string }>): string {
     if (files.length === 0) return 'unknown';
-    
+
     const extensions = files.map(f => {
       const match = f.path.match(/\.([^.]+)$/);
       return match ? match[1] : '';
     });
-    
+
     const languageMap: Record<string, string> = {
       'ts': 'typescript',
       'tsx': 'typescript',
@@ -770,17 +770,17 @@ export class ReviewGuardService {
       'go': 'go',
       'rb': 'ruby',
     };
-    
+
     const mostCommon = extensions
       .filter(ext => ext)
       .reduce((acc, ext) => {
         acc[ext] = (acc[ext] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-    
+
     const topExt = Object.entries(mostCommon)
       .sort((a, b) => b[1] - a[1])[0]?.[0];
-    
+
     return languageMap[topExt || ''] || 'unknown';
   }
 
@@ -882,7 +882,7 @@ export class ReviewGuardService {
     // Pattern 1: Many functions changed at once
     const beforeFunctions = (before.match(/(?:function|const\s+\w+\s*=\s*(?:async\s+)?\(|export\s+(?:async\s+)?function)/g) || []).length;
     const afterFunctions = (after.match(/(?:function|const\s+\w+\s*=\s*(?:async\s+)?\(|export\s+(?:async\s+)?function)/g) || []).length;
-    
+
     if (Math.abs(afterFunctions - beforeFunctions) > 5) {
       issues.push({
         ruleId: 'founder.large-refactor',
@@ -898,7 +898,7 @@ export class ReviewGuardService {
     // Pattern 2: Type changes (type erosion or over-typing)
     const beforeAnyCount = (before.match(/\b:\s*any\b/g) || []).length;
     const afterAnyCount = (after.match(/\b:\s*any\b/g) || []).length;
-    
+
     if (afterAnyCount > beforeAnyCount) {
       issues.push({
         ruleId: 'founder.type-erosion',
@@ -914,7 +914,7 @@ export class ReviewGuardService {
     // Pattern 3: Error handling removed
     const beforeTryCatch = (before.match(/\btry\s*\{/g) || []).length;
     const afterTryCatch = (after.match(/\btry\s*\{/g) || []).length;
-    
+
     if (afterTryCatch < beforeTryCatch) {
       issues.push({
         ruleId: 'founder.error-handling',

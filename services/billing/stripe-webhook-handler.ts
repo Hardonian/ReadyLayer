@@ -1,6 +1,6 @@
 /**
  * Stripe Webhook Handler
- * 
+ *
  * Processes Stripe webhook events for:
  * - Subscription creation/updates/cancellation
  * - Payment success/failure
@@ -93,7 +93,7 @@ export async function handleStripeWebhook(
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     logger.error(
       {
         eventId: event.id,

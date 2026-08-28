@@ -1,6 +1,6 @@
 /**
  * Provider Configuration Service
- * 
+ *
  * Handles encrypted storage and retrieval of LLM provider API keys.
  * Keys are encrypted at rest using lib/crypto and never exposed to client.
  */

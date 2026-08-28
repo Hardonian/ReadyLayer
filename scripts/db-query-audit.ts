@@ -2,13 +2,13 @@
 
 /**
  * Database Query Audit
- * 
+ *
  * Analyzes Prisma queries and logs to detect:
  * - N+1 query problems
  * - Slow queries
  * - Missing indexes
  * - Inefficient patterns
- * 
+ *
  * Run with: pnpm tsx scripts/db-query-audit.ts
  */
 

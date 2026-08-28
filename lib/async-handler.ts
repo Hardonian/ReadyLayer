@@ -1,10 +1,10 @@
 /**
  * Async Handler Support for I/O-Bound Operations
- * 
+ *
  * P2: Efficient async handling for database queries, API calls, file I/O
  * Provides worker pool management, concurrency control, and backpressure
  * handling for optimal I/O-bound performance.
- * 
+ *
  * Features:
  * - Worker pool with dynamic sizing
  * - Task queue with priority support
@@ -93,10 +93,10 @@ export class AsyncHandler<T, R> {
    */
   start(): void {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     this.startWorkerLoop();
-    
+
     logger.info({
       minWorkers: this.config.minWorkers,
       maxWorkers: this.config.maxWorkers,
@@ -119,7 +119,7 @@ export class AsyncHandler<T, R> {
     const queueFillRatio = this.taskQueue.length / this.config.queueSize;
     if (queueFillRatio > this.config.backpressureThreshold) {
       metrics.increment('async_handler_backpressure');
-      
+
       // If queue is full, reject or apply backpressure
       if (this.taskQueue.length >= this.config.queueSize) {
         throw new Error('Task queue is full - apply backpressure');
@@ -143,7 +143,7 @@ export class AsyncHandler<T, R> {
    */
   async submitBatch(tasks: Array<Omit<AsyncTask<T, R>, 'retries' | 'timeout' | 'createdAt'>>): Promise<string[]> {
     const taskIds: string[] = [];
-    
+
     for (const task of tasks) {
       try {
         const id = await this.submit(task);
@@ -166,7 +166,7 @@ export class AsyncHandler<T, R> {
     return new Promise((resolve, reject) => {
       const checkResult = (): void => {
         const result = this.results.get(taskId);
-        
+
         if (result) {
           this.results.delete(taskId);
           resolve(result);
@@ -190,7 +190,7 @@ export class AsyncHandler<T, R> {
    */
   async waitForBatch(taskIds: string[], timeout?: number): Promise<Map<string, TaskResult<R>>> {
     const results = new Map<string, TaskResult<R>>();
-    
+
     await Promise.all(
       taskIds.map(async (taskId) => {
         try {
@@ -237,7 +237,7 @@ export class AsyncHandler<T, R> {
     };
   } {
     const busyWorkers = this.workers.filter(w => w.busy).length;
-    
+
     return {
       workers: {
         total: this.workers.length,
@@ -264,7 +264,7 @@ export class AsyncHandler<T, R> {
    */
   async shutdown(timeout: number = 30000): Promise<void> {
     this.isRunning = false;
-    
+
     logger.info({
       pendingTasks: this.taskQueue.length,
       activeWorkers: this.workers.filter(w => w.busy).length,
@@ -352,7 +352,7 @@ export class AsyncHandler<T, R> {
       try {
         // Execute with circuit breaker
         if (this.circuitBreaker) {
-          result = await this.circuitBreaker.execute(() => 
+          result = await this.circuitBreaker.execute(() =>
             this.executeWithTimeout(task)
           );
         } else {
@@ -371,7 +371,7 @@ export class AsyncHandler<T, R> {
           task.retries++;
           this.stats.tasksRetried++;
           metrics.increment('async_handler_task_retry');
-          
+
           // Re-queue with exponential backoff
           setTimeout(() => {
             this.taskQueue.push(task);
@@ -385,10 +385,10 @@ export class AsyncHandler<T, R> {
       }
 
       const duration = Date.now() - startTime;
-      
+
       // Update average duration
-      this.stats.avgDuration = 
-        (this.stats.avgDuration * (this.stats.tasksCompleted - 1) + duration) / 
+      this.stats.avgDuration =
+        (this.stats.avgDuration * (this.stats.tasksCompleted - 1) + duration) /
         this.stats.tasksCompleted || duration;
 
       // Store result if final attempt
@@ -438,7 +438,7 @@ export class AsyncHandler<T, R> {
       const newWorker = { id: newWorkerId, busy: false };
       this.workers.push(newWorker);
       this.runWorker(newWorker);
-      
+
       logger.debug({ workerId: newWorkerId }, 'Scaled up worker');
       metrics.increment('async_handler_worker_scaled_up');
     }
@@ -448,7 +448,7 @@ export class AsyncHandler<T, R> {
       const idleWorkerIndex = this.workers.findIndex(w => !w.busy);
       if (idleWorkerIndex > this.config.minWorkers - 1) {
         this.workers.splice(idleWorkerIndex, 1);
-        
+
         logger.debug({ workerIndex: idleWorkerIndex }, 'Scaled down worker');
         metrics.increment('async_handler_worker_scaled_down');
       }

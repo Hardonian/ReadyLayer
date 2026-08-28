@@ -28,7 +28,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // Log error to monitoring service in production
     console.error('Error caught by boundary:', error, errorInfo)
-    
+
     // In production, you might want to send this to an error reporting service
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
       // Example: window.analytics.track('error', { error: error.message, stack: error.stack })
@@ -42,7 +42,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render(): React.ReactNode {
     if (this.state.hasError) {
       const { fallback: Fallback } = this.props
-      
+
       if (Fallback && this.state.error) {
         return <Fallback error={this.state.error} reset={this.reset} />
       }
@@ -61,7 +61,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               <p className="text-center font-body text-text-muted">
                 We encountered an unexpected error. This has been logged and our team will investigate.
               </p>
-              
+
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <div className="rounded-lg bg-danger/10 border border-danger/20 p-3">
                   <p className="text-sm font-mono text-danger">
@@ -79,17 +79,17 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                   )}
                 </div>
               )}
-              
+
               <div className="flex flex-col gap-2">
-                <Button 
+                <Button
                   onClick={this.reset}
                   className="w-full tap-target"
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Try again
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => window.location.href = '/'}
                   className="w-full tap-target"
                 >

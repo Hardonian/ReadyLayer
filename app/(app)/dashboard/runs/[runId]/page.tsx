@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   ErrorState,
   Skeleton,
@@ -16,8 +16,8 @@ import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { fadeIn } from '@/lib/design/motion'
 import { getSeverityColor, type SeverityLevel } from '@/lib/utils/color-mapping'
-import { 
-  CheckCircle2, 
+import {
+  CheckCircle2,
   Clock,
   XCircle,
   Shield,
@@ -241,7 +241,7 @@ export default function RunDetailsPage(): React.JSX.Element {
           </button>
           <div className="flex-1">
             <h1 className="text-3xl font-bold">
-              {run.sandboxId ? 'Sandbox Demo Run' : 
+              {run.sandboxId ? 'Sandbox Demo Run' :
                run.repository?.fullName || `Run ${run.correlationId.slice(0, 8)}`}
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -353,9 +353,9 @@ export default function RunDetailsPage(): React.JSX.Element {
                   </div>
                   {run.reviewGuardResult.summary && (
                     <div className="text-sm text-muted-foreground">
-                      Critical: {run.reviewGuardResult.summary.critical} • 
-                      High: {run.reviewGuardResult.summary.high} • 
-                      Medium: {run.reviewGuardResult.summary.medium} • 
+                      Critical: {run.reviewGuardResult.summary.critical} •
+                      High: {run.reviewGuardResult.summary.high} •
+                      Medium: {run.reviewGuardResult.summary.medium} •
                       Low: {run.reviewGuardResult.summary.low}
                     </div>
                   )}
@@ -404,8 +404,8 @@ export default function RunDetailsPage(): React.JSX.Element {
                   </div>
                   {run.testEngineResult.coverage && (
                     <div className="text-sm text-muted-foreground">
-                      Coverage: {run.testEngineResult.coverage.lines}% lines • 
-                      {run.testEngineResult.coverage.branches}% branches • 
+                      Coverage: {run.testEngineResult.coverage.lines}% lines •
+                      {run.testEngineResult.coverage.branches}% branches •
                       {run.testEngineResult.coverage.functions}% functions
                     </div>
                   )}
@@ -448,7 +448,7 @@ export default function RunDetailsPage(): React.JSX.Element {
                   </div>
                   {run.docSyncResult.driftDetected && (
                     <div className="text-sm text-muted-foreground">
-                      Missing endpoints: {run.docSyncResult.missingEndpoints} • 
+                      Missing endpoints: {run.docSyncResult.missingEndpoints} •
                       Changed endpoints: {run.docSyncResult.changedEndpoints}
                     </div>
                   )}
@@ -471,7 +471,7 @@ export default function RunDetailsPage(): React.JSX.Element {
                     <div>
                       <div className="font-medium">{file.path}</div>
                       <div className="text-sm text-muted-foreground">
-                        Confidence: {(file.confidence * 100).toFixed(0)}% • 
+                        Confidence: {(file.confidence * 100).toFixed(0)}% •
                         Methods: {file.methods.join(', ')}
                       </div>
                     </div>
@@ -566,7 +566,7 @@ export default function RunDetailsPage(): React.JSX.Element {
                     report: FileCode,
                   };
                   const Icon = artifactIcons[artifact.type] || FileCode;
-                  
+
                   return (
                     <div
                       key={idx}

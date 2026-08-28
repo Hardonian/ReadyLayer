@@ -1,6 +1,6 @@
 /**
  * AI Risk Exposure Index API
- * 
+ *
  * GET /api/v1/cultural-artifacts/risk-index/[organizationId] - Get risk index
  */
 

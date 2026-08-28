@@ -1,6 +1,6 @@
 /**
  * Visual Test Utilities
- * 
+ *
  * Helpers for deterministic, stable visual regression tests.
  * Eliminates flaky pixels from animations, timestamps, randomness.
  */
@@ -22,12 +22,12 @@ export const DISABLE_ANIMATIONS_CSS = `
     transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
-  
+
   /* Stop Framer Motion animations */
   [style*="animation"] {
     animation: none !important;
   }
-  
+
   /* Stop CSS animations */
   .animate-blob,
   .animate-float,
@@ -38,20 +38,20 @@ export const DISABLE_ANIMATIONS_CSS = `
   .animate-ping {
     animation: none !important;
   }
-  
+
   /* Stop code glow */
   .code-preview-glow {
     animation: none !important;
     opacity: 0.5 !important;
     transform: scale(1) !important;
   }
-  
+
   /* Stop blob animation */
   .animate-blob {
     animation: none !important;
     transform: none !important;
   }
-  
+
   /* Stop float animation */
   .float-animation,
   .float-animation-delay-1,
@@ -59,18 +59,18 @@ export const DISABLE_ANIMATIONS_CSS = `
     animation: none !important;
     transform: none !important;
   }
-  
+
   /* Stop loading spinners */
   .animate-spin {
     animation: none !important;
     transform: none !important;
   }
-  
+
   /* Hide cursor in screenshots */
   * {
     caret-color: transparent !important;
   }
-  
+
   /* Stop gradient animations */
   @keyframes none {
     to { }
@@ -87,25 +87,25 @@ export const STABILIZE_JS = `
     randomSeed = (randomSeed * 9301 + 49297) % 233280;
     return randomSeed / 233280;
   };
-  
+
   // Mock Date to freeze time (January 15, 2026 10:00:00 UTC)
   const frozenTime = 1736935200000;
   let timeOffset = 0;
-  
+
   const OriginalDate = Date;
-  
+
   function FrozenDate(...args) {
     if (args.length === 0) {
       return new OriginalDate(frozenTime + timeOffset);
     }
     return new OriginalDate(...args);
   }
-  
+
   FrozenDate.prototype = OriginalDate.prototype;
   FrozenDate.now = function() { return frozenTime + timeOffset; };
   FrozenDate.parse = OriginalDate.parse;
   FrozenDate.UTC = OriginalDate.UTC;
-  
+
   // Allow minimal time progression for setTimeout/setInterval
   const originalSetTimeout = window.setTimeout;
   window.setTimeout = function(callback, delay, ...args) {
@@ -114,43 +114,43 @@ export const STABILIZE_JS = `
     }
     return originalSetTimeout(callback, delay, ...args);
   };
-  
+
   Date = FrozenDate;
-  
+
   // Mock performance.now()
   let perfOffset = 0;
   performance.now = function() {
     perfOffset += 0.1;
     return frozenTime + perfOffset;
   };
-  
+
   // Suppress hydration warnings in visual tests
   window.__NEXT_DATA__ = window.__NEXT_DATA__ || {};
   window.__NEXT_DATA__.suppressHydrationWarning = true;
-  
+
   // Override requestAnimationFrame for consistency
   let rafId = 0;
   let rafCallbacks = [];
-  
+
   window.requestAnimationFrame = function(callback) {
     const id = ++rafId;
     rafCallbacks.push({ id, callback });
-    
+
     // Execute immediately for consistent screenshots
     setTimeout(() => {
       callback(frozenTime + perfOffset);
     }, 0);
-    
+
     return id;
   };
-  
+
   window.cancelAnimationFrame = function(id) {
     rafCallbacks = rafCallbacks.filter(cb => cb.id !== id);
   };
-  
+
   // Add class to body for test identification
   document.body.classList.add('visual-test-mode');
-  
+
   // Dispatch custom event for components to detect visual test mode
   window.dispatchEvent(new CustomEvent('visualTestMode'));
 `
@@ -161,16 +161,16 @@ export const STABILIZE_JS = `
 export async function setupVisualTest(page: Page, _testInfo?: TestInfo): Promise<void> {
   // Inject CSS to disable animations
   await page.addStyleTag({ content: DISABLE_ANIMATIONS_CSS })
-  
+
   // Inject JS to stabilize time and randomness
   await page.addInitScript(STABILIZE_JS)
-  
+
   // Set viewport to ensure consistent sizing
   await page.setViewportSize({ width: 1920, height: 1080 })
-  
+
   // Wait for fonts to be ready
   await page.waitForFunction(() => document.fonts.ready)
-  
+
   // Wait for any lazy-loaded content
   await page.waitForLoadState('networkidle')
 }
@@ -183,17 +183,17 @@ export const DYNAMIC_SELECTORS = [
   'time',
   '[data-testid="timestamp"]',
   '[data-testid="date"]',
-  
+
   // Dynamic user content
   '[data-testid="user-avatar"]',
   '[data-testid="username"]',
-  
+
   // Random IDs
   '[data-testid="id"]',
-  
+
   // Loading states that may vary
   '.animate-spin',
-  
+
   // Charts with dynamic data
   'canvas[data-chart]',
 ]
@@ -212,10 +212,10 @@ export async function takeStableScreenshot(
   }
 ): Promise<Buffer> {
   const maskSelectors = [...DYNAMIC_SELECTORS, ...(options.mask || [])]
-  
+
   // Get mask elements
   const maskElements = await page.locator(maskSelectors.join(', ')).all()
-  
+
   return await page.screenshot({
     fullPage: options.fullPage ?? false,
     mask: maskElements,
@@ -232,16 +232,16 @@ export async function takeStableScreenshot(
 export async function waitForVisualStability(page: Page): Promise<void> {
   // Wait for network to be idle
   await page.waitForLoadState('networkidle')
-  
+
   // Wait for all images to load
   await page.waitForFunction(() => {
     const images = Array.from(document.querySelectorAll('img'))
     return images.every(img => img.complete && img.naturalHeight !== 0)
   })
-  
+
   // Wait for fonts
   await page.waitForFunction(() => document.fonts.ready)
-  
+
   // Small delay for any final layout shifts
   await page.waitForTimeout(100)
 }
@@ -252,20 +252,20 @@ export async function waitForVisualStability(page: Page): Promise<void> {
 export async function setTheme(page: Page, theme: 'light' | 'dark' | 'system'): Promise<void> {
   await page.evaluate((t) => {
     localStorage.setItem('readylayer-theme', t)
-    
+
     if (t === 'dark') {
       document.documentElement.classList.add('dark')
     } else if (t === 'light') {
       document.documentElement.classList.remove('dark')
     }
-    
+
     // Dispatch storage event for theme provider
     window.dispatchEvent(new StorageEvent('storage', {
       key: 'readylayer-theme',
       newValue: t,
     }))
   }, theme)
-  
+
   // Wait for theme transition
   await page.waitForTimeout(150)
 }
@@ -290,7 +290,7 @@ export async function mockConsistentData(page: Page): Promise<void> {
       }),
     })
   })
-  
+
   // Mock repos endpoint with consistent data
   await page.route('/api/v1/repos?*', async (route) => {
     await route.fulfill({
@@ -319,7 +319,7 @@ export async function mockConsistentData(page: Page): Promise<void> {
       }),
     })
   })
-  
+
   // Mock reviews endpoint
   await page.route('/api/v1/reviews?*', async (route) => {
     await route.fulfill({
@@ -370,9 +370,9 @@ export async function mockAuthenticatedSession(page: Page): Promise<void> {
         },
       },
     }
-    
+
     localStorage.setItem('sb-auth-token', JSON.stringify(mockSession))
-    
+
     // Also set cookie for SSR
     document.cookie = `sb-auth-token=${encodeURIComponent(JSON.stringify(mockSession))}; path=/`
   })
@@ -391,19 +391,19 @@ export async function expectScreenshot(
   } = {}
 ): Promise<void> {
   const { expect } = await import('@playwright/test')
-  
+
   // Wait for stability
   await waitForVisualStability(page)
-  
+
   // Set theme if specified
   if (options.theme) {
     await setTheme(page, options.theme)
   }
-  
+
   // Take screenshot with masking
   const maskSelectors = [...DYNAMIC_SELECTORS, ...(options.mask || [])]
   const maskElements = await page.locator(maskSelectors.join(', ')).all()
-  
+
   await expect(page).toHaveScreenshot(name, {
     fullPage: options.fullPage ?? false,
     mask: maskElements,

@@ -1,6 +1,6 @@
 /**
  * Readiness Score API
- * 
+ *
  * GET /api/v1/cultural-artifacts/readiness/[repositoryId] - Get readiness score
  */
 

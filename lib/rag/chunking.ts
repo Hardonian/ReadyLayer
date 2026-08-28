@@ -1,6 +1,6 @@
 /**
  * Deterministic Chunking
- * 
+ *
  * Produces same chunks for same input (required for idempotency)
  */
 
@@ -15,7 +15,7 @@ export interface Chunk {
 
 /**
  * Chunk text deterministically with overlap
- * 
+ *
  * Same input always produces same chunks
  */
 export function chunkText(
@@ -54,7 +54,7 @@ export function chunkText(
         0,
         currentChunk.length - chunkOverlap
       );
-      
+
       // Try to find a good break point (space, newline, punctuation)
       let actualOverlapStart = overlapStart;
       for (let j = overlapStart; j < currentChunk.length; j++) {

@@ -1,6 +1,6 @@
 /**
  * Merge Confidence Certificate API
- * 
+ *
  * GET /api/v1/cultural-artifacts/certificate/[reviewId] - Get certificate for a review
  */
 

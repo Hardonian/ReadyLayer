@@ -42,7 +42,7 @@ const nextConfig = {
   // Vercel optimizes builds automatically with serverless functions
   // 'standalone' is only for self-hosted deployments (Docker, VPS)
   // Keeping output undefined allows Vercel to handle serverless optimization
-  
+
   // Logging
   logging: {
     fetches: {

@@ -1,6 +1,6 @@
 /**
  * GitHub OAuth Callback Route
- * 
+ *
  * Handles GitHub OAuth callback with:
  * - CSRF state token validation
  * - Code-to-token exchange

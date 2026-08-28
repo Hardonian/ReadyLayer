@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -17,8 +17,8 @@ import {
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
-import { 
-  Shield, 
+import {
+  Shield,
   Plus,
   CheckCircle2,
   XCircle,
@@ -208,8 +208,8 @@ export default function PoliciesPage() {
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <Shield 
-                className="h-8 w-8" 
+              <Shield
+                className="h-8 w-8"
                 style={{ color: '#6366f1' }} // Default primary color
               />
               <h1 className="text-3xl font-bold">Policy Management</h1>

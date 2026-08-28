@@ -1,6 +1,6 @@
 /**
  * Queue Service
- * 
+ *
  * Redis-backed durable queue with retries, idempotency, and DLQ
  */
 
@@ -250,7 +250,7 @@ const jobData = JSON.parse(result.element) as { id: string };
 
   /**
    * Process jobs from database (fallback) - BATCH OPTIMIZED
-   * 
+   *
    * Improvements:
    * - Fetches jobs in batches (50 instead of 10)
    * - Processes multiple jobs concurrently (up to 5 at a time)
@@ -262,7 +262,7 @@ const jobData = JSON.parse(result.element) as { id: string };
     handler: QueueHandler
   ): Promise<void> {
     let emptyPollCount = 0;
-    
+
     while (true) {
       try {
         const jobs = await prisma.job.findMany({
@@ -301,7 +301,7 @@ const jobData = JSON.parse(result.element) as { id: string };
         // Process jobs with limited concurrency (5 at a time)
         const CONCURRENCY = 5;
         const results: Array<{ jobId: string; success: boolean; error?: string }> = [];
-        
+
         for (let i = 0; i < jobs.length; i += CONCURRENCY) {
           const batch = jobs.slice(i, i + CONCURRENCY);
           const batchResults = await Promise.all(
@@ -336,11 +336,11 @@ const jobData = JSON.parse(result.element) as { id: string };
         for (const failed of failedResults) {
           const job = jobs.find(j => j.id === failed.jobId)!;
           const retryCount = job.retryCount + 1;
-          
+
           if (retryCount < job.maxRetries) {
             const delay = Math.pow(2, retryCount) * 1000;
             const scheduledAt = new Date(Date.now() + delay);
-            
+
             await prisma.job.update({
               where: { id: failed.jobId },
               data: {

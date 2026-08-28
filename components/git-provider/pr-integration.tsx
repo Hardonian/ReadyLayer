@@ -19,7 +19,7 @@ interface PRIntegrationProps {
 
 /**
  * PR Integration Component
- * 
+ *
  * Embeds policy status into Git provider PR/MR UI
  * Adapts styling and behavior to match provider
  */
@@ -41,7 +41,7 @@ export function PRIntegration({ repository, prNumber, prSha, reviewId }: PRInteg
           try {
             const response = await fetch(`/api/v1/reviews/${reviewId}`)
             if (response.ok) {
-              const review = (await response.json()) as { 
+              const review = (await response.json()) as {
                 isBlocked?: boolean
                 result?: {
                   policyScore?: number

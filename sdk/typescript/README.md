@@ -49,15 +49,15 @@ const review = await client.createReview({
 const client = new ReadyLayerClient({
   // Required: Your API key or Bearer token
   apiKey: process.env.READYLAYER_API_KEY,
-  
+
   // Optional: Custom base URL (default: https://readylayer.io/api/v1)
   baseURL: 'http://localhost:3000/api/v1',
-  
+
   // Optional: Retry configuration
   maxRetries: 3,        // Default: 3
   retryDelayMs: 1000,   // Default: 1000
   maxRetryDelayMs: 10000, // Default: 10000
-  
+
   // Optional: Request timeout
   timeoutMs: 30000,     // Default: 30000ms
 });
@@ -367,15 +367,15 @@ const limit = 50;
 
 while (true) {
   const response = await client.listRepositories({ limit, offset });
-  
+
   for (const repo of response.repositories) {
     console.log(repo.name);
   }
-  
+
   if (!response.pagination.hasMore) {
     break;
   }
-  
+
   offset += limit;
 }
 ```

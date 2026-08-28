@@ -100,9 +100,9 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // 400 - Validation errors for missing required fields
-  if (req.method === 'POST' && req.path === '/api/v1/reviews' && 
+  if (req.method === 'POST' && req.path === '/api/v1/reviews' &&
       (!req.body || Object.keys(req.body as object).length === 0)) {
     return {
       status: 400,
@@ -121,9 +121,9 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // 400 - Invalid data types for reviews
-  if (req.method === 'POST' && req.path === '/api/v1/reviews' && 
+  if (req.method === 'POST' && req.path === '/api/v1/reviews' &&
       req.body && typeof (req.body as { prNumber?: unknown }).prNumber === 'string') {
     return {
       status: 400,
@@ -140,7 +140,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
   }
 
   // 400 - Invalid data types for repos (name should be string, not number)
-  if (req.method === 'POST' && req.path === '/api/v1/repos' && 
+  if (req.method === 'POST' && req.path === '/api/v1/repos' &&
       req.body && typeof (req.body as { name?: unknown }).name === 'number') {
     return {
       status: 400,
@@ -171,7 +171,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // 403 - Blocked repository access
   if ((req.body as { repositoryId?: string })?.repositoryId?.startsWith('blocked')) {
     return {
@@ -187,7 +187,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // 404 - Resource not found
   if ((req.body as { repositoryId?: string })?.repositoryId?.startsWith('nonexistent')) {
     return {
@@ -203,7 +203,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // 403 - Forbidden (insufficient permissions)
   if (token === 'valid-token-no-perms') {
     return {
@@ -295,7 +295,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
           code: 'INTERNAL_SERVER_ERROR',
           message: 'An unexpected error occurred',
           requestId,
-          ...(isDev && { 
+          ...(isDev && {
             details: 'Error: Database connection failed\n    at Query.run (/app/db.ts:42:19)',
             stack: 'Error: Database connection failed\n    at Query.run (/app/db.ts:42:19)',
           }),
@@ -304,7 +304,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // 404 - Route not found
   if (req.path === '/api/v1/nonexistent') {
     return {
@@ -320,7 +320,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // 405 - Method not allowed
   if (req.path === '/api/v1/reviews' && req.method === 'PATCH') {
     return {
@@ -352,7 +352,7 @@ async function mockApiRequest(req: ApiTestRequest): Promise<{
       },
     };
   }
-  
+
   // Default success response
   return {
     status: 200,
@@ -371,7 +371,7 @@ describe('API Sad Path Tests', () => {
       const response = await mockApiRequest({
         method: 'POST',
         path: '/api/v1/reviews',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer valid-token',
         },
@@ -390,7 +390,7 @@ describe('API Sad Path Tests', () => {
       const response = await mockApiRequest({
         method: 'POST',
         path: '/api/v1/repos',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer valid-token',
         },

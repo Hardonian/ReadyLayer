@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 /**
  * POST /api/github/actions/webhook
  * Handle CI/CD webhook events from GitHub, GitLab, and Bitbucket
- * 
+ *
  * Ingests pipeline/workflow completion events and updates TestRun records
  * with coverage and pass/fail results from artifacts.
  */
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only handle CI completion events
-    const isCIEvent = 
+    const isCIEvent =
       (provider === 'github' && eventType === 'workflow_run') ||
       (provider === 'gitlab' && eventType === 'Pipeline Hook') ||
       (provider === 'bitbucket' && (eventType === 'build:status' || eventType === 'build:completed'));
@@ -209,9 +209,9 @@ export async function POST(request: NextRequest) {
       }
 
       pipelineRunId = buildStatus.key;
-      repoFullName = eventObj.repository?.full_name || 
-        (eventObj.repository?.workspace?.slug && eventObj.repository?.slug 
-          ? `${eventObj.repository.workspace.slug}/${eventObj.repository.slug}` 
+      repoFullName = eventObj.repository?.full_name ||
+        (eventObj.repository?.workspace?.slug && eventObj.repository?.slug
+          ? `${eventObj.repository.workspace.slug}/${eventObj.repository.slug}`
           : '');
       sha = eventObj.commit?.hash || '';
       status = buildStatus.state === 'SUCCESSFUL' ? 'completed' : 'failed';

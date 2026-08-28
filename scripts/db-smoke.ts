@@ -1,16 +1,16 @@
 #!/usr/bin/env tsx
 /**
  * Database Smoke Test Script
- * 
+ *
  * Runs a small set of real queries against Supabase to verify:
  * - Database connectivity
  * - Required tables exist
  * - RLS policies work correctly (anon vs authenticated)
  * - Basic CRUD operations succeed
- * 
+ *
  * Usage:
  *   DATABASE_URL="postgresql://..." tsx scripts/db-smoke.ts
- * 
+ *
  * Exit codes:
  *   0 - All smoke tests passed
  *   1 - Smoke tests failed
@@ -54,9 +54,9 @@ async function runSmokeTests(): Promise<SmokeTestResult[]> {
   const test2Start = Date.now();
   try {
     const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename 
-      FROM pg_tables 
-      WHERE schemaname = 'public' 
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
       AND tablename IN (
         'User', 'Organization', 'OrganizationMember', 'Repository',
         'Review', 'Test', 'Doc', 'Job', 'Violation', 'ApiKey',

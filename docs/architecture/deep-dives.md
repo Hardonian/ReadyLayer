@@ -159,12 +159,12 @@ interface LLMJob {
   model: 'gpt-4' | 'claude';
   temperature: number;
   maxTokens: number;
-  
+
   // Tracking
   status: 'pending'|'processing'|'completed'|'failed';
   attempts: number;
   maxRetries: number;
-  
+
   // Results
   result?: string;
   costTokens?: number;
@@ -208,10 +208,10 @@ async recordLLMCost(
   outputTokens: number
 ) {
   const pricing = PRICING[model];
-  const cost = 
+  const cost =
     (inputTokens / 1_000_000) * pricing.input +
     (outputTokens / 1_000_000) * pricing.output;
-  
+
   await costAttributionService.recordLLMCost(
     organizationId,
     model,
@@ -441,7 +441,7 @@ function validateWebhookSignature(
     .createHmac('sha256', secret)
     .update(payload)
     .digest('hex');
-  
+
   // Constant-time comparison (prevent timing attacks)
   return crypto.timingSafeEqual(
     Buffer.from(signature),

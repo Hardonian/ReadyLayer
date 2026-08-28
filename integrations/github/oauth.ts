@@ -1,6 +1,6 @@
 /**
  * GitHub OAuth Integration with CSRF Protection
- * 
+ *
  * Handles GitHub App OAuth flow with state token validation
  * to prevent CSRF attacks.
  */
@@ -249,7 +249,7 @@ export async function listGitHubRepositories(
 
 /**
  * Verify GitHub webhook signature
- * 
+ *
  * GitHub sends an X-Hub-Signature-256 header with HMAC SHA256 signature
  */
 export function verifyGitHubWebhookSignature(

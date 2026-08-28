@@ -2,14 +2,14 @@ import { z } from 'zod';
 
 /**
  * Feature Flags Configuration
- * 
+ *
  * Gates experimental features behind explicit opt-in.
  * Core features are always enabled.
- * 
+ *
  * Usage:
  * ```typescript
  * import { isFeatureEnabled, FeatureFlags } from '@/config/feature-flags';
- * 
+ *
  * if (isFeatureEnabled('experimentalAiRiskIndex')) {
  *   // Show experimental feature
  * }
@@ -164,7 +164,7 @@ function getFeatureFlagsFromEnv(): FeatureFlags {
 
 /**
  * Feature gate component for React
- * 
+ *
  * Usage:
  * ```tsx
  * <FeatureGate feature="aiRiskIndex">

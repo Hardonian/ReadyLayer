@@ -27,7 +27,7 @@ stages:
 readylayer:
   stage: review
   image: ubuntu:latest
-  
+
   script:
     - |
       curl -X POST https://api.ready-layer.com/v1/reviews \
@@ -39,10 +39,10 @@ readylayer:
           \"prSha\": \"$CI_COMMIT_SHA\",
           \"files\": []
         }"
-  
+
   only:
     - merge_requests
-  
+
   allow_failure: false
 ```
 
@@ -58,14 +58,14 @@ Push a merge request. ReadyLayer will automatically review your code.
 readylayer:
   stage: review
   image: readylayer/gitlab-ci:latest
-  
+
   variables:
     GITLAB_TOKEN: $CI_JOB_TOKEN
     MR_IID: $CI_MERGE_REQUEST_IID
-  
+
   script:
     - readylayer review
-  
+
   only:
     - merge_requests
 ```
@@ -103,7 +103,7 @@ exclude-paths:
 readylayer:
   stage: review
   image: readylayer/gitlab-ci:latest
-  
+
   script:
     - readylayer review
     - |
@@ -111,10 +111,10 @@ readylayer:
         echo "MR blocked due to critical issues"
         exit 1
       fi
-  
+
   only:
     - merge_requests
-  
+
   allow_failure: false
 ```
 
@@ -155,7 +155,7 @@ test:
 readylayer:
   stage: review
   image: readylayer/gitlab-ci:latest
-  
+
   script:
     - |
       if [ "$CI_COMMIT_BRANCH" = "main" ]; then
@@ -165,7 +165,7 @@ readylayer:
       else
         readylayer review
       fi
-  
+
   only:
     - merge_requests
 ```
@@ -187,16 +187,16 @@ readylayer:
 readylayer:
   stage: review
   image: readylayer/gitlab-ci:latest
-  
+
   variables:
     READYLAYER_ENDPOINT: "https://api.ready-layer.com"
     READYLAYER_TIMEOUT: "60"
     READYLAYER_FAIL_ON_CRITICAL: "true"
     READYLAYER_FAIL_ON_HIGH: "false"
-  
+
   script:
     - readylayer review
-  
+
   only:
     - merge_requests
 ```
@@ -279,15 +279,15 @@ Collect ReadyLayer reports as artifacts:
 readylayer:
   stage: review
   image: readylayer/gitlab-ci:latest
-  
+
   script:
     - readylayer review --output-file readylayer-report.json
-  
+
   artifacts:
     reports:
       custom:
         readylayer-report.json
-  
+
   only:
     - merge_requests
 ```
@@ -345,20 +345,20 @@ readylayer:
 readylayer:
   stage: review
   image: readylayer/gitlab-ci:latest
-  
+
   variables:
     READYLAYER_FAIL_ON_CRITICAL: "true"
     READYLAYER_FAIL_ON_HIGH: "true"
-  
+
   script:
     - readylayer review --policy-file readylayer.enterprise.yml
-  
+
   retry:
     max: 2
     when: api_failure
-  
+
   timeout: 5 minutes
-  
+
   only:
     - merge_requests
     - branches:

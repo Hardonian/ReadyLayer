@@ -132,7 +132,7 @@ export async function PATCH(
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const body = bodyResult.data;
     if (!body || typeof body !== 'object') {
       return NextResponse.json(

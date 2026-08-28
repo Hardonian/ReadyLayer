@@ -8,12 +8,12 @@ import {
 
 /**
  * Visual Regression Test Suite
- * 
+ *
  * Covers critical routes across:
  * - Multiple viewports (desktop, tablet, mobile)
  * - Light and dark themes
  * - Different states (loading, error, empty, populated)
- * 
+ *
  * Projects run via:
  * - visual-desktop: 1920x1080
  * - visual-tablet: 834x1194 (iPad Pro 11)
@@ -44,10 +44,10 @@ test.describe('Visual Regression: Public Pages', () => {
   test('homepage - loaded state', async ({ page }) => {
     await page.goto('/')
     await waitForVisualStability(page)
-    
+
     // Verify key elements are present
     await expect(page.getByRole('heading', { name: /ReadyLayer/i })).toBeVisible()
-    
+
     await expect(page).toHaveScreenshot(snapshotName('homepage-loaded'), {
       fullPage: true,
       animations: 'disabled',
@@ -61,19 +61,19 @@ test.describe('Visual Regression: Public Pages', () => {
       test.skip()
       return
     }
-    
+
     await page.goto('/')
     await waitForVisualStability(page)
-    
+
     // Toggle to dark mode via localStorage
     await page.evaluate(() => {
       localStorage.setItem('readylayer-theme', 'dark')
       document.documentElement.classList.add('dark')
     })
-    
+
     await page.reload()
     await waitForVisualStability(page)
-    
+
     await expect(page).toHaveScreenshot(snapshotName('homepage-dark'), {
       fullPage: true,
       animations: 'disabled',
@@ -84,9 +84,9 @@ test.describe('Visual Regression: Public Pages', () => {
   test('signin page - loaded state', async ({ page }) => {
     await page.goto('/auth/signin')
     await waitForVisualStability(page)
-    
+
     await expect(page.getByRole('button', { name: /Continue with/i })).toBeVisible()
-    
+
     await expect(page).toHaveScreenshot(snapshotName('signin-loaded'), {
       fullPage: true,
       animations: 'disabled',
@@ -97,9 +97,9 @@ test.describe('Visual Regression: Public Pages', () => {
   test('signin page - error state', async ({ page }) => {
     await page.goto('/auth/error?error=AuthError')
     await waitForVisualStability(page)
-    
+
     await expect(page.getByText(/Authentication Error/i)).toBeVisible()
-    
+
     await expect(page).toHaveScreenshot(snapshotName('signin-error'), {
       fullPage: true,
       animations: 'disabled',
@@ -110,9 +110,9 @@ test.describe('Visual Regression: Public Pages', () => {
   test('pricing page', async ({ page }) => {
     await page.goto('/pricing')
     await waitForVisualStability(page)
-    
+
     await expect(page.getByRole('heading', { name: /Pricing/i })).toBeVisible()
-    
+
     await expect(page).toHaveScreenshot(snapshotName('pricing-page'), {
       fullPage: true,
       animations: 'disabled',
@@ -123,9 +123,9 @@ test.describe('Visual Regression: Public Pages', () => {
   test('features page', async ({ page }) => {
     await page.goto('/features')
     await waitForVisualStability(page)
-    
+
     await expect(page.getByRole('heading', { name: /Features/i })).toBeVisible()
-    
+
     await expect(page).toHaveScreenshot(snapshotName('features-page'), {
       fullPage: true,
       animations: 'disabled',
@@ -136,7 +136,7 @@ test.describe('Visual Regression: Public Pages', () => {
   test('docs page', async ({ page }) => {
     await page.goto('/docs')
     await waitForVisualStability(page)
-    
+
     await expect(page).toHaveScreenshot(snapshotName('docs-page'), {
       fullPage: true,
       animations: 'disabled',
@@ -147,7 +147,7 @@ test.describe('Visual Regression: Public Pages', () => {
   test('about page', async ({ page }) => {
     await page.goto('/about')
     await waitForVisualStability(page)
-    
+
     await expect(page).toHaveScreenshot(snapshotName('about-page'), {
       fullPage: true,
       animations: 'disabled',
@@ -166,10 +166,10 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
   test('dashboard - loaded state with data', async ({ page }) => {
     await page.goto('/dashboard')
     await waitForVisualStability(page)
-    
+
     // Wait for dashboard heading
     await expect(page.locator('#dashboard-heading')).toBeVisible()
-    
+
     await expect(page).toHaveScreenshot(snapshotName('dashboard-loaded'), {
       fullPage: true,
       animations: 'disabled',
@@ -189,7 +189,7 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
         }),
       })
     })
-    
+
     await page.route('/api/v1/reviews?*', async (route) => {
       await route.fulfill({
         status: 200,
@@ -200,12 +200,12 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
         }),
       })
     })
-    
+
     await page.goto('/dashboard')
     await waitForVisualStability(page)
-    
+
     await expect(page.locator('#dashboard-heading')).toBeVisible()
-    
+
     await expect(page).toHaveScreenshot(snapshotName('dashboard-empty'), {
       fullPage: true,
       animations: 'disabled',
@@ -224,10 +224,10 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
         }),
       })
     })
-    
+
     await page.goto('/dashboard')
     await waitForVisualStability(page)
-    
+
     await expect(page).toHaveScreenshot(snapshotName('dashboard-error'), {
       fullPage: true,
       animations: 'disabled',
@@ -238,7 +238,7 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
   test('repositories page', async ({ page }) => {
     await page.goto('/dashboard/repos')
     await waitForVisualStability(page)
-    
+
     await expect(page).toHaveScreenshot(snapshotName('repos-page'), {
       fullPage: true,
       animations: 'disabled',
@@ -249,7 +249,7 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
   test('settings page', async ({ page }) => {
     await page.goto('/dashboard/settings')
     await waitForVisualStability(page)
-    
+
     await expect(page).toHaveScreenshot(snapshotName('settings-page'), {
       fullPage: true,
       animations: 'disabled',
@@ -260,7 +260,7 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
   test('billing page', async ({ page }) => {
     await page.goto('/dashboard/billing')
     await waitForVisualStability(page)
-    
+
     await expect(page).toHaveScreenshot(snapshotName('billing-page'), {
       fullPage: true,
       animations: 'disabled',
@@ -280,16 +280,16 @@ test.describe('Visual Regression: Responsive Behavior', () => {
       test.skip()
       return
     }
-    
+
     await page.goto('/')
     await waitForVisualStability(page)
-    
+
     // Try to open mobile menu
     const menuButton = page.locator('button[aria-label*="menu"], button[aria-label*="Menu"]').first()
     if (await menuButton.isVisible().catch(() => false)) {
       await menuButton.click()
       await page.waitForTimeout(200)
-      
+
       await expect(page).toHaveScreenshot(snapshotName('mobile-menu-open'), {
         fullPage: false,
         animations: 'disabled',
@@ -301,7 +301,7 @@ test.describe('Visual Regression: Responsive Behavior', () => {
   test('homepage - responsive elements visible', async ({ page }) => {
     await page.goto('/')
     await waitForVisualStability(page)
-    
+
     // Verify key responsive elements
     if (IS_MOBILE) {
       // Mobile: check for hamburger or simplified nav
@@ -331,12 +331,12 @@ test.describe('Visual Regression: Component States', () => {
       await new Promise(resolve => setTimeout(resolve, 5000))
       await route.continue()
     })
-    
+
     await page.goto('/dashboard')
-    
+
     // Wait a bit for loading UI to appear
     await page.waitForTimeout(300)
-    
+
     // Take screenshot of loading state
     await expect(page).toHaveScreenshot(snapshotName('dashboard-loading'), {
       fullPage: false,
@@ -348,7 +348,7 @@ test.describe('Visual Regression: Component States', () => {
   test('toast notifications', async ({ page }) => {
     await page.goto('/dashboard')
     await waitForVisualStability(page)
-    
+
     // Trigger a toast via localStorage action
     await page.evaluate(() => {
       // Dispatch a custom event that Toaster component might listen to
@@ -356,7 +356,7 @@ test.describe('Visual Regression: Component States', () => {
         detail: { message: 'Test notification', type: 'info' }
       }))
     })
-    
+
     // Look for any toast/notification element
     const toast = page.locator('[role="alert"], .toast, [data-toast]').first()
     if (await toast.isVisible().catch(() => false)) {

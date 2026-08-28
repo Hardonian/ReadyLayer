@@ -1,6 +1,6 @@
 /**
  * Example API route showing how to enqueue Python jobs
- * 
+ *
  * POST /api/python-jobs/examples/report - Generate a report
  */
 
@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
       reviewId?: string;
       format?: 'pdf' | 'sarif' | 'json';
     };
-    const { 
-      organizationId, 
-      repositoryId, 
-      reviewId, 
-      format = 'pdf' 
+    const {
+      organizationId,
+      repositoryId,
+      reviewId,
+      format = 'pdf'
     } = body;
 
     // Validate required fields

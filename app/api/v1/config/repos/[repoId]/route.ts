@@ -165,7 +165,7 @@ export async function PUT(
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const body = bodyResult.data;
     if (!body || typeof body !== 'object') {
       return NextResponse.json(
@@ -198,7 +198,7 @@ export async function PUT(
     // Validate and update config
     // The service will validate the structure matches ReadyLayerConfig
     await configService.updateRepositoryConfig(
-      repoId, 
+      repoId,
       config as ReadyLayerConfig,
       rawConfig as string | undefined
     );
@@ -233,14 +233,14 @@ export async function PUT(
     log.error(error, 'Failed to update repository config');
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const isConfigError = errorMessage.includes('Invalid config') || errorMessage.includes('configuration');
-    
+
     return NextResponse.json(
       {
         error: {
           code: 'UPDATE_CONFIG_FAILED',
           message: errorMessage,
-          fix: isConfigError 
-            ? errorMessage 
+          fix: isConfigError
+            ? errorMessage
             : 'Check your configuration format and try again. See https://docs.readylayer.com/config for valid configuration options. If the problem persists, contact support@readylayer.com',
         },
       },

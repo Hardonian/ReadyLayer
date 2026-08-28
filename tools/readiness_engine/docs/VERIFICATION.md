@@ -229,10 +229,10 @@ Add to your CI:
     test -f readiness-output/readiness.md
     test -f readiness-output/findings.csv
     test -f readiness-output/evidence.zip
-    
+
     # Verify JSON is valid
     jq '.' readiness-output/readiness.json > /dev/null
-    
+
     # Verify structure
     jq -e '.version' readiness-output/readiness.json
     jq -e '.timestamp' readiness-output/readiness.json

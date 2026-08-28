@@ -1,6 +1,6 @@
 /**
  * Analytics & Event Tracking Service
- * 
+ *
  * Tracks conversion-related events for CRO (Conversion Rate Optimization)
  * and product engagement metrics.
  */

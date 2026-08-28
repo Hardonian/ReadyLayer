@@ -1,6 +1,6 @@
 /**
  * Waiver Detail API
- * 
+ *
  * GET    /api/v1/waivers/:waiverId - Get waiver
  * DELETE /api/v1/waivers/:waiverId - Revoke waiver
  */

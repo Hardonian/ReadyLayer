@@ -82,7 +82,7 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
     try {
       const supabase = createSupabaseClient()
       const { data: { session } } = await supabase.auth.getSession()
-      
+
       if (!session) {
         toast({
           variant: 'destructive',
@@ -96,7 +96,7 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
       // Redirect to provider OAuth flow
       const oauthUrl = `/api/auth/${provider}`
       window.location.href = oauthUrl
-      
+
     } catch (_error) {
       toast({
         variant: 'destructive',
@@ -129,10 +129,10 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
         },
       })
 
-      const data = (await response.json()) as { 
-        success?: boolean; 
-        message?: string; 
-        error?: { message?: string } 
+      const data = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+        error?: { message?: string }
       }
 
       if (data.success) {
@@ -236,7 +236,7 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
                     )}
                   </div>
                   <CardDescription>
-                    {installation 
+                    {installation
                       ? `${providerRepos.length} repository${providerRepos.length !== 1 ? 'ies' : ''} connected`
                       : 'Connect repositories from ' + getProviderName(provider)}
                   </CardDescription>
@@ -321,7 +321,7 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
                 <li>Provide real-time feedback on AI-generated code</li>
               </ul>
               <p className="pt-2">
-                <strong className="text-text-primary">Note:</strong> Repository connection is currently in development. 
+                <strong className="text-text-primary">Note:</strong> Repository connection is currently in development.
                 This feature will be available in a future update.
               </p>
             </div>

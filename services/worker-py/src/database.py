@@ -51,7 +51,7 @@ def get_pool_status() -> dict:
     global _connection_pool
     if _connection_pool is None:
         return {"healthy": False, "status": "not_initialized"}
-    
+
     try:
         # Try to get a connection to verify health
         conn = _connection_pool.getconn()
@@ -107,13 +107,13 @@ def get_cursor():
 
 def claim_jobs(worker_id: str, limit: int = 3) -> List[Job]:
     """Claim pending jobs for processing.
-    
+
     Uses atomic update to prevent race conditions.
-    
+
     Args:
         worker_id: Unique worker identifier
         limit: Maximum jobs to claim
-    
+
     Returns:
         List of claimed jobs
     """
@@ -136,13 +136,13 @@ def claim_jobs(worker_id: str, limit: int = 3) -> List[Job]:
                 FOR UPDATE SKIP LOCKED
                 LIMIT %s
             )
-            RETURNING 
+            RETURNING
                 id, type, payload, status, retry_count, max_retries,
                 created_at, updated_at, correlation_id
             """,
             (worker_id, limit),
         )
-        
+
         rows = cursor.fetchall()
         jobs = []
         for row in rows:
@@ -158,14 +158,14 @@ def claim_jobs(worker_id: str, limit: int = 3) -> List[Job]:
                 correlation_id=row.get("correlation_id"),
             )
             jobs.append(job)
-        
+
         if jobs:
             logger.info(
                 "Claimed jobs",
                 count=len(jobs),
                 job_ids=[j.id for j in jobs]
             )
-        
+
         return jobs
 
 
@@ -175,7 +175,7 @@ def mark_job_completed(
     metrics: Optional[dict] = None,
 ) -> None:
     """Mark job as completed successfully.
-    
+
     Args:
         job_id: Job ID
         result: Job result (JSON-serializable)
@@ -194,7 +194,7 @@ def mark_job_completed(
             """,
             (json.dumps(result), json.dumps(metrics) if metrics else None, job_id),
         )
-        
+
         # Also insert into job_results table
         cursor.execute(
             """
@@ -206,7 +206,7 @@ def mark_job_completed(
             """,
             (job_id, json.dumps(result)),
         )
-        
+
         logger.info("Job marked completed", job_id=job_id)
 
 
@@ -217,18 +217,18 @@ def mark_job_failed(
     max_retries: int,
 ) -> bool:
     """Mark job as failed, with retry or DLQ logic.
-    
+
     Args:
         job_id: Job ID
         error: Error message
         retry_count: Current retry count
         max_retries: Maximum allowed retries
-    
+
     Returns:
         True if job will be retried, False if moved to DLQ
     """
     will_retry = retry_count < max_retries
-    
+
     with get_cursor() as cursor:
         if will_retry:
             # Schedule for retry with exponential backoff
@@ -236,7 +236,7 @@ def mark_job_failed(
                 settings.retry_backoff_base ** retry_count,
                 300  # Max 5 minutes
             )
-            
+
             cursor.execute(
                 """
                 UPDATE jobs
@@ -249,7 +249,7 @@ def mark_job_failed(
                 """,
                 (retry_count, error[:500], delay_seconds, job_id),
             )
-            
+
             logger.info(
                 "Job scheduled for retry",
                 job_id=job_id,
@@ -270,7 +270,7 @@ def mark_job_failed(
                 """,
                 (error[:500], job_id),
             )
-            
+
             # Move to DLQ if enabled
             if settings.enable_dead_letter_queue:
                 cursor.execute(
@@ -279,7 +279,7 @@ def mark_job_failed(
                         job_id, type, payload, error_message,
                         retry_count, max_retries, failed_at
                     )
-                    SELECT 
+                    SELECT
                         id, type, payload, %s,
                         retry_count, max_retries, NOW()
                     FROM jobs WHERE id = %s
@@ -287,19 +287,19 @@ def mark_job_failed(
                     """,
                     (error[:500], job_id),
                 )
-            
+
             logger.error(
                 "Job failed permanently",
                 job_id=job_id,
                 total_attempts=retry_count,
             )
-    
+
     return will_retry
 
 
 def update_heartbeat(job_id: str, progress: Optional[dict] = None) -> None:
     """Update job heartbeat for long-running jobs.
-    
+
     Args:
         job_id: Job ID
         progress: Optional progress information
@@ -319,11 +319,11 @@ def update_heartbeat(job_id: str, progress: Optional[dict] = None) -> None:
 
 def reset_stale_jobs(worker_id: str, timeout_minutes: int = 10) -> int:
     """Reset jobs that appear stuck (no heartbeat).
-    
+
     Args:
         worker_id: This worker's ID (only reset jobs from crashed workers)
         timeout_minutes: Minutes since last heartbeat
-    
+
     Returns:
         Number of jobs reset
     """
@@ -342,15 +342,15 @@ def reset_stale_jobs(worker_id: str, timeout_minutes: int = 10) -> int:
             """,
             (worker_id, timeout_minutes),
         )
-        
+
         rows = cursor.fetchall()
         count = len(rows)
-        
+
         if count > 0:
             logger.warning(
                 "Reset stale jobs",
                 count=count,
                 job_ids=[str(r["id"]) for r in rows],
             )
-        
+
         return count

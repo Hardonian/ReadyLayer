@@ -4,9 +4,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
+import {
+  Card,
+  CardContent,
   CardHeader,
   ErrorState,
   EmptyState,
@@ -17,9 +17,9 @@ import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { getStatusColor as getRunStatusColor } from '@/lib/utils/color-mapping'
-import { 
-  CheckCircle2, 
-  AlertTriangle, 
+import {
+  CheckCircle2,
+  AlertTriangle,
   Clock,
   XCircle,
   PlayCircle,
@@ -344,8 +344,8 @@ export default function RunsPage(): React.JSX.Element {
             initial="hidden"
             animate="visible"
           >
-            {(filters.search 
-              ? runs.filter(r => 
+            {(filters.search
+              ? runs.filter(r =>
                   r.correlationId.toLowerCase().includes(filters.search.toLowerCase()) ||
                   r.repository?.fullName?.toLowerCase().includes(filters.search.toLowerCase())
                 )
@@ -376,7 +376,7 @@ export default function RunsPage(): React.JSX.Element {
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold">
-                                  {run.sandboxId ? 'Sandbox Demo Run' : 
+                                  {run.sandboxId ? 'Sandbox Demo Run' :
                                    run.repository?.fullName || `Run ${run.correlationId.slice(0, 8)}`}
                                 </span>
                                 {providerLink && (

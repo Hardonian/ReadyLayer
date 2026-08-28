@@ -15,10 +15,10 @@ class BaseParser(ABC):
     def parse(self, output: ToolOutput) -> List[Finding]:
         """
         Parse raw tool output and return normalized findings.
-        
+
         Args:
             output: The raw tool output to parse
-            
+
         Returns:
             List of normalized Finding objects
         """
@@ -33,7 +33,7 @@ class BaseParser(ABC):
         - /path/to/file.ts:123:45
         """
         import re
-        
+
         # Pattern: path:line:col or path:line
         match = re.match(r'^(.+?):(\d+)(?::(\d+))?$', path_str)
         if match:
@@ -41,5 +41,5 @@ class BaseParser(ABC):
             line = int(match.group(2))
             col = int(match.group(3)) if match.group(3) else None
             return path, line, col
-        
+
         return path_str, None, None

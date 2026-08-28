@@ -1,6 +1,6 @@
 /**
  * Contract Schemas
- * 
+ *
  * Runtime validation schemas for critical API endpoints.
  * Ensures request/response shapes match expectations and prevents drift.
  */

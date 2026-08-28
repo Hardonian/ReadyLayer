@@ -1,6 +1,6 @@
 /**
  * Onboarding Progress Hook
- * 
+ *
  * Tracks user progress through the onboarding checklist
  * Persists to localStorage and syncs with backend
  */

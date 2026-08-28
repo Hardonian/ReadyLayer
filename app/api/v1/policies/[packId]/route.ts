@@ -1,6 +1,6 @@
 /**
  * Policy Pack Detail API
- * 
+ *
  * GET    /api/v1/policies/:packId - Get policy pack
  * PUT    /api/v1/policies/:packId - Update policy pack
  * DELETE /api/v1/policies/:packId - Delete policy pack
@@ -199,7 +199,7 @@ export async function PUT(
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validated = updatePolicyPackSchema.parse(bodyResult.data);
 
     // Calculate checksum if source updated

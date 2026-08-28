@@ -1,6 +1,6 @@
 /**
  * Organization ID Hook
- * 
+ *
  * Gets the current user's organization ID from their repositories
  */
 

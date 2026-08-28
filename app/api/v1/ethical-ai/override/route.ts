@@ -1,6 +1,6 @@
 /**
  * Human Override API
- * 
+ *
  * POST /api/v1/ethical-ai/override - Record human override of AI decision
  */
 

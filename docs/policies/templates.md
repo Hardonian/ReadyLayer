@@ -8,14 +8,14 @@ ReadyLayer provides pre-built policy templates for common compliance standards. 
 
 ### 🔒 OWASP Top 10
 
-**ID:** `owasp-top-10`  
-**Category:** Security  
+**ID:** `owasp-top-10`
+**Category:** Security
 **Minimum Coverage:** 80%
 
 Enforces OWASP Top 10 security vulnerabilities:
 
 - A01: Injection Prevention
-- A02: Authentication & Session Management  
+- A02: Authentication & Session Management
 - A03: Sensitive Data Exposure
 - A04: XML External Entity (XXE)
 - A05: Broken Access Control
@@ -29,8 +29,8 @@ Enforces OWASP Top 10 security vulnerabilities:
 
 ### 💳 PCI-DSS
 
-**ID:** `pci-dss`  
-**Category:** Compliance  
+**ID:** `pci-dss`
+**Category:** Compliance
 **Minimum Coverage:** 90%
 
 Payment Card Industry Data Security Standard requirements:
@@ -46,8 +46,8 @@ Payment Card Industry Data Security Standard requirements:
 
 ### 🏥 HIPAA
 
-**ID:** `hipaa`  
-**Category:** Compliance  
+**ID:** `hipaa`
+**Category:** Compliance
 **Minimum Coverage:** 95%
 
 Health Insurance Portability and Accountability Act:
@@ -62,8 +62,8 @@ Health Insurance Portability and Accountability Act:
 
 ### ✓ SOC 2
 
-**ID:** `soc-2`  
-**Category:** Compliance  
+**ID:** `soc-2`
+**Category:** Compliance
 **Minimum Coverage:** 85%
 
 Service Organization Control 2 Framework:

@@ -1,6 +1,6 @@
 /**
  * Optimized Usage Enforcement Service
- * 
+ *
  * Performance improvements:
  * - Caches usage stats in Redis/memory with 5s TTL
  * - Pre-aggregates daily/monthly data
@@ -12,10 +12,10 @@ import { prisma } from './prisma';
 import { billingService } from '../billing';
 import { cache, buildCacheKey } from './db/cache';
 import { SimpleCache } from './utils/memoization';
-import { 
-  LimitType, 
-  LimitCheckResult, 
-  UsageLimitExceededError 
+import {
+  LimitType,
+  LimitCheckResult,
+  UsageLimitExceededError
 } from './usage-enforcement';
 
 // In-memory cache for high-frequency checks
@@ -45,7 +45,7 @@ async function getCachedOrganizationTier(
 ): Promise<ReturnType<typeof billingService.getOrganizationTier>> {
   const cacheKey = buildCacheKey('tier', organizationId);
   const cached = await cache.get<ReturnType<typeof billingService.getOrganizationTier>>(cacheKey);
-  
+
   if (cached) {
     return cached;
   }
@@ -69,7 +69,7 @@ async function getCachedUsageStats(
 }> {
   const cacheKey = `usage:${organizationId}`;
   const memCached = usageCache.get(cacheKey);
-  
+
   if (memCached) {
     return {
       dailyTokens: memCached.daily,
@@ -334,7 +334,7 @@ export async function getUsageStatsOptimized(
   });
   const orgTimezone = org?.timezone || 'UTC';
 
-  const { dailyTokens, monthlyTokens, concurrentJobs, todayRuns } = 
+  const { dailyTokens, monthlyTokens, concurrentJobs, todayRuns } =
     await getCachedUsageStats(organizationId, orgTimezone);
 
   const budget = await billingService.checkLLMBudget(organizationId);

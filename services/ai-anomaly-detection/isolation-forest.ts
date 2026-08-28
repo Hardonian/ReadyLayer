@@ -1,9 +1,9 @@
 /**
  * Isolation Forest Anomaly Detection
- * 
+ *
  * P0: Real Isolation Forest implementation for anomaly detection
  * Based on the algorithm by Liu, Ting, and Zhou (2008)
- * 
+ *
  * Features:
  * - Binary tree-based isolation of anomalies
  * - Random feature selection and split values
@@ -114,8 +114,8 @@ export class IsolationForest {
       }
     }
 
-    logger.info({ 
-      numSamples: data.length, 
+    logger.info({
+      numSamples: data.length,
       numFeatures: this.numFeatures,
       numTrees: this.config.numTrees,
       subsampleSize: this.config.subsampleSize,
@@ -128,11 +128,11 @@ export class IsolationForest {
     for (let i = 0; i < this.config.numTrees; i++) {
       // Create random subsample
       const subsample = this.createSubsample(data);
-      
+
       // Build tree
       const tree = this.buildTree(subsample, 0);
       this.trees.push(tree);
-      
+
       if ((i + 1) % 10 === 0) {
         logger.debug({ treeIndex: i + 1 }, 'Built trees');
       }
@@ -140,11 +140,11 @@ export class IsolationForest {
 
     this.isTrained = true;
     const trainingTime = Date.now() - startTime;
-    
+
     metrics.recordHistogram('isolation_forest_train_duration', trainingTime);
     metrics.increment('isolation_forest_trained', { num_trees: this.trees.length.toString() });
-    
-    logger.info({ 
+
+    logger.info({
       trainingTimeMs: trainingTime,
       treesBuilt: this.trees.length,
     }, 'Isolation Forest training complete');
@@ -163,16 +163,16 @@ export class IsolationForest {
 
     for (const point of data) {
       if (point.features.length !== this.numFeatures) {
-        logger.warn({ 
-          pointId: point.id, 
-          expected: this.numFeatures, 
-          actual: point.features.length 
+        logger.warn({
+          pointId: point.id,
+          expected: this.numFeatures,
+          actual: point.features.length
         }, 'Feature dimension mismatch');
         continue;
       }
 
       const pathLengths: number[] = [];
-      
+
       for (const tree of this.trees) {
         const pathLength = this.traverseTree(point.features, tree.root, 0);
         pathLengths.push(pathLength);
@@ -264,7 +264,7 @@ export class IsolationForest {
 
     // Randomly select feature
     const splitFeature = this.random.nextInt(0, this.numFeatures - 1);
-    
+
     // Get min and max for this feature
     const values = data.map(d => d.features[splitFeature]);
     const min = Math.min(...values);
@@ -335,7 +335,7 @@ export class IsolationForest {
     }
 
     const featureValue = features[node.splitFeature!];
-    
+
     if (featureValue < node.splitValue!) {
       return this.traverseTree(features, node.left, currentPathLength + 1);
     } else {
@@ -349,7 +349,7 @@ export class IsolationForest {
   private c(n: number): number {
     if (n <= 1) return 0;
     if (n === 2) return 1;
-    
+
     // 2H(n-1) - (2(n-1)/n)
     // where H(i) is the harmonic number
     return 2 * this.harmonicNumber(n - 1) - (2 * (n - 1) / n);
@@ -361,15 +361,15 @@ export class IsolationForest {
    */
   private harmonicNumber(i: number): number {
     if (i <= 0) return 0;
-    
+
     // Euler-Mascheroni constant
     const gamma = 0.5772156649;
-    
+
     // Use approximation for large i
     if (i > 100) {
       return Math.log(i) + gamma;
     }
-    
+
     // Calculate directly for small i
     let sum = 0;
     for (let k = 1; k <= i; k++) {
@@ -435,7 +435,7 @@ export class FeatureExtractor {
   }): number[] {
     // Hash ruleId to consistent number
     const ruleHash = this.hashString(pattern.ruleId);
-    
+
     return [
       ruleHash,
       Math.log1p(pattern.count),
@@ -518,12 +518,12 @@ export class AnomalyDetectionService {
     }));
 
     const scores = this.forest.predict(dataPoints);
-    
+
     // Log anomalies
     const anomalies = scores.filter(s => s.isAnomaly);
     if (anomalies.length > 0) {
-      logger.warn({ 
-        count: anomalies.length, 
+      logger.warn({
+        count: anomalies.length,
         topScore: Math.max(...anomalies.map(a => a.score)),
       }, 'Anomalies detected');
     }

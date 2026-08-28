@@ -1,6 +1,6 @@
 /**
  * AI Decision Explanation API
- * 
+ *
  * GET /api/v1/ethical-ai/explain/[reviewId] - Get explanation for review decisions
  */
 

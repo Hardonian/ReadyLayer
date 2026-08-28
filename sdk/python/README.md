@@ -73,7 +73,7 @@ async def main():
         repos = await client.repos.list()
         for repo in repos.repositories:
             print(f"{repo.full_name}")
-        
+
         # Get a specific review
         review = await client.reviews.get("review-123")
         print(f"Status: {review.status.value}")

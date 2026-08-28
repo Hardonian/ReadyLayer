@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -21,8 +21,8 @@ import {
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
-import { 
-  Shield, 
+import {
+  Shield,
   ArrowLeft,
   Edit,
   Plus,
@@ -109,7 +109,7 @@ export default function PolicyDetailPage() {
         const data = (await response.json()) as PolicyPack
         setPolicy(data)
         setLoading(false)
-        
+
         // Trigger re-render to apply provider theme
         if (data.repository) {
           // Force component update to apply provider styling

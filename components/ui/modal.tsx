@@ -8,7 +8,7 @@ import { motion, type HTMLMotionProps } from 'framer-motion'
 
 /**
  * Modal Dialog Primitive
- * 
+ *
  * ARCHITECTURE:
  * - Uses Radix Dialog for accessible focus management and keyboard handling
  * - Provides automatic focus trap and dismissal on Escape key
@@ -178,7 +178,7 @@ ModalCloseButton.displayName = DialogPrimitive.Close.displayName
 
 /**
  * Composite Modal component for easy use
- * 
+ *
  * EXAMPLE:
  * ```tsx
  * <Modal open={isOpen} onOpenChange={setIsOpen}>

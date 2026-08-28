@@ -14,7 +14,7 @@ Additive Python subsystem for CPU-intensive background tasks without disrupting 
 ### 2. Worker Types (Python-specific)
 ```
 python.report.generate    - PDF/SARIF export generation
-python.batch.export       - Bulk evidence export  
+python.batch.export       - Bulk evidence export
 python.analytics.score    - AI risk exposure scoring
 python.ingest.document    - Large document chunking (RAG fallback)
 python.reconcile.violations - Pattern detection across repos
@@ -69,7 +69,7 @@ Extends existing Job.type field, no schema change needed:
 ```python
 PYTHON_JOB_TYPES = {
     'python.report.generate',
-    'python.batch.export', 
+    'python.batch.export',
     'python.analytics.score',
     'python.ingest.document',
     'python.reconcile.violations'

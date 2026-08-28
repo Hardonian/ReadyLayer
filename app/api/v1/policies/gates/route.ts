@@ -1,6 +1,6 @@
 /**
  * Policy Gates API Route
- * 
+ *
  * GET /api/v1/policies/gates - List policy gates
  * POST /api/v1/policies/gates - Create policy gate
  */

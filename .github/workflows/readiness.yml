@@ -133,26 +133,26 @@ jobs:
     if: always()  # Run even if previous jobs failed
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install Node dependencies
         run: npm ci
-      
+
       - name: Install Readiness Engine
         working-directory: tools/readiness_engine
         run: |
           pip install -e .
-      
+
       # Download all artifacts from previous jobs
       - name: Download lint/typecheck outputs
         uses: actions/download-artifact@v4
@@ -160,35 +160,35 @@ jobs:
           name: lint-typecheck-outputs
           path: ./tool-outputs/
         continue-on-error: true
-      
+
       - name: Download test outputs
         uses: actions/download-artifact@v4
         with:
           name: test-outputs
           path: ./tool-outputs/
         continue-on-error: true
-      
+
       - name: Download build outputs
         uses: actions/download-artifact@v4
         with:
           name: build-outputs
           path: ./tool-outputs/
         continue-on-error: true
-      
+
       - name: Download E2E results
         uses: actions/download-artifact@v4
         with:
           name: e2e-test-results
           path: ./tool-outputs/playwright/
         continue-on-error: true
-      
+
       - name: Download visual results
         uses: actions/download-artifact@v4
         with:
           name: visual-test-results
           path: ./tool-outputs/playwright/
         continue-on-error: true
-      
+
       # Run Readiness Engine
       - name: Run Readiness Engine
         id: readiness
@@ -200,7 +200,7 @@ jobs:
             --fail-on-blocker \
             --fail-on-high
         continue-on-error: true
-      
+
       # Upload readiness outputs
       - name: Upload Readiness Reports
         uses: actions/upload-artifact@v4
@@ -210,7 +210,7 @@ jobs:
           path: |
             readiness-output/
           retention-days: 30
-      
+
       # Comment on PR with results
       - name: Comment PR with Readiness Results
         if: github.event_name == 'pull_request' && always()
@@ -219,7 +219,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = './readiness-output/readiness.json';
-            
+
             if (!fs.existsSync(path)) {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
@@ -229,13 +229,13 @@ jobs:
               });
               return;
             }
-            
+
             const report = JSON.parse(fs.readFileSync(path, 'utf8'));
             const ready = report.ready ? '✅ READY' : '❌ NOT READY';
             const metrics = report.metrics;
-            
+
             const body = `## Readiness Assessment: ${ready}
-            
+
             | Severity | Count |
             |----------|-------|
             | 🔴 BLOCKER | ${metrics.blocker_count} |
@@ -243,25 +243,25 @@ jobs:
             | 🟡 MEDIUM | ${metrics.medium_count} |
             | 🟢 LOW | ${metrics.low_count} |
             | **Total** | ${metrics.total_findings} |
-            
+
             <details>
             <summary>View full report</summary>
-            
+
             \`\`\`json
             ${JSON.stringify(report, null, 2)}
             \`\`\`
             </details>
-            
+
             [View artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
             `;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: body
             });
-      
+
       # Fail the job if not ready
       - name: Check Readiness
         if: steps.readiness.outcome == 'failure'

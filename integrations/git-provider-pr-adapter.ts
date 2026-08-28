@@ -1,6 +1,6 @@
 /**
  * Git Provider PR Operations Adapter
- * 
+ *
  * Provider-agnostic abstraction for PR/MR operations
  */
 
@@ -160,8 +160,8 @@ class GitLabPRAdapter implements GitProviderPRAdapter {
   }
 
   async updateStatusCheck(repo: string, sha: string, status: StatusCheck, token: string): Promise<void> {
-    const gitlabState = status.state === 'success' ? 'success' : 
-                        status.state === 'failure' ? 'failed' : 
+    const gitlabState = status.state === 'success' ? 'success' :
+                        status.state === 'failure' ? 'failed' :
                         status.state === 'pending' ? 'pending' : 'canceled';
     await gitlabAPIClient.updateCommitStatus(
       repo,

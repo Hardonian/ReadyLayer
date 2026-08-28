@@ -28,7 +28,7 @@ jobs:
   migrate:
     name: Run Database Migration
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -87,26 +87,26 @@ jobs:
             # Get the first (latest) migration
             MIGRATION=$(echo "$MIGRATIONS" | head -1)
           fi
-          
+
           if [ -z "$MIGRATION" ] || [ "$MIGRATION" = "none" ]; then
             echo "No migration found to run"
             echo "migration=none" >> $GITHUB_OUTPUT
             echo "migration_path=" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           MIGRATION_PATH="backend/prisma/migrations/$MIGRATION"
-          
+
           if [ ! -d "$MIGRATION_PATH" ]; then
             echo "Error: Migration directory not found: $MIGRATION_PATH"
             exit 1
           fi
-          
+
           if [ ! -f "$MIGRATION_PATH/migration.sql" ]; then
             echo "Error: migration.sql not found in $MIGRATION_PATH"
             exit 1
           fi
-          
+
           echo "migration=$MIGRATION" >> $GITHUB_OUTPUT
           echo "migration_path=$MIGRATION_PATH" >> $GITHUB_OUTPUT
           echo "✅ Running migration: $MIGRATION"
@@ -114,13 +114,13 @@ jobs:
 
       - name: Run Migration
         if: |
-          steps.determine_migration.outputs.migration != 'none' && 
+          steps.determine_migration.outputs.migration != 'none' &&
           github.event.inputs.verify_only != 'true'
         run: |
           MIGRATION_PATH="${{ steps.determine_migration.outputs.migration_path }}"
           echo "🚀 Executing migration from: $MIGRATION_PATH"
           echo ""
-          
+
           # Run migration using Prisma script
           npx tsx scripts/run-migration-from-file.ts "$MIGRATION_PATH/migration.sql"
         env:
@@ -179,27 +179,27 @@ jobs:
       - name: Archive Migration
         if: |
           steps.determine_migration.outputs.migration != 'none' &&
-          github.event.inputs.archive_after != 'false' && 
+          github.event.inputs.archive_after != 'false' &&
           github.event.inputs.verify_only != 'true' &&
           job.status == 'success'
         run: |
           MIGRATION="${{ steps.determine_migration.outputs.migration }}"
           MIGRATION_PATH="${{ steps.determine_migration.outputs.migration_path }}"
-          
+
           echo "📦 Archiving migration: $MIGRATION"
-          
+
           # Create archived directory if it doesn't exist
           mkdir -p backend/prisma/migrations/archived
-          
+
           # Move migration to archived
           mv "$MIGRATION_PATH" "backend/prisma/migrations/archived/$MIGRATION"
-          
+
           echo "✅ Migration archived to: backend/prisma/migrations/archived/$MIGRATION"
-          
+
           # Commit and push archived migration
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           # Check if there are changes to commit
           if git diff --quiet && git diff --cached --quiet; then
             echo "No changes to commit (migration may already be archived)"
@@ -207,7 +207,7 @@ jobs:
             git add backend/prisma/migrations/archived/
             git add backend/prisma/migrations/
             git commit -m "chore: archive migration $MIGRATION after successful execution [skip ci]"
-            
+
             # Push to the same branch that triggered the workflow
             echo "Pushing archived migration to ${{ github.ref_name }}..."
             git push origin HEAD:${{ github.ref_name }} || echo "⚠️ Push failed (may need manual push or permissions)"

@@ -1,6 +1,6 @@
 /**
  * RAG Store Implementation
- * 
+ *
  * Supabase Postgres + pgvector store with lexical fallback
  */
 
@@ -54,7 +54,7 @@ export class SupabasePgVectorStore implements RagStore {
       const existing = await prisma.$queryRaw<Array<{ embeddingStatus: string }>>`
         SELECT "embeddingStatus" FROM "RagDocument" WHERE id = ${documentId}
       `.catch(() => []);
-      
+
       let status: 'pending' | 'completed' | 'failed' | 'disabled' = 'disabled';
       if (existing.length > 0) {
         const dbStatus = existing[0].embeddingStatus;
@@ -63,16 +63,16 @@ export class SupabasePgVectorStore implements RagStore {
         }
       }
       embeddingStatus = status;
-      
+
       // Count existing chunks
       const chunkCount = await prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(*)::bigint as count FROM "RagChunk" WHERE "documentId" = ${documentId}
       `.catch(() => [{ count: BigInt(0) }]);
 
       // Determine mode based on embedding status
-      const existingMode: 'vector' | 'lexical' | 'disabled' = 
+      const existingMode: 'vector' | 'lexical' | 'disabled' =
         (status === 'completed' || status === 'pending') ? 'vector' : 'lexical';
-      
+
       return {
         documentId,
         chunksStored: Number(chunkCount[0]?.count || 0),
@@ -83,7 +83,7 @@ export class SupabasePgVectorStore implements RagStore {
 
     // Chunk the content
     const chunks = chunkText(input.content);
-    
+
     if (chunks.length > this.maxChunksPerDoc) {
       throw new Error(
         `Document exceeds maximum chunks (${chunks.length} > ${this.maxChunksPerDoc})`
@@ -165,7 +165,7 @@ export class SupabasePgVectorStore implements RagStore {
           // Insert with embedding using raw SQL (pgvector requires special handling)
           // Format: '[1,2,3,...]'::vector(1536)
           const embeddingStr = `[${embedding.join(',')}]`;
-          
+
           await prisma.$executeRawUnsafe(`
             INSERT INTO "RagChunk" (
               id, "organizationId", "documentId", "chunkIndex",
@@ -231,13 +231,13 @@ export class SupabasePgVectorStore implements RagStore {
       try {
         // Generate query embedding
         const queryEmbeddings = await this.embeddingsProvider.embed([query.queryText]);
-        
+
         if (queryEmbeddings.length > 0 && queryEmbeddings[0].length > 0) {
           // Use SQL function for vector search
           const embeddingArray = queryEmbeddings[0];
           const embeddingStr = `[${embeddingArray.join(',')}]`;
           const sourceTypesFilter = query.filters?.sourceTypes || null;
-          
+
           const results = await prisma.$queryRawUnsafe<Array<{
             id: string;
             document_id: string;
@@ -297,7 +297,7 @@ export class SupabasePgVectorStore implements RagStore {
 
     // Lexical fallback search
     const sourceTypesFilter = query.filters?.sourceTypes || null;
-    
+
     const results = await prisma.$queryRawUnsafe<Array<{
       id: string;
       document_id: string;

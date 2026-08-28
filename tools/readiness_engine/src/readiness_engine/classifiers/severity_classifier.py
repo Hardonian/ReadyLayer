@@ -9,19 +9,19 @@ from readiness_engine.models import Category, Finding, Severity
 class SeverityClassifier:
     """
     Classifies findings by severity based on type and context.
-    
+
     Severity rules:
     BLOCKER:
     - Build failure
     - Typecheck failure
     - Route hard-500
     - Uncaught Playwright error
-    
+
     HIGH:
     - Visual regression on critical route
     - Console errors in E2E tests
     - Broken navigation or CTA
-    
+
     MEDIUM/LOW:
     - Cosmetic issues
     - Non-blocking lint warnings

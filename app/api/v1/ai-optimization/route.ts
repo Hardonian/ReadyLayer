@@ -1,6 +1,6 @@
 /**
  * AI Optimization API
- * 
+ *
  * GET /api/v1/ai-optimization - Get AI optimization suggestions and anomaly analysis
  */
 
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build developer profile
-    const developerProfile: DeveloperProfile | undefined = 
+    const developerProfile: DeveloperProfile | undefined =
       technicalLevel || stack.length > 0 || llmAccess.length > 0
         ? {
             technicalLevel: technicalLevel || 'intermediate',

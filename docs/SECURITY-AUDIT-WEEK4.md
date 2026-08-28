@@ -298,6 +298,6 @@ npm run test:e2e
 - [ ] Team lead approved security posture
 - [ ] Ready for production launch
 
-**Reviewed by:** [Name]  
-**Date:** [Date]  
+**Reviewed by:** [Name]
+**Date:** [Date]
 **Version:** 1.0

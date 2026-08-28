@@ -1,6 +1,6 @@
 /**
  * Deterministic Sandbox Fixtures
- * 
+ *
  * Sample code files for demo mode that always produce consistent results.
  * These fixtures are designed to:
  * - Trigger real findings (security issues, code quality)
@@ -17,7 +17,7 @@ export interface SandboxFile {
 
 /**
  * Deterministic sample files for sandbox demo
- * 
+ *
  * These files contain intentional issues that will be detected:
  * - SQL injection vulnerability
  * - Hardcoded secrets
@@ -29,7 +29,7 @@ export const sandboxFiles: SandboxFile[] = [
     path: 'src/auth.ts',
     content: `/**
  * Authentication module
- * 
+ *
  * WARNING: This code contains security vulnerabilities for demo purposes
  */
 
@@ -45,11 +45,11 @@ export async function login(username: string, password: string): Promise<User | 
   // SQL injection vulnerability - will be detected
   const query = \`SELECT * FROM users WHERE username = '\${username}' AND password = '\${password}'\`;
   const result = await db.query(query);
-  
+
   if (result.rows.length === 0) {
     return null;
   }
-  
+
   return result.rows[0] as User;
 }
 
@@ -82,7 +82,7 @@ export async function getUser(id: string) {
 export async function createUser(data: { username: string; email: string; password: string }) {
   const query = \`INSERT INTO users (username, email, password) VALUES ('\${data.username}', '\${data.email}', '\${data.password}')\`;
   await db.query(query);
-  
+
   return {
     status: 201,
     body: { message: 'User created' },

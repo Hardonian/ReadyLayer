@@ -1,6 +1,6 @@
 /**
  * Crypto Module - Encryption at Rest with Key Rotation
- * 
+ *
  * AES-256-GCM encryption with:
  * - Master key from env (READY_LAYER_KMS_KEY or READY_LAYER_MASTER_KEY)
  * - Key versioning for rotation readiness
@@ -145,7 +145,7 @@ export function encrypt(plaintext: string): EncryptionPayload {
 
     let ciphertext = cipher.update(plaintext, 'utf8', 'base64');
     ciphertext += cipher.final('base64');
-    
+
     const tag = cipher.getAuthTag();
 
     return {
@@ -282,9 +282,9 @@ export function isEncrypted(value: string): boolean {
   // Check for JSON format (new)
   try {
     const parsed = JSON.parse(value) as Record<string, unknown>;
-    return typeof parsed.ciphertext === 'string' && 
-           typeof parsed.iv === 'string' && 
-           typeof parsed.tag === 'string' && 
+    return typeof parsed.ciphertext === 'string' &&
+           typeof parsed.iv === 'string' &&
+           typeof parsed.tag === 'string' &&
            typeof parsed.keyVersion === 'number';
   } catch {
     // Not JSON

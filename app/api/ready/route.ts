@@ -6,11 +6,11 @@ import { isKeyConfigured, getAvailableKeyVersions } from '../../../lib/crypto';
 export async function GET() {
   try {
     const ready = await healthChecker.checkReady();
-    
+
     // Add secrets health check
     const secretsConfigured = isKeyConfigured();
     const keyVersions = secretsConfigured ? getAvailableKeyVersions() : [];
-    
+
     const checks = {
       ...ready.checks,
       secrets: secretsConfigured ? 'ready' : 'degraded',

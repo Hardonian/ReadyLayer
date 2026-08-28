@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion'
 
 /**
  * Motion Provider
- * 
+ *
  * Wraps app with AnimatePresence for page transitions
  * Respects reduced motion preferences
  */

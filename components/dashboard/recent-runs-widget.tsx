@@ -59,25 +59,25 @@ const getStageStatus = (stageStatus: string) => {
 }
 
 // Memoized individual run item component
-const RunItem = memo(function RunItem({ 
-  run, 
-  index 
-}: { 
-  run: RecentRun; 
-  index: number 
+const RunItem = memo(function RunItem({
+  run,
+  index
+}: {
+  run: RecentRun;
+  index: number
 }) {
   const StatusIcon = useMemo(() => getStatusIcon(run.status), [run.status])
   const statusColor = useMemo(() => getStatusColor(run.status, run.conclusion), [run.status, run.conclusion])
   const reviewGuard = useMemo(() => getStageStatus(run.reviewGuardStatus), [run.reviewGuardStatus])
   const testEngine = useMemo(() => getStageStatus(run.testEngineStatus), [run.testEngineStatus])
   const docSync = useMemo(() => getStageStatus(run.docSyncStatus), [run.docSyncStatus])
-  
-  const formattedDate = useMemo(() => 
-    new Date(run.startedAt).toLocaleDateString(), 
+
+  const formattedDate = useMemo(() =>
+    new Date(run.startedAt).toLocaleDateString(),
     [run.startedAt]
   )
 
-  const displayTitle = useMemo(() => 
+  const displayTitle = useMemo(() =>
     run.sandboxId ? 'Sandbox Demo Run' : `Run ${run.correlationId.slice(0, 8)}`,
     [run.sandboxId, run.correlationId]
   )
@@ -109,7 +109,7 @@ const RunItem = memo(function RunItem({
             {formattedDate}
           </div>
         </div>
-        
+
         {/* Stage timeline preview */}
         <div className="flex items-center gap-2 mt-3">
           <div className="flex items-center gap-1">
@@ -133,9 +133,9 @@ const RunItem = memo(function RunItem({
 })
 
 // Main component with React.memo
-export const RecentRunsWidget = memo(function RecentRunsWidget({ 
-  runs, 
-  maxRuns = 5 
+export const RecentRunsWidget = memo(function RecentRunsWidget({
+  runs,
+  maxRuns = 5
 }: RecentRunsWidgetProps): React.JSX.Element {
   // Memoize the sliced array to prevent re-computation on every render
   const displayRuns = useMemo(() => runs.slice(0, maxRuns), [runs, maxRuns])

@@ -9,16 +9,16 @@ logger = get_logger(__name__)
 @register_handler
 class ReconRunHandler(BaseHandler):
     """Handler for recon.run job type.
-    
+
     Runs data reconciliation workflows between systems.
     Safe no-op unless reconciliation rules exist.
     """
-    
+
     job_type = "recon.run"
-    
+
     def validate_payload(self, payload: dict) -> dict:
         """Validate recon.run payload.
-        
+
         Expected payload:
             - recon_id: str - Reconciliation configuration ID
             - source_system: str - Source system identifier
@@ -30,20 +30,20 @@ class ReconRunHandler(BaseHandler):
         for field in required:
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
-        
+
         # Default dry_run to True for safety
         if "dry_run" not in payload:
             payload["dry_run"] = True
-        
+
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         """Execute reconciliation workflow.
-        
+
         Args:
             payload: Validated payload
             context: Execution context with worker_id
-        
+
         Returns:
             JobResult with reconciliation results
         """
@@ -52,7 +52,7 @@ class ReconRunHandler(BaseHandler):
         target_system = payload["target_system"]
         rules = payload.get("rules", [])
         dry_run = payload.get("dry_run", True)
-        
+
         logger.info(
             "Starting reconciliation",
             recon_id=recon_id,
@@ -61,7 +61,7 @@ class ReconRunHandler(BaseHandler):
             rule_count=len(rules),
             dry_run=dry_run,
         )
-        
+
         # Safe no-op: If no rules defined, return empty result
         if not rules:
             logger.info("No reconciliation rules defined, returning empty result")
@@ -77,7 +77,7 @@ class ReconRunHandler(BaseHandler):
                     "message": "No reconciliation rules configured",
                 }
             )
-        
+
         # Stub: Simulate reconciliation
         # In production, this would:
         # 1. Query source system data
@@ -85,10 +85,10 @@ class ReconRunHandler(BaseHandler):
         # 3. Apply reconciliation rules
         # 4. Generate mismatch report
         # 5. Optionally apply fixes (if not dry_run)
-        
+
         matches = len(rules) * 10  # Stub: Assume 10 items per rule
         mismatches = len(rules)    # Stub: Assume 1 mismatch per rule
-        
+
         result_data = {
             "recon_id": recon_id,
             "source_system": source_system,
@@ -100,14 +100,14 @@ class ReconRunHandler(BaseHandler):
             "dry_run": dry_run,
             "worker_id": context.get("worker_id"),
         }
-        
+
         logger.info(
             "Reconciliation complete",
             recon_id=recon_id,
             matches=matches,
             mismatches=mismatches,
         )
-        
+
         return JobResult(
             success=True,
             data=result_data,

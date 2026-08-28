@@ -24,7 +24,7 @@ on:
 jobs:
   readylayer:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -98,17 +98,17 @@ Block based on review results:
 ```yaml
   readylayer:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: readylayer/action@v1
         id: review
         with:
           api-key: ${{ secrets.READYLAYER_API_KEY }}
           fail-on-critical: true
           fail-on-high: true
-      
+
       - name: Check Review Status
         if: steps.review.outputs.blocked == 'true'
         run: |
@@ -126,36 +126,36 @@ on: [pull_request]
 jobs:
   review:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: readylayer/action@v1
         with:
           api-key: ${{ secrets.READYLAYER_API_KEY }}
 
   tests:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - run: npm ci && npm test
 
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - run: npm ci && npm run build
 ```
 
@@ -178,7 +178,7 @@ Access review results in subsequent steps:
         id: review
         with:
           api-key: ${{ secrets.READYLAYER_API_KEY }}
-      
+
       - name: Review Results
         run: |
           echo "Total issues: ${{ steps.review.outputs.total }}"
@@ -224,10 +224,10 @@ on:
 jobs:
   readylayer:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: readylayer/action@v1
         with:
           api-key: ${{ secrets.READYLAYER_API_KEY }}
@@ -248,10 +248,10 @@ on:
 jobs:
   review-services:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: readylayer/action@v1
         with:
           api-key: ${{ secrets.READYLAYER_API_KEY }}
@@ -263,15 +263,15 @@ jobs:
 ```yaml
   readylayer:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: readylayer/action@v1
         id: review
         with:
           api-key: ${{ secrets.READYLAYER_API_KEY }}
-      
+
       - name: Notify Slack
         if: steps.review.outputs.blocked == 'true'
         uses: slackapi/slack-github-action@v1

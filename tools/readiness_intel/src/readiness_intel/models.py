@@ -187,30 +187,30 @@ class ReadinessScorecard(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     commit_sha: Optional[str] = None
     branch: Optional[str] = None
-    
+
     # Current state
     current_readiness_score: float = Field(..., ge=0.0, le=100.0)
     current_findings_count: int
     current_status: str = Field(..., description="PASS, FAIL, WARNING")
-    
+
     # Trend analysis (last 10 runs)
     trend: List[ReadinessTrend] = Field(default_factory=list)
     trend_direction: str = Field(..., description="improving, stable, degrading")
     trend_confidence: float = Field(..., ge=0.0, le=1.0)
-    
+
     # Predictive insights
     predicted_risk_areas: List[str] = Field(default_factory=list)
     high_risk_files: List[FileRiskProfile] = Field(default_factory=list)
     fragile_subsystems: List[str] = Field(default_factory=list)
-    
+
     # Recommendations
     recommended_test_focus: List[str] = Field(default_factory=list)
     recommended_reviews: List[str] = Field(default_factory=list)
-    
+
     # Statistics
     historical_stats: Dict[str, Any] = Field(default_factory=dict)
     confidence_interval: Tuple[float, float] = Field(..., description="(lower, upper) bounds")
-    
+
     # Metadata
     analysis_window_days: int = Field(default=30)
     total_historical_runs: int

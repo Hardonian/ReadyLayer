@@ -10,7 +10,7 @@ import * as path from 'path'
 
 /**
  * UI Consistency & Functional Integrity Audit
- * 
+ *
  * This test performs an automated audit of the application to identify:
  * - Console errors/warnings
  * - Network failures
@@ -19,7 +19,7 @@ import * as path from 'path'
  * - Responsive issues
  * - Keyboard/focus traps
  * - Reduced motion compliance
- * 
+ *
  * Generates a markdown report with findings.
  */
 
@@ -127,16 +127,16 @@ test.describe('UI Consistency Audit', () => {
         page.on('response', (response) => {
           const url = response.url()
           const status = response.status()
-          
+
           if (status >= 400) {
             const failure = `${status} ${url}`
             audit.networkFailures.push(failure)
-            
+
             // Classify severity based on status
             let severity: 'BLOCKER' | 'HIGH' | 'MED' = 'MED'
             if (status >= 500) severity = 'BLOCKER'
             else if (status === 404) severity = 'HIGH'
-            
+
             findings.push({
               severity,
               category: 'network',
@@ -235,11 +235,11 @@ async function auditResponsiveBehavior(
   const overflows = await page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll('*'))
     const overflowing: string[] = []
-    
+
     for (const el of elements) {
       const rect = el.getBoundingClientRect()
       const html = document.documentElement
-      
+
       if (rect.right > html.clientWidth || rect.bottom > html.clientHeight) {
         const tag = el.tagName.toLowerCase()
         const className = el.className
@@ -248,7 +248,7 @@ async function auditResponsiveBehavior(
         }
       }
     }
-    
+
     return overflowing.slice(0, 5) // Limit to first 5
   })
 
@@ -266,7 +266,7 @@ async function auditResponsiveBehavior(
   if (viewport.name === 'mobile') {
     const hasMenuButton = await page.locator('button[aria-label*="menu"], button[aria-label*="Menu"]').isVisible().catch(() => false)
     const hasVisibleNav = await page.locator('nav a').first().isVisible().catch(() => false)
-    
+
     if (!hasMenuButton && !hasVisibleNav) {
       findings.push({
         severity: 'MED',
@@ -289,16 +289,16 @@ async function auditAccessibility(
   const focusableWithoutIndicators = await page.evaluate(() => {
     const focusable = Array.from(document.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
     const problematic: string[] = []
-    
+
     for (const el of focusable) {
       const style = window.getComputedStyle(el)
       const hasOutline = style.outlineStyle !== 'none' || style.boxShadow !== 'none'
-      
+
       if (!hasOutline) {
         problematic.push(el.tagName.toLowerCase())
       }
     }
-    
+
     return problematic.length
   })
 
@@ -327,7 +327,7 @@ async function auditAccessibility(
   // Check for missing landmarks
   const hasMain = await page.locator('main').count() > 0
   await page.locator('nav').count() // Check nav exists but don't require it
-  
+
   if (!hasMain) {
     findings.push({
       severity: 'LOW',
@@ -354,14 +354,14 @@ async function auditReducedMotion(
   const animationsRunning = await page.evaluate(() => {
     const animated = Array.from(document.querySelectorAll('.animate-*, [class*="animate-"], [style*="animation"]'))
     let runningCount = 0
-    
+
     for (const el of animated) {
       const style = window.getComputedStyle(el)
       if (style.animationName !== 'none' && parseFloat(style.animationDuration) > 0.1) {
         runningCount++
       }
     }
-    
+
     return runningCount
   })
 
@@ -389,7 +389,7 @@ async function auditLayoutStability(
   const layoutShiftScore = await page.evaluate(() => {
     return new Promise<number>((resolve) => {
       let clsScore = 0
-      
+
       // Check if PerformanceObserver is available
       if ('PerformanceObserver' in window) {
         const observer = new PerformanceObserver((list) => {
@@ -399,14 +399,14 @@ async function auditLayoutStability(
             }
           }
         })
-        
+
         try {
           observer.observe({ entryTypes: ['layout-shift'] })
         } catch {
           // layout-shift might not be supported
         }
       }
-      
+
       // Wait a bit and return score
       setTimeout(() => resolve(clsScore), 1000)
     })
@@ -425,7 +425,7 @@ async function auditLayoutStability(
 
 async function generateAuditReport(): Promise<void> {
   const reportLines: string[] = []
-  
+
   reportLines.push('# UI Consistency & Functional Integrity Audit Report')
   reportLines.push('')
   reportLines.push(`**Generated:** ${new Date().toISOString()}`)
@@ -494,22 +494,22 @@ async function generateAuditReport(): Promise<void> {
   reportLines.push('')
   reportLines.push('| Route | Desktop | Tablet | Mobile | Issues |')
   reportLines.push('|-------|---------|--------|--------|--------|')
-  
+
   for (const route of ROUTES) {
     const routeFindings = findings.filter(f => f.route === route.path)
     const hasDesktop = findings.some(f => f.route === route.path && f.viewport === 'desktop')
     const hasTablet = findings.some(f => f.route === route.path && f.viewport === 'tablet')
     const hasMobile = findings.some(f => f.route === route.path && f.viewport === 'mobile')
-    
+
     reportLines.push(`| ${route.name} | ${hasDesktop ? '✓' : '○'} | ${hasTablet ? '✓' : '○'} | ${hasMobile ? '✓' : '○'} | ${routeFindings.length} |`)
   }
-  
+
   reportLines.push('')
 
   // Recommendations
   reportLines.push('## Recommendations')
   reportLines.push('')
-  
+
   if (blockerCount > 0) {
     reportLines.push('### Immediate Actions Required')
     reportLines.push('1. Fix all BLOCKER issues before merging')
@@ -542,9 +542,9 @@ async function generateAuditReport(): Promise<void> {
   // Write report
   const reportContent = reportLines.join('\n')
   const reportPath = path.join(process.cwd(), 'ui-consistency-report.md')
-  
+
   fs.writeFileSync(reportPath, reportContent)
-  
+
   // Also log summary to console
   console.log('\n========== UI CONSISTENCY AUDIT COMPLETE ==========')
   console.log(`BLOCKER: ${blockerCount}, HIGH: ${highCount}, MED: ${medCount}, LOW: ${lowCount}`)

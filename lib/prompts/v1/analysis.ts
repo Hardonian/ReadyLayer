@@ -192,7 +192,7 @@ export function buildLayeredPrompt(
   analysisPromptFn: (...args: unknown[]) => string,
   ...args: unknown[]
 ): { system: string; user: string } {
-   
+
 const { getSystemPrompt } = require('./system') as { getSystemPrompt: (key: string) => string };
 
   return {

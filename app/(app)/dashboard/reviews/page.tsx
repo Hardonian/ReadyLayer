@@ -4,17 +4,17 @@ import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
+import {
+  Card,
+  CardContent,
   Button,
   ErrorState,
   LoadingState,
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { 
-  AlertTriangle, 
+import {
+  AlertTriangle,
   CheckCircle2,
   FileCode,
   Clock,
@@ -49,7 +49,7 @@ export default function ReviewsPage(): React.JSX.Element {
   const fetchReviews = useCallback(async () => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    
+
     if (!url || !key) {
       setError('Configuration not available')
       setLoading(false)
@@ -100,7 +100,7 @@ export default function ReviewsPage(): React.JSX.Element {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery)
     }, 300)
-    
+
     return () => {
       clearTimeout(timer)
     }
@@ -108,14 +108,14 @@ export default function ReviewsPage(): React.JSX.Element {
 
   const filteredReviews = useMemo(() => {
     return reviews.filter((review) => {
-      const matchesSearch = debouncedSearchQuery === '' || 
+      const matchesSearch = debouncedSearchQuery === '' ||
         review.id.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         review.prNumber.toString().includes(debouncedSearchQuery)
-      
+
       const matchesFilter = filterStatus === 'all' ||
         (filterStatus === 'blocked' && review.isBlocked) ||
         (filterStatus === 'approved' && !review.isBlocked)
-      
+
       return matchesSearch && matchesFilter
     })
   }, [reviews, debouncedSearchQuery, filterStatus])
@@ -234,7 +234,7 @@ export default function ReviewsPage(): React.JSX.Element {
                 <FileCode className="h-12 w-12 text-text-muted mx-auto mb-4" aria-hidden="true" />
                 <p className="text-text-muted font-medium">No reviews found</p>
                 <p className="text-sm text-text-muted mt-1">
-                  {searchQuery || filterStatus !== 'all' 
+                  {searchQuery || filterStatus !== 'all'
                     ? 'Try adjusting your filters'
                     : 'Reviews will appear here after PRs are analyzed'}
                 </p>

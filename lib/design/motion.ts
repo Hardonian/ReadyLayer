@@ -1,6 +1,6 @@
 /**
  * ReadyLayer Motion System
- * 
+ *
  * PRINCIPLES:
  * - Motion is semantic, not decorative
  * - Every async action has a visible, calm state transition
@@ -53,7 +53,7 @@ export const pageTransition: Transition = {
  */
 export const fadeIn: Variants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
     transition: standardTransition,
   },
@@ -63,11 +63,11 @@ export const fadeIn: Variants = {
  * Slide up variants for content entry
  */
 export const slideUp: Variants = {
-  hidden: { 
+  hidden: {
     opacity: 0,
     y: 12,
   },
-  visible: { 
+  visible: {
     opacity: 1,
     y: 0,
     transition: standardTransition,
@@ -79,7 +79,7 @@ export const slideUp: Variants = {
  */
 export const scalePress: Variants = {
   rest: { scale: 1 },
-  pressed: { 
+  pressed: {
     scale: 0.98,
     transition: microTransition,
   },
@@ -123,7 +123,7 @@ export const staggerContainer: Variants = {
 }
 
 export const staggerItem: Variants = {
-  hidden: { 
+  hidden: {
     opacity: 0,
     y: 8,
   },

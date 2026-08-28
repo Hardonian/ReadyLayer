@@ -1,6 +1,6 @@
 /**
  * GitHub OAuth Initiation Route
- * 
+ *
  * Generates CSRF state token and redirects to GitHub authorization URL
  */
 

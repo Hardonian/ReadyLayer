@@ -1,6 +1,6 @@
 /**
  * Test Engine Service
- * 
+ *
  * Automatic test generation and coverage enforcement
  * Enforces coverage thresholds (minimum 80%)
  */
@@ -64,22 +64,22 @@ export interface CoverageResult {
 
 /**
  * Test Engine Service
- * 
+ *
  * Automatic test generation and coverage enforcement for AI-touched files.
  * Enforces minimum 80% coverage threshold (cannot go below).
- * 
+ *
  * Key Features:
  * - AI-touched file detection (commit message, author, patterns)
  * - Framework auto-detection (Jest, Mocha, pytest, etc.)
  * - LLM-powered test generation with RAG evidence
  * - Coverage threshold enforcement (minimum 80%)
  * - Test placement strategies (co-located, separate, mirror)
- * 
+ *
  * **Enforcement-First Behavior:**
  * - Coverage threshold minimum 80% (cannot disable)
  * - failOnBelow always true (cannot disable)
  * - Test generation failures don't block PR (fail-open)
- * 
+ *
  * @example
  * ```typescript
  * const result = await testEngineService.generateTests({
@@ -92,18 +92,18 @@ export interface CoverageResult {
 export class TestEngineService {
   /**
    * Detect files that were likely touched by AI coding tools.
-   * 
+   *
    * Uses multiple heuristics:
    * - Commit message keywords (copilot, cursor, claude, gpt, ai-generated)
    * - Author patterns (github-actions, copilot, cursor)
    * - Code patterns (generated comments, AI markers)
-   * 
+   *
    * Returns files with confidence >= 0.5 (50% threshold).
-   * 
+   *
    * @param _repositoryId - Repository ID (unused, reserved for future repo-specific patterns)
    * @param files - Files to analyze with optional commit metadata
    * @returns Array of AI-touched files with confidence scores and detection methods
-   * 
+   *
    * @example
    * ```typescript
    * const aiTouched = await testEngineService.detectAITouchedFiles('repo_123', [
@@ -177,7 +177,7 @@ export class TestEngineService {
 
   /**
    * Generate tests for a file using LLM-powered test generation.
-   * 
+   *
    * **Process:**
    * 1. Validates config (coverage threshold >= 80%, failOnBelow always true)
    * 2. Detects test framework (or uses provided)
@@ -188,20 +188,20 @@ export class TestEngineService {
    * 7. Determines test placement (co-located, separate, mirror)
    * 8. Evaluates against policy (may block if policy requires)
    * 9. Creates evidence bundle for audit trail
-   * 
+   *
    * **Enforcement:**
    * - Coverage threshold minimum 80% (enforced)
    * - failOnBelow always true (enforced)
    * - Billing limits checked (throws UsageLimitExceededError if exceeded)
    * - Test generation failures don't block PR (fail-open)
-   * 
+   *
    * @param request - Test generation request with file and config
    * @returns Test generation result with test content and placement
    * @throws {Error} If coverage threshold < 80% (validation error)
    * @throws {Error} If failOnBelow is false (validation error)
    * @throws {UsageLimitExceededError} If billing limits exceeded
    * @throws {Error} If test generation fails (non-blocking, but logged)
-   * 
+   *
    * @example
    * ```typescript
    * const result = await testEngineService.generateTests({
@@ -252,11 +252,11 @@ export class TestEngineService {
         where: { id: request.repositoryId },
         select: { organizationId: true },
       });
-      
+
       if (!repoForOrg) {
         throw new Error(`Repository ${request.repositoryId} not found`);
       }
-      
+
       // Check billing limits before generating tests
       // Note: This is a service-level check. If called from webhook, billing is already checked.
       // But if called directly from API, we need to check here.
@@ -302,11 +302,11 @@ export class TestEngineService {
         where: { id: request.repositoryId },
         select: { organizationId: true },
       });
-      
+
       if (!repoForPolicy) {
         throw new Error(`Repository ${request.repositoryId} not found`);
       }
-      
+
       const organizationIdForPolicy = repoForPolicy.organizationId;
 
       // Load effective policy
@@ -417,7 +417,7 @@ export class TestEngineService {
       where: { id: repositoryId },
       select: { organizationId: true },
     });
-    
+
     if (!repoForCoverage) {
       throw new Error(`Repository ${repositoryId} not found`);
     }

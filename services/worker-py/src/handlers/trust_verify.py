@@ -69,23 +69,23 @@ class TrustVerification:
 @register_handler
 class TrustVerifyHandler(BaseHandler):
     """Handler for trust.verify job type.
-    
+
     Verifies AI-generated content through multiple validation methods:
     - Static analysis for code quality
     - Security pattern checks
     - Syntax validation
     - Provenance tracking
     - Confidence scoring
-    
+
     Real tables connected:
     - Job: Source job that generated the content
     - Review: Related review data for context
     - Test: Test coverage validation
     - job_results: Stores verification records
     """
-    
+
     job_type = "trust.verify"
-    
+
     # Verification weights for confidence calculation
     CHECK_WEIGHTS = {
         "syntax_valid": 0.20,
@@ -95,7 +95,7 @@ class TrustVerifyHandler(BaseHandler):
         "pattern_match": 0.10,
         "complexity_check": 0.10,
     }
-    
+
     # Security patterns to check
     SECURITY_PATTERNS = {
         "hardcoded_secret": re.compile(
@@ -112,14 +112,14 @@ class TrustVerifyHandler(BaseHandler):
             r'http://(?!localhost|127\.0\.0\.1)',
         ),
     }
-    
+
     # Code quality thresholds
     COMPLEXITY_THRESHOLD = 15  # Cyclomatic complexity
     LINES_THRESHOLD = 500      # Max lines per file
-    
+
     def validate_payload(self, payload: dict) -> dict:
         """Validate trust.verify payload.
-        
+
         Expected payload:
             - tenant_id: str - Organization scope
             - content_type: str - Type of content ('code', 'test', 'doc', 'config', 'policy', 'review')
@@ -134,7 +134,7 @@ class TrustVerifyHandler(BaseHandler):
         for field in required:
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
-        
+
         # Validate content type
         valid_types = [ct.value for ct in ContentType]
         if payload["content_type"] not in valid_types:
@@ -142,18 +142,18 @@ class TrustVerifyHandler(BaseHandler):
                 f"Invalid content_type: {payload['content_type']}. "
                 f"Must be one of: {valid_types}"
             )
-        
+
         # Compute content hash if not provided
         if "content_hash" not in payload:
             content_bytes = payload["content"].encode("utf-8")
             payload["content_hash"] = hashlib.sha256(content_bytes).hexdigest()
-        
+
         # Validate min_confidence
         min_confidence = payload.get("min_confidence", 0.8)
         if not 0 <= min_confidence <= 1:
             raise ValueError(f"min_confidence must be between 0 and 1, got {min_confidence}")
         payload["min_confidence"] = min_confidence
-        
+
         # Validate checks
         valid_checks = list(self.CHECK_WEIGHTS.keys())
         checks = payload.get("checks", valid_checks)
@@ -161,19 +161,19 @@ class TrustVerifyHandler(BaseHandler):
         if invalid:
             raise ValueError(f"Invalid checks: {invalid}. Must be one of: {valid_checks}")
         payload["checks"] = checks
-        
+
         payload["dry_run"] = payload.get("dry_run", False)
         payload["source_job_id"] = payload.get("source_job_id")
-        
+
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         """Execute trust verification.
-        
+
         Args:
             payload: Validated payload with verification parameters
             context: Execution context with worker_id
-        
+
         Returns:
             JobResult with verification results
         """
@@ -185,7 +185,7 @@ class TrustVerifyHandler(BaseHandler):
         checks_to_run = payload["checks"]
         min_confidence = payload["min_confidence"]
         dry_run = payload["dry_run"]
-        
+
         logger.info(
             "Starting trust verification",
             tenant_id=tenant_id,
@@ -193,7 +193,7 @@ class TrustVerifyHandler(BaseHandler):
             content_hash=content_hash[:16],
             source_job=source_job_id,
         )
-        
+
         try:
             with get_cursor() as cursor:
                 # Check for existing verification (idempotency)
@@ -210,36 +210,36 @@ class TrustVerifyHandler(BaseHandler):
                         success=True,
                         data=existing,
                     )
-                
+
                 # Run verification checks
                 checks = []
-                
+
                 if "syntax_valid" in checks_to_run:
                     checks.append(self._check_syntax(content, content_type))
-                
+
                 if "security_scan" in checks_to_run:
                     checks.append(self._check_security(content, content_type))
-                
+
                 if "static_analysis" in checks_to_run:
                     checks.append(self._check_static_analysis(content, content_type))
-                
+
                 if "test_coverage" in checks_to_run:
                     checks.append(self._check_test_coverage(
                         cursor, tenant_id, content, content_type, source_job_id
                     ))
-                
+
                 if "pattern_match" in checks_to_run:
                     checks.append(self._check_patterns(content, content_type))
-                
+
                 if "complexity_check" in checks_to_run:
                     checks.append(self._check_complexity(content, content_type))
-                
+
                 # Compute confidence score
                 confidence = self._compute_confidence(checks, checks_to_run)
-                
+
                 # Determine verification level
                 level = self._confidence_to_level(confidence)
-                
+
                 # Build provenance info
                 provenance = {
                     "content_hash": content_hash,
@@ -251,14 +251,14 @@ class TrustVerifyHandler(BaseHandler):
                     "checks_performed": len(checks),
                     "checks_passed": sum(1 for c in checks if c.passed),
                 }
-                
+
                 # Store verification if not dry run
                 if not dry_run:
                     self._store_verification(
                         cursor, tenant_id, content_hash, content_type,
                         source_job_id, confidence, level, checks, provenance
                     )
-                
+
                 result_data = {
                     "tenant_id": tenant_id,
                     "content_hash": content_hash,
@@ -284,7 +284,7 @@ class TrustVerifyHandler(BaseHandler):
                     ],
                     "provenance": provenance,
                 }
-                
+
                 logger.info(
                     "Trust verification complete",
                     tenant_id=tenant_id,
@@ -293,7 +293,7 @@ class TrustVerifyHandler(BaseHandler):
                     level=level,
                     passed=result_data["passed"],
                 )
-                
+
                 return JobResult(
                     success=True,
                     data=result_data,
@@ -302,7 +302,7 @@ class TrustVerifyHandler(BaseHandler):
                         "confidence_breakdown": self._get_confidence_breakdown(checks, checks_to_run),
                     }
                 )
-                
+
         except Exception as e:
             logger.error(
                 "Trust verification failed",
@@ -315,12 +315,12 @@ class TrustVerifyHandler(BaseHandler):
                 success=False,
                 error=f"Trust verification failed: {str(e)}",
             )
-    
-    def _check_existing_verification(self, cursor, tenant_id: str, 
+
+    def _check_existing_verification(self, cursor, tenant_id: str,
                                      content_hash: str) -> Optional[dict]:
         """Check if verification already exists for this content."""
         verification_id = f"trust_{tenant_id}_{content_hash}"
-        
+
         cursor.execute(
             """
             SELECT result
@@ -330,20 +330,20 @@ class TrustVerifyHandler(BaseHandler):
             (verification_id,),
         )
         row = cursor.fetchone()
-        
+
         if row:
             result = row["result"]
             if isinstance(result, str):
                 result = json.loads(result)
             return result
-        
+
         return None
-    
+
     def _check_syntax(self, content: str, content_type: str) -> VerificationCheck:
         """Check syntax validity of content."""
         details = {"content_type": content_type, "length": len(content)}
         recommendations = []
-        
+
         try:
             if content_type == ContentType.CODE.value:
                 # Basic Python syntax check
@@ -361,7 +361,7 @@ class TrustVerifyHandler(BaseHandler):
                     # JavaScript/TypeScript - basic validation
                     passed = True
                     score = 0.9  # Assume valid if no obvious errors
-                    
+
             elif content_type == ContentType.CONFIG.value:
                 # JSON/YAML validation
                 if content.strip().startswith("{"):
@@ -377,17 +377,17 @@ class TrustVerifyHandler(BaseHandler):
                 else:
                     passed = True
                     score = 0.9
-                    
+
             else:
                 passed = True
                 score = 0.95
-                
+
         except Exception as e:
             passed = False
             score = 0.0
             details["error"] = str(e)
             recommendations.append("Review content for syntax errors")
-        
+
         return VerificationCheck(
             name="syntax_valid",
             passed=passed,
@@ -395,13 +395,13 @@ class TrustVerifyHandler(BaseHandler):
             details=details,
             recommendations=recommendations,
         )
-    
+
     def _check_security(self, content: str, content_type: str) -> VerificationCheck:
         """Check for security issues."""
         issues = []
         score = 1.0
         recommendations = []
-        
+
         if content_type in [ContentType.CODE.value, ContentType.CONFIG.value]:
             for pattern_name, pattern in self.SECURITY_PATTERNS.items():
                 matches = pattern.findall(content)
@@ -424,10 +424,10 @@ class TrustVerifyHandler(BaseHandler):
                     elif pattern_name == "http_url":
                         score -= 0.1 * len(matches)
                         recommendations.append("Use HTTPS URLs instead of HTTP")
-        
+
         score = max(0.0, score)
         passed = score >= 0.7  # Security threshold
-        
+
         return VerificationCheck(
             name="security_scan",
             passed=passed,
@@ -438,34 +438,34 @@ class TrustVerifyHandler(BaseHandler):
             },
             recommendations=list(set(recommendations)),  # Deduplicate
         )
-    
+
     def _check_static_analysis(self, content: str, content_type: str) -> VerificationCheck:
         """Perform static analysis checks."""
         details = {}
         recommendations = []
-        
+
         if content_type == ContentType.CODE.value:
             lines = content.split("\n")
-            
+
             # Count lines
             line_count = len(lines)
             details["line_count"] = line_count
-            
+
             # Check file size
             if line_count > self.LINES_THRESHOLD:
                 details["oversized"] = True
                 recommendations.append(f"File is too large ({line_count} lines), consider splitting")
-            
+
             # Check for TODO/FIXME comments (not necessarily bad, but worth noting)
             todo_count = sum(1 for line in lines if "TODO" in line or "FIXME" in line)
             details["todo_count"] = todo_count
-            
+
             # Check for docstrings
             has_docstring = '"""' in content or "'''" in content
             details["has_docstring"] = has_docstring
             if not has_docstring:
                 recommendations.append("Add documentation/docstrings")
-            
+
             # Compute basic score
             score = 1.0
             if line_count > self.LINES_THRESHOLD:
@@ -474,14 +474,14 @@ class TrustVerifyHandler(BaseHandler):
                 score -= 0.1
             if not has_docstring:
                 score -= 0.1
-            
+
             passed = score >= 0.75
-            
+
         else:
             passed = True
             score = 0.9
             details["note"] = "Static analysis primarily for code content"
-        
+
         return VerificationCheck(
             name="static_analysis",
             passed=passed,
@@ -489,24 +489,24 @@ class TrustVerifyHandler(BaseHandler):
             details=details,
             recommendations=recommendations,
         )
-    
-    def _check_test_coverage(self, cursor, tenant_id: str, content: str, 
+
+    def _check_test_coverage(self, cursor, tenant_id: str, content: str,
                              content_type: str, source_job_id: Optional[str]) -> VerificationCheck:
         """Check test coverage for generated content."""
         details = {}
         recommendations = []
-        
+
         if content_type == ContentType.TEST.value:
             # Tests should be well-formed
             has_assertions = "assert" in content or "expect" in content.lower()
             details["has_assertions"] = has_assertions
-            
+
             if not has_assertions:
                 recommendations.append("Add assertions to test cases")
-            
+
             score = 0.9 if has_assertions else 0.5
             passed = has_assertions
-            
+
         elif content_type == ContentType.CODE.value and source_job_id:
             # Try to find related tests
             cursor.execute(
@@ -520,9 +520,9 @@ class TrustVerifyHandler(BaseHandler):
             )
             row = cursor.fetchone()
             test_count = row["test_count"] if row else 0
-            
+
             details["related_tests"] = test_count
-            
+
             if test_count == 0:
                 recommendations.append("Add tests for this code")
                 score = 0.6
@@ -538,7 +538,7 @@ class TrustVerifyHandler(BaseHandler):
             passed = True
             score = 0.85
             details["note"] = "Test coverage check primarily for code/test content"
-        
+
         return VerificationCheck(
             name="test_coverage",
             passed=passed,
@@ -546,47 +546,47 @@ class TrustVerifyHandler(BaseHandler):
             details=details,
             recommendations=recommendations,
         )
-    
+
     def _check_patterns(self, content: str, content_type: str) -> VerificationCheck:
         """Check against known good patterns."""
         details = {}
         recommendations = []
-        
+
         # Pattern matching is content-type specific
         if content_type == ContentType.CODE.value:
             # Check for common good practices
             has_error_handling = "try:" in content or "try {" in content or "catch" in content
             has_logging = "logger" in content or "console.log" in content or "print(" in content
             has_type_hints = "-> " in content or ": " in content.split("def")[0] if "def" in content else False
-            
+
             details = {
                 "has_error_handling": has_error_handling,
                 "has_logging": has_logging,
                 "has_type_hints": has_type_hints,
             }
-            
+
             score = 0.7  # Base score
             if has_error_handling:
                 score += 0.1
             else:
                 recommendations.append("Add error handling")
-            
+
             if has_logging:
                 score += 0.1
             else:
                 recommendations.append("Add logging for observability")
-            
+
             if has_type_hints:
                 score += 0.1
             else:
                 recommendations.append("Consider adding type hints")
-            
+
             passed = score >= 0.75
-            
+
         else:
             passed = True
             score = 0.9
-        
+
         return VerificationCheck(
             name="pattern_match",
             passed=passed,
@@ -594,36 +594,36 @@ class TrustVerifyHandler(BaseHandler):
             details=details,
             recommendations=recommendations,
         )
-    
+
     def _check_complexity(self, content: str, content_type: str) -> VerificationCheck:
         """Check code complexity."""
         details = {}
         recommendations = []
-        
+
         if content_type == ContentType.CODE.value:
             lines = content.split("\n")
-            
+
             # Count control flow statements (simple cyclomatic complexity approximation)
             control_flow = ["if ", "for ", "while ", "switch", "case", "try:", "except"]
             complexity = sum(content.count(cf) for cf in control_flow)
-            
+
             details["approx_complexity"] = complexity
             details["line_count"] = len(lines)
-            
+
             score = 1.0
             if complexity > self.COMPLEXITY_THRESHOLD:
                 score -= 0.3
                 recommendations.append(f"Reduce complexity (currently ~{complexity})")
             elif complexity > self.COMPLEXITY_THRESHOLD / 2:
                 score -= 0.1
-            
+
             passed = score >= 0.75
-            
+
         else:
             passed = True
             score = 0.95
             details["note"] = "Complexity check for code content only"
-        
+
         return VerificationCheck(
             name="complexity_check",
             passed=passed,
@@ -631,16 +631,16 @@ class TrustVerifyHandler(BaseHandler):
             details=details,
             recommendations=recommendations,
         )
-    
-    def _compute_confidence(self, checks: List[VerificationCheck], 
+
+    def _compute_confidence(self, checks: List[VerificationCheck],
                            checks_to_run: List[str]) -> float:
         """Compute overall confidence score from individual checks."""
         if not checks:
             return 0.0
-        
+
         total_weight = 0.0
         weighted_score = 0.0
-        
+
         for check in checks:
             weight = self.CHECK_WEIGHTS.get(check.name, 0.1)
             # Adjust weight based on whether this check was requested
@@ -648,12 +648,12 @@ class TrustVerifyHandler(BaseHandler):
                 weight = 0
             total_weight += weight
             weighted_score += check.score * weight
-        
+
         if total_weight == 0:
             return 0.0
-        
+
         return weighted_score / total_weight
-    
+
     def _confidence_to_level(self, confidence: float) -> str:
         """Convert confidence score to verification level."""
         if confidence >= 0.95:
@@ -666,14 +666,14 @@ class TrustVerifyHandler(BaseHandler):
             return VerificationLevel.STATIC.value
         else:
             return VerificationLevel.NONE.value
-    
+
     def _store_verification(self, cursor, tenant_id: str, content_hash: str,
                            content_type: str, source_job_id: Optional[str],
                            confidence: float, level: str, checks: List[VerificationCheck],
                            provenance: dict) -> None:
         """Store verification result in database."""
         verification_id = f"trust_{tenant_id}_{content_hash}"
-        
+
         cursor.execute(
             """
             INSERT INTO job_results (job_id, result, created_at)
@@ -706,7 +706,7 @@ class TrustVerifyHandler(BaseHandler):
                 }),
             ),
         )
-        
+
         logger.info(
             "Stored trust verification",
             verification_id=verification_id,
@@ -714,12 +714,12 @@ class TrustVerifyHandler(BaseHandler):
             confidence=round(confidence, 4),
             level=level,
         )
-    
-    def _get_confidence_breakdown(self, checks: List[VerificationCheck], 
+
+    def _get_confidence_breakdown(self, checks: List[VerificationCheck],
                                   checks_to_run: List[str]) -> dict:
         """Get breakdown of confidence contribution by check."""
         breakdown = {}
-        
+
         for check in checks:
             if check.name in checks_to_run:
                 weight = self.CHECK_WEIGHTS.get(check.name, 0.1)
@@ -729,5 +729,5 @@ class TrustVerifyHandler(BaseHandler):
                     "weight": weight,
                     "contribution": round(contribution, 4),
                 }
-        
+
         return breakdown

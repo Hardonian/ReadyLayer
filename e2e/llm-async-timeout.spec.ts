@@ -1,6 +1,6 @@
 /**
  * LLM Async Timeout E2E Test
- * 
+ *
  * Tests that the system properly handles LLM timeout scenarios:
  * - Returns immediate static analysis results
  * - Processes LLM enrichment in background

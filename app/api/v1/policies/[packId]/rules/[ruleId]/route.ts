@@ -1,6 +1,6 @@
 /**
  * Policy Rule Detail API
- * 
+ *
  * PUT    /api/v1/policies/:packId/rules/:ruleId - Update rule
  * DELETE /api/v1/policies/:packId/rules/:ruleId - Remove rule
  */
@@ -94,7 +94,7 @@ export async function PUT(
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validated = updateRuleSchema.parse(bodyResult.data);
 
     // Update rule
@@ -108,8 +108,8 @@ export async function PUT(
       data: {
         ...(validated.severityMapping && { severityMapping: validated.severityMapping as Prisma.InputJsonValue }),
         ...(validated.enabled !== undefined && { enabled: validated.enabled }),
-        ...(validated.params !== undefined && { 
-          params: validated.params ? (validated.params as Prisma.InputJsonValue) : undefined 
+        ...(validated.params !== undefined && {
+          params: validated.params ? (validated.params as Prisma.InputJsonValue) : undefined
         }),
       },
     });

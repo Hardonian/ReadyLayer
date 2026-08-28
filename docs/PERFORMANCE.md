@@ -5,8 +5,8 @@
 ### Critical Hot Paths
 
 #### 1. Webhook Processor (`workers/webhook-processor.ts`)
-**Frequency**: Every PR event (opened, updated, merged)  
-**Impact**: Direct user experience (PR checks)  
+**Frequency**: Every PR event (opened, updated, merged)
+**Impact**: Direct user experience (PR checks)
 **Optimizations**:
 - Repository lookup uses `getCachedRepository()` with 5s in-memory + Redis cache
 - Organization data cached for 30s
@@ -18,8 +18,8 @@ const repoRecord = await getCachedRepository(String(repository.id));
 ```
 
 #### 2. Readiness Command Center (`components/dashboard/readiness-command-center.tsx`)
-**Frequency**: Dashboard page load, real-time polling  
-**Impact**: Dashboard UX  
+**Frequency**: Dashboard page load, real-time polling
+**Impact**: Dashboard UX
 **Optimizations**:
 - Consider React Query caching with stale-while-revalidate
 - Implement server-side caching for metrics aggregation
@@ -38,23 +38,23 @@ const { data: metrics, isLoading } = useQuery({
 ```
 
 #### 3. Policy Engine (Security Scanning)
-**Frequency**: Every file in PR  
-**Impact**: PR merge time  
+**Frequency**: Every file in PR
+**Impact**: PR merge time
 **Optimizations**:
 - File content cached in webhook processor (lines 444-461)
 - AST parsing results can be memoized
 - Rule evaluation uses immutable caches
 
 #### 4. Test Engine (Coverage Analysis)
-**Frequency**: Every AI-touched file  
-**Impact**: PR feedback quality  
+**Frequency**: Every AI-touched file
+**Impact**: PR feedback quality
 **Optimizations**:
 - Framework detection cached per repository
 - Coverage reports cached by commit SHA
 
 #### 5. LLM Cache (`lib/cache/llm-cache.ts`)
-**Frequency**: Every AI generation request  
-**Impact**: API costs + latency  
+**Frequency**: Every AI generation request
+**Impact**: API costs + latency
 **Optimizations**:
 - Redis-backed semantic cache
 - Hash-based deduplication

@@ -1,6 +1,6 @@
 /**
  * Complete Flow E2E Test
- * 
+ *
  * Tests the entire user journey from signup through the first enforced PR review.
  * This is the gold standard test that verifies all major features work together.
  */
@@ -171,7 +171,7 @@ const response = await fetch('http://insecure-api.example.com');
   }) => {
     // This test would require setting up a free tier account
     // and simulating hitting the usage limits
-    
+
     // Step 1: Login as free tier user
     await page.goto(`${baseUrl}/auth/signin`);
     // ... login flow ...

@@ -1,6 +1,6 @@
 /**
  * Platform-Specific Theme Configuration
- * 
+ *
  * Adapts ReadyLayer UI to match GitHub, GitLab, and Bitbucket design languages
  */
 

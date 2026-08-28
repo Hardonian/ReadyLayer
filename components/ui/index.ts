@@ -1,6 +1,6 @@
 /**
  * ReadyLayer UI Component Library
- * 
+ *
  * Cohesive, professional components following design system principles
  */
 

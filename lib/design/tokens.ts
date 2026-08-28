@@ -1,6 +1,6 @@
 /**
  * ReadyLayer Design Tokens
- * 
+ *
  * Visual depth, spacing, and typography system
  * for consistent, professional UI
  */

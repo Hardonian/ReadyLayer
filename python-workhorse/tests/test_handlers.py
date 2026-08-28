@@ -20,7 +20,7 @@ from src.handlers import (
 
 class TestSettings:
     """Test configuration loading."""
-    
+
     def test_settings_defaults(self):
         """Test default settings values."""
         with patch.dict('os.environ', {
@@ -37,7 +37,7 @@ class TestSettings:
 
 class TestReportGeneratorHandler:
     """Test report generation handler."""
-    
+
     def test_valid_payload(self):
         """Test handler with valid payload."""
         handler = ReportGeneratorHandler()
@@ -48,28 +48,28 @@ class TestReportGeneratorHandler:
                 "reviewId": "rev_456",
             }
         }
-        
+
         result = handler.handle(payload)
-        
+
         assert "downloadUrl" in result
         assert result["format"] == "pdf"
         assert result["recordCount"] == 1500
         assert "checksum" in result
-    
+
     def test_missing_organization_id(self):
         """Test handler rejects missing organizationId."""
         handler = ReportGeneratorHandler()
         payload = {
             "parameters": {"format": "pdf"}
         }
-        
+
         with pytest.raises(ValueError, match="organizationId"):
             handler.handle(payload)
 
 
 class TestBatchExporterHandler:
     """Test batch export handler."""
-    
+
     def test_export_reviews(self):
         """Test exporting reviews."""
         handler = BatchExporterHandler()
@@ -81,9 +81,9 @@ class TestBatchExporterHandler:
                 "format": "csv",
             }
         }
-        
+
         result = handler.handle(payload)
-        
+
         assert result["entityType"] == "reviews"
         assert "downloadUrl" in result
         assert result["recordCount"] == 5000
@@ -91,7 +91,7 @@ class TestBatchExporterHandler:
 
 class TestAnalyticsScorerHandler:
     """Test analytics scoring handler."""
-    
+
     def test_ai_risk_exposure(self):
         """Test AI risk exposure calculation."""
         handler = AnalyticsScorerHandler()
@@ -102,9 +102,9 @@ class TestAnalyticsScorerHandler:
                 "period": "30d",
             }
         }
-        
+
         result = handler.handle(payload)
-        
+
         assert result["metric"] == "ai_risk_exposure"
         assert "score" in result
         assert "level" in result
@@ -114,7 +114,7 @@ class TestAnalyticsScorerHandler:
 
 class TestHandlerRegistry:
     """Test handler registry."""
-    
+
     def test_get_valid_handler(self):
         """Test getting valid handlers."""
         handlers = [
@@ -124,11 +124,11 @@ class TestHandlerRegistry:
             "python.ingest.document",
             "python.reconcile.violations",
         ]
-        
+
         for job_type in handlers:
             handler = get_handler(job_type)
             assert handler is not None
-    
+
     def test_get_invalid_handler(self):
         """Test getting invalid handler raises error."""
         with pytest.raises(ValueError, match="Unknown job type"):

@@ -26,7 +26,7 @@ export function createSupabaseClient(): SupabaseClient {
 export function createSupabaseServerClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
+
   if (!url || !key) {
     // Return mock client during build
     return createClient(
@@ -34,6 +34,6 @@ export function createSupabaseServerClient(): SupabaseClient {
       key || 'placeholder-key'
     ) as SupabaseClient;
   }
-  
+
   return createClient(url, key) as SupabaseClient;
 }

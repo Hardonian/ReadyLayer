@@ -1,6 +1,6 @@
 /**
  * Configuration Service
- * 
+ *
  * Parses and validates .readylayer.yml configuration files
  */
 

@@ -48,7 +48,7 @@ All configuration via environment variables (validated by Pydantic):
 ## Job Types
 
 - `ingest.normalize` - CSV/JSON data normalization
-- `recon.run` - Data reconciliation workflows  
+- `recon.run` - Data reconciliation workflows
 - `anomaly.score` - Anomaly detection scoring
 - `eval.run` - Dataset evaluation
 
@@ -65,13 +65,13 @@ from src.handlers.base import BaseHandler, JobResult, register_handler
 @register_handler
 class MyHandler(BaseHandler):
     job_type = "my.job"
-    
+
     def validate_payload(self, payload: dict) -> dict:
         # Validate and return cleaned payload
         if "required_field" not in payload:
             raise ValueError("Missing required_field")
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         # Execute job logic
         result_data = {"processed": True}
@@ -156,6 +156,6 @@ CREATE TABLE dead_letter_jobs (
 CREATE INDEX idx_jobs_status ON jobs(status);
 CREATE INDEX idx_jobs_type ON jobs(type);
 CREATE INDEX idx_jobs_worker ON jobs(worker_id) WHERE status = 'processing';
-CREATE INDEX idx_jobs_pending ON jobs(status, priority DESC, created_at) 
+CREATE INDEX idx_jobs_pending ON jobs(status, priority DESC, created_at)
     WHERE status = 'pending';
 ```

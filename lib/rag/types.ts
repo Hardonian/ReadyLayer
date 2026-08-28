@@ -1,6 +1,6 @@
 /**
  * Evidence RAG Layer Types
- * 
+ *
  * Type definitions for the Evidence RAG system
  */
 

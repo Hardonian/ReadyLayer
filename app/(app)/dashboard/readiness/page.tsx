@@ -1,6 +1,6 @@
 /**
  * Readiness Command Center Dashboard
- * 
+ *
  * Makes ReadyLayer operationally indispensable with comprehensive metrics
  */
 
@@ -24,7 +24,7 @@ export default function ReadinessPage(): React.JSX.Element {
       try {
         const supabase = createSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!session) {
           router.push('/auth/signin');
           return;
@@ -46,7 +46,7 @@ export default function ReadinessPage(): React.JSX.Element {
                 'Authorization': `Bearer ${session.access_token}`,
               },
             });
-            
+
             if (repoResponse.ok) {
               const repoData = await repoResponse.json() as { data?: { organizationId: string } };
               if (repoData.data?.organizationId) {

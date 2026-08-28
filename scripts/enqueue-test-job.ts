@@ -1,8 +1,8 @@
 /**
  * Enqueue test job script
- * 
+ *
  * Creates a test job for development/testing
- * 
+ *
  * Usage: npx tsx scripts/enqueue-test-job.ts [type] [payload]
  * Example: npx tsx scripts/enqueue-test-job.ts smoke.test.echo '{"test":true}'
  */
@@ -27,7 +27,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 async function main(): Promise<void> {
   const jobType = process.argv[2] || 'smoke.test.echo';
   const payloadStr = process.argv[3] || '{"test": true, "manual": true}';
-  
+
   let payload: Record<string, unknown>;
   try {
     payload = JSON.parse(payloadStr) as Record<string, unknown>;

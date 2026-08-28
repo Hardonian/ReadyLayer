@@ -1,10 +1,10 @@
 /**
  * Model Versioning and A/B Testing
- * 
+ *
  * P2: Production model versioning with A/B testing framework
  * Supports multiple model versions, traffic splitting, and
  * statistical significance testing for model comparison.
- * 
+ *
  * Features:
  * - Semantic model versioning
  * - Traffic splitting with configurable weights
@@ -105,7 +105,7 @@ export class ModelVersionManager {
     };
 
     this.versions.set(version.id, fullVersion);
-    
+
     logger.info({
       versionId: version.id,
       modelType: version.modelType,
@@ -129,7 +129,7 @@ export class ModelVersionManager {
 
     version.status = 'staging';
     logger.info({ versionId }, 'Model version promoted to staging');
-    
+
     return version;
   }
 
@@ -174,9 +174,9 @@ export class ModelVersionManager {
     if (!version) throw new Error(`Version ${versionId} not found`);
 
     version.status = 'deprecated';
-    
+
     logger.info({ versionId }, 'Model version deprecated');
-    
+
     return version;
   }
 
@@ -223,7 +223,7 @@ export class ModelVersionManager {
   } {
     const versionA = this.versions.get(versionAId);
     const versionB = this.versions.get(versionBId);
-    
+
     if (!versionA) throw new Error(`Version ${versionAId} not found`);
     if (!versionB) throw new Error(`Version ${versionBId} not found`);
 
@@ -276,7 +276,7 @@ export class ABTestManager {
     // Validate model versions exist
     const modelA = this.versionManager.getVersion(config.modelA);
     const modelB = this.versionManager.getVersion(config.modelB);
-    
+
     if (!modelA) throw new Error(`Model version ${config.modelA} not found`);
     if (!modelB) throw new Error(`Model version ${config.modelB} not found`);
 
@@ -360,7 +360,7 @@ export class ABTestManager {
     if (!experiment) throw new Error(`Experiment ${experimentId} not found`);
 
     const observations = this.observations.get(experimentId) || [];
-    
+
     // Filter for primary metric
     const primaryObservations = observations.filter(
       o => o.metricName === experiment.primaryMetric
@@ -507,7 +507,7 @@ export class ABTestManager {
     const stdDev = Math.sqrt(variance);
 
     // Confidence interval
-    const zScore = confidenceLevel === 0.95 ? 1.96 : 
+    const zScore = confidenceLevel === 0.95 ? 1.96 :
                    confidenceLevel === 0.99 ? 2.576 : 1.645;
     const margin = zScore * (stdDev / Math.sqrt(n));
 
@@ -536,7 +536,7 @@ export class ABTestManager {
 
     // Pooled standard error
     const se = Math.sqrt(varA / groupA.length + varB / groupB.length);
-    
+
     if (se === 0) {
       return { pValue: meanA === meanB ? 1 : 0, isSignificant: meanA !== meanB };
     }
@@ -551,7 +551,7 @@ export class ABTestManager {
 
     // Approximate p-value (two-tailed)
     const pValue = this.approximatePValue(Math.abs(tStat), df);
-    
+
     return {
       pValue,
       isSignificant: pValue < 0.05,
@@ -563,7 +563,7 @@ export class ABTestManager {
     if (df > 30) {
       return 2 * (1 - this.normalCDF(t));
     }
-    
+
     // For smaller df, use a rough approximation
     return Math.min(1, Math.exp(-0.5 * t * t) * (1 + 0.1 / df));
   }
@@ -609,15 +609,15 @@ export class ABTestManager {
   private checkAutoComplete(experiment: ABTest): void {
     const observations = this.observations.get(experiment.id) || [];
     const primaryObservations = observations.filter(o => o.metricName === experiment.primaryMetric);
-    
+
     const countA = primaryObservations.filter(o => o.variant === 'A').length;
     const countB = primaryObservations.filter(o => o.variant === 'B').length;
-    
+
     // Check minimum sample size
     if (countA >= experiment.minimumSampleSize && countB >= experiment.minimumSampleSize) {
       // Check if we have a significant result
       const results = this.getResults(experiment.id);
-      
+
       if (results.comparison.isSignificant && results.comparison.power > 0.8) {
         logger.info({
           experimentId: experiment.id,
@@ -625,7 +625,7 @@ export class ABTestManager {
           sampleSizeB: countB,
           winner: results.comparison.winner,
         }, 'Auto-completing A/B test');
-        
+
         this.completeExperiment(experiment.id);
       }
     }

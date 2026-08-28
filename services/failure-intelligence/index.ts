@@ -1,9 +1,9 @@
 /**
  * Failure Intelligence Memory Service
- * 
+ *
  * Aggregates anonymized AI failure patterns without storing customer code.
  * Provides pattern classification, confidence scoring, and temporal trend detection.
- * 
+ *
  * Ethical AI Compliance:
  * - Strict opt-in required
  * - No customer code stored
@@ -41,14 +41,14 @@ export interface PatternInsight {
 
 /**
  * Failure Intelligence Memory Service
- * 
+ *
  * Tracks anonymized failure patterns across organizations to provide
  * intelligence about AI failure modes without storing customer code.
  */
 export class FailureIntelligenceService {
   /**
    * Record a failure pattern (anonymized)
-   * 
+   *
    * Extracts pattern characteristics without storing actual code.
    */
   async recordPattern(
@@ -111,7 +111,7 @@ export class FailureIntelligenceService {
 
   /**
    * Get pattern insights for a PR context
-   * 
+   *
    * Returns anonymized insights about patterns that have correlated
    * with real incidents elsewhere.
    */

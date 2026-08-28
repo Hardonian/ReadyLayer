@@ -45,9 +45,9 @@ class BuildParser(BaseParser):
 
     def parse(self, output: ToolOutput) -> List[Finding]:
         findings: List[Finding] = []
-        
+
         raw = output.raw_output
-        
+
         # Check for success with warnings
         if output.exit_code == 0:
             if self.SUCCESS_WITH_WARNINGS.search(raw):
@@ -65,18 +65,18 @@ class BuildParser(BaseParser):
                     )
                 )
             return findings
-        
+
         # Build failed - extract errors
         for pattern in self.PATTERNS:
             for match in pattern.finditer(raw):
                 groups = match.groupdict()
-                
+
                 location = groups.get('location', 'build process')
                 line = int(groups['line']) if 'line' in groups and groups['line'] else None
                 col = int(groups['col']) if 'col' in groups and groups['col'] else None
                 message = groups.get('message', groups.get('module', 'Build error'))
                 module = groups.get('module', '')
-                
+
                 if module:
                     description = f"Missing module: {module} in {location}"
                     remediation = f"Install missing dependency: npm install {module}"
@@ -85,7 +85,7 @@ class BuildParser(BaseParser):
                     description = f"Build error: {message[:200]}"
                     remediation = "Fix the build error and retry"
                     rule_id = "build/compilation-error"
-                
+
                 finding = Finding(
                     rule_id=rule_id,
                     category=Category.BUILD,
@@ -107,7 +107,7 @@ class BuildParser(BaseParser):
                     tool="build",
                 )
                 findings.append(finding)
-        
+
         # If no specific errors found but build failed
         if not findings:
             findings.append(
@@ -123,5 +123,5 @@ class BuildParser(BaseParser):
                     tool="build",
                 )
             )
-        
+
         return findings

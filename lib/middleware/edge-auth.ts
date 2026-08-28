@@ -1,6 +1,6 @@
 /**
  * Edge-Safe Authentication
- * 
+ *
  * Authentication helpers for Edge runtime (middleware)
  * Uses only Supabase SSR - no Prisma, no Node crypto
  */

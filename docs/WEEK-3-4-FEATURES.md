@@ -244,18 +244,18 @@ Tests async LLM processing and timeout handling:
 #### Database Indexes
 ```sql
 -- PR review queries
-CREATE INDEX idx_reviews_org_status 
+CREATE INDEX idx_reviews_org_status
   ON reviews(organization_id, status);
 
-CREATE INDEX idx_reviews_created 
+CREATE INDEX idx_reviews_created
   ON reviews(created_at DESC);
 
 -- Policy queries
-CREATE INDEX idx_policies_org_default 
+CREATE INDEX idx_policies_org_default
   ON org_policies(organization_id, is_default);
 
 -- User queries
-CREATE INDEX idx_org_members_org 
+CREATE INDEX idx_org_members_org
   ON org_members(organization_id);
 ```
 

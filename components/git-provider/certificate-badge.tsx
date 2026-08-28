@@ -1,6 +1,6 @@
 /**
  * Merge Confidence Certificate Badge
- * 
+ *
  * Displays ReadyLayer certificate status in PR context.
  * Makes absence of ReadyLayer review visible.
  */

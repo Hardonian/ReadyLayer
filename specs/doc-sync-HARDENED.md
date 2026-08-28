@@ -38,22 +38,22 @@ drift_prevention:
 - **Drift detection MUST block PR** by default:
   ```
   ⚠️ ReadyLayer Doc Sync: Drift Detected
-  
+
   Cause: Code and documentation are out of sync
   Impact: API documentation does not match code changes
-  
+
   Missing Endpoints:
   - GET /api/users/{id} (in code, not in docs)
   - POST /api/users (in code, not in docs)
-  
+
   Changed Endpoints:
   - PUT /api/users/{id} (parameters changed in code, docs outdated)
-  
+
   Required Action:
   1. Update documentation to match code changes
   2. Or regenerate docs by pushing a new commit
   3. ReadyLayer will re-check
-  
+
   This PR is BLOCKED until documentation is in sync.
   ```
 - **No silent auto-update** (must be explicit)
@@ -77,18 +77,18 @@ drift_prevention:
 - **Generation failures MUST block PR** with explicit error:
   ```
   ⚠️ ReadyLayer Doc Sync Failed
-  
+
   Cause: Cannot generate documentation
   Reason: Code parser failed to extract API endpoints
   Impact: Cannot ensure documentation stays in sync
-  
+
   Files Affected:
   - src/api/users.ts (Parse error at line 42)
-  
+
   Required Action:
   1. Fix parse error in code
   2. Or contact support@readylayer.com if issue persists
-  
+
   This PR is BLOCKED until documentation can be generated.
   ```
 - **No silent fallback** (cannot merge without docs)
@@ -133,33 +133,33 @@ drift_prevention:
 interface DocSyncConfig {
   enabled: boolean; // Default: true
   framework: string; // Auto-detect if not specified
-  
+
   openapi: {
     version: "3.0" | "3.1"; // Required
     output_path: string; // Required
     enhance_with_llm: boolean; // Default: true
   };
-  
+
   markdown: {
     enabled: boolean; // Default: true
     output_path: string; // Required if enabled
     template: "default" | "custom"; // Default: "default"
   };
-  
+
   update_strategy: "commit" | "pr"; // Required, default: "pr"
   branch: string; // Required
-  
+
   storage: {
     type: "github_releases" | "s3" | "registry" | "webhook";
     // ... type-specific config
   };
-  
+
   drift_prevention: {
     enabled: true; // REQUIRED: Cannot be disabled
     action: "block"; // REQUIRED: Default is "block", not "auto_update"
     check_on: "pr" | "merge" | "both"; // Required
   };
-  
+
   excluded_paths: string[]; // Default: ["**/vendor/**", "**/node_modules/**"]
 }
 
@@ -172,7 +172,7 @@ function validateDocSyncConfig(config: DocSyncConfig): ValidationResult {
       fix: "Remove 'drift_prevention.enabled: false' from config or set to true."
     };
   }
-  
+
   // Drift action must be "block" by default
   if (config.drift_prevention.action !== "block" && !hasAdminRole()) {
     return {
@@ -181,7 +181,7 @@ function validateDocSyncConfig(config: DocSyncConfig): ValidationResult {
       fix: "Set drift_prevention.action to 'block' or contact org admin for override."
     };
   }
-  
+
   // Update strategy must be explicit
   if (!config.update_strategy) {
     return {
@@ -190,7 +190,7 @@ function validateDocSyncConfig(config: DocSyncConfig): ValidationResult {
       fix: "Set update_strategy to 'commit' or 'pr' in config."
     };
   }
-  
+
   return { valid: true };
 }
 ```

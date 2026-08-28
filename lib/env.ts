@@ -1,6 +1,6 @@
 /**
  * Environment Variable Validation
- * 
+ *
  * Runtime validation with safe defaults and clear error messages
  * Uses lazy evaluation to avoid build-time errors
  */
@@ -8,33 +8,33 @@
 interface EnvConfig {
   // Database
   DATABASE_URL: string;
-  
+
   // Supabase
   NEXT_PUBLIC_SUPABASE_URL: string;
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
-  
+
   // Redis (optional - falls back to DB queue)
   REDIS_URL?: string;
-  
+
   // LLM Providers (at least one required)
   OPENAI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
   DEFAULT_LLM_PROVIDER?: 'openai' | 'anthropic';
-  
+
   // GitHub App (optional - required for GitHub integration)
   GITHUB_APP_ID?: string;
   GITHUB_APP_SECRET?: string;
   GITHUB_WEBHOOK_SECRET?: string;
-  
+
   // App Configuration
   NODE_ENV: 'development' | 'production' | 'test';
   LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error';
-  
+
   // API Configuration
   API_BASE_URL?: string;
   API_VERSION?: string;
-  
+
   // RAG Configuration (Evidence RAG Layer)
   RAG_ENABLED?: boolean;
   RAG_INGEST_ENABLED?: boolean;
@@ -74,8 +74,8 @@ class EnvValidator {
 
     // Optional with defaults
     const nodeEnv = process.env.NODE_ENV;
-    this.config.NODE_ENV = (nodeEnv === 'development' || nodeEnv === 'production' || nodeEnv === 'test') 
-      ? nodeEnv 
+    this.config.NODE_ENV = (nodeEnv === 'development' || nodeEnv === 'production' || nodeEnv === 'test')
+      ? nodeEnv
       : 'development';
     const logLevel = process.env.LOG_LEVEL;
     this.config.LOG_LEVEL = (logLevel === 'debug' || logLevel === 'info' || logLevel === 'warn' || logLevel === 'error')
@@ -93,7 +93,7 @@ class EnvValidator {
     this.config.GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
     this.config.API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3000';
     this.config.API_VERSION = process.env.API_VERSION || 'v1';
-    
+
     // RAG Configuration (defaults to disabled for safety)
     this.config.RAG_ENABLED = process.env.RAG_ENABLED === 'true';
     this.config.RAG_INGEST_ENABLED = process.env.RAG_INGEST_ENABLED === 'true';
@@ -195,7 +195,7 @@ function getEnvConfig(): EnvConfig {
   }
 
   // During build, use defaults without validation
-  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' ||
                       process.env.NEXT_PHASE === 'phase-development-build' ||
                       typeof window === 'undefined' && !process.env.DATABASE_URL;
 

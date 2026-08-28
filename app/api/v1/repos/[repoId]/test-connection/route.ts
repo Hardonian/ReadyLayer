@@ -1,6 +1,6 @@
 /**
  * Test Repository Connection API Route
- * 
+ *
  * POST /api/v1/repos/:repoId/test-connection - Test repository connection
  */
 
@@ -129,12 +129,12 @@ export async function POST(
 
     // Test connection by fetching repository info
     const prAdapter = getGitProviderPRAdapter(repo.provider as 'github' | 'gitlab' | 'bitbucket');
-    
+
     try {
       // Try to get a file from the default branch to test connection
       const testFile = 'README.md';
       const defaultBranch = 'main';
-      
+
       try {
         await prAdapter.getFileContent(
           repo.fullName,
@@ -174,8 +174,8 @@ export async function POST(
       });
     } catch (apiError) {
       const errorMessage = apiError instanceof Error ? apiError.message : String(apiError);
-      const isAuthError = errorMessage.includes('401') || 
-                         errorMessage.includes('403') || 
+      const isAuthError = errorMessage.includes('401') ||
+                         errorMessage.includes('403') ||
                          errorMessage.includes('Unauthorized') ||
                          errorMessage.includes('Forbidden');
       const isNotFoundError = errorMessage.includes('404') || errorMessage.includes('not found');

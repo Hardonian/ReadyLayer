@@ -21,7 +21,7 @@ console = Console()
 def get_git_info(project_root: Path) -> tuple[str | None, str | None]:
     """Get git commit SHA and branch."""
     import subprocess
-    
+
     try:
         sha = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -32,7 +32,7 @@ def get_git_info(project_root: Path) -> tuple[str | None, str | None]:
         ).stdout.strip()
     except Exception:
         sha = None
-    
+
     try:
         branch = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
@@ -43,7 +43,7 @@ def get_git_info(project_root: Path) -> tuple[str | None, str | None]:
         ).stdout.strip()
     except Exception:
         branch = None
-    
+
     return sha, branch
 
 
@@ -92,7 +92,7 @@ def main(
 ) -> int:
     """
     Readiness Engine - Judge codebase production-readiness.
-    
+
     Runs all configured tools, normalizes findings, and generates
     machine- and human-readable reports.
     """
@@ -103,15 +103,15 @@ def main(
         title="AI Code Readiness Platform",
         border_style="blue",
     ))
-    
+
     # Get git info
     commit_sha, branch = get_git_info(project_root)
     if commit_sha:
         console.print(f"Git commit: [dim]{commit_sha[:8]}[/dim] on [dim]{branch}[/dim]")
-    
+
     # Initialize engine
     engine = ReadinessEngine(project_name, project_root)
-    
+
     # Skip tools if specified
     if skip_tools:
         skip_list = [t.strip() for t in skip_tools.split(",")]
@@ -119,16 +119,16 @@ def main(
             if tool in engine.parsers:
                 del engine.parsers[tool]
                 console.print(f"[yellow]Skipping {tool}[/yellow]")
-    
+
     # Run assessment
     console.print("\n[bold]Running assessment...[/bold]")
-    
+
     try:
         verdict = engine.assess_readiness(commit_sha, branch)
     except Exception as e:
         console.print(f"[bold red]Assessment failed: {e}[/bold red]")
         return 1
-    
+
     # Generate outputs
     console.print("[bold]Generating reports...[/bold]")
     try:
@@ -136,10 +136,10 @@ def main(
     except Exception as e:
         console.print(f"[bold red]Report generation failed: {e}[/bold red]")
         return 1
-    
+
     # Display results
     console.print("\n" + "=" * 60)
-    
+
     if verdict.ready:
         console.print(Panel(
             "[bold green]✅ READY FOR PRODUCTION[/bold green]",
@@ -152,20 +152,20 @@ def main(
             f"High: {verdict.metrics.high_count}",
             border_style="red",
         ))
-    
+
     # Summary table
     table = Table(title="Findings Summary")
     table.add_column("Severity", style="bold")
     table.add_column("Count", justify="right")
     table.add_column("Indicator")
-    
+
     severities = [
         ("BLOCKER", verdict.metrics.blocker_count, "🔴"),
         ("HIGH", verdict.metrics.high_count, "🟠"),
         ("MEDIUM", verdict.metrics.medium_count, "🟡"),
         ("LOW", verdict.metrics.low_count, "🟢"),
     ]
-    
+
     for sev, count, indicator in severities:
         color = {
             "BLOCKER": "red",
@@ -178,37 +178,37 @@ def main(
             str(count),
             indicator,
         )
-    
+
     table.add_row("[bold]Total[/bold]", str(verdict.metrics.total_findings), "")
     console.print(table)
-    
+
     # By category
     if verdict.metrics.by_category:
         cat_table = Table(title="By Category")
         cat_table.add_column("Category")
         cat_table.add_column("Count", justify="right")
-        
+
         for cat, count in sorted(verdict.metrics.by_category.items()):
             if count > 0:
                 cat_table.add_row(cat, str(count))
-        
+
         console.print(cat_table)
-    
+
     # Output files
     console.print("\n[bold]Generated Reports:[/bold]")
     for name, path in outputs.items():
         console.print(f"  • [cyan]{name}:[/cyan] [dim]{path}[/dim]")
-    
+
     # Determine exit code
     exit_code = 0
     if fail_on_blocker and verdict.metrics.blocker_count > 0:
         exit_code = 1
     if fail_on_high and verdict.metrics.high_count > 0:
         exit_code = 1
-    
+
     if exit_code != 0:
         console.print(f"\n[bold red]Exiting with code {exit_code} due to readiness issues[/bold red]")
-    
+
     return exit_code
 
 

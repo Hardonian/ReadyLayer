@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 /**
  * Expected Database Contract Inventory
- * 
+ *
  * Builds expected backend contract from:
  * - Prisma schema (schema.prisma)
  * - Migration files
  * - App code references
- * 
+ *
  * Usage:
  *   tsx scripts/db-inventory-expected.ts > expected-inventory.json
  */
@@ -91,7 +91,7 @@ function parsePrismaSchema(): ExpectedContract {
     const fieldMatches = modelBody.matchAll(/^\s+(\w+)\s+(\S+)(.*)$/gm);
     for (const fieldMatch of fieldMatches) {
       const [, fieldName, fieldType, modifiers] = fieldMatch;
-      
+
       const isOptional = modifiers.includes('?');
       const isId = modifiers.includes('@id');
       const hasDefault = modifiers.match(/@default\(([^)]+)\)/);
@@ -133,7 +133,7 @@ function parsePrismaSchema(): ExpectedContract {
       const columnsStr = indexMatch[1];
       const columns = columnsStr.split(',').map(c => c.trim().replace(/"/g, ''));
       const isUnique = indexMatch[0].includes('unique: true');
-      
+
       indexes.push({
         name: `${modelName}_${columns.join('_')}_idx`,
         columns,
@@ -146,7 +146,7 @@ function parsePrismaSchema(): ExpectedContract {
     for (const uniqueMatch of uniqueMatches) {
       const columnsStr = uniqueMatch[1];
       const columns = columnsStr.split(',').map(c => c.trim().replace(/"/g, ''));
-      
+
       constraints.push({
         name: `${modelName}_${columns.join('_')}_key`,
         type: 'UNIQUE',
@@ -207,7 +207,7 @@ function parseMigrationSQL(): Partial<ExpectedContract> {
     const tableMatches = migrationContent.matchAll(/CREATE TABLE IF NOT EXISTS "(\w+)"\s*\(/g);
     for (const tableMatch of tableMatches) {
       const tableName = tableMatch[1];
-      
+
       // Extract RLS policies for this table
       const policyRegex = new RegExp(
         `(?:DROP POLICY IF EXISTS|CREATE POLICY)\\s+"([^"]+)"\\s+ON\\s+"${tableName}"[^;]+;`,
@@ -218,7 +218,7 @@ function parseMigrationSQL(): Partial<ExpectedContract> {
       for (const polMatch of policyMatches) {
         const policyDef = polMatch[0];
         const policyName = polMatch[1];
-        
+
         let command: ExpectedTable['policies'][0]['command'] = 'ALL';
         if (policyDef.includes('FOR SELECT')) command = 'SELECT';
         else if (policyDef.includes('FOR INSERT')) command = 'INSERT';
@@ -247,7 +247,7 @@ function parseMigrationSQL(): Partial<ExpectedContract> {
         const triggerName = trigMatch[1];
         const timing = trigMatch[2] as 'BEFORE' | 'AFTER';
         const event = trigMatch[3];
-        
+
         // Find function name
         const funcMatch = migrationContent.match(
           new RegExp(`${triggerName}[^;]+EXECUTE FUNCTION\\s+([^(]+)`, 'i')

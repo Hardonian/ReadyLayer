@@ -45,13 +45,13 @@ This directory contains optimized visual assets for the ReadyLayer application.
 
 **Generation Recipe:**
 ```
-Modern flat illustration showing AI-powered code governance concept. 
-Central composition: code editor window with syntax-highlighted code 
-on left, flowing through a shield/badge icon in center, emerging as 
-checked/approved code on right. Floating elements: git branch icons, 
-PR symbols, checkmarks. Color palette: primary blue (#135bec), white 
-background, subtle gray accents. Clean 2px line art style, minimal 
-shadows, rounded corners (12px radius feel). Professional, trustworthy, 
+Modern flat illustration showing AI-powered code governance concept.
+Central composition: code editor window with syntax-highlighted code
+on left, flowing through a shield/badge icon in center, emerging as
+checked/approved code on right. Floating elements: git branch icons,
+PR symbols, checkmarks. Color palette: primary blue (#135bec), white
+background, subtle gray accents. Clean 2px line art style, minimal
+shadows, rounded corners (12px radius feel). Professional, trustworthy,
 developer-focused aesthetic. No text. Transparent or white background.
 ```
 
@@ -68,11 +68,11 @@ developer-focused aesthetic. No text. Transparent or white background.
 
 **Generation Recipe:**
 ```
-Minimal flat illustration of empty repository state. Single floating 
-Git branch icon with dotted connection lines extending to empty space. 
-Subtle question mark or "?" floating nearby. Soft gray tones with 
-primary blue (#135bec) accent on the branch icon. Clean background 
-matching surface-muted color. Friendly, inviting, not alarming. 
+Minimal flat illustration of empty repository state. Single floating
+Git branch icon with dotted connection lines extending to empty space.
+Subtle question mark or "?" floating nearby. Soft gray tones with
+primary blue (#135bec) accent on the branch icon. Clean background
+matching surface-muted color. Friendly, inviting, not alarming.
 Decorative only - no text elements.
 ```
 
@@ -89,10 +89,10 @@ Decorative only - no text elements.
 
 **Generation Recipe:**
 ```
-Minimal flat illustration of empty document review state. Document 
-icon with magnifying glass floating above it, both with soft gray 
-tones. Primary blue (#135bec) accent on magnifying glass handle. 
-Subtle dashed lines suggesting "searching." Clean, minimal, matches 
+Minimal flat illustration of empty document review state. Document
+icon with magnifying glass floating above it, both with soft gray
+tones. Primary blue (#135bec) accent on magnifying glass handle.
+Subtle dashed lines suggesting "searching." Clean, minimal, matches
 surface-muted background. Decorative illustration.
 ```
 
@@ -109,10 +109,10 @@ surface-muted background. Decorative illustration.
 
 **Generation Recipe:**
 ```
-Minimal flat illustration of empty policy state. Shield icon with 
-dotted outline (suggesting incomplete/unfilled) floating center. 
-Small gear icons floating nearby. Soft gray tones with primary blue 
-(#135bec) accent on shield border. Clean, minimal style. Background 
+Minimal flat illustration of empty policy state. Shield icon with
+dotted outline (suggesting incomplete/unfilled) floating center.
+Small gear icons floating nearby. Soft gray tones with primary blue
+(#135bec) accent on shield border. Clean, minimal style. Background
 matches surface-muted. Decorative only.
 ```
 
@@ -129,10 +129,10 @@ matches surface-muted. Decorative only.
 
 **Generation Recipe:**
 ```
-Minimal flat illustration of empty pipeline state. Pipeline/workflow 
-icon (horizontal line with circles) with dotted/disconnected segments. 
-Soft gray tones with primary blue (#135bec) accent on connected 
-segments. Suggests "waiting to start." Clean, minimal. Background 
+Minimal flat illustration of empty pipeline state. Pipeline/workflow
+icon (horizontal line with circles) with dotted/disconnected segments.
+Soft gray tones with primary blue (#135bec) accent on connected
+segments. Suggests "waiting to start." Clean, minimal. Background
 matches surface-muted. Decorative illustration.
 ```
 
@@ -149,11 +149,11 @@ matches surface-muted. Decorative illustration.
 
 **Generation Recipe:**
 ```
-Friendly flat illustration for error state. Robot or computer mascot 
-with puzzled/confused expression, looking at a broken gear or warning 
-triangle. Use warning amber (#f59e0b) and danger red (#ef4444) accents 
-sparingly. Keep it friendly, not scary. Soft gray and white tones 
-dominant. Clean line art style. Background white/light surface. 
+Friendly flat illustration for error state. Robot or computer mascot
+with puzzled/confused expression, looking at a broken gear or warning
+triangle. Use warning amber (#f59e0b) and danger red (#ef4444) accents
+sparingly. Keep it friendly, not scary. Soft gray and white tones
+dominant. Clean line art style. Background white/light surface.
 Conveys "something went wrong but we're on it" feeling.
 ```
 
@@ -170,10 +170,10 @@ Conveys "something went wrong but we're on it" feeling.
 
 **Generation Recipe:**
 ```
-Friendly flat illustration for 404 page. Mascot character looking 
-around confused, searching for something. Magnifying glass nearby, 
-empty page/document floating. Use primary blue (#135bec) and muted 
-gray tones. Keep playful but professional. Clean line art. White 
+Friendly flat illustration for 404 page. Mascot character looking
+around confused, searching for something. Magnifying glass nearby,
+empty page/document floating. Use primary blue (#135bec) and muted
+gray tones. Keep playful but professional. Clean line art. White
 background. Conveys "we couldn't find that page" feeling.
 ```
 
@@ -190,10 +190,10 @@ background. Conveys "we couldn't find that page" feeling.
 
 **Generation Recipe:**
 ```
-Friendly flat illustration for auth error. Shield icon with subtle 
-X mark or lock with keyhole. Mascot character shrugging or showing 
-key that's too big/small. Use danger red (#ef4444) sparingly for 
-X mark only. Soft grays and primary blue dominant. Clean, minimal. 
+Friendly flat illustration for auth error. Shield icon with subtle
+X mark or lock with keyhole. Mascot character shrugging or showing
+key that's too big/small. Use danger red (#ef4444) sparingly for
+X mark only. Soft grays and primary blue dominant. Clean, minimal.
 White background. Conveys "can't authenticate" without being scary.
 ```
 
@@ -212,8 +212,8 @@ White background. Conveys "can't authenticate" without being scary.
 
 **Generation Recipe:**
 ```
-Small flat illustration: Shield icon protecting a code document. 
-Shield has checkmark. Clean, minimal. Primary blue (#135bec) shield, 
+Small flat illustration: Shield icon protecting a code document.
+Shield has checkmark. Clean, minimal. Primary blue (#135bec) shield,
 gray document. 2px line weight. Decorative icon illustration.
 ```
 
@@ -230,8 +230,8 @@ gray document. 2px line weight. Decorative icon illustration.
 
 **Generation Recipe:**
 ```
-Small flat illustration: Three puzzle pieces or modular blocks 
-connecting together to form complete solution. Primary blue 
+Small flat illustration: Three puzzle pieces or modular blocks
+connecting together to form complete solution. Primary blue
 (#135bec) and gray tones. Clean line art. Decorative icon.
 ```
 
@@ -248,8 +248,8 @@ connecting together to form complete solution. Primary blue
 
 **Generation Recipe:**
 ```
-Small flat illustration: Two documents with arrows/sync icon between 
-them showing alignment. Primary blue (#135bec) arrows, gray documents. 
+Small flat illustration: Two documents with arrows/sync icon between
+them showing alignment. Primary blue (#135bec) arrows, gray documents.
 Clean, minimal line art. Decorative icon.
 ```
 
@@ -266,8 +266,8 @@ Clean, minimal line art. Decorative icon.
 
 **Generation Recipe:**
 ```
-Small flat illustration: Git branch diagram with merge flow. Branch 
-lines connecting to central hub. Primary blue (#135bec) flow, gray 
+Small flat illustration: Git branch diagram with merge flow. Branch
+lines connecting to central hub. Primary blue (#135bec) flow, gray
 branch points. Clean line art. Decorative icon.
 ```
 

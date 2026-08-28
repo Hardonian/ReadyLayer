@@ -9,16 +9,16 @@ logger = get_logger(__name__)
 @register_handler
 class AnomalyScoreHandler(BaseHandler):
     """Handler for anomaly.score job type.
-    
+
     Runs anomaly detection scoring on datasets.
     Safe no-op unless dataset exists.
     """
-    
+
     job_type = "anomaly.score"
-    
+
     def validate_payload(self, payload: dict) -> dict:
         """Validate anomaly.score payload.
-        
+
         Expected payload:
             - dataset_id: str - Dataset to analyze
             - model_id: str (optional) - Anomaly model to use
@@ -30,14 +30,14 @@ class AnomalyScoreHandler(BaseHandler):
         for field in required:
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
-        
+
         valid_algorithms = ["isolation_forest", "z_score", "iqr", "dbscan", "lof"]
         if payload["algorithm"] not in valid_algorithms:
             raise ValueError(
                 f"Invalid algorithm: {payload['algorithm']}. "
                 f"Must be one of: {valid_algorithms}"
             )
-        
+
         # Validate threshold if provided
         if "threshold" in payload:
             threshold = payload["threshold"]
@@ -45,16 +45,16 @@ class AnomalyScoreHandler(BaseHandler):
                 raise ValueError(f"Threshold must be between 0 and 1, got {threshold}")
         else:
             payload["threshold"] = 0.95  # Default threshold
-        
+
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         """Execute anomaly scoring.
-        
+
         Args:
             payload: Validated payload
             context: Execution context with worker_id
-        
+
         Returns:
             JobResult with anomaly scores
         """
@@ -63,7 +63,7 @@ class AnomalyScoreHandler(BaseHandler):
         threshold = payload["threshold"]
         features = payload.get("features", [])
         model_id = payload.get("model_id", "default")
-        
+
         logger.info(
             "Starting anomaly scoring",
             dataset_id=dataset_id,
@@ -72,7 +72,7 @@ class AnomalyScoreHandler(BaseHandler):
             feature_count=len(features),
             threshold=threshold,
         )
-        
+
         # Safe no-op: If no features specified, return empty result
         if not features:
             logger.info("No features specified for analysis, returning empty result")
@@ -87,7 +87,7 @@ class AnomalyScoreHandler(BaseHandler):
                     "message": "No features specified for anomaly detection",
                 }
             )
-        
+
         # Stub: Simulate anomaly detection
         # In production, this would:
         # 1. Load dataset from storage
@@ -95,10 +95,10 @@ class AnomalyScoreHandler(BaseHandler):
         # 3. Score each record
         # 4. Flag anomalies above threshold
         # 5. Store results
-        
+
         total_records = 1000  # Stub
         anomaly_count = int(total_records * (1 - threshold))  # Stub
-        
+
         result_data = {
             "dataset_id": dataset_id,
             "algorithm": algorithm,
@@ -111,14 +111,14 @@ class AnomalyScoreHandler(BaseHandler):
             "features_analyzed": features,
             "worker_id": context.get("worker_id"),
         }
-        
+
         logger.info(
             "Anomaly scoring complete",
             dataset_id=dataset_id,
             total_records=total_records,
             anomalies=anomaly_count,
         )
-        
+
         return JobResult(
             success=True,
             data=result_data,

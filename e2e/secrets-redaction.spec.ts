@@ -1,6 +1,6 @@
 /**
  * Secrets Redaction E2E Test Suite
- * 
+ *
  * Verifies that:
  * 1. Secrets are detected in code
  * 2. Secrets are properly redacted
@@ -28,9 +28,9 @@ describe('Secrets Redaction Service', () => {
         const apiKey = 'sk-proj-abcdefghijklmnopqrst12345';
         const client = new OpenAI({ apiKey });
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('api-key-openai');
       expect(result.redacted).toContain('[API-KEY-OPENAI_REDACTED]');
@@ -42,9 +42,9 @@ describe('Secrets Redaction Service', () => {
         const awsKey = 'AKIAIOSFODNN7EXAMPLE';
         const config = { accessKeyId: awsKey };
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('api-key-aws');
       expect(result.redacted).toContain('[API-KEY-AWS_REDACTED]');
@@ -56,9 +56,9 @@ describe('Secrets Redaction Service', () => {
         const token = 'ghp_1234567890abcdefghijklmnopqrstuvwxyz';
         const auth = { token };
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('api-key-github');
       expect(result.redacted).toContain('[API-KEY-GITHUB_REDACTED]');
@@ -70,9 +70,9 @@ describe('Secrets Redaction Service', () => {
         const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
         authorize(token);
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('jwt-token');
       expect(result.redacted).toContain('[JWT-TOKEN_REDACTED]');
@@ -84,9 +84,9 @@ describe('Secrets Redaction Service', () => {
         const dbUrl = 'postgresql://user:password@localhost:5432/mydb';
         const client = new Client({ connectionString: dbUrl });
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('database-url');
       expect(result.redacted).toContain('[DATABASE-URL_REDACTED]');
@@ -98,9 +98,9 @@ describe('Secrets Redaction Service', () => {
         const dbPassword = password="superSecretPassword123";
         const config = { password: "anotherSecret" };
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBeGreaterThan(0);
       expect(result.secretTypes).toContain('password-literal');
       expect(result.redacted).toContain('[PASSWORD-LITERAL_REDACTED]');
@@ -112,9 +112,9 @@ describe('Secrets Redaction Service', () => {
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
 -----END PRIVATE KEY-----\`;
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.secretTypes).toContain('private-key-begin');
       expect(result.redacted).toContain('[PRIVATE-KEY-BEGIN_REDACTED]');
@@ -155,9 +155,9 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
         const dbUrl = 'postgresql://user:pass@localhost/db';
         const jwtToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sub';
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(4);
       expect(result.secretTypes.length).toBe(4);
       expect(result.secretTypes).toContain('api-key-openai');
@@ -171,9 +171,9 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
         const email = 'user@example.com';
         const contact = 'support@company.com';
       `;
-      
+
       const result = redactSecrets(code, { redactEmail: false, logDetections: false });
-      
+
       expect(result.redacted).toContain('user@example.com');
       expect(result.secretsFound).toBe(0);
     });
@@ -183,9 +183,9 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
         const email = 'user@example.com';
         const contact = 'support@company.com';
       `;
-      
+
       const result = redactSecrets(code, { redactEmail: true, logDetections: false });
-      
+
       expect(result.secretsFound).toBe(2);
       expect(result.secretTypes).toContain('email-address');
       expect(result.redacted).not.toContain('@example.com');
@@ -199,9 +199,9 @@ function authenticate(apiKey) {
   return client.send();
 }
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       // Code structure should be preserved
       expect(result.redacted).toContain('function authenticate');
       expect(result.redacted).toContain('if (!apiKey)');
@@ -211,7 +211,7 @@ function authenticate(apiKey) {
 
     it('should handle empty code', () => {
       const result = redactSecrets('', { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(0);
       expect(result.redacted).toBe('');
     });
@@ -222,9 +222,9 @@ function hello(name) {
   console.log(\`Hello, \${name}!\`);
 }
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(0);
       expect(result.redacted).toBe(code);
     });
@@ -246,21 +246,21 @@ function hello(name) {
     it('should calculate secret density correctly', () => {
       const code = 'sk-proj-1234567890abcdefghij'; // Entire string is secret
       const density = getSecretDensity(code);
-      
+
       expect(density).toBeGreaterThan(90); // Nearly 100% secret
     });
 
     it('should return 0 for code without secrets', () => {
       const code = 'const name = "John";';
       const density = getSecretDensity(code);
-      
+
       expect(density).toBe(0);
     });
 
     it('should calculate partial secret density', () => {
       const code = 'const apiKey = "sk-proj-1234567890abcdefghij";';
       const density = getSecretDensity(code);
-      
+
       expect(density).toBeGreaterThan(0);
       expect(density).toBeLessThan(100);
     });
@@ -278,9 +278,9 @@ function hello(name) {
           content: "const dbUrl = 'postgresql://user:pass@localhost/db';",
         },
       ];
-      
+
       const results = redactSecretsFromFiles(files);
-      
+
       expect(results).toHaveLength(2);
       expect(results[0].secretsFound).toBe(1);
       expect(results[0].secretTypes).toContain('api-key-openai');
@@ -295,7 +295,7 @@ function hello(name) {
     it('should redact secrets for logging', () => {
       const text = "The API key is 'sk-proj-1234567890abcdefghij' for auth";
       const safe = makeSafeForLogging(text);
-      
+
       expect(safe).not.toContain('sk-proj-');
       expect(safe).toContain('[API-KEY-OPENAI_REDACTED]');
     });
@@ -303,7 +303,7 @@ function hello(name) {
     it('should truncate long text', () => {
       const text = 'a'.repeat(200);
       const safe = makeSafeForLogging(text, 50);
-      
+
       expect(safe.length).toBeLessThanOrEqual(53); // 50 + '...'
       expect(safe).toContain('...');
     });
@@ -325,10 +325,10 @@ function hello(name) {
     it('should track redaction statistics', () => {
       const code = "const apiKey = 'sk-proj-1234567890abcdefghij';";
       const result = redactSecrets(code, { logDetections: false });
-      
+
       updateRedactionStats(result);
       const stats = getRedactionStats();
-      
+
       expect(stats.totalChecks).toBeGreaterThan(0);
       expect(stats.averageSecretsPerFile).toBeGreaterThan(0);
     });
@@ -407,7 +407,7 @@ export function setupServices() {
 const apiKey = 'sk-proj-' +
   '1234567890abcdefghij';
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
       // Note: Multi-line secrets might not be detected by this pattern,
       // which is expected as they're rare in practice
@@ -419,9 +419,9 @@ const apiKey = 'sk-proj-' +
 // Legacy key: sk-proj-1234567890abcdefghij
 function oldAuth() { }
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       expect(result.secretsFound).toBe(1);
       expect(result.redacted).not.toContain('sk-proj-');
     });
@@ -431,9 +431,9 @@ function oldAuth() { }
 const randomId = 'aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0uV';
 const hash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       // These might or might not be flagged depending on pattern matching
       expect(result).toBeDefined();
     });
@@ -442,9 +442,9 @@ const hash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
       const code = `
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
       `;
-      
+
       const result = redactSecrets(code, { logDetections: false });
-      
+
       // Base64 data might trigger docker-config pattern but is generally safe
       expect(result).toBeDefined();
     });

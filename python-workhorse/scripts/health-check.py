@@ -15,16 +15,16 @@ def main():
     """Run health check and exit with appropriate code."""
     try:
         status = get_health_status()
-        
+
         # Print status as JSON
         print(json.dumps(status, indent=2))
-        
+
         # Exit 0 if healthy, 1 if unhealthy
         if status.get("status") == "healthy":
             sys.exit(0)
         else:
             sys.exit(1)
-    
+
     except Exception as e:
         print(json.dumps({
             "status": "unhealthy",

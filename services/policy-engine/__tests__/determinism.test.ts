@@ -1,6 +1,6 @@
 /**
  * Policy Engine Determinism Tests
- * 
+ *
  * Ensures same inputs + same policy = identical results
  */
 

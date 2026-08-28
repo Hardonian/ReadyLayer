@@ -1,6 +1,6 @@
 /**
  * Waiver Management API
- * 
+ *
  * POST   /api/v1/waivers - Create waiver
  * GET    /api/v1/waivers - List waivers
  */
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validated = createWaiverSchema.parse(bodyResult.data);
 
     // Verify user belongs to organization
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const severity = validated.ruleId.startsWith('security.') ? 'critical' :
                        validated.ruleId.startsWith('quality.') ? 'high' :
                        validated.ruleId.startsWith('style.') ? 'low' : 'medium';
-      
+
       await trackWaiverCreated({
         organizationId: validated.organizationId,
         repositoryId: validated.repositoryId || null,

@@ -1,6 +1,6 @@
 /**
  * Notification Service
- * 
+ *
  * Unified interface for sending notifications across multiple channels:
  * - Email (SendGrid/Postmark)
  * - Slack

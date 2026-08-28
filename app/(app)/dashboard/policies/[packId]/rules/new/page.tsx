@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -15,8 +15,8 @@ import {
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
-import { 
-  Shield, 
+import {
+  Shield,
   ArrowLeft,
   Save,
 } from 'lucide-react'

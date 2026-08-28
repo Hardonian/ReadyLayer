@@ -1,6 +1,6 @@
 /**
  * Cursor IDE Integration
- * 
+ *
  * ReadyLayer extension for Cursor IDE
  * Provides inline code review, test generation, and policy enforcement
  */
@@ -81,7 +81,7 @@ export function initializeReadyLayer(config: CursorConfig): void {
 
   // Register Cursor commands
   registerCommands(config);
-  
+
   // Setup file watchers for auto-review
   if (config.readyLayer.autoReview) {
     setupFileWatchers(config);
@@ -152,14 +152,14 @@ async function reviewFile(filePath: string, config: CursorConfig): Promise<void>
       throw new Error(`Review failed: ${response.statusText}`);
     }
 
-     
+
     const result = await response.json() as {
       data?: {
         issuesCount?: number;
         issues?: unknown[];
       };
     };
-    
+
     if ((result.data?.issuesCount ?? 0) > 0) {
       cursor.window.showWarningMessage(
         `Found ${result.data?.issuesCount ?? 0} issue(s)`,
@@ -204,14 +204,14 @@ async function generateTests(filePath: string, config: CursorConfig): Promise<vo
       throw new Error(`Test generation failed: ${response.statusText}`);
     }
 
-     
+
     const result = await response.json() as {
       data?: {
         testContent?: string;
         placement?: string;
       };
     };
-    
+
     if (result.data?.testContent) {
       // Show test preview
       showTestPreview(result.data.testContent, result.data.placement ?? '');
@@ -254,7 +254,7 @@ function setupInlineDiagnostics(config: CursorConfig): void {
           (issue.column ?? 0) + 1
         ),
         message: issue.message,
-        severity: issue.severity === 'critical' || issue.severity === 'high' 
+        severity: issue.severity === 'critical' || issue.severity === 'high'
           ? cursor.DiagnosticSeverity.Error
           : issue.severity === 'medium'
           ? cursor.DiagnosticSeverity.Warning
@@ -310,7 +310,7 @@ async function getFileIssues(filePath: string, config: CursorConfig): Promise<Is
       return null;
     }
 
-     
+
     const result = await response.json() as {
       data?: {
         issues?: Issue[];
@@ -330,7 +330,7 @@ function showIssuesPanel(issues: Issue[]): void {
   const outputChannel = cursor.window.createOutputChannel('ReadyLayer Issues');
   outputChannel.clear();
   outputChannel.appendLine(`Found ${issues.length} issue(s):\n`);
-  
+
   issues.forEach((issue, index) => {
     outputChannel.appendLine(`${index + 1}. ${issue.severity.toUpperCase()}: ${issue.ruleId}`);
     outputChannel.appendLine(`   ${issue.file}:${issue.line}`);
@@ -340,7 +340,7 @@ function showIssuesPanel(issues: Issue[]): void {
     }
     outputChannel.appendLine('');
   });
-  
+
   outputChannel.show();
 }
 

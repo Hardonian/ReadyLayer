@@ -1,6 +1,6 @@
 /**
  * Secrets Encryption Utilities
- * 
+ *
  * Encrypts/decrypts sensitive data at rest using AES-256-GCM
  * Uses environment variable ENCRYPTION_KEY (32 bytes, base64 encoded)
  */
@@ -18,7 +18,7 @@ const KEY_LENGTH = 32; // 256 bits
  */
 function getEncryptionKey(): Buffer {
   const envKey = process.env.ENCRYPTION_KEY;
-  
+
   if (!envKey) {
     throw new Error(
       'ENCRYPTION_KEY environment variable is required. ' +
@@ -57,12 +57,12 @@ export function encrypt(plaintext: string): string {
 
     let encrypted = cipher.update(plaintext, 'utf8', 'base64');
     encrypted += cipher.final('base64');
-    
+
     const authTag = cipher.getAuthTag();
 
     // Combine IV, auth tag, and encrypted data
     const combined = `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
-    
+
     return combined;
   } catch (error) {
     logger.error({

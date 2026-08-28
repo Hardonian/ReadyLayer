@@ -303,7 +303,7 @@ All service methods have async variants returning `CompletableFuture`:
 // Async repository operations
 client.repositories().listAsync()
     .thenAccept(repos -> {
-        repos.getRepositories().forEach(repo -> 
+        repos.getRepositories().forEach(repo ->
             System.out.println(repo.getFullName())
         );
     })
@@ -314,7 +314,7 @@ client.repositories().listAsync()
 
 // Compose async operations
 client.repositories().getAsync("repo-id")
-    .thenCompose(repo -> 
+    .thenCompose(repo ->
         client.reviews().createAsync(
             CreateReviewRequest.builder()
                 .repositoryId(repo.getId())
@@ -322,7 +322,7 @@ client.repositories().getAsync("repo-id")
                 .build()
         )
     )
-    .thenAccept(review -> 
+    .thenAccept(review ->
         System.out.println("Review created: " + review.getId())
     );
 ```

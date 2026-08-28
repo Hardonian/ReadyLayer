@@ -1,9 +1,9 @@
 /**
  * Secrets Detection & Redaction Service
- * 
+ *
  * Automatically detects and redacts sensitive information before sending code to LLM.
  * Prevents accidental exposure of API keys, credentials, tokens, and PII.
- * 
+ *
  * Patterns detected:
  * - API keys (OpenAI, AWS, GitHub, etc.)
  * - Database credentials and connection strings

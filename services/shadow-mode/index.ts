@@ -1,9 +1,9 @@
 /**
  * Shadow Mode Service
- * 
+ *
  * Runs ReadyLayer analysis on AI-touched diffs without blocking merges
  * Produces "what would have been caught" reports for validation
- * 
+ *
  * Purpose: Validate ReadyLayer usefulness before enforcement
  */
 

@@ -40,7 +40,7 @@ export async function GET(): Promise<NextResponse> {
 
     const health = await healthChecker.checkHealth();
     const statusCode = health.status === 'healthy' ? 200 : 503;
-    
+
     // Add environment check to response
     return NextResponse.json({
       ...health,

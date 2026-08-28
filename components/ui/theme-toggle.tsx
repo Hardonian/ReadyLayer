@@ -7,9 +7,9 @@ import { Button } from './button'
 
 /**
  * ThemeToggle - Simple theme switcher component
- * 
+ *
  * Cycles between light and dark themes (system preference handled by ThemeProvider)
- * 
+ *
  * Features:
  * - Accessible keyboard navigation
  * - Visual feedback for current selection

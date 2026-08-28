@@ -9,7 +9,7 @@ Added a non-breaking Python "workhorse" subsystem to ReadyLayer for CPU-intensiv
 ```
 python-workhorse/
 ├── ARCHITECTURE.md              # System design and decisions
-├── README.md                    # Setup and operation guide  
+├── README.md                    # Setup and operation guide
 ├── requirements.txt             # Python dependencies
 ├── .env.example                 # Environment template
 ├── Dockerfile                   # Container build

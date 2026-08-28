@@ -1,6 +1,6 @@
 /**
  * Dashboard Findings Snapshot API
- * 
+ *
  * GET /api/dashboard/findings - Get findings inbox snapshot
  */
 

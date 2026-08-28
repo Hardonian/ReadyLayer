@@ -1,10 +1,10 @@
 /**
  * Prometheus Metrics Integration
- * 
+ *
  * P2: Production-ready Prometheus metrics exporter
  * Provides HTTP endpoint for metrics scraping with
  * support for counters, gauges, histograms, and summaries.
- * 
+ *
  * Features:
  * - OpenMetrics format output
  * - Custom metric registration
@@ -49,7 +49,7 @@ class MetricCollector {
 
   record(value: number, labels: Record<string, string> = {}): void {
     const labelKey = this.getLabelKey(labels);
-    
+
     // Check cardinality
     if (!this.values.has(labelKey) && this.values.size >= this.maxCardinality) {
       logger.warn({
@@ -60,7 +60,7 @@ class MetricCollector {
     }
 
     const existing = this.values.get(labelKey);
-    
+
     switch (this.definition.type) {
       case 'counter':
         this.values.set(labelKey, {
@@ -69,7 +69,7 @@ class MetricCollector {
           timestamp: Date.now(),
         });
         break;
-      
+
       case 'gauge':
         this.values.set(labelKey, {
           value,
@@ -77,11 +77,11 @@ class MetricCollector {
           timestamp: Date.now(),
         });
         break;
-      
+
       case 'histogram':
         this.recordHistogram(labelKey, labels, value);
         break;
-      
+
       case 'summary':
         this.recordSummary(labelKey, labels, value);
         break;
@@ -92,13 +92,13 @@ class MetricCollector {
     // Store raw values for histogram calculation
     const existing = this.values.get(labelKey);
     const values = existing ? [...(existing as unknown as { values: number[] }).values, value] : [value];
-    
+
     this.values.set(labelKey, {
       value: 0, // Placeholder
       labels,
       timestamp: Date.now(),
     } as unknown as MetricValue);
-    
+
     // Store values array as hidden property
     (this.values.get(labelKey) as unknown as { values: number[] }).values = values;
   }
@@ -107,23 +107,23 @@ class MetricCollector {
     // Similar to histogram but for quantiles
     const existing = this.values.get(labelKey);
     const values = existing ? [...(existing as unknown as { values: number[] }).values, value] : [value];
-    
+
     this.values.set(labelKey, {
       value: 0,
       labels,
       timestamp: Date.now(),
     } as unknown as MetricValue);
-    
+
     (this.values.get(labelKey) as unknown as { values: number[] }).values = values;
   }
 
   getOutput(): string {
     const lines: string[] = [];
-    
+
     // Metric header
     lines.push(`# HELP ${this.definition.name} ${this.definition.help}`);
     lines.push(`# TYPE ${this.definition.name} ${this.definition.type}`);
-    
+
     // Output values
     if (this.definition.type === 'histogram') {
       lines.push(...this.getHistogramOutput());
@@ -135,18 +135,18 @@ class MetricCollector {
         lines.push(`${this.definition.name}${labelStr} ${metricValue.value}`);
       }
     }
-    
+
     return lines.join('\n');
   }
 
   private getHistogramOutput(): string[] {
     const lines: string[] = [];
     const buckets = this.definition.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10];
-    
+
     for (const [_, metricValue] of this.values) {
       const labelStr = this.formatLabels(metricValue.labels);
       const values = (metricValue as unknown as { values: number[] }).values || [];
-      
+
       // Bucket counts
       let cumulativeCount = 0;
       for (const bucket of buckets) {
@@ -154,44 +154,44 @@ class MetricCollector {
         cumulativeCount = count;
         lines.push(`${this.definition.name}_bucket{le="${bucket}"${labelStr.replace('{', ',').replace('}', '')}} ${cumulativeCount}`);
       }
-      
+
       // +Inf bucket
       lines.push(`${this.definition.name}_bucket{le="+Inf"${labelStr.replace('{', ',').replace('}', '')}} ${values.length}`);
-      
+
       // Sum and count
       const sum = values.reduce((a, b) => a + b, 0);
       lines.push(`${this.definition.name}_sum${labelStr} ${sum}`);
       lines.push(`${this.definition.name}_count${labelStr} ${values.length}`);
     }
-    
+
     return lines;
   }
 
   private getSummaryOutput(): string[] {
     const lines: string[] = [];
     const quantiles = this.definition.quantiles || [0.5, 0.9, 0.95, 0.99];
-    
+
     for (const [_, metricValue] of this.values) {
       const labelStr = this.formatLabels(metricValue.labels);
       const values = (metricValue as unknown as { values: number[] }).values || [];
-      
+
       if (values.length === 0) continue;
-      
+
       // Calculate quantiles
       const sorted = [...values].sort((a, b) => a - b);
-      
+
       for (const q of quantiles) {
         const index = Math.floor(sorted.length * q);
         const quantileValue = sorted[Math.min(index, sorted.length - 1)];
         lines.push(`${this.definition.name}{quantile="${q}"${labelStr.replace('{', ',').replace('}', '')}} ${quantileValue}`);
       }
-      
+
       // Sum and count
       const sum = values.reduce((a, b) => a + b, 0);
       lines.push(`${this.definition.name}_sum${labelStr} ${sum}`);
       lines.push(`${this.definition.name}_count${labelStr} ${values.length}`);
     }
-    
+
     return lines;
   }
 
@@ -205,7 +205,7 @@ class MetricCollector {
   private formatLabels(labels: Record<string, string>): string {
     const entries = Object.entries(labels);
     if (entries.length === 0) return '';
-    
+
     const labelStr = entries
       .map(([k, v]) => `${k}="${v}"`)
       .join(',');
@@ -304,12 +304,12 @@ export class PrometheusMetrics {
    */
   generateMetrics(): string {
     const sections: string[] = [];
-    
+
     // Add default metrics
     if (this.config.collectDefaultMetrics) {
       this.updateDefaultMetrics();
     }
-    
+
     // Generate output for each metric
     for (const [_, metric] of this.metrics) {
       const output = metric.getOutput();
@@ -317,7 +317,7 @@ export class PrometheusMetrics {
         sections.push(output);
       }
     }
-    
+
     return sections.join('\n\n');
   }
 
@@ -361,7 +361,7 @@ export class PrometheusMetrics {
   createHandler() {
     return async (_req: Request): Promise<Response> => {
       const { content, contentType } = this.getMetricsResponse();
-      
+
       return new Response(content, {
         status: 200,
         headers: {

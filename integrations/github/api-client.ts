@@ -1,6 +1,6 @@
 /**
  * GitHub API Client
- * 
+ *
  * Wrapper for GitHub REST API with rate limiting and retries
  */
 
@@ -128,7 +128,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
    */
   async getPRDiff(repo: string, prNumber: number, token: string): Promise<string> {
     const url = `${this.baseUrl}/repos/${repo}/pulls/${prNumber}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
@@ -200,7 +200,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
   async getFileContent(repo: string, path: string, ref: string, token: string): Promise<string> {
     const url = `${this.baseUrl}/repos/${repo}/contents/${path}?ref=${ref}`;
     const response = await this.request<{ content?: string }>(url, token);
-    
+
     // GitHub returns base64 encoded content
     if (response.content) {
       return Buffer.from(response.content, 'base64').toString('utf-8');
@@ -212,7 +212,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
   /**
    * Create or update check run (idempotent)
    * Uses check-run name to find existing check-run and update it, or create new one
-   * 
+   *
    * Rate limiting and retries are handled by the request() method
    */
   async createOrUpdateCheckRun(
@@ -241,7 +241,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
       }
 
       if (checkRunsResponse.ok) {
-         
+
         const checkRunsData = await checkRunsResponse.json() as {
           check_runs?: Array<{ id: number; name: string; head_sha: string }>;
         };
@@ -322,7 +322,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
         if (!response.ok) {
           let errorMessage = `${response.status} ${response.statusText}`;
           try {
-             
+
             const errorData = await response.json() as { message?: string };
             errorMessage = errorData.message ?? errorMessage;
           } catch {
@@ -332,14 +332,14 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
         }
 
         try {
-           
+
           return await response.json() as T;
         } catch {
           throw new Error('Failed to parse GitHub API response as JSON');
         }
       } catch (_error) {
         lastError = _error instanceof Error ? _error : new Error('Unknown error');
-        
+
         // Handle timeout/abort errors
         if (_error instanceof Error && (_error.name === 'TimeoutError' || _error.name === 'AbortError')) {
           if (attempt < maxRetries - 1) {
@@ -349,7 +349,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
           }
           throw new Error('GitHub API request timed out after retries');
         }
-        
+
         // Retry on transient errors
         if (attempt < maxRetries - 1 && this.isRetryableError(lastError)) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
@@ -438,7 +438,7 @@ export class GitHubAPIClientImpl implements GitHubAPIClient {
    */
   async downloadArtifact(repo: string, artifactId: number, token: string): Promise<ArrayBuffer> {
     const url = `${this.baseUrl}/repos/${repo}/actions/artifacts/${artifactId}/zip`;
-    
+
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,

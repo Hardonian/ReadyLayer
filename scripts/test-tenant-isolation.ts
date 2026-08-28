@@ -1,6 +1,6 @@
 /**
  * Test Tenant Isolation
- * 
+ *
  * Verifies that RLS policies and API-level checks prevent cross-tenant access
  */
 
@@ -12,7 +12,7 @@ async function testTenantIsolation(): Promise<void> {
 
   // Test 1: Create test data
   console.log('1️⃣  Creating test organizations and users...');
-  
+
   const org1 = await prisma.organization.create({
     data: {
       name: 'Test Org 1',
@@ -141,7 +141,7 @@ async function testTenantIsolation(): Promise<void> {
 
   // Test 4: Direct query test (simulating RLS)
   console.log('4️⃣  Testing: Direct repository queries respect organization membership...');
-  
+
   // This simulates what RLS would do
   const user1Memberships = await prisma.organizationMember.findMany({
     where: { userId: user1.id },
@@ -155,7 +155,7 @@ async function testTenantIsolation(): Promise<void> {
     },
   });
 
-  const filteredCorrectly = 
+  const filteredCorrectly =
     user1FilteredRepos.some(r => r.id === repo1.id) &&
     !user1FilteredRepos.some(r => r.id === repo2.id);
 
@@ -174,8 +174,8 @@ async function testTenantIsolation(): Promise<void> {
   console.log('✅ Test data cleaned up\n');
 
   // Summary
-  const allTestsPassed = user1CanSeeRepo1 && user1CannotSeeRepo2 && 
-                         user2CanSeeRepo2 && user2CannotSeeRepo1 && 
+  const allTestsPassed = user1CanSeeRepo1 && user1CannotSeeRepo2 &&
+                         user2CanSeeRepo2 && user2CannotSeeRepo1 &&
                          filteredCorrectly;
 
   if (allTestsPassed) {

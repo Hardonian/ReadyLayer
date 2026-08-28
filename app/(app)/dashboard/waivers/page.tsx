@@ -4,10 +4,10 @@ import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -17,8 +17,8 @@ import {
 } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { 
-  ShieldCheck, 
+import {
+  ShieldCheck,
   Plus,
   Calendar,
   Trash2,
@@ -47,7 +47,7 @@ export default function WaiversPage(): React.JSX.Element {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeOnly, setActiveOnly] = useState(false)
-  
+
   // Get provider theme for adaptive styling
   const { theme } = useGitProvider()
 
@@ -194,8 +194,8 @@ export default function WaiversPage(): React.JSX.Element {
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <ShieldCheck 
-                className="h-8 w-8" 
+              <ShieldCheck
+                className="h-8 w-8"
                 style={{ color: theme?.colors.primary || 'currentColor' }}
               />
               <h1 className="text-3xl font-bold">Waivers</h1>

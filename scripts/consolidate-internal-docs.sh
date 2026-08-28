@@ -179,7 +179,7 @@ declare -a STRATEGY=(
 move_file() {
     local file="$1"
     local dest="$2"
-    
+
     if [[ -f "$file" ]]; then
         if [[ -f "$dest/$file" ]]; then
             log_warn "File already exists in destination: $dest/$file"

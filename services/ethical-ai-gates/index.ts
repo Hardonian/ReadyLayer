@@ -1,6 +1,6 @@
 /**
  * Ethical AI Acceptance Gates Service
- * 
+ *
  * Implements explicit ethical AI controls:
  * - AI decision explainability
  * - Confidence scoring
@@ -8,7 +8,7 @@
  * - Bias monitoring
  * - False-positive tracking
  * - Transparent audit logs
- * 
+ *
  * No black-box decisions allowed.
  */
 
@@ -52,13 +52,13 @@ export interface BiasMetrics {
 
 /**
  * Ethical AI Acceptance Gates Service
- * 
+ *
  * Ensures all AI decisions are explainable, overrideable, and auditable.
  */
 export class EthicalAIGatesService {
   /**
    * Explain an AI decision
-   * 
+   *
    * Provides full transparency into why a decision was made.
    */
   async explainDecision(
@@ -120,7 +120,7 @@ export class EthicalAIGatesService {
 
   /**
    * Record human override
-   * 
+   *
    * Logs when a human overrides an AI decision with justification.
    */
   async recordOverride(request: OverrideRequest): Promise<void> {
@@ -157,7 +157,7 @@ export class EthicalAIGatesService {
 
   /**
    * Calculate bias metrics
-   * 
+   *
    * Monitors for bias in AI decisions.
    */
   async calculateBiasMetrics(_organizationId: string): Promise<BiasMetrics> {
@@ -189,7 +189,7 @@ export class EthicalAIGatesService {
 
   /**
    * Track false positives
-   * 
+   *
    * Records when a finding was incorrectly flagged.
    */
   async trackFalsePositive(

@@ -24,10 +24,10 @@ logger = get_logger(__name__)
 @register_handler
 class ReportArtifactHandler(BaseHandler):
     """Handler for report.generate job type.
-    
+
     Generates report artifacts from job results and stores them.
     Supports linking to ReadyLayerRun, Review, TestRun for context.
-    
+
     Real tables connected:
     - job_results: Stores the generated report
     - Job: Links report to triggering job
@@ -35,9 +35,9 @@ class ReportArtifactHandler(BaseHandler):
     - Review: Provides review guard context
     - TestRun: Provides test execution context
     """
-    
+
     job_type = "report.generate"
-    
+
     # Report templates for HTML generation
     HTML_TEMPLATE = """<!DOCTYPE html>
 <html>
@@ -76,10 +76,10 @@ class ReportArtifactHandler(BaseHandler):
     </div>
 </body>
 </html>"""
-    
+
     def validate_payload(self, payload: dict) -> dict:
         """Validate report.generate payload.
-        
+
         Expected payload:
             - job_id: str - Source job to generate report from
             - format: str - 'json', 'html', 'markdown' (default: 'json')
@@ -91,27 +91,27 @@ class ReportArtifactHandler(BaseHandler):
         for field in required:
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
-        
+
         # Validate format
         valid_formats = ["json", "html", "markdown"]
         format_type = payload.get("format", "json")
         if format_type not in valid_formats:
             raise ValueError(f"Invalid format: {format_type}. Must be one of: {valid_formats}")
-        
+
         payload["format"] = format_type
         payload["include_context"] = payload.get("include_context", True)
         payload["template"] = payload.get("template", "default")
         payload["filters"] = payload.get("filters", {})
-        
+
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         """Execute report generation.
-        
+
         Args:
             payload: Validated payload with job_id, format, etc.
             context: Execution context with worker_id, correlation_id
-        
+
         Returns:
             JobResult with generated report and storage confirmation
         """
@@ -120,14 +120,14 @@ class ReportArtifactHandler(BaseHandler):
         include_context = payload["include_context"]
         template = payload["template"]
         filters = payload["filters"]
-        
+
         logger.info(
             "Starting report generation",
             source_job_id=source_job_id,
             format=format_type,
             include_context=include_context,
         )
-        
+
         try:
             with get_cursor() as cursor:
                 # 1. Fetch source job result
@@ -137,19 +137,19 @@ class ReportArtifactHandler(BaseHandler):
                         success=False,
                         error=f"Source job {source_job_id} not found or has no result",
                     )
-                
+
                 # 2. Fetch context if requested
                 context_data = None
                 if include_context:
                     context_data = self._fetch_run_context(cursor, source_job_id)
-                
+
                 # 3. Apply filters
                 filtered_result = self._apply_filters(source_result, filters)
-                
+
                 # 4. Generate report in requested format
                 report_id = f"report_{source_job_id}_{format_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                 report_hash = self._compute_hash(filtered_result)
-                
+
                 if format_type == "json":
                     report_content = self._generate_json_report(
                         report_id, source_job_id, filtered_result, context_data, context
@@ -167,10 +167,10 @@ class ReportArtifactHandler(BaseHandler):
                         success=False,
                         error=f"Unsupported format: {format_type}",
                     )
-                
+
                 # 5. Store report in job_results table (idempotent update)
                 self._store_report(cursor, report_id, source_job_id, format_type, report_content, report_hash)
-                
+
                 # Build result metadata
                 result_data = {
                     "report_id": report_id,
@@ -183,14 +183,14 @@ class ReportArtifactHandler(BaseHandler):
                     "filters_applied": list(filters.keys()) if filters else [],
                     "worker_id": context.get("worker_id"),
                 }
-                
+
                 logger.info(
                     "Report generation complete",
                     report_id=report_id,
                     format=format_type,
                     content_size=result_data["content_size_bytes"],
                 )
-                
+
                 return JobResult(
                     success=True,
                     data=result_data,
@@ -200,7 +200,7 @@ class ReportArtifactHandler(BaseHandler):
                         "source_result_keys": list(filtered_result.keys()) if isinstance(filtered_result, dict) else [],
                     }
                 )
-                
+
         except Exception as e:
             logger.error(
                 "Report generation failed",
@@ -212,7 +212,7 @@ class ReportArtifactHandler(BaseHandler):
                 success=False,
                 error=f"Report generation failed: {str(e)}",
             )
-    
+
     def _fetch_job_result(self, cursor, job_id: str) -> Optional[dict]:
         """Fetch job result from job_results table."""
         cursor.execute(
@@ -224,13 +224,13 @@ class ReportArtifactHandler(BaseHandler):
             (job_id,),
         )
         row = cursor.fetchone()
-        
+
         if row and row["result"]:
             result = row["result"]
             if isinstance(result, str):
                 return json.loads(result)
             return result
-        
+
         # Fallback: check Job table directly
         cursor.execute(
             """
@@ -241,20 +241,20 @@ class ReportArtifactHandler(BaseHandler):
             (job_id,),
         )
         row = cursor.fetchone()
-        
+
         if row and row["result"]:
             result = row["result"]
             if isinstance(result, str):
                 return json.loads(result)
             return result
-        
+
         return None
-    
+
     def _fetch_run_context(self, cursor, job_id: str) -> Optional[dict]:
         """Fetch ReadyLayerRun context for a job."""
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 j."runId",
                 j."repositoryId",
                 j."organizationId",
@@ -271,38 +271,38 @@ class ReportArtifactHandler(BaseHandler):
             (job_id,),
         )
         row = cursor.fetchone()
-        
+
         if not row:
             return None
-        
+
         context = {
             "run_id": row["runId"],
             "repository_id": row["repositoryId"],
             "organization_id": row["organizationId"],
             "job_type": row["job_type"],
         }
-        
+
         if row["run_status"]:
             context["run_status"] = row["run_status"]
             context["review_guard_status"] = row["reviewGuardStatus"]
             context["test_engine_status"] = row["testEngineStatus"]
             context["doc_sync_status"] = row["docSyncStatus"]
             context["conclusion"] = row["conclusion"]
-        
+
         # If we have a run_id, fetch related reviews and test runs
         if row["runId"]:
             context["related_data"] = self._fetch_related_data(cursor, row["runId"])
-        
+
         return context
-    
+
     def _fetch_related_data(self, cursor, run_id: str) -> dict:
         """Fetch reviews and test runs related to a ReadyLayerRun."""
         related = {}
-        
+
         # Fetch reviews
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 r.id, r.status, r."issuesFound", r."isBlocked",
                 r."prNumber", r."prSha"
             FROM "Review" r
@@ -320,11 +320,11 @@ class ReportArtifactHandler(BaseHandler):
                 "is_blocked": review["isBlocked"],
                 "pr_number": review["prNumber"],
             }
-        
+
         # Fetch test runs
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 t.id, t.status, t.conclusion, t.coverage, t.summary
             FROM "TestRun" t
             JOIN "ReadyLayerRun" r ON t."prSha" = r."triggerMetadata"->>'prSha'
@@ -341,26 +341,26 @@ class ReportArtifactHandler(BaseHandler):
                 "conclusion": test_run["conclusion"],
                 "has_coverage": test_run["coverage"] is not None,
             }
-        
+
         return related
-    
+
     def _apply_filters(self, result: Any, filters: dict) -> Any:
         """Apply filters to result data."""
         if not filters or not isinstance(result, dict):
             return result
-        
+
         filtered = result.copy()
-        
+
         # Include only specified keys
         if "include_keys" in filters:
             keys = filters["include_keys"]
             filtered = {k: v for k, v in filtered.items() if k in keys}
-        
+
         # Exclude specified keys
         if "exclude_keys" in filters:
             keys = filters["exclude_keys"]
             filtered = {k: v for k, v in filtered.items() if k not in keys}
-        
+
         # Limit nested arrays
         if "max_array_items" in filters:
             max_items = filters["max_array_items"]
@@ -369,19 +369,19 @@ class ReportArtifactHandler(BaseHandler):
                     filtered[key] = value[:max_items]
                     filtered[f"{key}_truncated"] = True
                     filtered[f"{key}_total"] = len(value)
-        
+
         return filtered
-    
+
     def _compute_hash(self, data: Any) -> str:
         """Compute deterministic hash of data for idempotency."""
         content = json.dumps(data, sort_keys=True, default=str)
         return hashlib.sha256(content.encode('utf-8')).hexdigest()[:16]
-    
+
     def _generate_json_report(
-        self, 
-        report_id: str, 
+        self,
+        report_id: str,
         source_job_id: str,
-        result: Any, 
+        result: Any,
         context: Optional[dict],
         exec_context: dict
     ) -> str:
@@ -401,27 +401,27 @@ class ReportArtifactHandler(BaseHandler):
             },
         }
         return json.dumps(report, indent=2, default=str)
-    
+
     def _generate_html_report(
-        self, 
-        report_id: str, 
+        self,
+        report_id: str,
         source_job_id: str,
-        result: Any, 
+        result: Any,
         context: Optional[dict],
         template: str,
         exec_context: dict
     ) -> str:
         """Generate HTML format report."""
         title = f"Job Report: {source_job_id[:8]}..."
-        
+
         # Build content sections
         sections = []
-        
+
         # Result summary section
         if isinstance(result, dict):
             sections.append("<h2>Result Summary</h2>")
             sections.append('<div class="section">')
-            
+
             # Display key metrics
             for key, value in result.items():
                 if key in ["success", "status", "overall_score", "grade"]:
@@ -435,22 +435,22 @@ class ReportArtifactHandler(BaseHandler):
                             status_class = "status-fail"
                         else:
                             status_class = "status-warn"
-                    
+
                     sections.append(
                         f'<div class="metric">'
                         f'<div class="metric-label">{key.replace("_", " ").title()}</div>'
                         f'<div class="metric-value {status_class}">{value}</div>'
                         f'</div>'
                     )
-            
+
             sections.append('</div>')
-            
+
             # Details table
             if len(result) > 0:
                 sections.append("<h2>Details</h2>")
                 sections.append("<table>")
                 sections.append("<tr><th>Key</th><th>Value</th></tr>")
-                
+
                 for key, value in result.items():
                     if key not in ["success", "status"]:
                         if isinstance(value, (dict, list)):
@@ -459,13 +459,13 @@ class ReportArtifactHandler(BaseHandler):
                                 value_str += "..."
                         else:
                             value_str = str(value)
-                        
+
                         sections.append(
                             f"<tr><td>{key}</td><td><pre>{value_str}</pre></td></tr>"
                         )
-                
+
                 sections.append("</table>")
-        
+
         # Context section
         if context:
             sections.append("<h2>Pipeline Context</h2>")
@@ -475,9 +475,9 @@ class ReportArtifactHandler(BaseHandler):
             sections.append(f'<p><strong>Run Status:</strong> {context.get("run_status", "N/A")}</p>')
             sections.append(f'<p><strong>Conclusion:</strong> {context.get("conclusion", "N/A")}</p>')
             sections.append('</div>')
-        
+
         content = "\n".join(sections)
-        
+
         return self.HTML_TEMPLATE.format(
             title=title,
             content=content,
@@ -487,12 +487,12 @@ class ReportArtifactHandler(BaseHandler):
             report_id=report_id[:16],
             report_hash=self._compute_hash(result),
         )
-    
+
     def _generate_markdown_report(
-        self, 
-        report_id: str, 
+        self,
+        report_id: str,
         source_job_id: str,
-        result: Any, 
+        result: Any,
         context: Optional[dict],
         exec_context: dict
     ) -> str:
@@ -508,14 +508,14 @@ class ReportArtifactHandler(BaseHandler):
             "## Result Summary",
             "",
         ]
-        
+
         if isinstance(result, dict):
             # Key metrics
             for key, value in result.items():
                 if key in ["success", "status", "overall_score", "grade"]:
                     emoji = "✅" if value in [True, "completed", "passed", "success"] else "❌" if value in [False, "failed", "error"] else "⚠️"
                     lines.append(f"- {emoji} **{key.replace('_', ' ').title()}:** {value}")
-            
+
             lines.append("")
             lines.append("## Details")
             lines.append("")
@@ -524,7 +524,7 @@ class ReportArtifactHandler(BaseHandler):
             lines.append("```")
         else:
             lines.append(f"```\n{result}\n```")
-        
+
         if context:
             lines.append("")
             lines.append("## Pipeline Context")
@@ -533,17 +533,17 @@ class ReportArtifactHandler(BaseHandler):
             lines.append(f"- **Repository:** `{context.get('repository_id', 'N/A')}`")
             lines.append(f"- **Run Status:** {context.get('run_status', 'N/A')}")
             lines.append(f"- **Conclusion:** {context.get('conclusion', 'N/A')}")
-        
+
         lines.append("")
         lines.append("---")
         lines.append(f"*Report Hash: `{self._compute_hash(result)}`*")
-        
+
         return "\n".join(lines)
-    
+
     def _store_report(
-        self, 
-        cursor, 
-        report_id: str, 
+        self,
+        cursor,
+        report_id: str,
         source_job_id: str,
         format_type: str,
         content: str,
@@ -571,7 +571,7 @@ class ReportArtifactHandler(BaseHandler):
                 }),
             ),
         )
-        
+
         logger.info(
             "Stored report artifact",
             report_id=report_id,

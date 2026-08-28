@@ -3,7 +3,7 @@
 ## Pricing Tiers
 
 ### Starter (Free)
-**Price:** $0/month  
+**Price:** $0/month
 **Target:** Individual developers, small teams
 
 **Limits:**
@@ -23,7 +23,7 @@
 ---
 
 ### Growth ($99/month)
-**Price:** $99/month  
+**Price:** $99/month
 **Target:** Growing teams (10-50 engineers)
 
 **Limits:**
@@ -44,7 +44,7 @@
 ---
 
 ### Scale ($499/month)
-**Price:** $499/month  
+**Price:** $499/month
 **Target:** Large teams (50+ engineers)
 
 **Limits:**
@@ -180,22 +180,22 @@
 
 ## FAQ
 
-**Q: Can I change tiers anytime?**  
+**Q: Can I change tiers anytime?**
 A: Yes, upgrades are immediate. Downgrades take effect at end of billing period.
 
-**Q: What happens if I exceed limits?**  
+**Q: What happens if I exceed limits?**
 A: You'll receive warnings. Critical actions (PR reviews) will be blocked until you upgrade or reduce usage.
 
-**Q: Do you offer annual billing?**  
+**Q: Do you offer annual billing?**
 A: Yes, 20% discount for annual plans.
 
-**Q: Can I get a refund?**  
+**Q: Can I get a refund?**
 A: Refunds available within 30 days of purchase, prorated.
 
-**Q: What payment methods do you accept?**  
+**Q: What payment methods do you accept?**
 A: Credit card, ACH (US), wire transfer (enterprise).
 
 ---
 
-**Last Updated:** 2024-12-30  
+**Last Updated:** 2024-12-30
 **Pricing Subject to Change:** 30 days notice required

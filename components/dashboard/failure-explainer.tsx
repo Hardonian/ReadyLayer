@@ -128,7 +128,7 @@ const commonFailures: FailureExplanation[] = [
 
 export function FailureExplainer({ failure, explanations = commonFailures }: FailureExplainerProps): React.JSX.Element {
   // Find matching explanation
-  const explanation = explanations.find(e => e.code === failure.code) || 
+  const explanation = explanations.find(e => e.code === failure.code) ||
     (failure.stage === 'review_guard' ? explanations.find(e => e.code === 'REVIEW_GUARD_FAILED') :
      failure.stage === 'test_engine' ? explanations.find(e => e.code === 'TEST_COMMAND_FAILED') :
      failure.stage === 'doc_sync' ? explanations.find(e => e.code === 'DOC_SYNC_DRIFT') :

@@ -1,6 +1,6 @@
 /**
  * Run Migration Using Prisma
- * 
+ *
  * Executes the migration SQL using Prisma's $executeRaw
  * This is safer than direct psql as it uses the configured connection
  */
@@ -37,7 +37,7 @@ async function runMigration(): Promise<void> {
     // Execute statements one by one (some may fail if already exists, which is OK)
     for (let i = 0; i < statements.length; i++) {
       const statement = statements[i];
-      
+
       // Skip empty or comment-only statements
       if (!statement || statement.length < 10) {
         continue;
@@ -47,7 +47,7 @@ async function runMigration(): Promise<void> {
         // Use $executeRawUnsafe for DDL statements
         await prisma.$executeRawUnsafe(statement);
         executed++;
-        
+
         if ((i + 1) % 10 === 0) {
           console.log(`   Progress: ${i + 1}/${statements.length} statements executed...`);
         }
@@ -79,11 +79,11 @@ async function runMigration(): Promise<void> {
 
     // Verify migration
     console.log('\n🔍 Verifying migration...');
-    
+
     const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename 
-      FROM pg_tables 
-      WHERE schemaname = 'public' 
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
       AND tablename IN ('User', 'Organization', 'Repository', 'Review')
       ORDER BY tablename
     `;
@@ -97,9 +97,9 @@ async function runMigration(): Promise<void> {
 
     // Check RLS
     const rlsStatus = await prisma.$queryRaw<Array<{ tablename: string; rowsecurity: boolean }>>`
-      SELECT tablename, rowsecurity 
-      FROM pg_tables 
-      WHERE schemaname = 'public' 
+      SELECT tablename, rowsecurity
+      FROM pg_tables
+      WHERE schemaname = 'public'
       AND tablename IN ('Organization', 'Repository', 'Review')
     `;
 

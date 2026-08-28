@@ -134,7 +134,7 @@ export function RunArtifacts({ className }: RunArtifactsProps): React.JSX.Elemen
       return artifactExamples[0]
     }
   }, [selectedArtifact])
-  
+
   const Icon = artifact?.icon || FileText
 
   return (

@@ -1,16 +1,16 @@
 /**
  * Optimized ReadyLayer Run Pipeline Service
- * 
+ *
  * Performance improvements:
  * - Parallel execution of independent stages (Review Guard, Test Engine, Doc Sync)
  * - Cached AI-touched detection results
  * - Reduced sequential database writes through batching
- * 
+ *
  * Orchestrates the complete ReadyLayer pipeline:
  * 1. Review Guard (static checks + AI review) - CAN RUN IN PARALLEL
  * 2. Test Engine (test generation + coverage check) - CAN RUN IN PARALLEL
  * 3. Doc Sync (documentation generation + drift check) - CAN RUN IN PARALLEL
- * 
+ *
  * Supports:
  * - Webhook-triggered runs (from PR events)
  * - Manual runs (user-initiated)
@@ -61,12 +61,12 @@ export interface RunResult {
   sandboxId?: string | null;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   conclusion?: 'success' | 'failure' | 'partial_success' | 'cancelled';
-  
+
   // Stage statuses
   reviewGuardStatus: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped';
   testEngineStatus: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped';
   docSyncStatus: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped';
-  
+
   // Stage results
   reviewGuardResult?: {
     reviewId?: string;
@@ -95,15 +95,15 @@ export interface RunResult {
     missingEndpoints: number;
     changedEndpoints: number;
   };
-  
+
   // AI-touched detection
   aiTouchedDetected: boolean;
   aiTouchedFiles?: Array<{ path: string; confidence: number; methods: string[] }>;
-  
+
   // Policy gates
   gatesPassed: boolean;
   gatesFailed?: Array<{ gate: string; reason: string }>;
-  
+
   // Timing
   startedAt: Date;
   completedAt?: Date;
@@ -125,14 +125,14 @@ interface StageResult {
 
 /**
  * ReadyLayer Run Pipeline Service - OPTIMIZED
- * 
+ *
  * Orchestrates the complete ReadyLayer verification pipeline.
  * Stages run in parallel for maximum performance when parallelExecution is enabled.
  */
 export class RunPipelineService {
   /**
    * Execute a ReadyLayer Run - OPTIMIZED WITH PARALLEL STAGES
-   * 
+   *
    * Orchestrates Review Guard, Test Engine, and Doc Sync with:
    * - Correlation ID for tracing
    * - Stage-by-stage status tracking
@@ -140,16 +140,16 @@ export class RunPipelineService {
    * - Policy gate evaluation
    * - Complete audit trail
    * - PARALLEL EXECUTION of independent stages
-   * 
+   *
    * @param request - Run request with trigger and metadata
    * @returns Run result with all stage outputs
    */
   async executeRun(request: RunRequest): Promise<RunResult> {
     const correlationId = `run_${Date.now()}_${randomUUID().slice(0, 8)}`;
     const log = logger.child({ correlationId, trigger: request.trigger });
-    
+
     const startedAt = new Date();
-    
+
     // Create run record
     const run = await prisma.readyLayerRun.create({
       data: {
@@ -176,17 +176,17 @@ export class RunPipelineService {
       let reviewGuardStatus: RunResult['reviewGuardStatus'] = 'skipped';
       let reviewGuardStartedAt: Date | undefined;
       let reviewGuardCompletedAt: Date | undefined;
-      
+
       let testEngineResult: RunResult['testEngineResult'] | undefined;
       let testEngineStatus: RunResult['testEngineStatus'] = 'skipped';
       let testEngineStartedAt: Date | undefined;
       let testEngineCompletedAt: Date | undefined;
-      
+
       let docSyncResult: RunResult['docSyncResult'] | undefined;
       let docSyncStatus: RunResult['docSyncStatus'] = 'skipped';
       let docSyncStartedAt: Date | undefined;
       let docSyncCompletedAt: Date | undefined;
-      
+
       let aiTouchedFiles: Array<{ path: string; confidence: number; methods: string[] }> = [];
       let aiTouchedDetected = false;
 
@@ -205,7 +205,7 @@ export class RunPipelineService {
       if (parallelExecution && (shouldRunReviewGuard || shouldRunTestEngine || shouldRunDocSync)) {
         // PARALLEL EXECUTION: Run independent stages concurrently
         log.info({ parallel: true }, 'Running stages in parallel');
-        
+
         // Start all stages simultaneously where possible
         const stagePromises: Array<Promise<StageResult>> = [];
         const stageNames: string[] = [];
@@ -214,7 +214,7 @@ export class RunPipelineService {
         if (shouldRunReviewGuard) {
           reviewGuardStartedAt = new Date();
           reviewGuardStatus = 'running';
-          
+
           await prisma.readyLayerRun.update({
             where: { id: run.id },
             data: {
@@ -248,7 +248,7 @@ export class RunPipelineService {
         if (shouldRunTestEngine) {
           testEngineStartedAt = new Date();
           testEngineStatus = 'running';
-          
+
           await prisma.readyLayerRun.update({
             where: { id: run.id },
             data: {
@@ -282,7 +282,7 @@ export class RunPipelineService {
         if (shouldRunDocSync) {
           docSyncStartedAt = new Date();
           docSyncStatus = 'running';
-          
+
           await prisma.readyLayerRun.update({
             where: { id: run.id },
             data: {
@@ -318,15 +318,15 @@ export class RunPipelineService {
         // Process results
         results.forEach((result, index) => {
           const stageName = stageNames[index];
-          
+
           if (result.status === 'fulfilled') {
             const stageResult = result.value;
-            
+
             if (stageName === 'reviewGuard') {
               reviewGuardCompletedAt = stageResult.completedAt;
               reviewGuardStatus = stageResult.status;
               reviewGuardResult = stageResult.result as RunResult['reviewGuardResult'];
-              
+
               // Update database
               prisma.readyLayerRun.update({
                 where: { id: run.id },
@@ -355,22 +355,22 @@ export class RunPipelineService {
                   },
                 }).catch(() => {});
               }
-              
+
               metrics.increment('runs.stage.completed', { stage: 'review_guard', status: reviewGuardStatus });
             }
-            
+
             else if (stageName === 'testEngine') {
               testEngineCompletedAt = stageResult.completedAt;
               testEngineStatus = stageResult.status;
               testEngineResult = stageResult.result as RunResult['testEngineResult'];
-              
+
               // Extract AI-touched info from result
               if (stageResult.result && typeof stageResult.result === 'object') {
                 const result = stageResult.result as { aiTouchedFiles?: typeof aiTouchedFiles; aiTouchedDetected?: boolean };
                 aiTouchedFiles = result.aiTouchedFiles || [];
                 aiTouchedDetected = result.aiTouchedDetected || false;
               }
-              
+
               // Update database with both test results and AI detection
               prisma.readyLayerRun.update({
                 where: { id: run.id },
@@ -401,15 +401,15 @@ export class RunPipelineService {
                   },
                 }).catch(() => {});
               }
-              
+
               metrics.increment('runs.stage.completed', { stage: 'test_engine', status: testEngineStatus });
             }
-            
+
             else if (stageName === 'docSync') {
               docSyncCompletedAt = stageResult.completedAt;
               docSyncStatus = stageResult.status;
               docSyncResult = stageResult.result as RunResult['docSyncResult'];
-              
+
               // Update database
               prisma.readyLayerRun.update({
                 where: { id: run.id },
@@ -438,7 +438,7 @@ export class RunPipelineService {
                   },
                 }).catch(() => {});
               }
-              
+
               metrics.increment('runs.stage.completed', { stage: 'doc_sync', status: docSyncStatus });
             }
           } else {
@@ -448,7 +448,7 @@ export class RunPipelineService {
                 ? result.reason
                 : new Error(`Stage failure: ${String(result.reason)}`);
             log.error({ stage: stageName, error: failure }, 'Stage failed in parallel execution');
-            
+
             if (stageName === 'reviewGuard') {
               reviewGuardStatus = 'failed';
               reviewGuardCompletedAt = new Date();
@@ -480,12 +480,12 @@ export class RunPipelineService {
       } else {
         // SEQUENTIAL EXECUTION (fallback for compatibility)
         log.info({ parallel: false }, 'Running stages sequentially');
-        
+
         // Stage 1: Review Guard (sequential)
         if (shouldRunReviewGuard) {
           reviewGuardStartedAt = new Date();
           reviewGuardStatus = 'running';
-          
+
           await prisma.readyLayerRun.update({
             where: { id: run.id },
             data: {
@@ -526,10 +526,10 @@ export class RunPipelineService {
             };
 
             const reviewResult = await reviewGuardService.review(reviewRequest);
-            
+
             reviewGuardCompletedAt = new Date();
             reviewGuardStatus = reviewResult.isBlocked ? 'failed' : 'succeeded';
-            
+
             reviewGuardResult = {
               reviewId: reviewResult.id,
               issuesFound: reviewResult.issues.length,
@@ -587,7 +587,7 @@ export class RunPipelineService {
         if (shouldRunTestEngine) {
           testEngineStartedAt = new Date();
           testEngineStatus = 'running';
-          
+
           await prisma.readyLayerRun.update({
             where: { id: run.id },
             data: {
@@ -620,7 +620,7 @@ export class RunPipelineService {
             // Detect AI-touched files (with caching)
             const cacheKey = `ai-touched:${request.repositoryId ?? 'sandbox'}:${prSha}`;
             const cachedDetection = aiDetectionCache.get(cacheKey);
-            
+
             if (!cachedDetection) {
               aiTouchedFiles = await testEngineService.detectAITouchedFiles(
                 request.repositoryId || 'sandbox',
@@ -631,9 +631,9 @@ export class RunPipelineService {
                 })),
                 prBody
               );
-              
+
               aiTouchedDetected = aiTouchedFiles.length > 0;
-              
+
               // Cache the result
               aiDetectionCache.set(cacheKey, { files: aiTouchedFiles, timestamp: Date.now() }, 30000);
             } else {
@@ -674,7 +674,7 @@ export class RunPipelineService {
 
             testEngineCompletedAt = new Date();
             testEngineStatus = 'succeeded';
-            
+
             testEngineResult = {
               testsGenerated,
               meetsThreshold: true,
@@ -728,7 +728,7 @@ export class RunPipelineService {
         if (shouldRunDocSync) {
           docSyncStartedAt = new Date();
           docSyncStatus = 'running';
-          
+
           await prisma.readyLayerRun.update({
             where: { id: run.id },
             data: {
@@ -770,7 +770,7 @@ export class RunPipelineService {
 
             docSyncCompletedAt = new Date();
             docSyncStatus = driftResult.isBlocked ? 'failed' : 'succeeded';
-            
+
             docSyncResult = {
               driftDetected: driftResult.driftDetected,
               missingEndpoints: driftResult.missingEndpoints.length,
@@ -843,17 +843,17 @@ export class RunPipelineService {
       }
 
       // Determine overall conclusion
-      const allStagesSucceeded = 
+      const allStagesSucceeded =
         (reviewGuardStatus === 'succeeded' || reviewGuardStatus === 'skipped') &&
         (testEngineStatus === 'succeeded' || testEngineStatus === 'skipped') &&
         (docSyncStatus === 'succeeded' || docSyncStatus === 'skipped');
-      
-      const anyStageFailed = 
+
+      const anyStageFailed =
         reviewGuardStatus === 'failed' ||
         testEngineStatus === 'failed' ||
         docSyncStatus === 'failed';
 
-      const conclusion: RunResult['conclusion'] = 
+      const conclusion: RunResult['conclusion'] =
         gatesPassed && allStagesSucceeded ? 'success' :
         anyStageFailed || !gatesPassed ? 'failure' :
         'partial_success';
@@ -987,9 +987,9 @@ export class RunPipelineService {
       };
     } catch (error) {
       const completedAt = new Date();
-      
+
       log.error({ err: error }, 'Run execution failed');
-      
+
       await prisma.readyLayerRun.update({
         where: { id: run.id },
         data: {
@@ -1015,7 +1015,7 @@ export class RunPipelineService {
   ): Promise<StageResult> {
     const startedAt = new Date();
     const stageLog = log.child({ runId, stage: 'review_guard' });
-    
+
     try {
       const reviewRequest: ReviewRequest = {
         repositoryId: request.repositoryId || 'sandbox',
@@ -1027,7 +1027,7 @@ export class RunPipelineService {
       };
 
       const reviewResult = await reviewGuardService.review(reviewRequest);
-      
+
       return {
         status: reviewResult.isBlocked ? 'failed' : 'succeeded',
         result: {
@@ -1059,14 +1059,14 @@ export class RunPipelineService {
     log: ReturnType<typeof logger.child>
   ): Promise<StageResult> {
     const startedAt = new Date();
-    
+
     try {
       // Check cache first
       const cacheKey = `ai-touched:${request.repositoryId}:${request.triggerMetadata?.prSha}`;
       const cachedDetection = aiDetectionCache.get(cacheKey);
-      
+
       let aiTouchedFiles: Array<{ path: string; confidence: number; methods: string[] }>;
-      
+
       if (cachedDetection) {
         aiTouchedFiles = cachedDetection.files;
         log.info({ cacheHit: true, runId }, 'Using cached AI-touched detection');
@@ -1080,7 +1080,7 @@ export class RunPipelineService {
           })),
           request.triggerMetadata?.prBody
         );
-        
+
         // Cache the result
         aiDetectionCache.set(cacheKey, { files: aiTouchedFiles, timestamp: Date.now() }, 30000);
       }
@@ -1140,7 +1140,7 @@ export class RunPipelineService {
     log: ReturnType<typeof logger.child>
   ): Promise<StageResult> {
     const startedAt = new Date();
-    
+
     try {
       const driftResult = await docSyncService.checkDrift(
         request.repositoryId || 'sandbox',

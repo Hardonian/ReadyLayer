@@ -1,6 +1,6 @@
 /**
  * Tabnine Agent Integration
- * 
+ *
  * ReadyLayer integration for Tabnine agent
  * Provides real-time code review and policy enforcement
  */
@@ -55,7 +55,7 @@ function registerTabnineHooks(config: TabnineConfig): void {
 
     // Review the code being generated
     const reviewResult = await reviewCode(context.code, config);
-    
+
     if (reviewResult.isBlocked && config.readyLayer.blockOnCritical) {
       // Block completion if critical issues found
       throw new Error(`Code blocked: ${reviewResult.issues[0]?.message}`);
@@ -72,7 +72,7 @@ function registerTabnineHooks(config: TabnineConfig): void {
 
     // Review completed code
     const reviewResult = await reviewCode(completion.code, config);
-    
+
     if (reviewResult.issues.length > 0) {
       // Show warnings
       tabnine.showWarning(
@@ -93,7 +93,7 @@ function registerTabnineHooks(config: TabnineConfig): void {
     }
 
     const reviewResult = await reviewCode(code, config);
-    
+
     if (reviewResult.isBlocked && config.readyLayer.blockOnCritical) {
       // Block insertion
       tabnine.showError('Code insertion blocked due to policy violations');
@@ -134,7 +134,7 @@ async function reviewCode(code: string, config: TabnineConfig): Promise<{
       return { isBlocked: false, issues: [] };
     }
 
-     
+
     const result = await response.json() as {
       data?: {
         isBlocked?: boolean;

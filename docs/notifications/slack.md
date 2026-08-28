@@ -91,7 +91,7 @@ Create `readylayer.slack.yml`:
 ```yaml
 slack:
   workspace: my-workspace
-  
+
   notifications:
     blocked_pr:
       enabled: true
@@ -99,19 +99,19 @@ slack:
         - '#engineering'
         - '@security-lead'
       severity_threshold: critical
-      
+
     security_findings:
       enabled: true
       channels:
         - '#security'
       severity_threshold: high
-      
+
     test_coverage:
       enabled: true
       channels:
         - '#qa'
       threshold_percentage: 5  # Alert if drops > 5%
-      
+
     policy_violations:
       enabled: true
       channels:

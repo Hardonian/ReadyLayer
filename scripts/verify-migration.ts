@@ -1,6 +1,6 @@
 /**
  * Verify Migration Success
- * 
+ *
  * Checks that all tables, indexes, RLS policies, and functions were created correctly
  */
 
@@ -15,9 +15,9 @@ async function verifyMigration(): Promise<void> {
   // Check 1: Verify tables exist
   try {
     const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename 
-      FROM pg_tables 
-      WHERE schemaname = 'public' 
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
       ORDER BY tablename
     `;
 
@@ -66,9 +66,9 @@ async function verifyMigration(): Promise<void> {
   // Check 2: Verify RLS is enabled
   try {
     const rlsStatus = await prisma.$queryRaw<Array<{ tablename: string; rowsecurity: boolean }>>`
-      SELECT tablename, rowsecurity 
-      FROM pg_tables 
-      WHERE schemaname = 'public' 
+      SELECT tablename, rowsecurity
+      FROM pg_tables
+      WHERE schemaname = 'public'
       AND tablename IN ('User', 'Organization', 'Repository', 'Review')
       ORDER BY tablename
     `;
@@ -97,8 +97,8 @@ async function verifyMigration(): Promise<void> {
   // Check 3: Verify helper functions exist
   try {
     const functions = await prisma.$queryRaw<Array<{ proname: string }>>`
-      SELECT proname 
-      FROM pg_proc 
+      SELECT proname
+      FROM pg_proc
       WHERE pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
       AND proname IN ('current_user_id', 'is_org_member', 'has_org_role')
     `;
@@ -129,8 +129,8 @@ async function verifyMigration(): Promise<void> {
   // Check 4: Verify indexes exist
   try {
     const indexes = await prisma.$queryRaw<Array<{ indexname: string }>>`
-      SELECT indexname 
-      FROM pg_indexes 
+      SELECT indexname
+      FROM pg_indexes
       WHERE schemaname = 'public'
       AND indexname LIKE '%_idx' OR indexname LIKE '%_unique_idx'
       LIMIT 50
@@ -158,8 +158,8 @@ async function verifyMigration(): Promise<void> {
   // Check 5: Verify triggers exist
   try {
     const triggers = await prisma.$queryRaw<Array<{ tgname: string }>>`
-      SELECT tgname 
-      FROM pg_trigger 
+      SELECT tgname
+      FROM pg_trigger
       WHERE tgname LIKE 'update_%_updated_at'
     `;
 

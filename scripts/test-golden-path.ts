@@ -1,10 +1,10 @@
 #!/usr/bin/env tsx
 /**
  * Golden Path Test Script
- * 
+ *
  * The ONE deterministic test that encodes the core ReadyLayer flow.
  * This test must NEVER break - it validates the entire activation path.
- * 
+ *
  * Usage: npm run test:golden-path
  */
 
@@ -45,14 +45,14 @@ async function main(): Promise<void> {
     console.log('\n[A] Creating sandbox run (demo mode)...');
     try {
       const result = await runPipelineService.createSandboxRun();
-      
+
       if (!result || !result.id || !result.correlationId) {
         recordTest('A) Create sandbox run', false, 'Run result missing required fields');
         throw new Error('Run creation failed');
       }
 
       sandboxRunId = result.id;
-      
+
       // Get sandbox ID from database
       const runRecord = await prisma.readyLayerRun.findUnique({
         where: { id: result.id },
@@ -211,7 +211,7 @@ async function main(): Promise<void> {
 
       // Validate against schema
       const validation = validateResponse(apiResponse, runResponseSchema);
-      
+
       if (!validation.success) {
         const errors = validation.errors.issues
           .map((e) => `${e.path.join('.')}: ${e.message}`)

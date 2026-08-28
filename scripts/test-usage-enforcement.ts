@@ -1,6 +1,6 @@
 /**
  * Usage Enforcement Test Suite
- * 
+ *
  * Simulates all recommended test scenarios and validates results
  */
 
@@ -36,7 +36,7 @@ async function test(name: string, fn: () => Promise<void>): Promise<void> {
 async function cleanup(): Promise<void> {
   // Clean up test data
   const testOrgId = 'test-org-usage-enforcement';
-  
+
   try {
     // Delete test organization and related data
     await prisma.auditLog.deleteMany({

@@ -1,6 +1,6 @@
 /**
  * Evidence RAG Layer
- * 
+ *
  * Main export for RAG functionality
  */
 

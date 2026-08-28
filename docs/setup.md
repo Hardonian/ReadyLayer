@@ -91,7 +91,7 @@ Start worker processes as background services:
 # Webhook processor
 npm run worker:webhook
 
-# Job processor  
+# Job processor
 npm run worker:job
 ```
 

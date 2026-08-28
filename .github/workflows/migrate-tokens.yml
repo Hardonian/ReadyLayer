@@ -22,7 +22,7 @@ jobs:
   migrate:
     name: Encrypt Installation Tokens
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
             exit 1
           fi
           echo "✅ Migration confirmed"
-      
+
       - name: Auto-migration notice
         if: github.event_name == 'push'
         run: |

@@ -1,6 +1,6 @@
 /**
  * Predictive Detection Service
- * 
+ *
  * Uses self-learning data to make predictive detections
  * Confidence and trust scores improve experientially
  */

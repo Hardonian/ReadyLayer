@@ -1,6 +1,6 @@
 /**
  * Test Executor Worker
- * 
+ *
  * Background worker for executing generated tests in isolated environments
  * with timeout handling, coverage reporting, and results persistence.
  */
@@ -44,7 +44,7 @@ export async function executeTestJob(
   job: TestExecutionJob
 ): Promise<TestExecutionJobResult> {
   const startTime = Date.now();
-  
+
   try {
     logger.info(
       {
@@ -78,7 +78,7 @@ export async function executeTestJob(
         break;
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt < maxRetries) {
           logger.warn(
             {
@@ -89,13 +89,13 @@ export async function executeTestJob(
             },
             'Test execution failed, retrying...'
           );
-          
+
           metrics.increment('test_execution_retry', {
             attempt: (attempt + 1).toString(),
           });
 
           // Wait before retry (exponential backoff)
-          await new Promise(resolve => 
+          await new Promise(resolve =>
             setTimeout(resolve, Math.pow(2, attempt) * 1000)
           );
         }
@@ -249,7 +249,7 @@ export async function executeBatchTestJobs(
   });
 
   const results = await Promise.all(
-    jobs.map(job => 
+    jobs.map(job =>
       executeTestJob(job).catch(error => ({
         jobId: job.id,
         testRunId: job.testRunId,

@@ -31,14 +31,14 @@ describe('Billing Enforcement Integration', () => {
 
   it('blocks when daily LLM token limit exceeded', async () => {
     vi.spyOn(prisma.costTracking, 'aggregate')
-      .mockResolvedValueOnce({ 
+      .mockResolvedValueOnce({
         _sum: { units: BILLING_TIERS.starter.limits.llmTokensPerDay },
         _count: undefined,
         _avg: undefined,
         _min: undefined,
         _max: undefined,
       } as unknown as never)
-      .mockResolvedValueOnce({ 
+      .mockResolvedValueOnce({
         _sum: { units: 0 },
         _count: undefined,
         _avg: undefined,

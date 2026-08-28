@@ -1,6 +1,6 @@
 /**
  * Standardized Error Envelope
- * 
+ *
  * All API errors and job failures use this structure for consistent
  * error handling across the application.
  */
@@ -8,22 +8,22 @@
 export interface ErrorEnvelope {
   /** Machine-readable error code */
   code: string;
-  
+
   /** Human-readable error message */
   message: string;
-  
+
   /** Correlation ID for tracing (UUID v4) */
   traceId: string;
-  
+
   /** Whether the operation can be retried */
   retryable: boolean;
-  
+
   /** Additional error details (safe for client exposure) */
   details?: Record<string, unknown>;
-  
+
   /** HTTP status code (for API responses) */
   statusCode?: number;
-  
+
   /** Timestamp when error occurred (ISO 8601) */
   timestamp?: string;
 }
@@ -75,28 +75,28 @@ export const ErrorCodes = {
   CONFLICT: 'CONFLICT',
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   RATE_LIMITED: 'RATE_LIMITED',
-  
+
   // Server errors (5xx)
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
   TIMEOUT: 'TIMEOUT',
-  
+
   // Job errors
   JOB_FAILED: 'JOB_FAILED',
   JOB_TIMEOUT: 'JOB_TIMEOUT',
   JOB_CANCELED: 'JOB_CANCELED',
-  
+
   // Database errors
   DB_CONNECTION_ERROR: 'DB_CONNECTION_ERROR',
   DB_QUERY_ERROR: 'DB_QUERY_ERROR',
   DB_CONSTRAINT_VIOLATION: 'DB_CONSTRAINT_VIOLATION',
-  
+
   // External service errors
   EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
   GITHUB_API_ERROR: 'GITHUB_API_ERROR',
   SUPABASE_ERROR: 'SUPABASE_ERROR',
   STRIPE_ERROR: 'STRIPE_ERROR',
-  
+
   // Multi-tenant errors
   TENANT_NOT_FOUND: 'TENANT_NOT_FOUND',
   TENANT_ISOLATION_VIOLATION: 'TENANT_ISOLATION_VIOLATION',
@@ -119,7 +119,7 @@ export function isRetryableError(code: ErrorCode): boolean {
     ErrorCodes.JOB_TIMEOUT,
     ErrorCodes.RATE_LIMITED,
   ];
-  
+
   return retryableCodes.includes(code);
 }
 
@@ -151,6 +151,6 @@ export function getHttpStatusCode(code: ErrorCode): number {
     [ErrorCodes.TENANT_NOT_FOUND]: 404,
     [ErrorCodes.TENANT_ISOLATION_VIOLATION]: 403,
   };
-  
+
   return statusMap[code] || 500;
 }

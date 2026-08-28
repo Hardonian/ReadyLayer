@@ -87,7 +87,7 @@ Create `.git/hooks/pre-commit` (optional):
 
 if git diff --cached --name-only | grep -q "package.json"; then
   echo "Checking package-lock.json sync status..."
-  
+
   if git diff --cached --name-only | grep -q "package-lock.json"; then
     echo "✓ package-lock.json updated"
   else

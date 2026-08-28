@@ -96,7 +96,7 @@ export function InteractivePRDemo({
         onComplete?.()
         return
       }
-      
+
       // Update check to running
       const runningTimer = setTimeout(() => {
         try {
@@ -207,11 +207,11 @@ export function InteractivePRDemo({
                 <span className="font-mono">Review ID: {check.reviewId}</span>
               )}
               {check.timestamp && (
-                <span>{new Date(check.timestamp).toLocaleString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
+                <span>{new Date(check.timestamp).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
                 })}</span>
               )}
               {check.reviewId && (

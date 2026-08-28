@@ -1,6 +1,6 @@
 /**
  * Database Guard Utilities
- * 
+ *
  * Provides graceful degradation when backend components are missing or misconfigured.
  * Never hard-500 user routes - return friendly errors instead.
  */
@@ -94,9 +94,9 @@ export async function checkRequiredTables(
 ): Promise<{ exists: boolean; missing: string[] }> {
   try {
     const result = await prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename 
-      FROM pg_tables 
-      WHERE schemaname = 'public' 
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
       AND tablename = ANY(${tables}::text[])
     `;
 

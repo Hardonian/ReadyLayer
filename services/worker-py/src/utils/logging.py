@@ -43,11 +43,11 @@ def _redact_secrets(
         "password", "token", "secret", "key", "auth", "credential",
         "api_key", "private_key", "access_token", "refresh_token",
     }
-    
+
     for key in list(event_dict.keys()):
         if any(sk in key.lower() for sk in secret_keys):
             event_dict[key] = "[REDACTED]"
-    
+
     return event_dict
 
 
@@ -55,7 +55,7 @@ def configure_logging() -> None:
     """Configure structured logging."""
     # Clear existing handlers
     logging.getLogger().handlers.clear()
-    
+
     # Configure structlog processors
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
@@ -65,7 +65,7 @@ def configure_logging() -> None:
         _add_correlation_id,
         _redact_secrets,
     ]
-    
+
     if settings.log_format == "json":
         # JSON format for production
         structlog.configure(
@@ -93,7 +93,7 @@ def configure_logging() -> None:
             logger_factory=structlog.PrintLoggerFactory(),
             cache_logger_on_first_use=True,
         )
-    
+
     # Configure standard library logging
     logging.basicConfig(
         format="%(message)s",

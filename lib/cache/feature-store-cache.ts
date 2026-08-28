@@ -1,10 +1,10 @@
 /**
  * Feature Store Redis Cache
- * 
+ *
  * P0: Distributed caching layer for feature store operations
  * Provides sub-millisecond latency for feature retrieval with
  * automatic fallback to database on cache misses.
- * 
+ *
  * Features:
  * - Multi-tier caching (L1: in-memory, L2: Redis cluster)
  * - Feature versioning support
@@ -72,7 +72,7 @@ class FeatureStoreCache {
     }
 
     try {
-      this.redisClient = createClient({ 
+      this.redisClient = createClient({
         url: redisUrl,
         socket: {
           reconnectStrategy: (retries) => Math.min(retries * 50, 500),
@@ -120,7 +120,7 @@ class FeatureStoreCache {
    */
   async get(entityType: string, entityId: string, featureNames?: string[]): Promise<FeatureSet | null> {
     const cacheKey = this.generateCacheKey(entityType, entityId, featureNames);
-    
+
     // L1: In-memory cache
     const l1Entry = this.inMemoryCache.get(cacheKey);
     if (l1Entry && Date.now() < l1Entry.expiresAt) {
@@ -193,13 +193,13 @@ class FeatureStoreCache {
    */
   async setWriteBehind(entityType: string, entityId: string, featureSet: FeatureSet): Promise<void> {
     const cacheKey = this.generateCacheKey(entityType, entityId);
-    
+
     // Write to cache immediately
     await this.set(entityType, entityId, featureSet);
-    
+
     // Queue for async DB write
     this.writeBehindQueue.push({ key: cacheKey, data: featureSet });
-    
+
     // Process if queue is getting large
     if (this.writeBehindQueue.length > 100) {
       this.processWriteBehindQueue();
@@ -211,19 +211,19 @@ class FeatureStoreCache {
    */
   async getBatch(entityType: string, entityIds: string[], featureNames?: string[]): Promise<Map<string, FeatureSet | null>> {
     const results = new Map<string, FeatureSet | null>();
-    
+
     // Use Redis pipeline for efficiency
     if (this.isRedisHealthy && this.redisClient && entityIds.length > 1) {
       try {
         const pipeline = this.redisClient.multi();
         const keys = entityIds.map(id => this.generateCacheKey(entityType, id, featureNames));
-        
+
         for (const key of keys) {
           pipeline.get(key);
         }
-        
+
         const responses = await pipeline.exec();
-        
+
         entityIds.forEach((id, index) => {
           const response = responses?.[index];
           if (response && typeof response === 'string') {
@@ -239,20 +239,20 @@ class FeatureStoreCache {
             results.set(id, null);
           }
         });
-        
+
         metrics.increment('feature_cache_batch_hit', { count: results.size.toString() });
         return results;
       } catch (error) {
         logger.warn({ error }, 'Redis pipeline error for batch get');
       }
     }
-    
+
     // Fallback to individual gets
     for (const entityId of entityIds) {
       const result = await this.get(entityType, entityId, featureNames);
       results.set(entityId, result);
     }
-    
+
     return results;
   }
 
@@ -260,7 +260,7 @@ class FeatureStoreCache {
    * Invalidate cache entries
    */
   async invalidate(entityType: string, entityId?: string): Promise<void> {
-    const pattern = entityId 
+    const pattern = entityId
       ? `${this.cacheKeyPrefix}${entityType}:${entityId}*`
       : `${this.cacheKeyPrefix}${entityType}:*`;
 
@@ -290,7 +290,7 @@ class FeatureStoreCache {
    */
   async warmCache(entityType: string, featureSets: Array<{ entityId: string; features: FeatureSet }>): Promise<void> {
     const pipeline = this.redisClient?.multi();
-    
+
     for (const { entityId, features } of featureSets) {
       const cacheKey = this.generateCacheKey(entityType, entityId);
       const entry: CacheEntry<FeatureSet> = {
@@ -299,16 +299,16 @@ class FeatureStoreCache {
         version: '1.0',
         lastAccessed: Date.now(),
       };
-      
+
       // Write to L1
       this.writeToL1(cacheKey, entry);
-      
+
       // Add to pipeline
       if (pipeline) {
         pipeline.setEx(cacheKey, this.redisTTL, JSON.stringify(entry));
       }
     }
-    
+
     // Execute pipeline
     if (pipeline) {
       try {
@@ -334,7 +334,7 @@ class FeatureStoreCache {
   } {
     const totalHits = this.cacheMetrics.hits.memory + this.cacheMetrics.hits.redis;
     const total = totalHits + this.cacheMetrics.misses;
-    
+
     return {
       l1Size: this.inMemoryCache.size,
       l1HitRate: total > 0 ? (this.cacheMetrics.hits.memory / total) * 100 : 0,
@@ -402,20 +402,20 @@ class FeatureStoreCache {
     if (this.writeBehindQueue.length === 0) return;
 
     const batch = this.writeBehindQueue.splice(0, 100);
-    
+
     // In production, this would write to the feature store database
     logger.info({ count: batch.length }, 'Processing write-behind batch');
-    
+
     // Simulate DB write - in production, implement actual persistence
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     metrics.increment('feature_write_behind_batch', { count: batch.length.toString() });
   }
 
   async disconnect(): Promise<void> {
     // Flush remaining write-behind queue
     await this.processWriteBehindQueue();
-    
+
     if (this.redisClient) {
       try {
         await this.redisClient.disconnect();
@@ -431,7 +431,7 @@ class FeatureStoreCache {
 const featureCacheInstance = new FeatureStoreCache();
 
 export const featureStoreCache = {
-  get: (entityType: string, entityId: string, featureNames?: string[]): Promise<FeatureSet | null> => 
+  get: (entityType: string, entityId: string, featureNames?: string[]): Promise<FeatureSet | null> =>
     featureCacheInstance.get(entityType, entityId, featureNames),
   set: (entityType: string, entityId: string, featureSet: FeatureSet, options?: { ttl?: number; version?: string }): Promise<void> =>
     featureCacheInstance.set(entityType, entityId, featureSet, options),

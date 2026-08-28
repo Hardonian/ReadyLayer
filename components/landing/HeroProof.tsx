@@ -225,7 +225,7 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
             >
               {/* Hero Illustration - Feature flagged via env */}
               {process.env.NEXT_PUBLIC_ENABLE_HERO_IMAGE === 'true' && (
-                <motion.div 
+                <motion.div
                   variants={prefersReducedMotion ? fadeIn : staggerItem}
                   className="mb-6"
                 >
@@ -238,7 +238,7 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
                   />
                 </motion.div>
               )}
-              
+
               <motion.div variants={prefersReducedMotion ? fadeIn : staggerItem}>
                  <div className="rounded-xl border border-border/20 bg-surface-code overflow-hidden shadow-code-preview">
                    <div className="flex items-center justify-between px-5 py-4 border-b border-border/20 bg-surface-dark">

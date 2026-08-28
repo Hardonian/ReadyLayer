@@ -1,6 +1,6 @@
 /**
  * Slack Events Handler
- * 
+ *
  * Processes Slack events (messages, reactions, etc.)
  */
 

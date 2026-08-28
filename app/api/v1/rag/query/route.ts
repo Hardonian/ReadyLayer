@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validation = querySchema.safeParse(bodyResult.data);
 
     if (!validation.success) {

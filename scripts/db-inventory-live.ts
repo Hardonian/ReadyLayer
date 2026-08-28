@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Database Inventory Script - Live State Discovery
- * 
+ *
  * Queries the live Supabase database to discover actual state:
  * - Tables, columns, types, defaults, nullability
  * - Indexes, constraints (PK, FK, UNIQUE, CHECK)
@@ -11,7 +11,7 @@
  * - Functions (RPC)
  * - Storage buckets (if any)
  * - Realtime publications
- * 
+ *
  * Usage:
  *   DATABASE_URL="postgresql://..." tsx scripts/db-inventory-live.ts > live-inventory.json
  */
@@ -108,9 +108,9 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
 
   // Get all tables in public schema
   const tablesResult = await prisma.$queryRaw<Array<{ tablename: string }>>`
-    SELECT tablename 
-    FROM pg_tables 
-    WHERE schemaname = 'public' 
+    SELECT tablename
+    FROM pg_tables
+    WHERE schemaname = 'public'
     AND tablename NOT LIKE '_prisma%'
     ORDER BY tablename;
   `;
@@ -130,24 +130,24 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
         is_primary: boolean;
         is_foreign: boolean;
       }>>`
-        SELECT 
+        SELECT
           c.column_name,
           c.data_type,
           c.is_nullable,
           c.column_default,
           EXISTS(
-            SELECT 1 FROM pg_constraint pk 
-            WHERE pk.conrelid = c.table_name::regclass 
-            AND pk.contype = 'p' 
+            SELECT 1 FROM pg_constraint pk
+            WHERE pk.conrelid = c.table_name::regclass
+            AND pk.contype = 'p'
             AND pk.conkey[1] = c.ordinal_position
           ) as is_primary,
           EXISTS(
-            SELECT 1 FROM pg_constraint fk 
-            WHERE fk.conrelid = c.table_name::regclass 
+            SELECT 1 FROM pg_constraint fk
+            WHERE fk.conrelid = c.table_name::regclass
             AND fk.contype = 'f'
           ) as is_foreign
         FROM information_schema.columns c
-        WHERE c.table_schema = 'public' 
+        WHERE c.table_schema = 'public'
         AND c.table_name = ${tableName}
         ORDER BY c.ordinal_position;
       `;
@@ -169,7 +169,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
       }>>`
         SELECT indexname, indexdef
         FROM pg_indexes
-        WHERE schemaname = 'public' 
+        WHERE schemaname = 'public'
         AND tablename = ${tableName};
       `;
 
@@ -177,10 +177,10 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
         const isUnique = idx.indexdef.includes('UNIQUE');
         const isPrimary = idx.indexdef.includes('PRIMARY KEY');
         const columnsMatch = idx.indexdef.match(/\(([^)]+)\)/);
-        const columns = columnsMatch 
+        const columns = columnsMatch
           ? columnsMatch[1].split(',').map(c => c.trim().replace(/"/g, ''))
           : [];
-        
+
         return {
           tableName,
           indexName: idx.indexname,
@@ -196,7 +196,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
         constraint_type: string;
         definition: string;
       }>>`
-        SELECT 
+        SELECT
           conname as constraint_name,
           CASE contype
             WHEN 'p' THEN 'PRIMARY KEY'
@@ -239,7 +239,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
         qual: string | null;
         with_check: string | null;
       }>>`
-        SELECT 
+        SELECT
           policyname,
           CASE cmd
             WHEN 'r' THEN 'SELECT'
@@ -251,7 +251,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
           pg_get_expr(qual, polrelid) as qual,
           pg_get_expr(with_check, polrelid) as with_check
         FROM pg_policies
-        WHERE schemaname = 'public' 
+        WHERE schemaname = 'public'
         AND tablename = ${tableName};
       `;
 
@@ -271,20 +271,20 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
         event_manipulation: string;
         action_statement: string;
       }>>`
-        SELECT 
+        SELECT
           trigger_name,
           action_timing,
           event_manipulation,
           action_statement
         FROM information_schema.triggers
-        WHERE event_object_schema = 'public' 
+        WHERE event_object_schema = 'public'
         AND event_object_table = ${tableName};
       `;
 
       const triggers: Trigger[] = triggersResult.map(trig => {
         const functionMatch = trig.action_statement.match(/EXECUTE FUNCTION\s+([^(]+)/i);
         const functionName = functionMatch ? functionMatch[1].trim() : '';
-        
+
         return {
           tableName,
           triggerName: trig.trigger_name,
@@ -315,7 +315,7 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
     routine_definition: string;
     security_type: string;
   }>>`
-    SELECT 
+    SELECT
       routine_name,
       routine_schema,
       data_type,
@@ -369,8 +369,8 @@ async function inventoryLiveDatabase(): Promise<Inventory> {
   let realtimePublications: string[] = [];
   try {
     const pubResult = await prisma.$queryRaw<Array<{ pubname: string }>>`
-      SELECT pubname 
-      FROM pg_publication 
+      SELECT pubname
+      FROM pg_publication
       WHERE pubname LIKE '%realtime%';
     `;
     realtimePublications = pubResult.map(p => p.pubname);

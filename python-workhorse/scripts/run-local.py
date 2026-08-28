@@ -24,14 +24,14 @@ def main():
         action="store_true",
         help="Run one iteration and exit (for testing)"
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.verbose:
         import logging
         logging.getLogger().setLevel(logging.DEBUG)
         logger.info("Verbose logging enabled")
-    
+
     if args.once:
         logger.info("Running single iteration...")
         from src.worker import run_worker_iteration

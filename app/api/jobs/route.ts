@@ -1,17 +1,17 @@
 /**
  * Jobs API Routes
- * 
+ *
  * POST /api/jobs - Enqueue a new job
  * GET /api/jobs - List jobs for tenant
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { 
-  enqueueJob, 
-  listJobs, 
+import {
+  enqueueJob,
+  listJobs,
   transformJobForApi,
-  JobStatus 
+  JobStatus
 } from '@/lib/jobs';
 import { requireAuth } from '@/lib/auth';
 import { logger } from '@/observability/logging';
@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
     const validationResult = enqueueJobSchema.safeParse(body);
     if (!validationResult.success) {
       return NextResponse.json(
-        { 
-          error: { 
-            code: 'VALIDATION_ERROR', 
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
             message: 'Invalid request body',
             context: { errors: validationResult.error.issues }
-          } 
+          }
         },
         { status: 400 }
       );
@@ -87,11 +87,11 @@ export async function POST(request: NextRequest) {
 
     const { type, payload, idempotencyKey, repositoryId, maxRetries } = validationResult.data;
 
-    log.info({ 
-      type, 
-      organizationId, 
+    log.info({
+      type,
+      organizationId,
       userId: user.id,
-      idempotencyKey 
+      idempotencyKey
     }, 'Enqueueing job');
 
     // Enqueue the job
@@ -108,12 +108,12 @@ export async function POST(request: NextRequest) {
     log.info({ jobId }, 'Job enqueued successfully');
 
     return NextResponse.json(
-      { 
-        data: { 
+      {
+        data: {
           id: jobId,
           status: 'queued',
           message: 'Job enqueued successfully'
-        } 
+        }
       },
       { status: 201 }
     );
@@ -123,12 +123,12 @@ export async function POST(request: NextRequest) {
 
     // Return friendly error with trace id
     return NextResponse.json(
-      { 
-        error: { 
-          code: 'INTERNAL_ERROR', 
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
           message: 'Failed to enqueue job. Please try again later.',
           context: { traceId: requestId }
-        } 
+        }
       },
       { status: 500 }
     );
@@ -173,12 +173,12 @@ export async function GET(request: NextRequest) {
 
     if (!queryResult.success) {
       return NextResponse.json(
-        { 
-          error: { 
-            code: 'VALIDATION_ERROR', 
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
             message: 'Invalid query parameters',
             context: { errors: queryResult.error.issues }
-          } 
+          }
         },
         { status: 400 }
       );
@@ -211,12 +211,12 @@ export async function GET(request: NextRequest) {
     log.error(error, 'Failed to list jobs');
 
     return NextResponse.json(
-      { 
-        error: { 
-          code: 'INTERNAL_ERROR', 
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
           message: 'Failed to list jobs. Please try again later.',
           context: { traceId: requestId }
-        } 
+        }
       },
       { status: 500 }
     );

@@ -18,7 +18,7 @@ npm run dev
 
 That's it. ReadyLayer will:
 - ✅ Start with local SQLite database
-- ✅ Create admin user automatically  
+- ✅ Create admin user automatically
 - ✅ Load sample governance policies
 - ✅ Be ready for first repository integration
 

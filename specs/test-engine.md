@@ -103,19 +103,19 @@ function detectFramework(repo: Repo): TestFramework | null {
   // 1. Check config files
   if (exists("jest.config.js")) return frameworks.jest;
   if (exists("pytest.ini")) return frameworks.pytest;
-  
+
   // 2. Check test files
   const testFiles = findFiles("**/*.test.ts", "**/*_test.py", ...);
   if (testFiles.length > 0) {
     // Analyze test file structure
     return inferFramework(testFiles[0]);
   }
-  
+
   // 3. Check package.json / requirements.txt
   const deps = readDependencies();
   if (deps.includes("jest")) return frameworks.jest;
   if (deps.includes("pytest")) return frameworks.pytest;
-  
+
   return null; // No framework detected
 }
 ```
@@ -176,12 +176,12 @@ describe('functionToTest', () => {
     const result = functionToTest('input');
     expect(result).toBe('expected');
   });
-  
+
   it('should handle edge case', () => {
     const result = functionToTest('');
     expect(result).toBeNull();
   });
-  
+
   it('should handle error case', () => {
     expect(() => functionToTest(null)).toThrow();
   });
@@ -297,7 +297,7 @@ test:
 function enforceCoverage(coverage: CoverageMetrics, config: TestConfig): EnforcementResult {
   const threshold = config.coverage.threshold;
   const metric = coverage[config.coverage.metric];
-  
+
   if (metric.percentage < threshold) {
     return {
       passed: false,
@@ -305,7 +305,7 @@ function enforceCoverage(coverage: CoverageMetrics, config: TestConfig): Enforce
       action: config.coverage.fail_on_below ? "block" : "warn"
     };
   }
-  
+
   return {
     passed: true,
     message: `Coverage ${metric.percentage}% meets threshold ${threshold}%`
@@ -452,22 +452,22 @@ test:
   framework: "jest" # Auto-detect if not specified
   placement: "co-located"
   test_dir: "tests"
-  
+
   ai_detection:
     methods: ["commit_message", "author", "pattern"]
     confidence_threshold: 0.7
-  
+
   coverage:
     threshold: 80
     metric: "lines"
     enforce_on: "pr"
     fail_on_below: true
-  
+
   generation:
     include_edge_cases: true
     include_error_cases: true
     match_existing_style: true
-  
+
   excluded_paths:
     - "**/vendor/**"
     - "**/node_modules/**"

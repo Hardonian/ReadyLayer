@@ -4,7 +4,7 @@ import { useCallback, useRef } from 'react'
 
 /**
  * Cache invalidation hook
- * 
+ *
  * Provides a simple cache invalidation mechanism for client-side data fetching.
  * In a production app, consider using React Query or SWR for more robust caching.
  */

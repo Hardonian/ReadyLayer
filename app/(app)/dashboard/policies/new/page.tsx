@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -15,8 +15,8 @@ import {
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
-import { 
-  Shield, 
+import {
+  Shield,
   ArrowLeft,
   Save,
   Code,
@@ -39,7 +39,7 @@ export default function NewPolicyPage() {
   const [viewMode, setViewMode] = useState<'json' | 'yaml'>('json')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Get provider theme (will adapt when repository is selected)
   const { theme } = useGitProvider()
 
@@ -119,8 +119,8 @@ export default function NewPolicyPage() {
             </Button>
           </Link>
           <div className="flex items-center gap-3">
-            <Shield 
-              className="h-8 w-8" 
+            <Shield
+              className="h-8 w-8"
               style={{ color: theme?.colors.primary || 'currentColor' }}
             />
             <h1 className="text-3xl font-bold">Create Policy Pack</h1>

@@ -1,12 +1,12 @@
 /**
  * Service Result Type
- * 
+ *
  * Standardized result pattern for all services.
  * Uses discriminated unions to represent three outcomes:
  * 1. Success (status: 'ok') - operation completed successfully
  * 2. Blocked (status: 'blocked') - operation is blocked/gated but not an error
  * 3. Error (status: 'error') - operation failed with an error
- * 
+ *
  * ARCHITECTURE:
  * - All services return ServiceResult<T> instead of throwing mixed patterns
  * - Callers use type narrowing to handle each case
@@ -84,7 +84,7 @@ export function serviceError(error: Error | string, details?: Record<string, unk
 
 /**
  * Example usage pattern (for reference):
- * 
+ *
  * ```typescript
  * export async function myScan(input: MyInput): Promise<ServiceResult<MyScan>> {
  *   try {
@@ -92,24 +92,24 @@ export function serviceError(error: Error | string, details?: Record<string, unk
  *     if (!input.isValid()) {
  *       return serviceBlocked('Invalid input', { reason: 'missing_field_X' })
  *     }
- *     
+ *
  *     // Execute scan
  *     const result = await executeScan(input)
- *     
+ *
  *     // Check for policy violations
  *     if (result.violatesPolicy) {
  *       return serviceBlocked('Policy violation', { rule: result.violatingRule })
  *     }
- *     
+ *
  *     return serviceOk(result)
  *   } catch (error) {
  *     return serviceError(error instanceof Error ? error : new Error(String(error)))
  *   }
  * }
- * 
+ *
  * // Caller code:
  * const result = await myScan(input)
- * 
+ *
  * if (isServiceResultOk(result)) {
  *   // Fully typed as ServiceResultOk<MyScan>
  *   console.log('Scan passed:', result.data)

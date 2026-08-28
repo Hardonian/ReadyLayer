@@ -1,6 +1,6 @@
 /**
  * Memoization Utilities
- * 
+ *
  * Provides caching decorators and utilities for expensive function calls.
  * Optimized for high-frequency operations with TTL and LRU eviction.
  */
@@ -40,7 +40,7 @@ export function createMemoizedFunction<T extends (...args: unknown[]) => Promise
   cleanupInterval.unref?.();
 
   return async function memoizedWrapper(...args: Parameters<T>): Promise<ReturnType<T>> {
-    const key = options.keyGenerator 
+    const key = options.keyGenerator
       ? options.keyGenerator(...args)
       : JSON.stringify(args);
 
@@ -57,7 +57,7 @@ export function createMemoizedFunction<T extends (...args: unknown[]) => Promise
     if (cache.size >= maxSize && !cached) {
       let oldestKey = cache.keys().next().value as string;
       let oldestTime = cache.get(oldestKey)?.lastAccessed ?? now;
-      
+
       for (const [k, v] of cache.entries()) {
         if (v.lastAccessed < oldestTime) {
           oldestTime = v.lastAccessed;
@@ -68,7 +68,7 @@ export function createMemoizedFunction<T extends (...args: unknown[]) => Promise
     }
 
     const result = await fn(...args) as ReturnType<T>;
-    
+
     cache.set(key, {
       value: result,
       expiresAt: now + options.ttlMs,
@@ -131,7 +131,7 @@ export class SimpleCache<T> {
   private evictLRU(): void {
     let oldestKey = this.cache.keys().next().value as string;
     let oldestTime = this.cache.get(oldestKey)?.lastAccessed ?? Date.now();
-    
+
     for (const [k, v] of this.cache.entries()) {
       if (v.lastAccessed < oldestTime) {
         oldestTime = v.lastAccessed;
@@ -164,7 +164,7 @@ export function memoize<T>(options: MemoizeOptions) {
     const maxSize = options.maxSize ?? 1000;
 
     descriptor.value = async function memoizedMethod(...args: unknown[]): Promise<T> {
-      const key = options.keyGenerator 
+      const key = options.keyGenerator
         ? options.keyGenerator(...args)
         : `${propertyKey}:${JSON.stringify(args)}`;
 
@@ -180,7 +180,7 @@ export function memoize<T>(options: MemoizeOptions) {
       if (cache.size >= maxSize && !cached) {
         let oldestKey = cache.keys().next().value as string;
         let oldestTime = cache.get(oldestKey)?.lastAccessed ?? now;
-        
+
         for (const [k, v] of cache.entries()) {
           if (v.lastAccessed < oldestTime) {
             oldestTime = v.lastAccessed;
@@ -192,7 +192,7 @@ export function memoize<T>(options: MemoizeOptions) {
 
       try {
         const result = await originalMethod.apply(this, args) as T;
-        
+
         cache.set(key, {
           value: result,
           expiresAt: now + options.ttlMs,

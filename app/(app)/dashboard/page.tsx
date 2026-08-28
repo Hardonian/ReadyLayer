@@ -4,10 +4,10 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   ErrorState,
   EmptyState,
@@ -17,11 +17,11 @@ import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
 import { getDifficultyColor, getImpactColor, type DifficultyLevel, type ImpactLevel } from '@/lib/utils/color-mapping'
-import { 
-  Shield, 
-  CheckCircle2, 
-  AlertTriangle, 
-  GitBranch, 
+import {
+  Shield,
+  CheckCircle2,
+  AlertTriangle,
+  GitBranch,
   FileText,
   ArrowRight,
   Database,
@@ -141,7 +141,7 @@ const DashboardPage: React.FC = () => {
   const fetchDashboardData = useCallback(async () => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      
+
       if (!url || !key) {
         setError('Configuration not available')
         setLoading(false)
@@ -229,19 +229,19 @@ const DashboardPage: React.FC = () => {
               'Authorization': `Bearer ${session.access_token}`,
             },
           })
-          
+
           if (usageResponse.ok) {
             const usageData = (await usageResponse.json()) as { data?: Partial<UsageStats> & { organizationId?: string } }
             // Only set usage stats if we have valid data structure
             const usageDataValue = usageData.data
-            if (usageDataValue && 
-                usageDataValue.llmTokens && 
-                usageDataValue.runs && 
-                usageDataValue.concurrentJobs && 
+            if (usageDataValue &&
+                usageDataValue.llmTokens &&
+                usageDataValue.runs &&
+                usageDataValue.concurrentJobs &&
                 usageDataValue.budget) {
               setUsageStats(usageDataValue as UsageStats)
             }
-            
+
             // Set organizationId from response if available
             if (usageDataValue?.organizationId) {
               setOrganizationId(usageDataValue.organizationId)
@@ -254,7 +254,7 @@ const DashboardPage: React.FC = () => {
                     'Authorization': `Bearer ${session.access_token}`,
                   },
                 }).then((r) => r.ok ? (r.json() as Promise<{ data?: { organizationId?: string } }>) : null).catch(() => null)
-                
+
                 if (repoDetails?.data?.organizationId) {
                   setOrganizationId(repoDetails.data.organizationId)
                 }
@@ -544,7 +544,7 @@ const DashboardPage: React.FC = () => {
               <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                 <div className="text-xs font-semibold text-primary mb-1">The Inevitability Principle</div>
                 <div className="text-xs text-muted-foreground">
-                  If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms. 
+                  If it passed ReadyLayer, we can defend it in audits, postmortems, and courtrooms.
                   If ReadyLayer didn&apos;t review it, that absence is visible.
                 </div>
               </div>
@@ -831,8 +831,8 @@ const DashboardPage: React.FC = () => {
                               <p className="text-sm text-muted-foreground">{repo.provider}</p>
                             </div>
                             <span className={`px-2 py-1 text-xs rounded ${
-                              repo.enabled 
-                                ? 'bg-success-muted text-success-foreground' 
+                              repo.enabled
+                                ? 'bg-success-muted text-success-foreground'
                                 : 'bg-surface-muted text-text-muted'
                             }`}>
                               {repo.enabled ? 'Active' : 'Inactive'}

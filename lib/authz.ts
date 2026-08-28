@@ -1,6 +1,6 @@
 /**
  * Authorization Middleware
- * 
+ *
  * RBAC and resource-level authorization
  */
 

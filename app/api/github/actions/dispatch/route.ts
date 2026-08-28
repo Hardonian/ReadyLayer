@@ -18,7 +18,7 @@ const dispatchSchema = z.object({
 /**
  * POST /api/github/actions/dispatch
  * Dispatch a GitHub Actions workflow
- * 
+ *
  * Requires:
  * - Authentication
  * - Repository access
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     if (!parseResult.success) {
       return parseResult.response;
     }
-    
+
     const bodyResult = await validateBody(
       parseResult.data,
       dispatchSchema
@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
       );
     } catch (error) {
       log.error(error, 'Failed to trigger pipeline');
-      
+
       // Handle pipeline not found gracefully
       if (error instanceof Error && (error.message.includes('404') || error.message.includes('Not Found'))) {
         const providerName = repository.provider === 'github' ? 'GitHub' : repository.provider === 'gitlab' ? 'GitLab' : 'Bitbucket';

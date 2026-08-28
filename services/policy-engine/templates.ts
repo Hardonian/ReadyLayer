@@ -1,6 +1,6 @@
 /**
  * Policy Engine Templates
- * 
+ *
  * Pre-built policy templates for common compliance standards:
  * - OWASP Top 10
  * - PCI-DSS

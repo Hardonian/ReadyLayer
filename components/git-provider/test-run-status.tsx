@@ -41,7 +41,7 @@ interface TestRun {
 
 /**
  * Test Run Status Component
- * 
+ *
  * Shows test execution status, coverage, and pass/fail summary
  */
 export function TestRunStatus({

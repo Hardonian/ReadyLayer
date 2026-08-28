@@ -1,6 +1,6 @@
 /**
  * Privacy & Compliance Service
- * 
+ *
  * Handles PII anonymization, data retention, consent management
  * Ensures GDPR and other compliance requirements
  */
@@ -148,7 +148,7 @@ export class PrivacyComplianceService {
    */
   private detectPII(data: Record<string, unknown>): boolean {
     const dataStr = JSON.stringify(data);
-    
+
     // Check for common PII patterns
     const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
     const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}\b/;

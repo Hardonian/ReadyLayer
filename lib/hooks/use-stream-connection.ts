@@ -1,6 +1,6 @@
 /**
  * SSE Stream Connection Hook
- * 
+ *
  * Manages Server-Sent Events connection for real-time dashboard updates
  */
 

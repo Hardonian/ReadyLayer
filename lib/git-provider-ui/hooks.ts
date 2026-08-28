@@ -1,6 +1,6 @@
 /**
  * Git Provider UI Hooks
- * 
+ *
  * React hooks for Git provider-aware UI components
  */
 
@@ -59,7 +59,7 @@ export function useProviderStyles(provider: GitProvider): {
   getStatusColor: (status: 'success' | 'failure' | 'pending' | 'error') => string
 } {
   const config = getGitProviderUIConfig(provider)
-  
+
   return {
     colors: config.theme.colors,
     spacing: config.theme.spacing,

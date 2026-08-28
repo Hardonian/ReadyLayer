@@ -1,10 +1,10 @@
 /**
  * Intelligent Batch Backfill with ML
- * 
+ *
  * P1: ML-powered batch backfill for missing feature data
  * Uses pattern recognition and interpolation to intelligently
  * fill gaps in historical data with confidence scoring.
- * 
+ *
  * Features:
  * - Pattern-based gap detection and classification
  * - Multiple interpolation strategies (linear, spline, ML-based)
@@ -84,7 +84,7 @@ export class IntelligentBatchBackfill {
   ): DataGap[] {
     const startTime = Date.now();
     const gaps: DataGap[] = [];
-    
+
     // Group by feature
     const featureGroups = new Map<string, typeof data>();
     for (const point of data) {
@@ -110,7 +110,7 @@ export class IntelligentBatchBackfill {
 
         if (prev.value !== null && curr.value !== null) {
           const gapMs = curr.timestamp.getTime() - prev.timestamp.getTime();
-          
+
           // Check if gap exceeds expected interval
           if (gapMs > expectedIntervalMs * 2 && gapMs <= maxGapMs) {
             gaps.push({
@@ -150,7 +150,7 @@ export class IntelligentBatchBackfill {
       for (const run of nullRuns) {
         const startPoint = sorted[Math.max(0, run.start - 1)];
         const endPoint = sorted[Math.min(sorted.length - 1, run.end + 1)];
-        
+
         if (startPoint && endPoint) {
           gaps.push({
             startTime: startPoint.timestamp,
@@ -193,16 +193,16 @@ export class IntelligentBatchBackfill {
     for (const batch of batches) {
       const batchPromises = batch.map(async (gap) => {
         const gapStartTime = Date.now();
-        
+
         // Select best strategy for this gap
         const strategy = this.selectStrategy(gap, historicalData);
-        
+
         // Fill the gap
         const filledData = await this.fillGap(gap, strategy, historicalData);
-        
+
         // Validate and score
         const quality = this.assessQuality(filledData, historicalData, gap);
-        
+
         const result: BackfillResult = {
           gap,
           strategy,
@@ -245,7 +245,7 @@ export class IntelligentBatchBackfill {
     historicalData: Array<{ timestamp: Date; featureName: string; value: number }>
   ): BackfillStrategy {
     const gapHours = gap.durationMs / (60 * 60 * 1000);
-    
+
     // Get historical patterns for this feature
     const featureData = historicalData.filter(
       d => gap.affectedFeatures.includes(d.featureName)
@@ -253,7 +253,7 @@ export class IntelligentBatchBackfill {
 
     // Check for strong patterns
     const hasStrongPattern = this.detectPatternStrength(featureData);
-    
+
     // Small gap: Use interpolation
     if (gapHours <= 2 && gap.estimatedDataPoints <= 4) {
       return {
@@ -280,7 +280,7 @@ export class IntelligentBatchBackfill {
         name: 'ML Prediction',
         type: 'ml_prediction',
         confidence: this.calculateMLConfidence(featureData, gap),
-        params: { 
+        params: {
           model: 'exponential_smoothing',
           seasonality: true,
         },
@@ -311,7 +311,7 @@ export class IntelligentBatchBackfill {
     const beforeGap = historicalData
       .filter(d => d.featureName === featureName && d.timestamp < gap.startTime)
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())[0];
-    
+
     const afterGap = historicalData
       .filter(d => d.featureName === featureName && d.timestamp > gap.endTime)
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())[0];
@@ -327,7 +327,7 @@ export class IntelligentBatchBackfill {
             afterGap?.value,
             i / gap.estimatedDataPoints
           );
-          
+
           filledData.push({
             timestamp,
             featureName,
@@ -344,7 +344,7 @@ export class IntelligentBatchBackfill {
         for (let i = 0; i < gap.estimatedDataPoints; i++) {
           const timestamp = new Date(gap.startTime.getTime() + i * intervalMs);
           const patternValue = pattern[i % pattern.length];
-          
+
           filledData.push({
             timestamp,
             featureName,
@@ -375,7 +375,7 @@ export class IntelligentBatchBackfill {
         for (let i = 0; i < gap.estimatedDataPoints; i++) {
           const timestamp = new Date(gap.startTime.getTime() + i * intervalMs);
           const decay = Math.pow(strategy.params.decayFactor as number, i);
-          
+
           filledData.push({
             timestamp,
             featureName,
@@ -443,7 +443,7 @@ export class IntelligentBatchBackfill {
    */
   private classifyGap(gapMs: number, expectedIntervalMs: number): DataGap['gapType'] {
     const gapRatio = gapMs / expectedIntervalMs;
-    
+
     if (gapRatio <= 2) return 'partial';
     if (gapRatio <= 10) return 'missing';
     if (gapRatio <= 50) return 'delayed';
@@ -463,7 +463,7 @@ export class IntelligentBatchBackfill {
 
     for (let i = 1; i < sorted.length; i++) {
       const next = sorted[i];
-      
+
       // Check for overlap
       if (next.startTime.getTime() <= current.endTime.getTime()) {
         // Merge
@@ -609,17 +609,17 @@ export class IntelligentBatchBackfill {
     let smoothed = data[data.length - 1];
 
     const predictions: Array<{ value: number; confidence: number }> = [];
-    
+
     for (let i = 0; i < gap.estimatedDataPoints; i++) {
       // Update smoothed value
       smoothed = alpha * (smoothed + trend) + (1 - alpha) * smoothed;
-      
+
       // Forecast with trend
       const forecast = smoothed + (i + 1) * trend * alpha;
-      
+
       // Confidence decreases with horizon
       const confidence = Math.max(0.5, 0.9 - i * 0.05);
-      
+
       predictions.push({
         value: Math.max(0, forecast),
         confidence,

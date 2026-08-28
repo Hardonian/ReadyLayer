@@ -51,8 +51,8 @@ export const GET = createRouteHandler(
 
     // Build where clause with tenant isolation
     const where: Record<string, unknown> = {
-      organizationId: organizationId 
-        ? organizationId 
+      organizationId: organizationId
+        ? organizationId
         : { in: userOrgIds }, // Only show repos from user's organizations
     };
 

@@ -419,10 +419,10 @@ while (true)
 {
     var result = await client.Repositories.ListAsync(params);
     allRepos.AddRange(result.Repositories);
-    
+
     if (!result.Pagination.HasMore)
         break;
-    
+
     params.Offset = result.Pagination.Offset + result.Pagination.Limit;
 }
 ```
@@ -457,7 +457,7 @@ Or for dependency injection scenarios:
 
 ```csharp
 // In your DI registration
-services.AddSingleton<ReadyLayerClient>(sp => 
+services.AddSingleton<ReadyLayerClient>(sp =>
     new ReadyLayerClient(configuration["ReadyLayer:ApiToken"]));
 
 // The client will be disposed when the application shuts down

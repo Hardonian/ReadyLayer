@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 /**
  * Database Contract Verification Script
- * 
+ *
  * Compares live database state vs expected contract and reports differences.
- * 
+ *
  * Usage:
  *   DATABASE_URL="postgresql://..." tsx scripts/db-verify.ts
- * 
+ *
  * Exit codes:
  *   0 - All checks passed
  *   1 - Critical issues found (missing tables, RLS not enabled)

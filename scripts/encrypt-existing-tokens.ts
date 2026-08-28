@@ -1,16 +1,16 @@
 /**
  * Encrypt Existing Installation Tokens (Legacy Script)
- * 
+ *
  * This script encrypts all plaintext tokens in the Installation table.
  * Uses the new crypto module with key rotation support.
- * 
+ *
  * Usage:
  *   READY_LAYER_KMS_KEY=<your-key> npm run secrets:encrypt-tokens
  *   OR
  *   READY_LAYER_MASTER_KEY=<your-key> npm run secrets:encrypt-tokens
  *   OR
  *   READY_LAYER_KEYS="v1:key1;v2:key2" npm run secrets:encrypt-tokens
- * 
+ *
  * For migration to new format, use: npm run secrets:migrate-tokens
  */
 

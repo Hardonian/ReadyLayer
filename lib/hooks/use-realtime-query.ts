@@ -1,6 +1,6 @@
 /**
  * Realtime Query Hook
- * 
+ *
  * Combines snapshot queries with SSE delta updates
  */
 

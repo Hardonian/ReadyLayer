@@ -1,9 +1,9 @@
 /**
  * Breaking Change Detector
- * 
+ *
  * Analyzes code changes to detect breaking changes.
  * Essential for OSS maintainers to prevent unintended API breaks.
- * 
+ *
  * Detects:
  * - Function signature changes (removed/renamed parameters)
  * - Function visibility changes (export removal)

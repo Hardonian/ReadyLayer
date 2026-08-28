@@ -1,6 +1,6 @@
 /**
  * Provider Configuration API Routes
- * 
+ *
  * POST /api/v1/providers - Create/update provider config
  * GET /api/v1/providers - List provider configs for org
  */

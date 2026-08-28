@@ -23,26 +23,26 @@ class VitestParser(BaseParser):
 
     def parse(self, output: ToolOutput) -> List[Finding]:
         findings: List[Finding] = []
-        
+
         if output.exit_code == 0:
             # Check if there are failures despite exit code 0 (unlikely but possible)
             if 'FAIL' not in output.raw_output:
                 return findings
-        
+
         raw = output.raw_output
-        
+
         # Look for failure patterns
         # Vitest outputs failures in sections starting with FAIL
         failure_sections = re.split(r'\n(?=FAIL\s+)', raw)
-        
+
         for section in failure_sections:
             if not section.startswith('FAIL'):
                 continue
-            
+
             # Extract test file
             lines = section.split('\n')
             test_file = lines[0].replace('FAIL', '').strip()
-            
+
             # Extract error message
             error_match = re.search(
                 r'(?:AssertionError|Error):\s*(.+?)(?=\n\s*at|\n\n|$)',
@@ -50,7 +50,7 @@ class VitestParser(BaseParser):
                 re.DOTALL
             )
             error_message = error_match.group(1).strip() if error_match else "Test assertion failed"
-            
+
             # Extract location
             location_match = re.search(r'at\s+([^:]+):(\d+):(\d+)', section)
             if location_match:
@@ -61,7 +61,7 @@ class VitestParser(BaseParser):
                 location = test_file
                 line = None
                 col = None
-            
+
             finding = Finding(
                 rule_id="vitest/test-failure",
                 category=Category.TEST,
@@ -81,7 +81,7 @@ class VitestParser(BaseParser):
                 tool="vitest",
             )
             findings.append(finding)
-        
+
         # If no specific failures parsed but exit code indicates failure
         if not findings and output.exit_code != 0:
             findings.append(
@@ -97,5 +97,5 @@ class VitestParser(BaseParser):
                     tool="vitest",
                 )
             )
-        
+
         return findings

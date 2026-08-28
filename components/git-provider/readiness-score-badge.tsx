@@ -1,6 +1,6 @@
 /**
  * Readiness Score Badge
- * 
+ *
  * Displays repository readiness score in PR context.
  */
 

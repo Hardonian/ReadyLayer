@@ -1,6 +1,6 @@
 /**
  * Test Billing Enforcement
- * 
+ *
  * Verifies that billing limits are enforced correctly
  */
 
@@ -25,7 +25,7 @@ async function testBillingEnforcement(): Promise<void> {
 
   // Test 2: Check repository limit
   console.log('2️⃣  Testing repository limit enforcement...');
-  
+
   const tier = await billingService.getOrganizationTier(org.id);
   console.log(`   Plan: ${tier.name}`);
   console.log(`   Max repos: ${tier.features.maxRepos === -1 ? 'Unlimited' : tier.features.maxRepos}`);
@@ -58,7 +58,7 @@ async function testBillingEnforcement(): Promise<void> {
 
   // Test 3: Check LLM budget
   console.log('3️⃣  Testing LLM budget enforcement...');
-  
+
   const budget = await billingService.checkLLMBudget(org.id);
   console.log(`   Current spend: $${budget.currentSpend.toFixed(2)}`);
   console.log(`   Budget: $${budget.budget.toFixed(2)}`);
@@ -73,7 +73,7 @@ async function testBillingEnforcement(): Promise<void> {
 
   // Test 4: Check feature access
   console.log('4️⃣  Testing feature access...');
-  
+
   const canUseReviewGuard = await billingService.canUseFeature(org.id, 'reviewGuard');
   const canUseTestEngine = await billingService.canUseFeature(org.id, 'testEngine');
   const canUseDocSync = await billingService.canUseFeature(org.id, 'docSync');
@@ -90,7 +90,7 @@ async function testBillingEnforcement(): Promise<void> {
 
   // Test 5: Check enforcement strength
   console.log('5️⃣  Testing enforcement strength...');
-  
+
   const strength = await billingService.getEnforcementStrength(org.id);
   console.log(`   Enforcement strength: ${strength}`);
 

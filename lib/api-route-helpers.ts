@@ -1,6 +1,6 @@
 /**
  * API Route Helpers
- * 
+ *
  * Standardized utilities for API route handlers
  * Provides consistent error handling, validation, and response formatting
  */

@@ -1,6 +1,6 @@
 /**
  * False Positive Tracking
- * 
+ *
  * Tracks false positives by monitoring waiver creation
  * Waivers are a proxy for false positives (users waive issues they believe are false)
  */

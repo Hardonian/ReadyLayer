@@ -1,10 +1,10 @@
 /**
  * Feature Drift Detection
- * 
+ *
  * P1: Detect when feature distributions change over time
  * Uses statistical tests (KS test, Chi-square, PSI) to detect
  * drift in feature values that may indicate model degradation.
- * 
+ *
  * Features:
  * - Kolmogorov-Smirnov test for numerical features
  * - Chi-square test for categorical features
@@ -138,7 +138,7 @@ export class FeatureDriftDetector {
 
     // Calculate PSI
     const psi = this.calculatePSI(baseline, current);
-    
+
     // Estimate KS statistic from distributions
     const ksResult = this.estimateKSStatistic(baseline, current);
 
@@ -282,11 +282,11 @@ export class FeatureDriftDetector {
     // Simplified PSI using mean difference relative to std
     const meanDiff = Math.abs(current.mean! - baseline.mean!);
     const pooledStd = Math.sqrt((baseline.std! ** 2 + current.std! ** 2) / 2);
-    
+
     if (pooledStd === 0) return 0;
-    
+
     const standardizedDiff = meanDiff / pooledStd;
-    
+
     // Approximate PSI from standardized difference
     if (standardizedDiff < 0.1) return 0;
     if (standardizedDiff < 0.5) return 0.05 + standardizedDiff * 0.2;
@@ -304,17 +304,17 @@ export class FeatureDriftDetector {
     // Simplified KS estimation from mean/std difference
     const meanDiff = Math.abs(current.mean! - baseline.mean!);
     const pooledStd = Math.sqrt((baseline.std! ** 2 + current.std! ** 2) / 2);
-    
+
     if (pooledStd === 0) return { statistic: 0, pValue: 1 };
-    
+
     // Approximate KS statistic from standardized mean difference
     const d = Math.min(meanDiff / pooledStd * 0.5, 1);
-    
+
     // Approximate p-value (simplified)
     const n = Math.min(baseline.count, current.count);
     const lambda = (Math.sqrt(n) + 0.12 + 0.11 / Math.sqrt(n)) * d;
     const pValue = Math.exp(-2 * lambda * lambda);
-    
+
     return { statistic: d, pValue };
   }
 
@@ -329,14 +329,14 @@ export class FeatureDriftDetector {
     const currentTotal = Object.values(current).reduce((a, b) => a + b, 0);
 
     const allCategories = new Set([...Object.keys(baseline), ...Object.keys(current)]);
-    
+
     let chiSquare = 0;
     const degreesOfFreedom = allCategories.size - 1;
 
     for (const category of allCategories) {
       const observed = current[category] || 0;
       const expected = (baseline[category] || 0) / baselineTotal * currentTotal;
-      
+
       if (expected > 0) {
         chiSquare += Math.pow(observed - expected, 2) / expected;
       }
@@ -344,7 +344,7 @@ export class FeatureDriftDetector {
 
     // Approximate p-value using chi-square distribution
     // For simplicity, using a rough approximation
-    const pValue = degreesOfFreedom > 0 
+    const pValue = degreesOfFreedom > 0
       ? Math.exp(-chiSquare / (2 * degreesOfFreedom))
       : 1;
 
@@ -362,7 +362,7 @@ export class FeatureDriftDetector {
     const currentTotal = Object.values(current).reduce((a, b) => a + b, 0);
 
     const allCategories = new Set([...Object.keys(baseline), ...Object.keys(current)]);
-    
+
     let psi = 0;
 
     for (const category of allCategories) {
@@ -447,20 +447,20 @@ export class FeatureDriftDetector {
     }
 
     const recommendations: string[] = [];
-    
+
     if (psi > this.config.psiThreshold) {
       recommendations.push(`PSI of ${psi.toFixed(3)} indicates distribution shift`);
     }
-    
+
     if (Math.abs(meanDiff) > 0.1) {
       recommendations.push(`Mean shifted by ${meanDiff.toFixed(3)}`);
     }
-    
+
     if (Math.abs(stdDiff) > 0.05) {
       recommendations.push(`Variance changed by ${stdDiff.toFixed(3)}`);
     }
 
-    const action = severity === 'critical' 
+    const action = severity === 'critical'
       ? 'Immediate model retraining recommended'
       : severity === 'high'
       ? 'Schedule model retraining soon'
@@ -487,11 +487,11 @@ export class FeatureDriftDetector {
     const disappearedCategories = Object.keys(baseline).filter(c => !current[c]);
 
     const parts: string[] = [];
-    
+
     if (newCategories.length > 0) {
       parts.push(`${newCategories.length} new categories detected`);
     }
-    
+
     if (disappearedCategories.length > 0) {
       parts.push(`${disappearedCategories.length} categories disappeared`);
     }

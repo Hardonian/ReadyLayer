@@ -28,7 +28,7 @@ interface PolicyStatusWidgetProps {
 
 /**
  * Policy Status Widget
- * 
+ *
  * Transposable widget that adapts to Git provider UI
  * Can be embedded in PR/MR pages or shown standalone
  */

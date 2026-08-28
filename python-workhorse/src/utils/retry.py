@@ -20,7 +20,7 @@ def retry_with_backoff(
     on_retry: Optional[Callable[[Exception, int, float], None]] = None,
 ) -> Callable:
     """Decorator for retrying functions with exponential backoff.
-    
+
     Args:
         max_retries: Maximum number of retry attempts
         base_delay: Initial delay between retries in seconds
@@ -28,7 +28,7 @@ def retry_with_backoff(
         exponential_base: Base for exponential calculation
         retryable_exceptions: Tuple of exception types to retry on
         on_retry: Optional callback function(exc, attempt, delay)
-    
+
     Returns:
         Decorated function
     """
@@ -36,23 +36,23 @@ def retry_with_backoff(
         @functools.wraps(func)
         def wrapper(*args, **kwargs) -> T:
             last_exception = None
-            
+
             for attempt in range(max_retries + 1):
                 try:
                     return func(*args, **kwargs)
                 except retryable_exceptions as e:
                     last_exception = e
-                    
+
                     if attempt >= max_retries:
                         logger.warning(
                             f"Function {func.__name__} failed after {max_retries} retries",
                             error=str(e),
                         )
                         raise
-                    
+
                     # Calculate delay with exponential backoff
                     delay = min(base_delay * (exponential_base ** attempt), max_delay)
-                    
+
                     logger.info(
                         f"Function {func.__name__} failed, retrying...",
                         attempt=attempt + 1,
@@ -60,15 +60,15 @@ def retry_with_backoff(
                         delay_seconds=delay,
                         error=str(e)[:100],
                     )
-                    
+
                     if on_retry:
                         on_retry(e, attempt + 1, delay)
-                    
+
                     time.sleep(delay)
-            
+
             # Should never reach here
             raise last_exception if last_exception else RuntimeError("Unexpected error")
-        
+
         return wrapper
     return decorator
 

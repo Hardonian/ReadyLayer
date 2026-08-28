@@ -1,6 +1,6 @@
 /**
  * Optimized Authorization Helpers
- * 
+ *
  * Performance improvements:
  * - Composite queries that fetch resource + membership in one query
  * - Caching for membership checks
@@ -194,7 +194,7 @@ export async function canAccessRepositoriesBatch(
   try {
     // Single query for all repositories
     const results = await prisma.$queryRaw<Array<{ repo_id: string; has_access: boolean }>>`
-      SELECT 
+      SELECT
         r.id as repo_id,
         EXISTS (
           SELECT 1 FROM "OrganizationMember" om

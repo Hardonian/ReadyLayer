@@ -1,6 +1,6 @@
 /**
  * Policy Rule Management API
- * 
+ *
  * POST   /api/v1/policies/:packId/rules - Add rule to pack
  * GET    /api/v1/policies/:packId/rules - List rules in pack
  */
@@ -87,7 +87,7 @@ export async function POST(
     if (!bodyResult.success) {
       return bodyResult.response;
     }
-    
+
     const validated = createRuleSchema.parse(bodyResult.data);
 
     // Check if rule already exists

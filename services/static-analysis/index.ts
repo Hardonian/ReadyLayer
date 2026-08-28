@@ -1,6 +1,6 @@
 /**
  * Static Analysis Service
- * 
+ *
  * Code pattern detection and rule evaluation
  * Security, quality, and style rules
  */
@@ -284,7 +284,7 @@ export class StaticAnalysisService {
         const issues: Issue[] = [];
 
         // Check if this is middleware or Edge runtime code
-        const isEdgeCode = filePath.includes('middleware') || 
+        const isEdgeCode = filePath.includes('middleware') ||
                           filePath.includes('edge-') ||
                           content.includes('export const runtime = \'edge\'') ||
                           content.includes('export const config = { runtime: \'edge\' }');
@@ -302,7 +302,7 @@ export class StaticAnalysisService {
 
         parseResult.imports.forEach((imp) => {
           const importSource = imp.source;
-          
+
           // Check for Node-only modules
           nodeOnlyModules.forEach((module) => {
             if (importSource.includes(module)) {
@@ -321,8 +321,8 @@ export class StaticAnalysisService {
           // Check for relative imports that might transitively import Node modules
           if (importSource.startsWith('.') || importSource.startsWith('..')) {
             // This would require transitive analysis - flag for manual review
-            if (importSource.includes('prisma') || 
-                importSource.includes('redis') || 
+            if (importSource.includes('prisma') ||
+                importSource.includes('redis') ||
                 importSource.includes('rate-limit') ||
                 importSource.includes('logging') && !importSource.includes('edge-')) {
               issues.push({
@@ -1069,17 +1069,17 @@ export class StaticAnalysisService {
   private getFunctionContent(content: string, func: { line: number }): string {
     const lines = content.split('\n');
     const startLine = func.line - 1;
-    
+
     // Try to get function body by finding matching braces
     let braceCount = 0;
     let inFunction = false;
     let endLine = startLine;
-    
+
     for (let i = startLine; i < lines.length; i++) {
       const line = lines[i];
       const openBraces = (line.match(/\{/g) || []).length;
       const closeBraces = (line.match(/\}/g) || []).length;
-      
+
       if (openBraces > 0) {
         inFunction = true;
         braceCount += openBraces;
@@ -1092,7 +1092,7 @@ export class StaticAnalysisService {
         }
       }
     }
-    
+
     // Return function body (or at least the function line if parsing fails)
     return lines.slice(startLine, endLine + 1).join('\n') || lines[startLine] || '';
   }

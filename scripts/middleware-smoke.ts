@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Middleware Smoke Test
- * 
+ *
  * Verifies middleware doesn't crash on common routes
  * Tests that public routes work and protected routes redirect properly
  */

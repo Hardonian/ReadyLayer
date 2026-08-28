@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   Button,
   ErrorState,
@@ -17,8 +17,8 @@ import {
 import { Container } from '@/components/ui/container'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 import { staggerContainer, staggerItem, fadeIn } from '@/lib/design/motion'
-import { 
-  FileSearch, 
+import {
+  FileSearch,
   Download,
   ExternalLink,
 } from 'lucide-react'

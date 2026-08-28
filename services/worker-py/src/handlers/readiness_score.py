@@ -18,19 +18,19 @@ logger = get_logger(__name__)
 @register_handler
 class ReadinessScoreHandler(BaseHandler):
     """Handler for readiness.score job type.
-    
+
     Computes readiness score breakdown based on actual repository data:
     - Review Guard results (violations, issues)
     - Test Engine results (test generation, coverage)
     - Test Run execution (CI/CD test results)
     - Historical violations (security, policy)
-    
+
     Deterministic: Same repo state produces same score.
     Idempotent: Safe to re-run, updates existing records.
     """
-    
+
     job_type = "readiness.score"
-    
+
     # Score weights (deterministic algorithm)
     WEIGHTS = {
         "review_health": 0.25,
@@ -40,10 +40,10 @@ class ReadinessScoreHandler(BaseHandler):
         "doc_sync": 0.10,
         "activity": 0.05,
     }
-    
+
     def validate_payload(self, payload: dict) -> dict:
         """Validate readiness.score payload.
-        
+
         Expected payload:
             - repository_id: str - Repository to score
             - organization_id: str - For tenant isolation
@@ -54,24 +54,24 @@ class ReadinessScoreHandler(BaseHandler):
         for field in required:
             if field not in payload:
                 raise ValueError(f"Missing required field: {field}")
-        
+
         # Validate lookback_days
         lookback_days = payload.get("lookback_days", 30)
         if not isinstance(lookback_days, int) or lookback_days < 1 or lookback_days > 365:
             raise ValueError(f"lookback_days must be between 1 and 365, got {lookback_days}")
-        
+
         payload["lookback_days"] = lookback_days
         payload["store_result"] = payload.get("store_result", True)
-        
+
         return payload
-    
+
     def execute(self, payload: dict, context: dict) -> JobResult:
         """Execute readiness score computation.
-        
+
         Args:
             payload: Validated payload with repository_id, organization_id, lookback_days
             context: Execution context with worker_id, correlation_id
-        
+
         Returns:
             JobResult with readiness breakdown and overall score
         """
@@ -79,37 +79,37 @@ class ReadinessScoreHandler(BaseHandler):
         organization_id = payload["organization_id"]
         lookback_days = payload["lookback_days"]
         store_result = payload["store_result"]
-        
+
         logger.info(
             "Starting readiness score computation",
             repository_id=repository_id,
             organization_id=organization_id,
             lookback_days=lookback_days,
         )
-        
+
         try:
             with get_cursor() as cursor:
                 # Fetch real data from multiple tables
                 since_date = datetime.now() - timedelta(days=lookback_days)
-                
+
                 # 1. Review Health Score (from Review table)
                 review_health = self._compute_review_health(cursor, repository_id, since_date)
-                
+
                 # 2. Test Coverage Score (from Test and TestRun tables)
                 test_coverage = self._compute_test_coverage(cursor, repository_id, since_date)
-                
+
                 # 3. CI Stability Score (from TestRun table)
                 ci_stability = self._compute_ci_stability(cursor, repository_id, since_date)
-                
+
                 # 4. Security Posture Score (from Violation table)
                 security_posture = self._compute_security_posture(cursor, repository_id, since_date)
-                
+
                 # 5. Doc Sync Score (from Doc table)
                 doc_sync = self._compute_doc_sync(cursor, repository_id, since_date)
-                
+
                 # 6. Activity Score (from Review and TestRun timestamps)
                 activity = self._compute_activity(cursor, repository_id, since_date)
-                
+
                 # Compute weighted overall score
                 overall_score = (
                     review_health["score"] * self.WEIGHTS["review_health"] +
@@ -119,10 +119,10 @@ class ReadinessScoreHandler(BaseHandler):
                     doc_sync["score"] * self.WEIGHTS["doc_sync"] +
                     activity["score"] * self.WEIGHTS["activity"]
                 )
-                
+
                 # Round to 2 decimal places for determinism
                 overall_score = round(overall_score, 2)
-                
+
                 # Build result
                 result_data = {
                     "repository_id": repository_id,
@@ -142,18 +142,18 @@ class ReadinessScoreHandler(BaseHandler):
                     "weights_used": self.WEIGHTS,
                     "worker_id": context.get("worker_id"),
                 }
-                
+
                 # Store result in AggregatedInsight table if requested
                 if store_result:
                     self._store_insight(cursor, organization_id, repository_id, result_data)
-                
+
                 logger.info(
                     "Readiness score computation complete",
                     repository_id=repository_id,
                     overall_score=overall_score,
                     grade=result_data["grade"],
                 )
-                
+
                 return JobResult(
                     success=True,
                     data=result_data,
@@ -168,7 +168,7 @@ class ReadinessScoreHandler(BaseHandler):
                         }
                     }
                 )
-                
+
         except Exception as e:
             logger.error(
                 "Readiness score computation failed",
@@ -180,12 +180,12 @@ class ReadinessScoreHandler(BaseHandler):
                 success=False,
                 error=f"Readiness score computation failed: {str(e)}",
             )
-    
+
     def _compute_review_health(self, cursor, repository_id: str, since_date: datetime) -> dict:
         """Compute review health score from Review table."""
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_reviews,
                 COUNT(*) FILTER (WHERE status = 'completed') as completed,
                 COUNT(*) FILTER (WHERE is_blocked = true) as blocked,
@@ -194,7 +194,7 @@ class ReadinessScoreHandler(BaseHandler):
                     0
                 ) as avg_issues,
                 COALESCE(
-                    AVG((summary->>'critical')::int + (summary->>'high')::int) 
+                    AVG((summary->>'critical')::int + (summary->>'high')::int)
                     FILTER (WHERE summary IS NOT NULL),
                     0
                 ) as avg_severe_issues
@@ -205,12 +205,12 @@ class ReadinessScoreHandler(BaseHandler):
             (repository_id, since_date),
         )
         row = cursor.fetchone()
-        
+
         total = row["total_reviews"] or 0
         blocked = row["blocked"] or 0
         avg_issues = float(row["avg_issues"] or 0)
         avg_severe = float(row["avg_severe_issues"] or 0)
-        
+
         # Scoring logic (deterministic)
         if total == 0:
             score = 50.0  # Neutral if no data
@@ -220,7 +220,7 @@ class ReadinessScoreHandler(BaseHandler):
             block_penalty = (blocked / total) * 20 if total > 0 else 0
             score = 100 - issue_penalty - block_penalty
             score = max(0, min(100, score))  # Clamp to 0-100
-        
+
         return {
             "score": round(score, 2),
             "total_reviews": total,
@@ -228,12 +228,12 @@ class ReadinessScoreHandler(BaseHandler):
             "avg_issues_per_review": round(avg_issues, 2),
             "avg_severe_issues": round(avg_severe, 2),
         }
-    
+
     def _compute_test_coverage(self, cursor, repository_id: str, since_date: datetime) -> dict:
         """Compute test coverage score from Test and TestRun tables."""
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) FILTER (WHERE status = 'generated') as generated,
                 COUNT(*) as total_tests,
                 AVG(
@@ -246,11 +246,11 @@ class ReadinessScoreHandler(BaseHandler):
             (repository_id, since_date),
         )
         row = cursor.fetchone()
-        
+
         generated = row["generated"] or 0
         total_tests = row["total_tests"] or 0
         avg_coverage = float(row["avg_coverage"] or 0)
-        
+
         # Also get latest TestRun coverage
         cursor.execute(
             """
@@ -265,19 +265,19 @@ class ReadinessScoreHandler(BaseHandler):
             (repository_id, since_date),
         )
         latest_run = cursor.fetchone()
-        
+
         ci_coverage = 0
         if latest_run and latest_run["coverage"]:
             cov = latest_run["coverage"]
             if isinstance(cov, dict):
                 ci_coverage = float(cov.get("total", 0))
-        
+
         # Use best of generated or CI coverage
         coverage = max(avg_coverage, ci_coverage)
-        
+
         # Score: coverage % directly maps to score
         score = coverage if coverage > 0 else 30.0  # Default 30 if no coverage data
-        
+
         return {
             "score": round(score, 2),
             "tests_generated": generated,
@@ -285,12 +285,12 @@ class ReadinessScoreHandler(BaseHandler):
             "avg_coverage_pct": round(avg_coverage, 2),
             "latest_ci_coverage_pct": round(ci_coverage, 2),
         }
-    
+
     def _compute_ci_stability(self, cursor, repository_id: str, since_date: datetime) -> dict:
         """Compute CI stability score from TestRun table."""
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_runs,
                 COUNT(*) FILTER (WHERE conclusion = 'success') as success,
                 COUNT(*) FILTER (WHERE conclusion = 'failure') as failure,
@@ -303,11 +303,11 @@ class ReadinessScoreHandler(BaseHandler):
             (repository_id, since_date),
         )
         row = cursor.fetchone()
-        
+
         total = row["total_runs"] or 0
         success = row["success"] or 0
         failure = row["failure"] or 0
-        
+
         if total == 0:
             score = 50.0  # Neutral if no CI data
         else:
@@ -318,7 +318,7 @@ class ReadinessScoreHandler(BaseHandler):
             else:
                 score = success_rate * 100
             score = min(100, score)
-        
+
         return {
             "score": round(score, 2),
             "total_runs": total,
@@ -326,12 +326,12 @@ class ReadinessScoreHandler(BaseHandler):
             "failed_runs": failure,
             "success_rate": round(success / total, 4) if total > 0 else 0,
         }
-    
+
     def _compute_security_posture(self, cursor, repository_id: str, since_date: datetime) -> dict:
         """Compute security posture score from Violation table."""
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_violations,
                 COUNT(*) FILTER (WHERE severity = 'critical') as critical,
                 COUNT(*) FILTER (WHERE severity = 'high') as high,
@@ -344,16 +344,16 @@ class ReadinessScoreHandler(BaseHandler):
             (repository_id, since_date),
         )
         row = cursor.fetchone()
-        
+
         total = row["total_violations"] or 0
         critical = row["critical"] or 0
         high = row["high"] or 0
         medium = row["medium"] or 0
         low = row["low"] or 0
-        
+
         # Weighted violation score (critical = 10x, high = 5x, medium = 2x, low = 1x)
         weighted_score = critical * 10 + high * 5 + medium * 2 + low
-        
+
         # Base score: 100 minus penalties
         if total == 0:
             score = 100.0  # Perfect if no violations
@@ -361,7 +361,7 @@ class ReadinessScoreHandler(BaseHandler):
             penalty = min(weighted_score * 2, 80)  # Cap penalty at 80 points
             score = 100 - penalty
             score = max(0, score)
-        
+
         return {
             "score": round(score, 2),
             "total_violations": total,
@@ -373,12 +373,12 @@ class ReadinessScoreHandler(BaseHandler):
             },
             "weighted_violation_score": weighted_score,
         }
-    
+
     def _compute_doc_sync(self, cursor, repository_id: str, since_date: datetime) -> dict:
         """Compute doc sync score from Doc table."""
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) as total_docs,
                 COUNT(*) FILTER (WHERE status = 'generated') as generated,
                 COUNT(*) FILTER (WHERE status = 'published') as published,
@@ -391,11 +391,11 @@ class ReadinessScoreHandler(BaseHandler):
             (repository_id, since_date),
         )
         row = cursor.fetchone()
-        
+
         total = row["total_docs"] or 0
         published = row["published"] or 0
         drifted = row["drifted"] or 0
-        
+
         if total == 0:
             score = 50.0  # Neutral if no docs
         else:
@@ -404,43 +404,43 @@ class ReadinessScoreHandler(BaseHandler):
             drift_penalty = (drifted / total) * 20
             score = (published_rate * 100) - drift_penalty
             score = max(0, min(100, score))
-        
+
         return {
             "score": round(score, 2),
             "total_docs": total,
             "published": published,
             "drift_detected": drifted,
         }
-    
+
     def _compute_activity(self, cursor, repository_id: str, since_date: datetime) -> dict:
         """Compute activity score based on recent activity."""
         # Check for activity in last 7 days
         recent_date = datetime.now() - timedelta(days=7)
-        
+
         cursor.execute(
             """
-            SELECT 
-                (SELECT COUNT(*) FROM "Review" 
+            SELECT
+                (SELECT COUNT(*) FROM "Review"
                  WHERE "repositoryId" = %s AND "createdAt" >= %s) as recent_reviews,
-                (SELECT COUNT(*) FROM "TestRun" 
+                (SELECT COUNT(*) FROM "TestRun"
                  WHERE "repositoryId" = %s AND "createdAt" >= %s) as recent_runs
             """,
             (repository_id, recent_date, repository_id, recent_date),
         )
         row = cursor.fetchone()
-        
+
         reviews = row["recent_reviews"] or 0
         runs = row["recent_runs"] or 0
-        
+
         # Simple activity score: points for recent activity
         score = min(100, (reviews * 5) + (runs * 10))
-        
+
         return {
             "score": round(score, 2),
             "reviews_last_7d": reviews,
             "test_runs_last_7d": runs,
         }
-    
+
     def _score_to_grade(self, score: float) -> str:
         """Convert numeric score to letter grade."""
         if score >= 95:
@@ -463,21 +463,21 @@ class ReadinessScoreHandler(BaseHandler):
             return "D"
         else:
             return "F"
-    
+
     def _store_insight(
-        self, 
-        cursor, 
-        organization_id: str, 
-        repository_id: str, 
+        self,
+        cursor,
+        organization_id: str,
+        repository_id: str,
         result_data: dict
     ) -> None:
         """Store readiness score in AggregatedInsight table (idempotent)."""
         insight_id = f"readiness_{repository_id}_{result_data['computed_at'][:10]}"
-        
+
         cursor.execute(
             """
             INSERT INTO "AggregatedInsight" (
-                id, "organizationId", "insightType", confidence, 
+                id, "organizationId", "insightType", confidence,
                 "trustLevel", "dataPoints", "firstSeen", "lastSeen",
                 trend, metadata
             ) VALUES (%s, %s, %s, %s, %s, %s, NOW(), NOW(), %s, %s)
@@ -504,7 +504,7 @@ class ReadinessScoreHandler(BaseHandler):
                 }),
             ),
         )
-        
+
         logger.info(
             "Stored readiness insight",
             insight_id=insight_id,

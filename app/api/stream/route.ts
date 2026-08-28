@@ -1,8 +1,8 @@
 /**
  * Server-Sent Events (SSE) Stream API
- * 
+ *
  * GET /api/stream - Real-time delta updates for dashboard
- * 
+ *
  * Features:
  * - Tenant isolation (org_id filtering)
  * - Backpressure handling (batch/coalesce events)

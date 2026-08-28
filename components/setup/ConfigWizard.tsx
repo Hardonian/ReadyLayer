@@ -71,7 +71,7 @@ export function ConfigWizard(): React.JSX.Element {
         return (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card 
+              <Card
                 className={`cursor-pointer transition-all hover:shadow-lg ${
                   config.database === 'sqlite' ? 'ring-2 ring-primary ring-offset-2' : ''
                 }`}
@@ -84,8 +84,8 @@ export function ConfigWizard(): React.JSX.Element {
                   <Badge variant="secondary" className="mt-2">Recommended</Badge>
                 </CardContent>
               </Card>
-              
-              <Card 
+
+              <Card
                 className={`cursor-pointer transition-all hover:shadow-lg ${
                   config.database === 'postgresql' ? 'ring-2 ring-primary ring-offset-2' : ''
                 }`}
@@ -98,7 +98,7 @@ export function ConfigWizard(): React.JSX.Element {
                 </CardContent>
               </Card>
             </div>
-            
+
             <div className="bg-surface-muted rounded-lg p-4">
               <h4 className="font-display font-medium mb-2">Current Selection</h4>
               <div className="flex items-center gap-2">
@@ -108,7 +108,7 @@ export function ConfigWizard(): React.JSX.Element {
             </div>
           </div>
         );
-        
+
       case 2:
         return (
           <div className="space-y-4">
@@ -122,7 +122,7 @@ export function ConfigWizard(): React.JSX.Element {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-display font-medium">Repository URL</label>
-                  <Input 
+                  <Input
                     placeholder="https://github.com/username/repo"
                     className="font-mono"
                   />
@@ -141,12 +141,12 @@ export function ConfigWizard(): React.JSX.Element {
                 </div>
               </CardContent>
             </Card>
-            
+
             <div className="bg-surface-muted rounded-lg p-4">
               <h4 className="font-display font-medium mb-2">Quick Setup Options</h4>
               <div className="space-y-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full justify-start"
                   onClick={() => window.open('/api/v1/github/oauth/start')}
                 >
@@ -157,7 +157,7 @@ export function ConfigWizard(): React.JSX.Element {
             </div>
           </div>
         );
-        
+
       case 3:
         return (
           <div className="space-y-4">
@@ -180,7 +180,7 @@ export function ConfigWizard(): React.JSX.Element {
                     <option value="custom">Custom Rules</option>
                   </select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-display font-medium">
                     Rule Severity Level
@@ -191,7 +191,7 @@ export function ConfigWizard(): React.JSX.Element {
                     <option value="lenient">Lenient - Info only</option>
                   </select>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -206,7 +206,7 @@ export function ConfigWizard(): React.JSX.Element {
                 </div>
               </CardContent>
             </Card>
-            
+
             <div className="bg-success/10 border border-success/20 rounded-lg p-4">
               <h4 className="font-display font-medium mb-2">Preview</h4>
               <div className="space-y-2 text-sm font-mono">
@@ -218,7 +218,7 @@ export function ConfigWizard(): React.JSX.Element {
             </div>
           </div>
         );
-        
+
       case 4:
         return (
           <div className="space-y-4">
@@ -241,7 +241,7 @@ export function ConfigWizard(): React.JSX.Element {
                       <option value="sso">SSO Integration</option>
                     </select>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="block text-sm font-display font-medium">
                       Session Duration
@@ -254,7 +254,7 @@ export function ConfigWizard(): React.JSX.Element {
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -267,7 +267,7 @@ export function ConfigWizard(): React.JSX.Element {
                     Enable security notifications
                   </label>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -281,7 +281,7 @@ export function ConfigWizard(): React.JSX.Element {
                 </div>
               </CardContent>
             </Card>
-            
+
             <div className="bg-surface-muted rounded-lg p-4">
               <h4 className="font-display font-medium mb-2">Security Summary</h4>
               <div className="space-y-3">
@@ -301,7 +301,7 @@ export function ConfigWizard(): React.JSX.Element {
             </div>
           </div>
         );
-        
+
       default:
         return null;
     }
@@ -318,7 +318,7 @@ export function ConfigWizard(): React.JSX.Element {
               Step {step} of {steps.length}
             </Badge>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {steps.map((s, _index) => (
               <div
@@ -329,7 +329,7 @@ export function ConfigWizard(): React.JSX.Element {
               />
             ))}
           </div>
-          
+
           <div className="flex justify-between mt-4">
             <Button
               variant="ghost"
@@ -339,15 +339,15 @@ export function ConfigWizard(): React.JSX.Element {
             >
               Previous
             </Button>
-            
+
             <div className="flex items-center gap-2">
               {steps.map((s) => (
                 <div
                   key={s.id}
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-mono transition-colors ${
-                    s.id === step 
-                      ? 'bg-primary text-primary-foreground' 
-                      : s.id < step 
+                    s.id === step
+                      ? 'bg-primary text-primary-foreground'
+                      : s.id < step
                         ? 'bg-success text-white'
                         : 'bg-border text-text-muted'
                   }`}
@@ -356,7 +356,7 @@ export function ConfigWizard(): React.JSX.Element {
                 </div>
               ))}
             </div>
-            
+
             {step < steps.length ? (
               <Button onClick={nextStep} className="font-mono" disabled={isCompleting}>
                 Next Step

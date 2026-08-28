@@ -1,6 +1,6 @@
 /**
  * Structured Logging
- * 
+ *
  * JSON-formatted logs with request IDs and context
  */
 
@@ -72,8 +72,8 @@ class Logger {
       this.logger.error(errorContext, errorOrMessage);
     } else {
       // Called as error(error, message) or error(error, context)
-      const message = typeof messageOrContext === 'string' 
-        ? messageOrContext 
+      const message = typeof messageOrContext === 'string'
+        ? messageOrContext
         : (context as unknown as string) || '';
       const errorContext = {
         ...(typeof messageOrContext === 'object' ? messageOrContext : {}),

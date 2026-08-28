@@ -439,7 +439,7 @@ review:
   fail_on_high: false
   fail_on_medium: false
   fail_on_low: false
-  
+
   rules:
     - id: security.sql-injection
       enabled: true
@@ -450,11 +450,11 @@ review:
       threshold: 15
     - id: style.missing-docstring
       enabled: false
-  
+
   severity_overrides:
     security.sql-injection: critical
     quality.high-complexity: high
-  
+
   excluded_paths:
     - "**/vendor/**"
     - "**/node_modules/**"

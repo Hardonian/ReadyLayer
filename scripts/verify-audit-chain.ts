@@ -55,14 +55,14 @@ async function main(): Promise<void> {
   // Note: We need to reconstruct the exact payload used in lib/audit.ts
   // This is tricky because JSON.stringify order might vary, but let's try a loose check
   // or just trust the chain link for now.
-  
+
   // Verify that genesis previousHash is null
   if (genesis.previousHash !== null) {
      // It might not be null if there were other logs for this org (unlikely given unique ID)
      // But strictly speaking, for a new org, it should be null OR point to a global genesis.
      // In our implementation, we filtered by orgId, so it might grab the last global log?
-     // Let's check lib/audit.ts logic again. 
-     // Ah, "where: { organizationId: data.organizationId || null }". 
+     // Let's check lib/audit.ts logic again.
+     // Ah, "where: { organizationId: data.organizationId || null }".
      // So for a new unique orgId, it should be null.
      if (genesis.previousHash !== null) {
          console.warn('⚠️ Genesis previousHash is not null. This might be due to concurrency or global chain logic.');

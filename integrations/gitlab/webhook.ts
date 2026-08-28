@@ -1,16 +1,16 @@
 /**
  * GitLab Webhook Handler
- * 
+ *
  * Handles GitLab webhooks with token-based validation
  * Normalizes events to internal format
- * 
+ *
  * Note: Webhook payloads from external APIs are inherently dynamic
  * and cannot be fully typed. We use interfaces for known structures
  * but some properties may be undefined or have unexpected types.
  */
 
- 
- 
+
+
 
 import { prisma } from '../../lib/prisma';
 import { queueService } from '../../queue';

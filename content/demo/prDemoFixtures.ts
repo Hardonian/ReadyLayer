@@ -1,6 +1,6 @@
 /**
  * Demo fixtures for Interactive PR Demo
- * 
+ *
  * These are static fixtures that simulate PR check states, findings, and diffs.
  * They are labeled as "Interactive Preview" to make it clear this is a simulation.
  */

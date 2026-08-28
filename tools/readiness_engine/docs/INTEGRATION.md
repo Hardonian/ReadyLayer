@@ -54,11 +54,11 @@ class CustomClassifier(SeverityClassifier):
     def classify(self, finding: Finding) -> None:
         # Apply default classification first
         super().classify(finding)
-        
+
         # Custom rule: Treat all security findings as BLOCKER
         if finding.category == "security":
             finding.severity = Severity.BLOCKER
-        
+
         # Custom rule: Deprecation warnings are LOW not MEDIUM
         if "deprecated" in finding.rule_id.lower():
             finding.severity = Severity.LOW
@@ -230,7 +230,7 @@ class SizeLimitedBundler(EvidenceBundler):
         # Only include first 10 screenshots
         limited_findings = []
         screenshot_count = 0
-        
+
         for finding in verdict.findings:
             limited_evidence = []
             for ev in finding.evidence:
@@ -240,10 +240,10 @@ class SizeLimitedBundler(EvidenceBundler):
                         screenshot_count += 1
                 else:
                     limited_evidence.append(ev)
-            
+
             finding.evidence = limited_evidence
             limited_findings.append(finding)
-        
+
         verdict.findings = limited_findings
         super().create_bundle(verdict, output_path)
 ```

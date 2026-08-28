@@ -18,7 +18,7 @@ class EvidenceBundler:
     def create_bundle(self, verdict: ReadinessVerdict, output_path: Path) -> None:
         """
         Create a zip bundle with all evidence files.
-        
+
         Includes:
         - Screenshots
         - Traces
@@ -28,7 +28,7 @@ class EvidenceBundler:
         with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
             # Add all evidence files
             added_paths: Set[str] = set()
-            
+
             for finding in verdict.findings:
                 for evidence in finding.evidence:
                     if evidence.path:
@@ -38,7 +38,7 @@ class EvidenceBundler:
                             arcname = Path(evidence.path).as_posix()
                             zf.write(full_path, arcname)
                             added_paths.add(str(full_path))
-            
+
             # Add JSON report for reference
             import json
             report_data = {

@@ -1,6 +1,6 @@
 /**
  * Database Seeding Utilities
- * 
+ *
  * Helpers for setting up test data in integration tests
  * Run in CI or locally: pnpm prisma:seed
  */

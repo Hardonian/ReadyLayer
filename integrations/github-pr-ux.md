@@ -93,10 +93,10 @@ POST /repos/{owner}/{repo}/statuses/{sha}
 <details>
 <summary>⚠️ <b>Security Issue: SQL Injection Risk</b> (Critical)</summary>
 
-**Rule:** `security.sql-injection`  
-**File:** `src/auth.ts`  
-**Line:** 42  
-**Introduced:** 2 commits ago  
+**Rule:** `security.sql-injection`
+**File:** `src/auth.ts`
+**Line:** 42
+**Introduced:** 2 commits ago
 **Severity:** Critical
 
 **Issue:**
@@ -158,7 +158,7 @@ Files:
 // Update PR comment with progress
 async function updateProgressComment(prNumber: number, progress: number) {
   const comment = await findProgressComment(prNumber);
-  
+
   if (comment) {
     await updateComment(comment.id, generateProgressMarkdown(progress));
   } else {
@@ -170,7 +170,7 @@ function generateProgressMarkdown(progress: number): string {
   const barWidth = 20;
   const filled = Math.floor(progress / 100 * barWidth);
   const empty = barWidth - filled;
-  
+
   return `⏳ ReadyLayer Review In Progress
 
 Progress: ${'█'.repeat(filled)}${'░'.repeat(empty)} ${progress}%
@@ -214,7 +214,7 @@ async function appendLog(prNumber: number, message: string) {
   const comment = await findLogComment(prNumber);
   const timestamp = new Date().toISOString().substr(11, 8);
   const logEntry = `[${timestamp}] ${message}\n`;
-  
+
   if (comment) {
     await updateComment(comment.id, comment.body + logEntry);
   } else {
@@ -317,7 +317,7 @@ POST /repos/{owner}/{repo}/statuses/{sha}
 // Create suggestion comment
 async function createFixSuggestion(prNumber: number, issue: Issue) {
   const suggestion = generateFixSuggestion(issue);
-  
+
   await createReviewComment({
     body: suggestion.markdown,
     path: issue.file,
@@ -357,7 +357,7 @@ function generateFixSuggestion(issue: Issue): { markdown: string } {
 // Apply fix via GitHub API
 async function applyFix(prNumber: number, issue: Issue) {
   const fix = generateFix(issue);
-  
+
   // Create commit with fix
   await createCommit({
     message: `fix: ${issue.message}`,
@@ -371,7 +371,7 @@ async function applyFix(prNumber: number, issue: Issue) {
     }),
     parents: [await getHeadSha(prNumber)]
   });
-  
+
   // Update PR
   await updatePR(prNumber, {
     head: fix.commitSha

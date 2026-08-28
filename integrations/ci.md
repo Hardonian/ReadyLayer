@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: ReadyLayer Review
         uses: readylayer/action-review@v1
         with:
@@ -110,7 +110,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: ReadyLayer Review
         uses: readylayer/action-review@v1
         with:
@@ -132,10 +132,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Run Tests
         run: npm test -- --coverage
-      
+
       - name: ReadyLayer Review
         uses: readylayer/action-review@v1
         with:
@@ -158,14 +158,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: ReadyLayer Review and Generate Tests
         uses: readylayer/action-review@v1
         with:
           api-key: ${{ secrets.READYLAYER_API_KEY }}
           generate-tests: true
           test-framework: jest
-      
+
       - name: Run Generated Tests
         run: npm test
 ```

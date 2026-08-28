@@ -1,6 +1,6 @@
 /**
  * Async LLM Processor for Review Guard
- * 
+ *
  * Handles asynchronous LLM enrichment with fallback to static analysis.
  * - Separates fast static analysis from slow LLM calls
  * - Returns immediately with deterministic results
@@ -90,7 +90,7 @@ export async function processLLMEnrichment(
 
     // Race: enrichment vs timeout
     const result = await Promise.race([enrichmentPromise, timeoutPromise]);
-    
+
     const durationMs = Date.now() - startTime;
     metrics.recordHistogram('llm_enrichment_duration_ms', durationMs);
     metrics.increment('llm_enrichment_success');
@@ -108,7 +108,7 @@ export async function processLLMEnrichment(
   } catch (error) {
     const durationMs = Date.now() - startTime;
     const isTimeout = error instanceof Error && error.message.includes('timeout');
-    
+
     logger.warn(
       {
         reviewId: request.reviewId,

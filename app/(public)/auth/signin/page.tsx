@@ -82,7 +82,7 @@ function SignInContent() {
       setLoading(provider)
       setError(null)
       const supabase = createSupabaseClient()
-      
+
       // Map provider names to Supabase OAuth provider IDs
       const supabaseProviderMap: Record<Provider, 'github' | 'gitlab' | 'google' | 'bitbucket'> = {
         github: 'github',
@@ -92,7 +92,7 @@ function SignInContent() {
       }
 
       const supabaseProvider = supabaseProviderMap[provider]
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: supabaseProvider,
         options: {
@@ -118,7 +118,7 @@ function SignInContent() {
         <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-        
+
         {/* Grid pattern overlay */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
       </div>
@@ -164,7 +164,7 @@ function SignInContent() {
                     />
                   </motion.div>
                 )}
-                
+
                 <div className="space-y-3">
                   {providers.map((provider) => (
                     <motion.div

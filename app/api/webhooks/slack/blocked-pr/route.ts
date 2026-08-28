@@ -1,6 +1,6 @@
 /**
  * Slack Blocked PR Notification Webhook
- * 
+ *
  * Sends blocked PR notifications to Slack channels
  */
 

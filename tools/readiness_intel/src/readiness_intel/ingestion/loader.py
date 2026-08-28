@@ -63,7 +63,7 @@ class ReadinessArtifactLoader:
             return
 
         repo = Repo(repo_path)
-        
+
         # Find all blobs matching readiness pattern
         for commit in repo.iter_commits(branch or "HEAD"):
             if since and commit.committed_datetime < since:
@@ -109,14 +109,14 @@ class ReadinessNormalizer:
     ) -> List[HistoricalFinding]:
         """Convert a readiness artifact into HistoricalFinding objects."""
         findings = []
-        
+
         # Extract base metadata
         commit_sha = artifact.get("commit_sha") or git_metadata.get("commit_sha") if git_metadata else None
         branch = artifact.get("branch") or git_metadata.get("branch") if git_metadata else None
-        
+
         timestamp_str = artifact.get("timestamp")
         timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00")) if timestamp_str else datetime.utcnow()
-        
+
         author = git_metadata.get("author") if git_metadata else None
 
         for finding_data in artifact.get("findings", []):
@@ -176,7 +176,7 @@ class ArtifactIngestionPipeline:
         """Ingest artifacts from git history."""
         if not self.repo_path:
             raise ValueError("repo_path required for git history ingestion")
-        
+
         since = datetime.utcnow() - __import__('datetime').timedelta(days=since_days)
         artifacts = list(self.loader.load_from_git_history(self.repo_path, since=since))
         return self.normalizer.normalize_batch(artifacts)

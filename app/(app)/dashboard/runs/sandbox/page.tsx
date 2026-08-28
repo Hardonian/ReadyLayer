@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
   ErrorState,
   Skeleton,
@@ -53,7 +53,7 @@ export default function SandboxRunPage(): React.JSX.Element {
       }
       const runData = data.data
       setRun(runData)
-      
+
       // Redirect to run details after a short delay
       if (runData.id) {
         setTimeout(() => {

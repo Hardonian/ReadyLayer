@@ -24,11 +24,11 @@ class ESLintParser(BaseParser):
 
     def parse(self, output: ToolOutput) -> List[Finding]:
         findings: List[Finding] = []
-        
+
         if output.exit_code == 0 and not output.raw_output.strip():
             # No lint errors
             return findings
-        
+
         for match in self.ESLINT_PATTERN.finditer(output.raw_output):
             path = match.group('path')
             line = int(match.group('line'))
@@ -36,9 +36,9 @@ class ESLintParser(BaseParser):
             severity_str = match.group('severity')
             rule_id = match.group('rule')
             message = match.group('message')
-            
+
             severity = Severity.HIGH if severity_str == 'error' else Severity.MEDIUM
-            
+
             finding = Finding(
                 rule_id=rule_id,
                 category=Category.LINT,
@@ -60,7 +60,7 @@ class ESLintParser(BaseParser):
                 tool="eslint",
             )
             findings.append(finding)
-        
+
         # If exit code is non-zero but we didn't parse anything, there's a configuration error
         if output.exit_code != 0 and not findings:
             findings.append(
@@ -75,7 +75,7 @@ class ESLintParser(BaseParser):
                     tool="eslint",
                 )
             )
-        
+
         return findings
 
     def _get_remediation(self, rule_id: str) -> str:

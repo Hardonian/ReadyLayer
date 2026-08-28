@@ -1,6 +1,6 @@
 /**
  * Check for unused exports
- * 
+ *
  * Scans the codebase for exported functions/variables that are never imported.
  * This helps keep the public API surface clean and identifies dead code.
  */
@@ -68,7 +68,7 @@ async function findUnusedExports(): Promise<ExportInfo[]> {
   for (const file of tsFiles) {
     const relativePath = path.relative(process.cwd(), file);
     const content = await readFile(file, 'utf-8');
-    
+
     // Skip ignored files
     if (IGNORE_PATTERNS.some(pattern => pattern.test(relativePath))) {
       continue;

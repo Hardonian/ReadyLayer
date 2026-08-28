@@ -23,10 +23,10 @@ class JSONFormatter(BaseFormatter):
 
     def format(self, verdict: ReadinessVerdict, output_path: Path) -> None:
         import json
-        
+
         # Convert to dict with proper datetime handling
         data = verdict.model_dump()
-        
+
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, default=str)
 
@@ -36,7 +36,7 @@ class MarkdownFormatter(BaseFormatter):
 
     def format(self, verdict: ReadinessVerdict, output_path: Path) -> None:
         lines: List[str] = []
-        
+
         # Header
         status_icon = "✅" if verdict.ready else "❌"
         lines.append(f"# Readiness Report: {status_icon} {verdict.project}")
@@ -47,7 +47,7 @@ class MarkdownFormatter(BaseFormatter):
         if verdict.branch:
             lines.append(f"**Branch:** {verdict.branch}")
         lines.append("")
-        
+
         # Verdict
         lines.append("## Verdict")
         lines.append("")
@@ -60,7 +60,7 @@ class MarkdownFormatter(BaseFormatter):
             lines.append("")
             lines.append("Blockers or high-severity issues detected. See findings below.")
         lines.append("")
-        
+
         # Metrics
         lines.append("## Summary")
         lines.append("")
@@ -70,7 +70,7 @@ class MarkdownFormatter(BaseFormatter):
         lines.append(f"- **Medium:** {verdict.metrics.medium_count} 🟡")
         lines.append(f"- **Low:** {verdict.metrics.low_count} 🟢")
         lines.append("")
-        
+
         # By category
         lines.append("### By Category")
         lines.append("")
@@ -78,7 +78,7 @@ class MarkdownFormatter(BaseFormatter):
             if count > 0:
                 lines.append(f"- {cat}: {count}")
         lines.append("")
-        
+
         # By tool
         lines.append("### By Tool")
         lines.append("")
@@ -86,12 +86,12 @@ class MarkdownFormatter(BaseFormatter):
             if count > 0:
                 lines.append(f"- {tool}: {count}")
         lines.append("")
-        
+
         # Findings by severity
         if verdict.findings:
             lines.append("## Findings")
             lines.append("")
-            
+
             # Group by severity
             by_severity: Dict[str, List] = {
                 "BLOCKER": [],
@@ -101,16 +101,16 @@ class MarkdownFormatter(BaseFormatter):
             }
             for f in verdict.findings:
                 by_severity[f.severity.value].append(f)
-            
+
             for severity in ["BLOCKER", "HIGH", "MEDIUM", "LOW"]:
                 findings = by_severity[severity]
                 if not findings:
                     continue
-                
+
                 icon = {"BLOCKER": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🟢"}[severity]
                 lines.append(f"### {icon} {severity} ({len(findings)})")
                 lines.append("")
-                
+
                 for finding in findings:
                     lines.append(f"#### {finding.title}")
                     lines.append("")
@@ -123,11 +123,11 @@ class MarkdownFormatter(BaseFormatter):
                     lines.append("")
                     lines.append(f"**Description:** {finding.description}")
                     lines.append("")
-                    
+
                     if finding.remediation:
                         lines.append(f"**Remediation:** {finding.remediation}")
                         lines.append("")
-                    
+
                     # Evidence
                     if finding.evidence:
                         lines.append("**Evidence:**")
@@ -140,10 +140,10 @@ class MarkdownFormatter(BaseFormatter):
                                 lines.append(ev.content[:500])
                                 lines.append(f"```")
                         lines.append("")
-                    
+
                     lines.append("---")
                     lines.append("")
-        
+
         # Write to file
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lines))
@@ -154,10 +154,10 @@ class CSVFormatter(BaseFormatter):
 
     def format(self, verdict: ReadinessVerdict, output_path: Path) -> None:
         import csv
-        
+
         with open(output_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            
+
             # Header
             writer.writerow([
                 'severity',
@@ -170,14 +170,14 @@ class CSVFormatter(BaseFormatter):
                 'tool',
                 'remediation',
             ])
-            
+
             # Sort by severity (blockers first)
             severity_order = {"BLOCKER": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
             sorted_findings = sorted(
                 verdict.findings,
                 key=lambda f: severity_order.get(f.severity.value, 99)
             )
-            
+
             for finding in sorted_findings:
                 writer.writerow([
                     finding.severity.value,

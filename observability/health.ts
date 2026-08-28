@@ -1,6 +1,6 @@
 /**
  * Health Check Endpoints
- * 
+ *
  * /health - Liveness probe
  * /ready - Readiness probe
  */
@@ -192,9 +192,9 @@ export class HealthChecker {
 
       // Check tables exist
       const tablesResult = await prisma.$queryRaw<Array<{ tablename: string }>>`
-        SELECT tablename 
-        FROM pg_tables 
-        WHERE schemaname = 'public' 
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
         AND tablename = ANY(${requiredTables}::text[])
       `;
 

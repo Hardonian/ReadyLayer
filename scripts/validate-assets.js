@@ -2,14 +2,14 @@
 
 /**
  * Asset Validation Script
- * 
+ *
  * Validates that required visual assets exist and meet size thresholds.
  * Run this in CI to ensure assets are present before deployment.
- * 
+ *
  * Usage:
  *   node scripts/validate-assets.js
  *   ASSET_STRICT=1 node scripts/validate-assets.js  (fails on missing assets)
- * 
+ *
  * Exit codes:
  *   0 - All assets valid or strict mode disabled
  *   1 - Missing required assets (strict mode only)
@@ -33,7 +33,7 @@ const REQUIRED_ASSETS = [
   { name: 'error-general.webp', maxSize: 60 * 1024, required: false },
   { name: 'error-404.webp', maxSize: 60 * 1024, required: false },
   { name: 'error-auth.webp', maxSize: 60 * 1024, required: false },
-  
+
   // Tier 2: Feature
   { name: 'value-policy.webp', maxSize: 30 * 1024, required: false },
   { name: 'value-composable.webp', maxSize: 30 * 1024, required: false },
@@ -53,7 +53,7 @@ function formatBytes(bytes) {
 // Main validation
 function validateAssets() {
   console.log('🔍 Validating visual assets...\n')
-  
+
   const results = {
     found: [],
     missing: [],
@@ -66,7 +66,7 @@ function validateAssets() {
     console.log(`⚠️  Assets directory not found: ${ASSETS_DIR}`)
     console.log('   Create it with: mkdir -p public/assets/visuals')
     console.log('   See public/assets/visuals/README.md for generation instructions.\n')
-    
+
     if (STRICT_MODE) {
       console.error('❌ STRICT MODE: Failing due to missing assets directory')
       process.exit(1)
@@ -77,12 +77,12 @@ function validateAssets() {
   // Validate each asset
   for (const asset of REQUIRED_ASSETS) {
     const assetPath = path.join(ASSETS_DIR, asset.name)
-    
+
     if (fs.existsSync(assetPath)) {
       const stats = fs.statSync(assetPath)
       const size = stats.size
       results.totalSize += size
-      
+
       if (size > asset.maxSize) {
         results.oversized.push({
           name: asset.name,
@@ -125,7 +125,7 @@ function validateAssets() {
   // Strict mode handling
   if (STRICT_MODE) {
     const hasIssues = results.missing.length > 0 || results.oversized.length > 0
-    
+
     if (hasIssues) {
       console.error('\n❌ STRICT MODE: Validation failed')
       if (results.missing.length > 0) {

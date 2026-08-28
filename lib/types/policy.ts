@@ -1,6 +1,6 @@
 /**
  * Policy Type Definitions
- * 
+ *
  * Shared types for policy validation, parsing, and management
  */
 

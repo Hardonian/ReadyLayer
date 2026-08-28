@@ -1,8 +1,8 @@
 /**
  * Worker status check script
- * 
+ *
  * Displays current worker and job queue status
- * 
+ *
  * Usage: npx tsx scripts/worker-status.ts
  */
 
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
       'canceled': '🚫',
       'retrying': '🔄'
     };
-    
+
     for (const [status, count] of Object.entries(stats)) {
       const icon = statusIcons[status] || '📄';
       console.log(`   ${icon} ${status}: ${count}`);
@@ -162,10 +162,10 @@ async function main(): Promise<void> {
       'dead': '💀',
       'canceled': '🚫'
     };
-    
+
     for (const job of recentJobs) {
       const icon = statusIcons[job.status] || '📄';
-      
+
       const time = new Date(job.createdAt).toLocaleTimeString();
       const shortId = job.id.slice(0, 8);
       console.log(`   ${icon} ${job.type} (${shortId}...) at ${time}`);
@@ -188,7 +188,7 @@ async function main(): Promise<void> {
   console.log('Run smoke test:    pnpm jobs:smoke');
   console.log('Enqueue test job:  pnpm jobs:enqueue');
   console.log('View logs:         pnpm worker:py:docker:logs');
-  
+
   process.exit(0);
 }
 

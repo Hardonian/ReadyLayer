@@ -1,6 +1,6 @@
 /**
  * Billing Service
- * 
+ *
  * Stripe integration, tier enforcement, cost guardrails
  */
 
@@ -11,11 +11,11 @@ export interface PlanLimits {
   llmTokensPerDay: number; // Daily token limit
   llmTokensPerMonth: number; // Monthly token limit (alternative to budget)
   llmBudget: number; // Monthly LLM spend limit (USD)
-  
+
   // Usage limits
   runsPerDay: number; // Daily review/test runs
   concurrentJobs: number; // Max concurrent processing jobs
-  
+
   // Fail-open/closed policy
   failOpenOnLimit: boolean; // If true, allow requests but log; if false, reject
 }

@@ -1,6 +1,6 @@
 /**
  * Dashboard Metrics Hook
- * 
+ *
  * Fetches dashboard metrics with real-time updates
  */
 
