@@ -1,5 +1,9 @@
 # ReadyLayer
 
+<!-- BEGIN: REPO HERO -->
+![ReadyLayer — hero generated locally on the GPU stack](assets/repo-hero.png)
+<!-- END: REPO HERO -->
+
 **ReadyLayer provides governance tooling for AI-assisted software delivery.** It ships a web app, CLI, and a deterministic runner that help teams capture policy decisions, evidence, and review signals around generated code.
 
 **Landing strip**
