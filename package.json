@@ -118,7 +118,7 @@
     "redis": "^6.1.0",
     "stripe": "^22.5.0",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.3.5",
+    "zod": "^4.5.4",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
