@@ -143,7 +143,7 @@
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.23.13",
-    "typescript": "^5.3.3",
+    "typescript": "^7.0.2",
     "vitest": "^4.1.11"
   },
   "engines": {
