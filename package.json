@@ -97,7 +97,6 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "commander": "^14.0.2",
-    "deepmerge-ts": "^8.0.2",
     "framer-motion": "^12.26.2",
     "js-yaml": "^4.3.2",
     "lucide-react": "^1.47.0",
