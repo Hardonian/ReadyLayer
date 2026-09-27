@@ -20,6 +20,29 @@ const IGNORE_PATTERNS = [
   // Entry points
   /^(cli|workers|app)\//,
   /^(index|main|server)\.ts$/,
+  // Public API directories (used by external consumers, workers, or tests — not internally imported)
+  /^services\//,
+  /^integrations\//,
+  /^sdk\//,
+  /^lib\//,
+  /^observability\//,
+  /^queue\//,
+  /^billing\//,
+  /^content\//,
+  /^e2e\//,
+  /^components\//,
+  /^middleware\//,
+  /^scripts\//,
+  // Re-export index files (barrel exports for external consumers)
+  /\/index\.ts$/,
+  // Error boundaries & failure UI (used by Next.js error pages, not directly imported)
+  /error-boundary\.tsx$/,
+  /ErrorBoundary\.tsx$/,
+  /failure-explainer\.tsx$/,
+  /FailureModes\.tsx$/,
+  // Next.js middleware and layout config
+  /middleware\.ts$/,
+  /usage-limit-banner\.tsx$/,
   // Contract/schema files (often exported for external use)
   /contracts\//,
   /schemas\//,
