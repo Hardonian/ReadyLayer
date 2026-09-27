@@ -163,13 +163,13 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
   const getProviderIcon = (provider: string) => {
     switch (provider) {
       case 'github':
-        return Github
+        return 
       case 'gitlab':
-        return Gitlab
+        return 
       case 'bitbucket':
         return Code
       default:
-        return Github
+        return 
     }
   }
 
