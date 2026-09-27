@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, ShieldOff, BookOpen } from 'lucide-react'
-import { Github, Gitlab } from '@/components/icons/brand-icons'
+import { Github } from '@/components/icons/brand-icons'
 
 export const metadata: Metadata = {
   title: 'Open Source',
@@ -73,7 +73,7 @@ export default function OpenSourcePage(): React.JSX.Element {
           </Button>
           <Button asChild variant="ghost">
             <a href="https://github.com/Hardonian/ReadyLayer" target="_blank" rel="noopener noreferrer">
-              < className="h-4 w-4 mr-2" />
+              <Github className="h-4 w-4 mr-2" />
               See GitHub
             </a>
           </Button>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, ErrorState, Skeleton } from '
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
 import { Settings, ToggleLeft, ToggleRight } from 'lucide-react'
-import { Github, Gitlab } from '@/components/icons/brand-icons'
+import { Github, Gitlab, Bitbucket } from '@/components/icons/brand-icons'
 import { Badge } from '@/components/ui/badge'
 
 export default function SettingsPage(): React.JSX.Element {
@@ -59,7 +59,7 @@ export default function SettingsPage(): React.JSX.Element {
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  < className="h-5 w-5" />
+                  <Github className="h-5 w-5" />
                   <div>
                     <div className="font-medium">GitHub</div>
                     <div className="text-sm text-muted-foreground">Connect your GitHub repositories</div>
@@ -70,7 +70,7 @@ export default function SettingsPage(): React.JSX.Element {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  < className="h-5 w-5" />
+                  <Gitlab className="h-5 w-5" />
                   <div>
                     <div className="font-medium">GitLab</div>
                     <div className="text-sm text-muted-foreground">Connect your GitLab repositories</div>
@@ -81,7 +81,7 @@ export default function SettingsPage(): React.JSX.Element {
 
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  < className="h-5 w-5" />
+                  <Bitbucket className="h-5 w-5" />
                   <div>
                     <div className="font-medium">Bitbucket</div>
                     <div className="text-sm text-muted-foreground">Connect your Bitbucket repositories</div>

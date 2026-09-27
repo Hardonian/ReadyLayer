@@ -15,13 +15,13 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
-  Github,
   GitBranch,
   Shield,
   Zap,
   Award,
   TrendingUp
 } from 'lucide-react'
+import { Github } from '@/components/icons/brand-icons'
 
 interface EvaluationStep {
   id: string

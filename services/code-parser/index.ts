@@ -392,7 +392,7 @@ export class CodeParserService {
   /**
    * Traverse AST with visitor pattern
    */
-  private traverseAST(ast: babel.ParseResult<t.File>, visitors: Record<string, (node: t.Node) => void>): void {
+  private traverseAST(ast: any, visitors: Record<string, (node: t.Node) => void>): void {
     const traverse = (node: t.Node): void => {
       if (!node || typeof node !== 'object') {
         return;

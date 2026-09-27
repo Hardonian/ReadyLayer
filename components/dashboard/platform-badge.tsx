@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { GitProvider } from '@/lib/platform-themes'
-import { Github, Gitlab } from 'lucide-react'
+import { Github, Gitlab } from '@/components/icons/brand-icons'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 

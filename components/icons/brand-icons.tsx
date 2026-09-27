@@ -1,5 +1,6 @@
 "use client";
 
+// Brand icons removed from lucide-react — inline SVG replacements
 export function Github({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -13,6 +14,23 @@ export function Gitlab({ size = 24, className = "" }: { size?: number; className
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="m22 13.29-3.33-10a.42.42 0 0 0-.14-.18.38.38 0 0 0-.22-.11.39.39 0 0 0-.23.07L12 6.89 5.92 3a.39.39 0 0 0-.23-.07.38.38 0 0 0-.22.11.42.42 0 0 0-.14.18L2 13.29a.43.43 0 0 0 .14.42L12 22l9.86-8.29a.43.43 0 0 0 .14-.42Z"/>
+    </svg>
+  );
+}
+
+export function Bitbucket({ size = 24, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3.343 3.343A1.5 1.5 0 0 1 4.757 3h14.486a1.5 1.5 0 0 1 1.414 1.086l3.137 11.043A2 2 0 0 1 21.86 19H2.14a2 2 0 0 1-1.934-2.528z"/>
+      <path d="m3 3 18 18"/>
+    </svg>
+  );
+}
+
+export function Twitter({ size = 24, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 4l11.733 16h4.267l-11.733 -16z" /><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
     </svg>
   );
 }

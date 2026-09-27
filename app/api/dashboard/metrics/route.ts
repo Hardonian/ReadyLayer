@@ -288,7 +288,7 @@ export const GET = createRouteHandler(
       }))
 
       // Hot repos from pre-aggregated query
-      const hotRepos = repoMetrics.map((repo) => ({
+      const hotRepos = repoMetrics.map((repo: any) => ({
         repositoryId: repo.repositoryId,
         repositoryName: repo.repositoryName,
         blockedRate: repo.total > 0 ? repo.blocked / repo.total : 0,

@@ -35,7 +35,7 @@ export const GET = createRouteHandler(async (context: RouteContext) => {
     safeSummary: pack.safeSummary,
     payload: includeRaw && canViewRaw ? pack.payload : pack.safeSummary,
     payloadAccess: includeRaw && canViewRaw ? 'raw' : 'redacted',
-    artifacts: pack.artifacts.map((artifact) => ({
+    artifacts: pack.artifacts.map((artifact: any) => ({
       id: artifact.id,
       kind: artifact.kind,
       mimeType: artifact.mimeType,

@@ -16,12 +16,12 @@ const integrations = [
   {
     title: 'GitHub',
     description: 'Run governance checks in GitHub Actions and annotate pull requests with results.',
-    icon: ,
+    icon: Github,
   },
   {
     title: 'GitLab',
     description: 'Use GitLab CI pipelines to run ReadyLayer checks and attach artifacts to merge requests.',
-    icon: ,
+    icon: Gitlab,
   },
   {
     title: 'Bitbucket',
