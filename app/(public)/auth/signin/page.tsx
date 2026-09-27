@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, LoadingState, ErrorState } from '@/components/ui'
 import { fadeIn, slideUp } from '@/lib/design/motion'
-import { Github } from 'lucide-react'
+
 
 // Provider icons as SVG components
 const GitLabIcon = () => (
@@ -44,7 +44,7 @@ const providers: ProviderConfig[] = [
   {
     id: 'github',
     name: 'GitHub',
-    icon: <Github className="h-5 w-5" />,
+    icon: < className="h-5 w-5" />,
     color: 'text-white',
     bgColor: 'bg-[#24292e] hover:bg-[#24292e]/90 shadow-provider-github',
   },

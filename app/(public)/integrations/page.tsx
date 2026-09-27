@@ -4,7 +4,8 @@ import { Container } from '@/components/ui/container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Github, Gitlab, GitBranch, Code } from 'lucide-react'
+import { GitBranch, Code } from 'lucide-react'
+import { Github, Gitlab } from '@/components/icons/brand-icons'
 
 export const metadata: Metadata = {
   title: 'Integrations',
@@ -15,12 +16,12 @@ const integrations = [
   {
     title: 'GitHub',
     description: 'Run governance checks in GitHub Actions and annotate pull requests with results.',
-    icon: Github,
+    icon: ,
   },
   {
     title: 'GitLab',
     description: 'Use GitLab CI pipelines to run ReadyLayer checks and attach artifacts to merge requests.',
-    icon: Gitlab,
+    icon: ,
   },
   {
     title: 'Bitbucket',

@@ -5,7 +5,8 @@ import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@/components/ui'
 import { Container } from '@/components/ui/container'
 import { fadeIn } from '@/lib/design/motion'
-import { ArrowLeft, Github, Gitlab, Code, CheckCircle2, Loader2 } from 'lucide-react'
+import { ArrowLeft, Code, CheckCircle2, Loader2 } from 'lucide-react'
+import { Github, Gitlab } from '@/components/icons/brand-icons'
 import Link from 'next/link'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useToast } from '@/lib/hooks/use-toast'
@@ -162,13 +163,13 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
   const getProviderIcon = (provider: string) => {
     switch (provider) {
       case 'github':
-        return Github
+        return 
       case 'gitlab':
-        return Gitlab
+        return 
       case 'bitbucket':
         return Code
       default:
-        return Github
+        return 
     }
   }
 
