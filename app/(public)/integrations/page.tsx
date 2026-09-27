@@ -4,7 +4,8 @@ import { Container } from '@/components/ui/container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Github, Gitlab, GitBranch, Code } from 'lucide-react'
+import { GitBranch, Code } from 'lucide-react'
+import { Github, Gitlab } from '@/components/icons/brand-icons'
 
 export const metadata: Metadata = {
   title: 'Integrations',

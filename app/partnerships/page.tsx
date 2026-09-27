@@ -6,10 +6,10 @@
  */
 
 import { Container } from '@/components/ui/container'
+import { Github } from '@/components/icons/brand-icons'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  Github,
   GitBranch,
   Shield,
   CheckCircle2,

@@ -61,7 +61,7 @@ export const GET = createRouteHandler(async (context: RouteContext) => {
     { path: 'evidence_bundle.json', content: stableStringify(evidenceBundle || {}) },
     { path: 'provenance/provenance_pack.json', content: stableStringify({ ...pack, payload: exposeRaw ? pack.payload : pack.safeSummary }) },
     { path: 'policy/effective_policy.json', content: stableStringify(policyPack ? { checksum: policyPack.checksum, source: policyPack.source } : {}) },
-    ...pack.artifacts.map((artifact) => ({
+    ...pack.artifacts.map((artifact: any) => ({
       path: `provenance/attachments/${artifact.kind}-${artifact.contentHash.slice(0, 12)}.${artifact.jsonContent ? 'json' : 'txt'}`,
       content: artifact.jsonContent ? stableStringify(artifact.jsonContent) : (exposeRaw ? (artifact.content || '') : ''),
     })),

@@ -4,7 +4,8 @@ import { Container } from '@/components/ui/container'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Github, ShieldCheck, ShieldOff, BookOpen } from 'lucide-react'
+import { ShieldCheck, ShieldOff, BookOpen } from 'lucide-react'
+import { Github } from '@/components/icons/brand-icons'
 
 export const metadata: Metadata = {
   title: 'Open Source',

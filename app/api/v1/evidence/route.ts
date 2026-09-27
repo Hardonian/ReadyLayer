@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
       select: { organizationId: true },
     });
-    const userOrgIds = memberships.map((m) => m.organizationId);
+    const userOrgIds = memberships.map((m: any) => m.organizationId);
 
     if (userOrgIds.length === 0) {
       return NextResponse.json({
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Filter by organization access
-    const filteredBundles = bundles.filter((bundle) => {
+    const filteredBundles = bundles.filter((bundle: any) => {
       let bundleOrgId: string | null = null;
       if (bundle.review?.repository?.organizationId) {
         bundleOrgId = bundle.review.repository.organizationId;
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
     const total = filteredBundles.length;
 
     return NextResponse.json({
-      evidence: filteredBundles.slice(0, limit).map((bundle) => ({
+      evidence: filteredBundles.slice(0, limit).map((bundle: any) => ({
         id: bundle.id,
         reviewId: bundle.reviewId,
         testId: bundle.testId,

@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
       select: { organizationId: true },
     });
-    const userOrgIds = memberships.map((m) => m.organizationId);
+    const userOrgIds = memberships.map((m: any) => m.organizationId);
 
     if (userOrgIds.length === 0) {
       return NextResponse.json({
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: Record<string, unknown> = {
       organizationId: organizationId
-        ? { in: userOrgIds.filter((id) => id === organizationId) }
+        ? { in: userOrgIds.filter((id: any) => id === organizationId) }
         : { in: userOrgIds },
     };
 
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
-      suggestions: suggestions.map((s) => ({
+      suggestions: suggestions.map((s: any) => ({
         id: s.id,
         type: s.type,
         difficulty: s.difficulty,

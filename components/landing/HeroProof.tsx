@@ -8,12 +8,11 @@ import { Badge } from '@/components/ui/badge'
 import { Container } from '@/components/ui/container'
 
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/design/motion'
+import { Github, Gitlab } from '@/components/icons/brand-icons'
 import {
   Shield,
   TestTube,
   FileText,
-  Github,
-  Gitlab,
   Code,
   Play,
   CheckCircle2,

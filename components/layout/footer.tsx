@@ -4,7 +4,8 @@ import React from 'react'
 import Link from 'next/link'
 import { Container } from '@/components/ui/container'
 import { LogoWord } from '@/components/ui/logo'
-import { Github, Twitter, Mail, Shield, FileText, BookOpen } from 'lucide-react'
+import { Mail, Shield, FileText, BookOpen } from 'lucide-react'
+import { Github, Twitter } from '@/components/icons/brand-icons'
 
 export function Footer(): React.JSX.Element {
   return (
