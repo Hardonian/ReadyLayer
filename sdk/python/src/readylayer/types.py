@@ -10,7 +10,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # ============================================================================
 # Enums
@@ -276,7 +276,7 @@ class SeverityMapping(BaseAPIModel):
 
     model_config = ConfigDict(extra="allow")
 
-    @field_validator("__dict__", mode="before")
+    @model_validator(mode="before")
     @classmethod
     def validate_severity_mapping(cls, v: Any) -> Any:
         """Validate that all values are valid actions."""

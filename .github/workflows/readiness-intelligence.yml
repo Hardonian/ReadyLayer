@@ -10,6 +10,10 @@ env:
   READINESS_ARTIFACTS_PATH: ./readiness-artifacts
   PYTHON_VERSION: '3.11'
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   # Phase 1: Analyze change impact
   analyze-impact:
@@ -81,6 +85,7 @@ jobs:
 
       - name: Comment PR with Analysis
         if: github.event_name == 'pull_request'
+        continue-on-error: true # Read-only tokens (e.g. Dependabot PRs) cannot comment
         uses: actions/github-script@v7
         with:
           script: |

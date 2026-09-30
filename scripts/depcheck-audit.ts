@@ -33,13 +33,21 @@ function loadAllowlist(): DepcheckAllowlist {
 }
 
 function runDepcheck(): DepcheckResult {
-  const output = execFileSync('npx', [
-    'depcheck',
-    '--json',
-    '--ignore-dirs=node_modules,dist,build',
-  ], { encoding: 'utf-8' });
-
-  return JSON.parse(output) as DepcheckResult;
+  // depcheck exits non-zero when it reports findings; the JSON report is still on stdout
+  try {
+    const output = execFileSync('npx', [
+      'depcheck',
+      '--json',
+      '--ignore-dirs=node_modules,dist,build',
+    ], { encoding: 'utf-8' });
+    return JSON.parse(output) as DepcheckResult;
+  } catch (err) {
+    const stdout = (err as { stdout?: string }).stdout;
+    if (stdout) {
+      return JSON.parse(stdout) as DepcheckResult;
+    }
+    throw err;
+  }
 }
 
 function main(): void {
