@@ -122,10 +122,11 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
     });
 
     it('should detect and redact Slack tokens', () => {
+      // Test vector assembled from fragments (via interpolation) so the
+      // repo's push protection does not mistake it for a real Slack token
+      const slackTokenVector = 'xox' + 'b-0123456789-0123456789abcdef0123456789';
       const code = `
-        // Assembled from fragments so the repo's push protection does not
-        // mistake this test vector for a real Slack token
-        const slackToken = 'xox' + 'b-0123456789-0123456789abcdef0123456789';
+        const slackToken = '${slackTokenVector}';
         client.auth(slackToken);
       `;
 
@@ -138,9 +139,10 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDU8JrlBz7O9Z5A
     });
 
     it('should detect and redact Stripe keys', () => {
+      // Fragmented test vector (see Slack token note above)
+      const stripeKeyVector = 'sk_' + 'live_51ABCDEFGHIJKLMNOPQRSTUV';
       const code = `
-        // Fragmented test vector (see Slack token note above)
-        const stripeKey = 'sk_' + 'live_51ABCDEFGHIJKLMNOPQRSTUV';
+        const stripeKey = '${stripeKeyVector}';
         const stripe = require('stripe')(stripeKey);
       `;
 
@@ -363,7 +365,7 @@ export async function authenticate() {
 const config = {
   stripe: {
     publishable: 'pk_test_51FakePublishableKeyForTests0123',
-    secret: 'sk_' + 'live_51ABCDEFGHIJKLMNOPQRSTUV',
+    secret: '${'sk_' + 'live_51ABCDEFGHIJKLMNOPQRSTUV'}',
   },
   database: {
     url: 'postgresql://admin:FAKEpassw0rdForTests@db.example.com:5432/production',
