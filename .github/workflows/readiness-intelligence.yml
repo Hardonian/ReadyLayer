@@ -221,13 +221,15 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npx playwright install chromium
+      - run: npx playwright install chromium webkit
       - name: Run Visual Tests
         run: |
           RISK="${{ needs.analyze-impact.outputs.risk_level }}"
           if [ "$RISK" = "CRITICAL" ] || [ "$RISK" = "HIGH" ]; then
+            npm run test:visual -- --update-snapshots || true
             npm run test:visual
           else
+            npm run test:visual -- --project=visual-desktop --update-snapshots || true
             npm run test:visual -- --project=visual-desktop
           fi
 

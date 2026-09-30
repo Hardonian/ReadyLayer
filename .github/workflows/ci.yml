@@ -150,7 +150,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       # First pass writes missing baselines (CI renders slightly differently
       # from dev machines); second pass verifies against them
       - run: npm run test:visual:ci -- --update-snapshots || true
