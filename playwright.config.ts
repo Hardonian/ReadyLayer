@@ -34,8 +34,9 @@ export default defineConfig({
     trace: 'on-first-retry',
     /* Screenshot on failure */
     screenshot: 'only-on-failure',
-    /* Video recording for debugging */
-    video: process.env.CI ? 'retain-on-failure' : 'off',
+    /* Video recording is disabled: it has crashed the webkit renderer in CI
+       mid-test ("browser has been closed"). Failure screenshots suffice. */
+    video: 'off',
     /* Action timeout */
     actionTimeout: 15000,
     /* Navigation timeout */

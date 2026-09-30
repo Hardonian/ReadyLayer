@@ -36,8 +36,11 @@ test.describe('Dashboard', () => {
     // This test verifies nav structure exists
     const navExists = await nav.count() > 0
     
-    // Nav should either exist or not exist based on route
-    expect(navExists || page.url() === '/').toBeTruthy()
+    // Nav should either exist or not exist based on route (on mobile the
+    // nav is collapsed behind a menu, so absence is acceptable on the
+    // homepage)
+    const path = new URL(page.url()).pathname
+    expect(navExists || path === '/').toBeTruthy()
   })
 
   test('should handle error state with retry', async ({ page }) => {

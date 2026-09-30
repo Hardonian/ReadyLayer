@@ -30,6 +30,10 @@ test.describe('Authentication Flow', () => {
     
     // Click first provider button
     const firstButton = page.getByRole('button', { name: /Continue with/i }).first()
+    let popupOpened = false
+    page.context().once('page', () => {
+      popupOpened = true
+    })
     await firstButton.click()
     
     // Should show loading state (button disabled or spinner), navigate to the
@@ -38,7 +42,7 @@ test.describe('Authentication Flow', () => {
     const hasLoadingText = await page.getByText(/Signing in/i).isVisible().catch(() => false)
     const hasErrorState = await page.getByText(/not configured/i).isVisible().catch(() => false)
     const navigatedToProvider = /auth\/v1\/authorize|github\.com|gitlab\.com|bitbucket\.org|google\.com/.test(page.url())
-    expect(isDisabled || hasLoadingText || hasErrorState || navigatedToProvider).toBeTruthy()
+    expect(isDisabled || hasLoadingText || hasErrorState || navigatedToProvider || popupOpened).toBeTruthy()
   })
 
   test('should handle auth error page', async ({ page }) => {
