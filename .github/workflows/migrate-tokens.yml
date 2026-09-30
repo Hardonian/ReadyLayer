@@ -1,16 +1,9 @@
 name: Migrate Installation Tokens
 
+# One-shot data migration utility. Requires runtime secrets (DATABASE_URL,
+# token encryption keys) that are not repo secrets, so it must only run
+# deliberately via workflow_dispatch - never automatically on push.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'services/policy-engine/**'
-      - 'lib/crypto/**'
-      - 'lib/secrets/**'
-      - 'scripts/migrate-installation-tokens.ts'
-      - 'prisma/schema.prisma'
-      - '.github/workflows/migrate-tokens.yml'
   workflow_dispatch:
     inputs:
       confirm:

@@ -198,13 +198,15 @@ jobs:
       - run: npx playwright install chromium
       - name: Run E2E Tests (Optimized)
         run: |
+          # Only chromium is installed in this job (the CI workflow's E2E job
+          # covers the full browser matrix)
           RISK="${{ needs.analyze-impact.outputs.risk_level }}"
           if [ "$RISK" = "LOW" ]; then
-            npm run test:e2e -- auth.spec.ts dashboard.spec.ts
+            npx playwright test --project=chromium -- auth.spec.ts dashboard.spec.ts
           elif [ "$RISK" = "MEDIUM" ]; then
-            npm run test:e2e -- auth.spec.ts dashboard.spec.ts billing-workflow.spec.ts
+            npx playwright test --project=chromium -- auth.spec.ts dashboard.spec.ts billing-workflow.spec.ts
           else
-            npm run test:e2e
+            npx playwright test --project=chromium
           fi
 
   test-visual:
