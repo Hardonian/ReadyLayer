@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SKIP_ENV_VALIDATION: 'true'
-      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/readylayer'
       NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321'
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'local-anon-key'
       SUPABASE_SERVICE_ROLE_KEY: 'local-service-key'

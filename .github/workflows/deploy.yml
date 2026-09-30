@@ -10,7 +10,10 @@ jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    
+    env:
+      # DATABASE_URL is not defined as a repo secret; fall back to the Supabase DB URL
+      DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.SUPABASE_DB_URL }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,13 +36,10 @@ jobs:
       - name: Verify database contract (dry-run)
         run: npm run db:verify || echo "⚠️ Database verification failed - check db-verification-report.json"
         continue-on-error: true
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build
         run: npm run build
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
