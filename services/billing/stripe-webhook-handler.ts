@@ -13,9 +13,22 @@ import { metrics } from '@/observability/metrics';
 import Stripe from 'stripe';
 import { createHmac } from 'crypto';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16' as Stripe.LatestApiVersion,
-});
+// Lazily constructed so importing this module (tests, tooling) does not
+// require STRIPE_SECRET_KEY to be configured.
+let stripeClient: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripeClient) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
+    }
+    stripeClient = new Stripe(key, {
+      apiVersion: '2023-10-16' as Stripe.LatestApiVersion,
+    });
+  }
+  return stripeClient;
+}
 
 export interface StripeWebhookEvent {
   id: string;
@@ -492,7 +505,7 @@ export async function getSubscriptionStatus(
   subscriptionId: string
 ): Promise<Stripe.Subscription | null> {
   try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
     return subscription;
   } catch (error) {
     logger.error(

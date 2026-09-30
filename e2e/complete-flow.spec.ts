@@ -8,6 +8,13 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Complete ReadyLayer Flow', () => {
+  test.beforeEach(() => {
+    // These flows drive the authenticated dashboard UI. Sessions are validated
+    // server-side by middleware (Supabase), so they need a real or stubbed auth
+    // backend; run them against a configured environment with E2E_DASHBOARD_TESTS=1.
+    test.skip(!process.env.E2E_DASHBOARD_TESTS, 'requires an authenticated dashboard session (server-side Supabase validation)');
+  });
+
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
   const testEmail = `test-${Date.now()}@readylayer.test`;
   const testPassword = 'TestPassword123!@#';

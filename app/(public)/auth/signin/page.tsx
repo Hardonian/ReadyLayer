@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { createSupabaseClient } from '@/lib/supabase/client'
+import { createSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, LoadingState, ErrorState } from '@/components/ui'
@@ -87,6 +87,15 @@ function SignInContent() {
     try {
       setLoading(provider)
       setError(null)
+
+      // Without real credentials the OAuth redirect would send the browser to
+      // placeholder endpoints; degrade to a clear error state instead.
+      if (!isSupabaseConfigured()) {
+        setError('Sign-in is not configured in this deployment.')
+        setLoading(null)
+        return
+      }
+
       const supabase = createSupabaseClient()
       
       // Map provider names to Supabase OAuth provider IDs

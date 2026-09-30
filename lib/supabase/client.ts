@@ -2,6 +2,15 @@ import { createBrowserClient } from '@supabase/ssr'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 /**
+ * Whether real Supabase credentials are configured in this environment.
+ * When false, auth flows must degrade gracefully instead of redirecting
+ * the browser to placeholder endpoints.
+ */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+}
+
+/**
  * Supabase client for browser/client-side usage
  */
 export function createSupabaseClient(): SupabaseClient {

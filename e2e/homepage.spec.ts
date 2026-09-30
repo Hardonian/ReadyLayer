@@ -20,7 +20,7 @@ test.describe('Homepage', () => {
     await expect(page).toHaveTitle(/ReadyLayer/)
     
     // Verify main heading is visible
-    await expect(page.getByRole('heading', { name: /ReadyLayer/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Open-source governance/i })).toBeVisible()
     
     // Verify no uncaught errors
     expect(errors.length).toBe(0)
@@ -38,18 +38,16 @@ test.describe('Homepage', () => {
     await expect(githubButton.or(gitlabButton).first()).toBeVisible()
   })
 
-  test('should navigate to sign-in page when clicking provider button', async ({ page }) => {
+  test('should link to GitHub from the homepage', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')
     
-    // Click GitHub sign-in button
+    // The homepage links to the public GitHub repository (sign-in lives at /auth/signin)
     const githubButton = page.getByRole('link', { name: /GitHub/i }).first()
-    if (await githubButton.isVisible()) {
-      await githubButton.click()
-      
-      // Should navigate to sign-in page
-      await expect(page).toHaveURL(/\/auth\/signin/)
-    }
+    await expect(githubButton).toBeVisible()
+    
+    const href = await githubButton.getAttribute('href')
+    expect(href).toMatch(/github\.com|\/auth\/|\/api\/github/)
   })
 
   test('should handle theme toggle', async ({ page }) => {

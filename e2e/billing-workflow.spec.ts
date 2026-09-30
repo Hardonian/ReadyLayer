@@ -97,24 +97,34 @@ test.describe('Billing and Subscription Workflow', () => {
   test('should trigger budget alerts', async () => {
     const monthlyBudget = 100;
     const testId = testOrgId + '_alerts';
-
-    // Track expensive usage to trigger warning
-    for (let i = 0; i < 200; i++) {
+    const usage = (costUSD: number) =>
       trackLLMCost(testId, {
         provider: 'openai' as const,
         model: 'gpt-4-turbo',
         inputTokens: 1000,
         outputTokens: 1000,
         totalTokens: 2000,
-        costUSD: 0.04,
+        costUSD,
         requestDurationMs: 100,
         timestamp: new Date(),
         success: true,
       });
-    }
 
+    // Below the first threshold (50%): no alert
+    usage(0.04);
+    expect(checkBudgetAlerts(testId, monthlyBudget)).toBeNull();
+
+    // Cross the 50% threshold
+    usage(60);
     const alert = checkBudgetAlerts(testId, monthlyBudget);
-    expect(['ok', 'warning', 'critical']).toContain(alert);
+    expect(alert).not.toBeNull();
+    expect(alert?.level).toBe(50);
+    expect(alert?.exceeded).toBe(false);
+
+    // Exceed the budget
+    usage(50);
+    const exceeded = checkBudgetAlerts(testId, monthlyBudget);
+    expect(exceeded?.exceeded).toBe(true);
   });
 
   test('should handle subscription updates from Stripe', async () => {

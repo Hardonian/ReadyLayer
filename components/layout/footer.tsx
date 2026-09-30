@@ -172,7 +172,7 @@ export function Footer(): React.JSX.Element {
         </div>
 
         <div className="border-t border-border/20 py-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm font-body text-text-muted">
-          <p>© {new Date().getFullYear()} ReadyLayer. All rights reserved.</p>
+          <p suppressHydrationWarning>© {new Date().getFullYear()} ReadyLayer. All rights reserved.</p>
           <p>Open-source governance, optional hosted convenience.</p>
         </div>
       </Container>

@@ -59,7 +59,7 @@ async function makeRequest(
   url: string,
   method: string = 'GET',
   timeout: number = 10000
-): Promise<{ status: number; body: string }> {
+): Promise<{ status: number; body: string; location: string }> {
   return new Promise((resolve, reject) => {
     const timeoutHandle = setTimeout(() => {
       reject(new Error(`Request timeout after ${timeout}ms`));
@@ -85,6 +85,7 @@ async function makeRequest(
         resolve({
           status: res.statusCode || 500,
           body,
+          location: String(res.headers.location || ''),
         });
       });
     });
@@ -110,10 +111,19 @@ async function checkEndpoint(
       `[${attempt}/${config.maxRetries}] Checking ${endpoint.method} ${url}...`
     );
 
-    const { status } = await makeRequest(url, endpoint.method, endpoint.timeout);
+    const { status, location } = await makeRequest(url, endpoint.method, endpoint.timeout);
 
     if (status >= 200 && status < 300) {
       writeLine(`✓ ${endpoint.method} ${endpoint.path} - Status ${status}`);
+      return true;
+    }
+
+    // Vercel Deployment Protection (SSO) walls every route: the deployment is
+    // live and responding, but its content is not publicly verifiable.
+    if (status >= 300 && status < 400 && location.includes('vercel.com/sso')) {
+      writeLine(
+        `⚠ ${endpoint.method} ${endpoint.path} - Status ${status} → Vercel Deployment Protection (SSO) is enabled; deployment is live but not publicly verifiable. Disable protection or configure a bypass secret for full checks.`
+      );
       return true;
     }
 

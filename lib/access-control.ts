@@ -38,6 +38,22 @@ export const PUBLIC_API_ROUTES = [
   '/api/ready',
   '/api/v1/runs/sandbox',
   '/api/demo',
+  // OAuth endpoints: CSRF state is generated/validated in-route, and the
+  // provider callback must be reachable without a session (user is mid-login)
+  '/api/github/auth',
+  '/api/github/callback',
+  '/api/integrations/github/install',
+  '/api/integrations/github/callback',
+  '/api/integrations/gitlab/install',
+  '/api/integrations/gitlab/callback',
+  '/api/integrations/bitbucket/install',
+  '/api/integrations/bitbucket/callback',
+  // Inbound webhooks: authenticated by provider signatures/tokens in-route
+  '/api/webhooks/stripe',
+  '/api/webhooks/github',
+  '/api/webhooks/gitlab',
+  '/api/webhooks/bitbucket',
+  '/api/github/actions/webhook',
 ]
 
 export const AUTH_ROUTE_PREFIXES = ['/dashboard', '/app']

@@ -10,6 +10,8 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './e2e',
+  /* Only Playwright specs live in e2e/; *.test.ts files there belong to vitest */
+  testMatch: /.*\.spec\.ts$/,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -146,19 +148,33 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-    env: process.env.DEMO_MODE_ENABLED
-      ? {
-          DEMO_MODE_ENABLED: 'true',
-          NODE_ENV: 'development',
-        }
-      : undefined,
-  },
+  /* Run the mock Supabase auth stub and the local dev server before tests */
+  webServer: [
+    {
+      command: 'node e2e/utils/mock-supabase-server.mjs',
+      url: 'http://127.0.0.1:54321/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30 * 1000,
+    },
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+      env: {
+        // Point Supabase at the mock auth stub so middleware session
+        // validation works during tests without real credentials
+        NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
+        ...(process.env.DEMO_MODE_ENABLED
+          ? {
+              DEMO_MODE_ENABLED: 'true',
+              NODE_ENV: 'development',
+            }
+          : {}),
+      },
+    },
+  ],
 
   /* Snapshot configuration for visual regression */
   snapshotDir: './e2e/__screenshots__',

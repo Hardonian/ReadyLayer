@@ -374,3 +374,4 @@ build/
 .vscode/
 *.pyc
 *.log
+ui-consistency-report.md

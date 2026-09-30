@@ -38,6 +38,9 @@ test.describe.configure({ mode: 'serial' })
 test.describe('Visual Regression: Public Pages', () => {
   test.beforeEach(async ({ page }) => {
     await setupVisualTest(page)
+    // Resolve framer-motion to its end state instantly so screenshots are
+    // deterministic (real-time animations otherwise get captured mid-flight)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
     await mockConsistentData(page)
   })
 
@@ -46,7 +49,7 @@ test.describe('Visual Regression: Public Pages', () => {
     await waitForVisualStability(page)
     
     // Verify key elements are present
-    await expect(page.getByRole('heading', { name: /ReadyLayer/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Open-source governance/i })).toBeVisible()
     
     await expect(page).toHaveScreenshot(snapshotName('homepage-loaded'), {
       fullPage: true,
@@ -85,7 +88,7 @@ test.describe('Visual Regression: Public Pages', () => {
     await page.goto('/auth/signin')
     await waitForVisualStability(page)
     
-    await expect(page.getByRole('button', { name: /Continue with/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Continue with/i }).first()).toBeVisible()
     
     await expect(page).toHaveScreenshot(snapshotName('signin-loaded'), {
       fullPage: true,
@@ -111,7 +114,8 @@ test.describe('Visual Regression: Public Pages', () => {
     await page.goto('/pricing')
     await waitForVisualStability(page)
     
-    await expect(page.getByRole('heading', { name: /Pricing/i })).toBeVisible()
+    await expect(page).toHaveURL(/\/enterprise/)
+    await expect(page.getByRole('heading', { name: /Enterprise Cloud/i })).toBeVisible()
     
     await expect(page).toHaveScreenshot(snapshotName('pricing-page'), {
       fullPage: true,
@@ -124,7 +128,9 @@ test.describe('Visual Regression: Public Pages', () => {
     await page.goto('/features')
     await waitForVisualStability(page)
     
-    await expect(page.getByRole('heading', { name: /Features/i })).toBeVisible()
+    // /features now redirects to /open-source
+    await expect(page).toHaveURL(/\/open-source/)
+    await expect(page.getByRole('heading', { name: /Open-source governance/i })).toBeVisible()
     
     await expect(page).toHaveScreenshot(snapshotName('features-page'), {
       fullPage: true,
@@ -159,6 +165,9 @@ test.describe('Visual Regression: Public Pages', () => {
 test.describe('Visual Regression: Dashboard (Authenticated)', () => {
   test.beforeEach(async ({ page }) => {
     await setupVisualTest(page)
+    // Resolve framer-motion to its end state instantly so screenshots are
+    // deterministic (real-time animations otherwise get captured mid-flight)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
     await mockConsistentData(page)
     await mockAuthenticatedSession(page)
   })
@@ -272,6 +281,9 @@ test.describe('Visual Regression: Dashboard (Authenticated)', () => {
 test.describe('Visual Regression: Responsive Behavior', () => {
   test.beforeEach(async ({ page }) => {
     await setupVisualTest(page)
+    // Resolve framer-motion to its end state instantly so screenshots are
+    // deterministic (real-time animations otherwise get captured mid-flight)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
     await mockConsistentData(page)
   })
 
@@ -321,6 +333,9 @@ test.describe('Visual Regression: Responsive Behavior', () => {
 test.describe('Visual Regression: Component States', () => {
   test.beforeEach(async ({ page }) => {
     await setupVisualTest(page)
+    // Resolve framer-motion to its end state instantly so screenshots are
+    // deterministic (real-time animations otherwise get captured mid-flight)
+    await page.emulateMedia({ reducedMotion: 'reduce' })
     await mockConsistentData(page)
     await mockAuthenticatedSession(page)
   })

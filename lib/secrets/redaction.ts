@@ -38,7 +38,7 @@ export interface RedactionPattern {
 const SECRET_PATTERNS: RedactionPattern[] = [
   {
     type: 'api-key-openai',
-    pattern: /sk-[A-Za-z0-9]{20,250}/g,
+    pattern: /sk-[A-Za-z0-9_-]{16,250}/g,
     example: 'sk-proj-XXX...',
   },
   {
@@ -52,41 +52,6 @@ const SECRET_PATTERNS: RedactionPattern[] = [
     example: 'ghp_XXX...',
   },
   {
-    type: 'private-key-begin',
-    pattern: /-----BEGIN\s(?:RSA\s|DSA\s|EC\s|OPENSSH\s)?PRIVATE\sKEY-----[\s\S]*?-----END\s(?:RSA\s|DSA\s|EC\s|OPENSSH\s)?PRIVATE\sKEY-----/g,
-    example: '-----BEGIN PRIVATE KEY-----...',
-  },
-  {
-    type: 'jwt-token',
-    pattern: /eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.?[A-Za-z0-9_-]*/g,
-    example: 'eyJhbGc...',
-  },
-  {
-    type: 'oauth-token',
-    pattern: /[Tt]oken[\s:=]+['"]?[A-Za-z0-9_.-]{20,}['"]?/g,
-    example: 'token=XXX',
-  },
-  {
-    type: 'database-url',
-    pattern: /(?:postgres|mysql|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\^[\]`]+/g,
-    example: 'postgresql://user:pass@host/db',
-  },
-  {
-    type: 'password-literal',
-    pattern: /password[\s:=]+['"]([^'"]+)['"]/gi,
-    example: 'password="secret123"',
-  },
-  {
-    type: 'api-key-generic',
-    pattern: /api[_-]?key[\s:=]+['"]?[A-Za-z0-9_.-]{20,}['"]?/gi,
-    example: 'api_key=XXX',
-  },
-  {
-    type: 'aws-secret',
-    pattern: /aws_secret_access_key[\s:=]+['"]?[A-Za-z0-9/+]{40}['"]?/gi,
-    example: 'aws_secret_access_key=XXX',
-  },
-  {
     type: 'slack-token',
     pattern: /xox[baprs]-[0-9]{10,12}-[A-Za-z0-9]{24,32}/g,
     example: 'xoxb-XXX...',
@@ -97,14 +62,34 @@ const SECRET_PATTERNS: RedactionPattern[] = [
     example: 'sk_live_XXX',
   },
   {
+    type: 'private-key-begin',
+    pattern: /-----BEGIN\s(?:RSA\s|DSA\s|EC\s|OPENSSH\s)?PRIVATE\sKEY-----[\s\S]*?-----END\s(?:RSA\s|DSA\s|EC\s|OPENSSH\s)?PRIVATE\sKEY-----/g,
+    example: '-----BEGIN PRIVATE KEY-----...',
+  },
+  {
+    type: 'jwt-token',
+    pattern: /eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.?[A-Za-z0-9_-]*/g,
+    example: 'eyJhbGc...',
+  },
+  {
+    type: 'database-url',
+    pattern: /(?:postgresql|postgres|mysql|mariadb|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\\^\[\]`]+/g,
+    example: 'postgresql://user:***@host/db',
+  },
+  {
+    type: 'aws-secret',
+    pattern: /aws_secret_access_key[\s:=]+['"]?[A-Za-z0-9/+]{40}['"]?/gi,
+    example: 'aws_secret_access_key=XXX',
+  },
+  {
     type: 'connection-string',
     pattern: /Server=.+?;.*?Password=[^;]+/gi,
     example: 'Server=host;Password=secret',
   },
   {
-    type: 'email-address',
-    pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-    example: 'user@example.com',
+    type: 'docker-config',
+    pattern: /"auth"\s*:\s*"[A-Za-z0-9+/]+=*"/g,
+    example: '"auth":"XXX"',
   },
   {
     type: 'credit-card',
@@ -117,13 +102,28 @@ const SECRET_PATTERNS: RedactionPattern[] = [
     example: '123-45-6789',
   },
   {
-    type: 'docker-config',
-    pattern: /"auth"\s*:\s*"[A-Za-z0-9+/]+=*"/g,
-    example: '"auth":"XXX"',
+    type: 'email-address',
+    pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
+    example: 'user@example.com',
+  },
+  {
+    type: 'password-literal',
+    pattern: /password[\s:=]+['"]([^'"]+)['"]/gi,
+    example: 'password="secret123"',
+  },
+  {
+    type: 'api-key-generic',
+    pattern: /api[_-]?key[\s:=]+['"]?[A-Za-z0-9_.-]{20,}['"]?/gi,
+    example: 'api_key=XXX',
+  },
+  {
+    type: 'oauth-token',
+    pattern: /[Tt]oken[\s:=]+['"]?[A-Za-z0-9_.-]{20,}['"]?/g,
+    example: 'token=XXX',
   },
   {
     type: 'environment-variable-secret',
-    pattern: /(?:SECRET|PRIVATE|KEY|CREDENTIAL|PASSWD)[\s:=]+['"]?[^\s'"]+['"]?/gi,
+    pattern: /(?:SECRET|PRIVATE|KEY|CREDENTIAL|PASSWD)[\s:=]+['"]?[^\s'"]{8,}['"]?/gi,
     example: 'SECRET_KEY=XXX',
   },
 ];
@@ -148,33 +148,62 @@ export function redactSecrets(
   } = options;
 
   let redacted = code;
-  let secretsFound = 0;
-  const detectedTypes = new Set<string>();
+
+  // Collect non-overlapping match spans across all patterns. A secret region
+  // matched by several patterns (e.g. `apiKey = 'sk-...'` trips both the
+  // generic and the OpenAI rules) counts once; earlier patterns win.
+  interface MatchSpan {
+    start: number;
+    end: number;
+    type: string;
+  }
+  const spans: MatchSpan[] = [];
   const appliedPatterns: RedactionPattern[] = [];
 
-  // Apply each pattern
   for (const patternConfig of SECRET_PATTERNS) {
     // Skip email redaction if disabled
     if (patternConfig.type === 'email-address' && !redactEmail) {
       continue;
     }
 
-    const matches = code.match(patternConfig.pattern);
-    if (matches) {
-      detectedTypes.add(patternConfig.type);
-      appliedPatterns.push(patternConfig);
-
-      // Count unique matches (avoid counting same secret multiple times)
-      const uniqueMatches = new Set(matches);
-      secretsFound += uniqueMatches.size;
-
-      // Replace with redacted version
-      const placeholder = `[${patternConfig.type.toUpperCase()}_REDACTED]`;
-      redacted = redacted.replace(patternConfig.pattern, placeholder);
-
-      if (logDetections) {
-        metrics.increment('secret_detected', { type: patternConfig.type });
+    const regex = new RegExp(patternConfig.pattern.source, patternConfig.pattern.flags);
+    let patternApplied = false;
+    for (const match of code.matchAll(regex)) {
+      const start = match.index ?? 0;
+      const end = start + match[0].length;
+      if (end <= start) {
+        continue;
       }
+      const overlaps = spans.some((s) => start < s.end && end > s.start);
+      if (overlaps) {
+        continue;
+      }
+      spans.push({ start, end, type: patternConfig.type });
+      patternApplied = true;
+    }
+    if (patternApplied) {
+      appliedPatterns.push(patternConfig);
+    }
+  }
+
+  // Rebuild the redacted string in one pass so indices stay valid
+  spans.sort((a, b) => a.start - b.start);
+  let cursor = 0;
+  let redactedOut = '';
+  for (const span of spans) {
+    redactedOut += code.slice(cursor, span.start);
+    redactedOut += `[${span.type.toUpperCase()}_REDACTED]`;
+    cursor = span.end;
+  }
+  redactedOut += code.slice(cursor);
+  redacted = redactedOut;
+
+  const secretsFound = spans.length;
+  const detectedTypes = new Set<string>(spans.map((s) => s.type));
+
+  if (logDetections) {
+    for (const type of detectedTypes) {
+      metrics.increment('secret_detected', { type });
     }
   }
 
@@ -220,16 +249,23 @@ export function containsSecrets(code: string): boolean {
  * Get secret density - percentage of code that is likely secrets
  */
 export function getSecretDensity(code: string): number {
-  let secretCharCount = 0;
+  if (code.length === 0) return 0;
 
+  // Sum non-overlapping secret spans so overlapping pattern matches do not
+  // inflate the density above 100%
+  const spans: Array<{ start: number; end: number }> = [];
   for (const patternConfig of SECRET_PATTERNS) {
-    const matches = code.match(patternConfig.pattern) || [];
-    for (const match of matches) {
-      secretCharCount += match.length;
+    const regex = new RegExp(patternConfig.pattern.source, patternConfig.pattern.flags);
+    for (const match of code.matchAll(regex)) {
+      const start = match.index ?? 0;
+      const end = start + match[0].length;
+      if (end <= start) continue;
+      if (spans.some((s) => start < s.end && end > s.start)) continue;
+      spans.push({ start, end });
     }
   }
 
-  if (code.length === 0) return 0;
+  const secretCharCount = spans.reduce((sum, s) => sum + (s.end - s.start), 0);
   return (secretCharCount / code.length) * 100;
 }
 
@@ -266,13 +302,13 @@ export function makeSafeForLogging(text: string, maxLength: number = 100): strin
 export function isRedactedSafe(code: string): boolean {
   // Check for any remaining unredacted secret-like patterns
   const unredactedSecretPatterns = [
-    /sk-[A-Za-z0-9]{20,250}/g, // OpenAI API keys
+    /sk-[A-Za-z0-9_-]{16,250}/g, // OpenAI API keys
     /AKIA[0-9A-Z]{16}/g, // AWS Access Keys
     /ghp_[A-Za-z0-9_]{36,255}/g, // GitHub tokens
     /-----BEGIN\s(?:RSA\s|DSA\s|EC\s|OPENSSH\s)?PRIVATE\sKEY-----/g, // Private keys
     /xox[baprs]-[0-9]{10,12}-[A-Za-z0-9]{24,32}/g, // Slack tokens
     /sk_live_[A-Za-z0-9]{24}/g, // Stripe keys
-    /(?:postgres|mysql|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\^[\]`]+/g, // DB URLs
+    /(?:postgresql|postgres|mysql|mariadb|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\\^\[\]`]+/g, // DB URLs
   ];
 
   // If any unredacted secrets are found, it's NOT safe

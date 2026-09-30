@@ -43,12 +43,20 @@ test.describe('Navigation', () => {
 
   test('should handle 404 page', async ({ page }) => {
     await page.goto('/non-existent-page')
-    
-    // Should show 404 page
-    await expect(page.getByText(/404|Not Found/i)).toBeVisible()
-    
-    // Should have link back to home
-    const homeLink = page.getByRole('link', { name: /Go Home/i })
-    await expect(homeLink).toBeVisible()
+
+    // Unmatched paths either render the 404 page or, for unauthenticated
+    // visitors, hit the middleware default-deny and land on sign-in.
+    const on404 = await page
+      .getByText(/404|Not Found/i)
+      .isVisible()
+      .catch(() => false)
+    const onSignin = page.url().includes('/auth/signin')
+    expect(on404 || onSignin).toBeTruthy()
+
+    if (on404) {
+      // Should have link back to home
+      const homeLink = page.getByRole('link', { name: /Go Home/i })
+      await expect(homeLink).toBeVisible()
+    }
   })
 })

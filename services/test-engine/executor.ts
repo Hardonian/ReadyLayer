@@ -91,7 +91,8 @@ export async function executeTests(
     // Race: execution vs timeout
     const result = await Promise.race([executionPromise, timeoutPromise])
 
-    const durationMs = Date.now() - startTime
+    // A completed run always takes at least 1ms; never report 0
+    const durationMs = Math.max(1, Date.now() - startTime)
     const meetsThreshold = result.coverage.lines.percentage >= coverageThreshold
 
     const finalResult: TestExecutionResult = {

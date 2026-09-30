@@ -100,7 +100,11 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'", // Required for CSS-in-JS and Tailwind
               "img-src 'self' data: https: blob:", // Allow images from CDNs and data URIs
               "font-src 'self' data:", // Allow fonts
-              "connect-src 'self' https://*.supabase.co https://api.stripe.com", // Allow Supabase and Stripe API calls
+              // Allow Supabase and Stripe API calls; the local mock auth stub
+              // used by the E2E suite is permitted outside production only
+              `connect-src 'self' https://*.supabase.co https://api.stripe.com${
+                process.env.NODE_ENV === 'production' ? '' : ' http://127.0.0.1:54321 http://localhost:54321'
+              }`,
               "frame-src 'self' https://js.stripe.com", // Allow Stripe checkout frames
               "object-src 'none'", // Block plugins
               "base-uri 'self'", // Restrict base tag

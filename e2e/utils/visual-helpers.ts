@@ -81,76 +81,31 @@ export const DISABLE_ANIMATIONS_CSS = `
  * JavaScript to inject that mocks unstable browser APIs
  */
 export const STABILIZE_JS = `
-  // Freeze Math.random for deterministic behavior
+  // Freeze Math.random for deterministic behavior.
+  // Note: Date and requestAnimationFrame are deliberately NOT mocked.
+  // Mocking them on the client while the server renders with the real ones
+  // causes React hydration mismatches (framer-motion styles, date text) that
+  // are artifacts of the test harness, not application bugs. Dynamic values
+  // are hidden via screenshot masking (see DYNAMIC_SELECTORS) instead.
   let randomSeed = 12345;
   Math.random = function() {
     randomSeed = (randomSeed * 9301 + 49297) % 233280;
     return randomSeed / 233280;
   };
-  
-  // Mock Date to freeze time (January 15, 2026 10:00:00 UTC)
-  const frozenTime = 1736935200000;
-  let timeOffset = 0;
-  
-  const OriginalDate = Date;
-  
-  function FrozenDate(...args) {
-    if (args.length === 0) {
-      return new OriginalDate(frozenTime + timeOffset);
-    }
-    return new OriginalDate(...args);
+
+  // Add class to the root element for test identification.
+  // Init scripts run before <body> exists, so wait for the DOM if needed.
+  // Use <html> (which carries suppressHydrationWarning) so React does not
+  // report an attribute hydration mismatch for the injected class.
+  const markVisualTestMode = () => {
+    document.documentElement.classList.add('visual-test-mode');
+  };
+  if (document.documentElement) {
+    markVisualTestMode();
+  } else {
+    document.addEventListener('DOMContentLoaded', markVisualTestMode, { once: true });
   }
-  
-  FrozenDate.prototype = OriginalDate.prototype;
-  FrozenDate.now = function() { return frozenTime + timeOffset; };
-  FrozenDate.parse = OriginalDate.parse;
-  FrozenDate.UTC = OriginalDate.UTC;
-  
-  // Allow minimal time progression for setTimeout/setInterval
-  const originalSetTimeout = window.setTimeout;
-  window.setTimeout = function(callback, delay, ...args) {
-    if (delay && delay > 0) {
-      timeOffset += Math.min(delay, 16); // Cap at one frame
-    }
-    return originalSetTimeout(callback, delay, ...args);
-  };
-  
-  Date = FrozenDate;
-  
-  // Mock performance.now()
-  let perfOffset = 0;
-  performance.now = function() {
-    perfOffset += 0.1;
-    return frozenTime + perfOffset;
-  };
-  
-  // Suppress hydration warnings in visual tests
-  window.__NEXT_DATA__ = window.__NEXT_DATA__ || {};
-  window.__NEXT_DATA__.suppressHydrationWarning = true;
-  
-  // Override requestAnimationFrame for consistency
-  let rafId = 0;
-  let rafCallbacks = [];
-  
-  window.requestAnimationFrame = function(callback) {
-    const id = ++rafId;
-    rafCallbacks.push({ id, callback });
-    
-    // Execute immediately for consistent screenshots
-    setTimeout(() => {
-      callback(frozenTime + perfOffset);
-    }, 0);
-    
-    return id;
-  };
-  
-  window.cancelAnimationFrame = function(id) {
-    rafCallbacks = rafCallbacks.filter(cb => cb.id !== id);
-  };
-  
-  // Add class to body for test identification
-  document.body.classList.add('visual-test-mode');
-  
+
   // Dispatch custom event for components to detect visual test mode
   window.dispatchEvent(new CustomEvent('visualTestMode'));
 `
@@ -291,6 +246,25 @@ export async function mockConsistentData(page: Page): Promise<void> {
     })
   })
   
+  // Mock single-repo endpoint (dashboard detail panels)
+  await page.route('/api/v1/repos/*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'repo-1',
+        name: 'example-repo',
+        fullName: 'acme-corp/example-repo',
+        provider: 'github',
+        url: 'https://github.com/acme-corp/example-repo',
+        enabled: true,
+        config: {},
+        createdAt: '2026-01-10T10:00:00Z',
+        updatedAt: '2026-01-10T10:00:00Z',
+      }),
+    })
+  })
+
   // Mock repos endpoint with consistent data
   await page.route('/api/v1/repos?*', async (route) => {
     await route.fulfill({
@@ -354,28 +328,50 @@ export async function mockConsistentData(page: Page): Promise<void> {
  * Create mock authenticated session
  */
 export async function mockAuthenticatedSession(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    // Mock Supabase session
-    const mockSession = {
-      access_token: 'mock-token-for-visual-tests',
-      refresh_token: 'mock-refresh-token',
-      expires_in: 3600,
-      token_type: 'bearer',
-      user: {
-        id: 'user-visual-test',
-        email: 'test@example.com',
-        user_metadata: {
-          full_name: 'Test User',
-          avatar_url: null,
-        },
+  const mockSession = {
+    access_token: 'mock-token-for-visual-tests',
+    refresh_token: 'mock-refresh-token',
+    expires_in: 3600,
+    // supabase-js rejects sessions without expires_at ("Auth session missing!")
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    token_type: 'bearer',
+    user: {
+      id: 'user-visual-test',
+      email: 'test@example.com',
+      user_metadata: {
+        full_name: 'Test User',
+        avatar_url: null,
       },
+    },
+  }
+  // The Supabase SSR cookie stores the session as raw JSON (URI-encoding
+  // makes the auth library report "Auth session missing!")
+  const cookieValue = JSON.stringify(mockSession)
+
+  // Seed storage via init script: page.evaluate cannot touch localStorage on
+  // about:blank (opaque origin) before the first real document is loaded.
+  await page.addInitScript((sessionJson: string) => {
+    try {
+      localStorage.setItem('sb-auth-token', sessionJson)
+    } catch {
+      // Storage unavailable - cookie set below still applies
     }
-    
-    localStorage.setItem('sb-auth-token', JSON.stringify(mockSession))
-    
-    // Also set cookie for SSR
-    document.cookie = `sb-auth-token=${encodeURIComponent(JSON.stringify(mockSession))}; path=/`
-  })
+  }, JSON.stringify(mockSession))
+
+  // Cookie equivalents for SSR-side session reads. The Supabase storage key
+  // is derived from the auth URL hostname ('sb-<host-first-label>-auth-token'),
+  // so cover the stub host plus the legacy/simple names.
+  const cookieNames = ['sb-127-auth-token', 'sb-localhost-auth-token', 'sb-auth-token']
+  await page.context().addCookies(
+    cookieNames.map((name) => ({
+      name,
+      value: cookieValue,
+      url: 'http://localhost:3000',
+      httpOnly: false,
+      sameSite: 'Lax' as const,
+      secure: false,
+    }))
+  )
 }
 
 /**
