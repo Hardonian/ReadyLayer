@@ -15,6 +15,8 @@ jobs:
     environment:
       name: staging
       url: https://staging-ready-layer.vercel.app
+    outputs:
+      url: ${{ steps.vercel.outputs.url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -30,21 +32,25 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Deploy to Vercel (Staging)
+        id: vercel
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          vercel deploy \
-            --token=$VERCEL_TOKEN \
-            --scope=$VERCEL_ORG_ID \
+          URL=$(vercel deploy \
+            --token="$VERCEL_TOKEN" \
+            --scope="$VERCEL_ORG_ID" \
             --prod \
-            --env NODE_ENV=staging
+            --yes \
+            --env NODE_ENV=staging | grep -o 'https://[^ ]*' | tail -n 1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployment URL: $URL"
 
       - name: Get deployment URL
         id: deployment
         run: |
-          URL="https://staging-ready-layer.vercel.app"
+          URL="${{ steps.vercel.outputs.url }}"
           echo "url=$URL" >> $GITHUB_OUTPUT
           echo "Deployment URL: $URL"
 
@@ -86,7 +92,7 @@ jobs:
 
       - name: Run health checks
         env:
-          STAGING_URL: https://staging-ready-layer.vercel.app
+          STAGING_URL: ${{ needs.deploy.outputs.url }}
           DATABASE_URL: ${{ secrets.DATABASE_URL || secrets.SUPABASE_DB_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -94,9 +100,9 @@ jobs:
 
       - name: Report status
         if: always()
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
-            const { context } = require('@actions/github');
             const status = '${{ job.status }}' === 'success' ? '✅' : '❌';
             console.log(`${status} Health checks completed`);
