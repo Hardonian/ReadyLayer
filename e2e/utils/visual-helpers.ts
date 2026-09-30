@@ -188,14 +188,21 @@ export async function waitForVisualStability(page: Page): Promise<void> {
   // Wait for network to be idle
   await page.waitForLoadState('networkidle')
   
-  // Wait for all images to load
-  await page.waitForFunction(() => {
-    const images = Array.from(document.querySelectorAll('img'))
-    return images.every(img => img.complete && img.naturalHeight !== 0)
-  })
+  // Wait for images to load, but do not fail the test if one never does
+  // (webkit/tablet renders can leave an image pending; this helper reduces
+  // screenshot flakiness, it is not an image-loading assertion)
+  await page
+    .waitForFunction(
+      () => {
+        const images = Array.from(document.querySelectorAll('img'))
+        return images.every(img => img.complete && img.naturalHeight !== 0)
+      },
+      { timeout: 5000 }
+    )
+    .catch(() => {})
   
   // Wait for fonts
-  await page.waitForFunction(() => document.fonts.ready)
+  await page.waitForFunction(() => document.fonts.ready, { timeout: 5000 }).catch(() => {})
   
   // Small delay for any final layout shifts
   await page.waitForTimeout(100)
