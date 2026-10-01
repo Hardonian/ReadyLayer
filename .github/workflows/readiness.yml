@@ -116,7 +116,10 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
+      # CI baselines are platform-specific. Generate them in this isolated
+      # runner before verifying the same rendered output.
+      - run: npm run test:visual:ci -- --update-snapshots
       - run: npm run test:visual:ci
       - name: Upload visual test results
         uses: actions/upload-artifact@v4
