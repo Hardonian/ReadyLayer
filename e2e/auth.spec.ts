@@ -30,12 +30,14 @@ test.describe('Authentication Flow', () => {
     
     // Click first provider button
     const firstButton = page.getByRole('button', { name: /Continue with/i }).first()
+    await expect(firstButton).toBeVisible()
+    await expect(firstButton).toBeEnabled()
     await firstButton.click()
 
     // This suite uses an auth stub that validates sessions but does not host
-    // provider OAuth. Assert the control accepts interaction here; the GitHub
-    // OAuth suite covers configured callback and error flows separately.
-    await expect(firstButton).toBeFocused()
+    // provider OAuth. A configured provider may navigate away immediately,
+    // so a successful click is the contract here; the GitHub OAuth suite
+    // covers configured callback and error flows separately.
   })
 
   test('should handle auth error page', async ({ page }) => {
