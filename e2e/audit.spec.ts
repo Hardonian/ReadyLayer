@@ -71,6 +71,10 @@ const VIEWPORTS = [
 
 test.describe.configure({ mode: 'serial' })
 
+// Screenshots + reduced-motion reloads across viewports are slow on webkit
+// mobile emulation
+test.setTimeout(120_000)
+
 test.describe('UI Consistency Audit', () => {
   test.afterAll(async () => {
     // Generate audit report
