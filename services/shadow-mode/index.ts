@@ -7,6 +7,8 @@
  * Purpose: Validate ReadyLayer usefulness before enforcement
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import { prisma } from '../../lib/prisma';
 import { reviewGuardService, ReviewRequest, ReviewResult } from '../review-guard';
 import { testEngineService } from '../test-engine';
@@ -96,7 +98,7 @@ export class ShadowModeService {
     }
 
     // Generate test analysis for AI-touched files
-    const testResults = await this.analyzeTestCoverage(aiTouchedFileData);
+    const testResults = await this.analyzeTestCoverage(aiTouchedFileData, request.files);
 
     // Generate summary
     const summary = {
@@ -138,21 +140,51 @@ export class ShadowModeService {
    * Analyze test coverage for AI-touched files
    */
   private async analyzeTestCoverage(
-    files: Array<{ path: string; content: string }>
+    files: Array<{ path: string; content: string }>,
+    allPrFiles?: Array<{ path: string; content: string }>
   ): Promise<Array<{ filePath: string; wouldHaveBlocked: boolean; issues: string[] }>> {
     const results: Array<{ filePath: string; wouldHaveBlocked: boolean; issues: string[] }> = [];
 
     for (const file of files) {
       // Skip non-code files
-      if (!file.path.match(/\.(ts|tsx|js|jsx|py|java|go)$/)) {
+      if (!file.path.match(/\.(ts|tsx|js|jsx|py|java|go)$/i)) {
+        continue;
+      }
+
+      // Skip test files themselves
+      if (file.path.match(/(\.test\.|\.spec\.|__tests__[\\/]|(^|[\\/])tests?[\\/])/i)) {
         continue;
       }
 
       const issues: string[] = [];
 
-      // Check if test file exists
-      // TODO: Implement actual test file existence check
-      const hasTestFile = false; // Would check if test file exists in repo
+      // Check if test file exists in PR files or on filesystem
+      const ext = path.extname(file.path);
+      const dir = path.dirname(file.path);
+      const base = path.basename(file.path, ext);
+
+      const candidatePaths = [
+        path.join(dir, `${base}.test${ext}`).replace(/\\/g, '/'),
+        path.join(dir, `${base}.spec${ext}`).replace(/\\/g, '/'),
+        path.join(dir, '__tests__', `${base}.test${ext}`).replace(/\\/g, '/'),
+        path.join(dir, '__tests__', `${base}.spec${ext}`).replace(/\\/g, '/'),
+        path.join('__tests__', file.path).replace(/\\/g, '/'),
+        path.join('tests', file.path).replace(/\\/g, '/'),
+        path.join('tests', `${base}.test${ext}`).replace(/\\/g, '/'),
+        path.join('test', `${base}.test${ext}`).replace(/\\/g, '/'),
+      ];
+
+      const normPrFiles = (allPrFiles || []).map((f: { path: string }) => f.path.replace(/\\/g, '/').toLowerCase());
+      const hasTestInPr = candidatePaths.some(cp => normPrFiles.includes(cp.toLowerCase()));
+      const hasTestOnDisk = candidatePaths.some(cp => {
+        try {
+          return fs.existsSync(cp);
+        } catch {
+          return false;
+        }
+      });
+
+      const hasTestFile = hasTestInPr || hasTestOnDisk;
 
       if (!hasTestFile) {
         issues.push(`No test file found for ${file.path}`);
