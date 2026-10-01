@@ -21,15 +21,20 @@ import {
  * - visual-dark: 1920x1080 with dark theme
  */
 
-// Test configuration
-const VIEWPORT = process.env.PLAYWRIGHT_PROJECT_NAME || 'visual-desktop'
-const IS_DARK_MODE = VIEWPORT === 'visual-dark'
-const IS_MOBILE = VIEWPORT === 'visual-mobile'
-const IS_TABLET = VIEWPORT === 'visual-tablet'
+// Test configuration — resolved per test from the running Playwright project.
+// (process.env.PLAYWRIGHT_PROJECT_NAME is NOT set by Playwright; hardcoding it
+// made every project write '-desktop' baselines and overwrite each other.)
+function projectViewport(): string {
+  return test.info().project.name
+}
+const isDarkMode = (): boolean => projectViewport() === 'visual-dark'
+const isMobile = (): boolean => projectViewport() === 'visual-mobile'
+const isTablet = (): boolean => projectViewport() === 'visual-tablet'
 
 // Helper to generate snapshot name with viewport info
 function snapshotName(baseName: string): string {
-  const suffix = IS_DARK_MODE ? '-dark' : IS_MOBILE ? '-mobile' : IS_TABLET ? '-tablet' : '-desktop'
+  const v = projectViewport()
+  const suffix = v === 'visual-dark' ? '-dark' : v === 'visual-mobile' ? '-mobile' : v === 'visual-tablet' ? '-tablet' : '-desktop'
   return `${baseName}${suffix}.png`
 }
 
@@ -65,7 +70,7 @@ test.describe('Visual Regression: Public Pages', () => {
   test('homepage - dark mode', async ({ page }) => {
     // Covered by the visual-dark project (desktop); the tablet/mobile
     // variants are redundant and webkit tablet is unstable here
-    if (IS_DARK_MODE || IS_TABLET || IS_MOBILE) {
+    if (isDarkMode() || isTablet() || isMobile()) {
       test.skip()
       return
     }
@@ -293,7 +298,7 @@ test.describe('Visual Regression: Responsive Behavior', () => {
   })
 
   test('navigation - mobile menu', async ({ page }) => {
-    if (!IS_MOBILE) {
+    if (!isMobile()) {
       test.skip()
       return
     }
@@ -320,11 +325,11 @@ test.describe('Visual Regression: Responsive Behavior', () => {
     await waitForVisualStability(page)
     
     // Verify key responsive elements
-    if (IS_MOBILE) {
+    if (isMobile()) {
       // Mobile: check for hamburger or simplified nav
       const hasMobileNav = await page.locator('nav, header').isVisible().catch(() => false)
       expect(hasMobileNav).toBeTruthy()
-    } else if (IS_TABLET) {
+    } else if (isTablet()) {
       // Tablet: check for adjusted layout
       await expect(page).toHaveScreenshot(snapshotName('homepage-tablet'), {
         fullPage: true,
