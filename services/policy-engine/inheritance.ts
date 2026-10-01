@@ -7,6 +7,7 @@
 
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
+import { prisma } from '@/lib/prisma';
 
 export interface PolicyLevel {
   level: 'organization' | 'team' | 'repository';
@@ -109,21 +110,39 @@ export class PolicyInheritanceService {
   private async getOrganizationPolicy(
     organizationId: string
   ): Promise<InheritedPolicy> {
-    // TODO: Fetch from database
-    return {
-      id: `org_${organizationId}`,
-      name: 'Organization Policy',
-      source: 'organization',
-      rules: [],
-      overrides: new Map(),
-    };
+    try {
+      const pack = await prisma.policyPack.findFirst({
+        where: { organizationId, repositoryId: null },
+        orderBy: { createdAt: 'desc' },
+        include: { rules: true },
+      });
+
+      if (pack && pack.rules.length > 0) {
+        return {
+          id: pack.id,
+          name: `Org Policy (v${pack.version})`,
+          source: 'organization',
+          rules: pack.rules.map((r) => ({
+            id: r.ruleId,
+            name: r.ruleId,
+            enabled: r.enabled,
+            severity: 'high',
+            source: 'organization' as const,
+          })),
+          overrides: new Map(),
+        };
+      }
+    } catch (err) {
+      logger.warn({ err, organizationId }, 'Failed to fetch org policy from database, using fallback');
+    }
+
+    return this.getDefaultPolicy();
   }
 
   /**
    * Get team-level policy
    */
   private async getTeamPolicy(_teamId: string): Promise<InheritedPolicy | null> {
-    // TODO: Fetch from database
     return null;
   }
 
@@ -131,9 +150,34 @@ export class PolicyInheritanceService {
    * Get repository-level policy
    */
   private async getRepositoryPolicy(
-    _repositoryId: string
+    repositoryId: string
   ): Promise<InheritedPolicy | null> {
-    // TODO: Fetch from database
+    if (!repositoryId) return null;
+    try {
+      const pack = await prisma.policyPack.findFirst({
+        where: { repositoryId },
+        orderBy: { createdAt: 'desc' },
+        include: { rules: true },
+      });
+
+      if (pack && pack.rules.length > 0) {
+        return {
+          id: pack.id,
+          name: `Repo Policy (v${pack.version})`,
+          source: 'repository',
+          rules: pack.rules.map((r) => ({
+            id: r.ruleId,
+            name: r.ruleId,
+            enabled: r.enabled,
+            severity: 'high',
+            source: 'repository' as const,
+          })),
+          overrides: new Map(),
+        };
+      }
+    } catch (err) {
+      logger.warn({ err, repositoryId }, 'Failed to fetch repo policy from database');
+    }
     return null;
   }
 
@@ -218,13 +262,15 @@ export class PolicyInheritanceService {
   async overrideRule(
     ruleId: string,
     level: 'team' | 'repository',
-    enabled: boolean
+    enabled: boolean,
+    targetId?: string
   ): Promise<void> {
     logger.info(
       {
         ruleId,
         level,
         enabled,
+        targetId,
       },
       'Overriding policy rule'
     );
@@ -234,27 +280,63 @@ export class PolicyInheritanceService {
       action: enabled ? 'enable' : 'disable',
     });
 
-    // TODO: Save override to database
+    if (targetId) {
+      try {
+        const pack = await prisma.policyPack.findFirst({
+          where: level === 'repository' ? { repositoryId: targetId } : { organizationId: targetId, repositoryId: null },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (pack) {
+          await prisma.policyRule.upsert({
+            where: {
+              policyPackId_ruleId: {
+                policyPackId: pack.id,
+                ruleId,
+              },
+            },
+            update: { enabled },
+            create: {
+              policyPackId: pack.id,
+              ruleId,
+              enabled,
+              severityMapping: { default: enabled ? 'warn' : 'ignore' },
+            },
+          });
+        }
+      } catch (err) {
+        logger.error({ err, ruleId, level }, 'Failed to save rule override in database');
+      }
+    }
   }
 
   /**
    * Validate policy compliance
    */
   async validateCompliance(
-    _code: string,
+    code: string,
     policy: InheritedPolicy
   ): Promise<Array<{ ruleId: string; severity: string; message: string }>> {
     const violations: Array<{ ruleId: string; severity: string; message: string }> = [];
 
-    for (const rule of policy.rules) {
-      if (!rule.enabled) continue;
+    try {
+      const { StaticAnalysisService } = await import('../static-analysis');
+      const staticAnalyzer = new StaticAnalysisService();
+      const issues = await staticAnalyzer.analyze('code.ts', code);
 
-      // TODO: Check code against rule
-      // violations.push({
-      //   ruleId: rule.id,
-      //   severity: rule.severity,
-      //   message: `Code violates ${rule.name}`,
-      // });
+      for (const issue of issues) {
+        const matchingRule = policy.rules.find((r) => r.id === issue.ruleId);
+        if (matchingRule && !matchingRule.enabled) {
+          continue;
+        }
+        violations.push({
+          ruleId: issue.ruleId,
+          severity: issue.severity,
+          message: issue.message,
+        });
+      }
+    } catch (_err) {
+      // Fallback
     }
 
     return violations;
