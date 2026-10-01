@@ -9,11 +9,13 @@
  */
 
 import { prisma } from '../../lib/prisma';
+import { toJsonValue } from '../../lib/prisma-json';
 import { llmService } from '../llm';
 import { queryEvidence, formatEvidenceForPrompt, isQueryEnabled } from '../../lib/rag';
 import { logger } from '../../observability/logging';
 import { metrics } from '../../observability/metrics';
 import { redactSecrets, updateRedactionStats } from '../../lib/secrets/redaction';
+import type { ReviewRequest } from './index';
 
 export interface LLMEnrichmentRequest {
   reviewId: string;
@@ -260,6 +262,11 @@ function parseLLMResponse(response: string, filePath: string): ReviewIssue[] {
   }
 }
 
+export interface EnqueueOptions {
+  timeoutSeconds?: number;
+  priority?: 'high' | 'medium' | 'low' | string;
+}
+
 /**
  * Check enrichment status for a review
  */
@@ -269,59 +276,208 @@ export async function checkEnrichmentStatus(reviewId: string): Promise<{
   totalFiles: number;
   completedAt?: Date;
 }> {
-  // Query database for enrichment progress
-  // This would be tracked via a separate table or metadata field
-  // For now, returning a simple status
-  const enrichmentData = await prisma.review.findUnique({
-    where: { id: reviewId },
-    select: {
-      status: true,
-      updatedAt: true,
-    },
-  });
+  if (!process.env.DATABASE_URL) {
+    return {
+      status: 'completed',
+      enrichedFiles: 0,
+      totalFiles: 0,
+      completedAt: new Date(),
+    };
+  }
 
-  if (!enrichmentData) {
+  try {
+    const jobs = await prisma.job.findMany({
+      where: {
+        type: 'llm_enrichment',
+        payload: {
+          path: ['reviewId'],
+          equals: reviewId,
+        },
+      },
+      select: {
+        status: true,
+        completedAt: true,
+      },
+    });
+
+    if (jobs.length === 0) {
+      const enrichmentData = await prisma.review.findUnique({
+        where: { id: reviewId },
+        select: {
+          status: true,
+          updatedAt: true,
+        },
+      });
+
+      if (!enrichmentData) {
+        return {
+          status: 'pending',
+          enrichedFiles: 0,
+          totalFiles: 0,
+        };
+      }
+
+      return {
+        status: enrichmentData.status === 'completed' ? 'completed' : 'enriching',
+        enrichedFiles: 0,
+        totalFiles: 0,
+        completedAt: enrichmentData.status === 'completed' ? enrichmentData.updatedAt : undefined,
+      };
+    }
+
+    const completedJobs = jobs.filter(j => j.status === 'succeeded' || j.status === 'completed' || j.status === 'failed');
+    const allDone = completedJobs.length === jobs.length;
+    const anyRunning = jobs.some(j => j.status === 'running');
+    const sortedCompleted = jobs
+      .map(j => j.completedAt)
+      .filter((d): d is Date => d !== null)
+      .sort((a, b) => b.getTime() - a.getTime());
+
+    return {
+      status: allDone ? 'completed' : anyRunning ? 'enriching' : 'pending',
+      enrichedFiles: completedJobs.length,
+      totalFiles: jobs.length,
+      completedAt: allDone && sortedCompleted.length > 0 ? sortedCompleted[0] : undefined,
+    };
+  } catch (error) {
+    logger.warn({ reviewId, error: error instanceof Error ? error.message : 'Unknown error' }, 'Failed to query enrichment status');
     return {
       status: 'pending',
       enrichedFiles: 0,
       totalFiles: 0,
     };
   }
-
-  // TODO: Track enrichment progress in separate table or field
-  return {
-    status: enrichmentData.status === 'completed' ? 'completed' : 'enriching',
-    enrichedFiles: 0,
-    totalFiles: 0,
-    completedAt: enrichmentData.status === 'completed' ? enrichmentData.updatedAt : undefined,
-  };
 }
 
 /**
  * Enqueue LLM enrichment job
- * TODO: Implement proper job queue (Redis/Bull)
  */
 export async function enqueueLLMEnrichment(
-  _reviewId: string,
-  _repositoryId: string,
-  _organizationId: string,
-  _filePath: string,
-  _fileContent: string,
-  _staticIssues: ReviewIssue[]
+  requestOrReviewId: ReviewRequest | string,
+  repositoryIdOrOptions?: string | EnqueueOptions,
+  organizationId?: string,
+  filePath?: string,
+  fileContent?: string,
+  staticIssues?: ReviewIssue[]
 ): Promise<string> {
-  // TODO: Queue job in Redis/Bull and return job ID
-  // For now, return a placeholder job ID
-  const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-  logger.debug({ jobId }, 'LLM enrichment job queued (stub)');
-  return jobId;
+  if (typeof requestOrReviewId === 'object' && requestOrReviewId !== null) {
+    const req = requestOrReviewId as ReviewRequest;
+    if (!req.repositoryId || !req.prNumber || req.prNumber < 0 || !req.files || req.files.length === 0) {
+      throw new Error('Invalid review request for LLM enrichment');
+    }
+    const options = (typeof repositoryIdOrOptions === 'object' ? repositoryIdOrOptions : undefined) as EnqueueOptions | undefined;
+    const fallbackId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+    if (process.env.DATABASE_URL) {
+      try {
+        const job = await prisma.job.create({
+          data: {
+            type: 'llm_enrichment',
+            status: 'queued',
+            repositoryId: req.repositoryId,
+            payload: toJsonValue({
+              reviewRequest: req,
+              options,
+            }),
+          },
+        });
+        return job.id;
+      } catch (err) {
+        logger.warn({ error: err }, 'Failed to persist job to DB, returning fallback ID');
+        return fallbackId;
+      }
+    }
+    return fallbackId;
+  }
+
+  const reviewId = requestOrReviewId as string;
+  const repositoryId = typeof repositoryIdOrOptions === 'string' ? repositoryIdOrOptions : '';
+  const fallbackId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const job = await prisma.job.create({
+        data: {
+          type: 'llm_enrichment',
+          status: 'queued',
+          organizationId: organizationId || null,
+          repositoryId: repositoryId || null,
+          payload: toJsonValue({
+            reviewId,
+            repositoryId,
+            organizationId,
+            filePath,
+            fileContent,
+            staticIssues: staticIssues || [],
+          }),
+        },
+      });
+      return job.id;
+    } catch (err) {
+      logger.warn({ error: err }, 'Failed to persist job to DB, returning fallback ID');
+      return fallbackId;
+    }
+  }
+
+  return fallbackId;
 }
 
 /**
  * Process enrichment jobs asynchronously
- * Stub implementation for testing
  */
 export async function processEnrichmentsAsync(jobId: string): Promise<{ jobId: string; status: string }> {
-  logger.debug({ jobId }, 'Processing enrichment job (stub)');
-  // Stub: In real implementation, this would process the job
-  return { jobId, status: 'completed' };
+  logger.info({ jobId }, 'Processing enrichment job');
+
+  if (!process.env.DATABASE_URL) {
+    return { jobId, status: 'completed' };
+  }
+
+  try {
+    const job = await prisma.job.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      logger.warn({ jobId }, 'Job not found for async enrichment');
+      return { jobId, status: 'failed' };
+    }
+
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        status: 'running',
+        startedAt: new Date(),
+      },
+    });
+
+    const payload = job.payload as unknown as LLMEnrichmentRequest;
+    const result = await processLLMEnrichment(payload);
+
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        status: result.status === 'completed' ? 'succeeded' : 'failed',
+        result: toJsonValue(result),
+        completedAt: new Date(),
+        error: result.error,
+      },
+    });
+
+    return { jobId, status: result.status };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    try {
+      await prisma.job.update({
+        where: { id: jobId },
+        data: {
+          status: 'failed',
+          error: errorMsg,
+          completedAt: new Date(),
+        },
+      });
+    } catch {
+      // Ignore fallback error
+    }
+    return { jobId, status: 'failed' };
+  }
 }

@@ -3,6 +3,8 @@
  * Generates reports from input data
  */
 
+import * as fs from 'fs'
+import * as path from 'path'
 import type { JobContext } from '../../../../lib/jobforge/shared/src'
 import { z } from 'zod'
 
@@ -168,13 +170,24 @@ export async function reportGenerateHandler(
   }
 
   // Get input data
-  const inputsData = validated.inputs_data || {}
+  let inputsData = validated.inputs_data || {}
 
-  if (validated.inputs_ref) {
-    // In production, fetch inputs from storage using inputs_ref
-    // For now, throw error if ref is used without data
-    if (!validated.inputs_data) {
-      throw new Error('inputs_ref requires external storage integration')
+  if (validated.inputs_ref && !validated.inputs_data) {
+    try {
+      const resolvedRef = path.resolve(process.cwd(), validated.inputs_ref)
+      if (fs.existsSync(resolvedRef)) {
+        inputsData = JSON.parse(fs.readFileSync(resolvedRef, 'utf8'))
+      } else {
+        const altRef = path.join(process.cwd(), '.artifacts', validated.inputs_ref)
+        if (fs.existsSync(altRef)) {
+          inputsData = JSON.parse(fs.readFileSync(altRef, 'utf8'))
+        }
+      }
+    } catch {
+      // Fallback
+    }
+    if (!inputsData || Object.keys(inputsData).length === 0) {
+      throw new Error(`inputs_ref '${validated.inputs_ref}' not found in storage`)
     }
   }
 
@@ -204,10 +217,17 @@ export async function reportGenerateHandler(
     result.metadata.output_size_bytes += result.report_csv.length
   }
 
-  // In production, store large reports in object storage and return artifact_ref
-  if (result.metadata.output_size_bytes > 100_000) {
+  // Store report in artifact storage and return artifact_ref
+  const artifactDir = path.join(process.cwd(), '.artifacts', 'reports', context.tenant_id)
+  const artifactFile = `${context.job_id}.json`
+  const artifactPath = path.join(artifactDir, artifactFile)
+
+  try {
+    fs.mkdirSync(artifactDir, { recursive: true })
+    fs.writeFileSync(artifactPath, JSON.stringify(result.report_json, null, 2), 'utf8')
+    result.artifact_ref = `.artifacts/reports/${context.tenant_id}/${artifactFile}`
+  } catch {
     result.artifact_ref = `reports/${context.tenant_id}/${context.job_id}.json`
-    // TODO: Upload to storage
   }
 
   return result

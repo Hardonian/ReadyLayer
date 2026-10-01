@@ -1,0 +1,80 @@
+name: 'ReadyLayer Governance Action'
+description: 'Deterministic AI code change governance, policy enforcement, and audit evidence generation.'
+author: 'ReadyLayer'
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  api-key:
+    description: 'ReadyLayer API key'
+    required: false
+    default: ''
+  api-url:
+    description: 'ReadyLayer API URL'
+    required: false
+    default: 'https://app.readylayer.com'
+  command:
+    description: 'Action command to execute (scan, review, verify)'
+    required: false
+    default: 'scan'
+  path:
+    description: 'Directory or file path to evaluate'
+    required: false
+    default: '.'
+  policy:
+    description: 'Policy pack identifier or local ruleset'
+    required: false
+    default: ''
+  format:
+    description: 'Output format (console, json, sarif)'
+    required: false
+    default: 'sarif'
+  output-file:
+    description: 'Output file path for report results'
+    required: false
+    default: 'readylayer-report.json'
+  fail-on-findings:
+    description: 'Whether to exit with a non-zero code on policy violations'
+    required: false
+    default: 'true'
+
+outputs:
+  total-issues:
+    description: 'Total number of detected issues'
+    value: ${{ steps.run-readylayer.outputs.total-issues }}
+  critical-issues:
+    description: 'Count of critical severity issues'
+    value: ${{ steps.run-readylayer.outputs.critical-issues }}
+  high-issues:
+    description: 'Count of high severity issues'
+    value: ${{ steps.run-readylayer.outputs.high-issues }}
+  passed:
+    description: 'Whether governance checks passed'
+    value: ${{ steps.run-readylayer.outputs.passed }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Run ReadyLayer Action
+      id: run-readylayer
+      shell: bash
+      env:
+        READYLAYER_API_KEY: ${{ inputs.api-key }}
+        READYLAYER_API_URL: ${{ inputs.api-url }}
+        INPUT_COMMAND: ${{ inputs.command }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_POLICY: ${{ inputs.policy }}
+        INPUT_FORMAT: ${{ inputs.format }}
+        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
+        INPUT_FAIL_ON_FINDINGS: ${{ inputs.fail-on-findings }}
+      run: |
+        npx tsx "${{ github.action_path }}/cli/readylayer-cli.ts" $INPUT_COMMAND "$INPUT_PATH" \
+          --format "$INPUT_FORMAT" \
+          ${INPUT_POLICY:+--policy "$INPUT_POLICY"} \
+          ${INPUT_OUTPUT_FILE:+--output "$INPUT_OUTPUT_FILE"}

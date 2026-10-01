@@ -8,6 +8,7 @@
  * - Webhooks
  */
 
+import * as crypto from 'crypto';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
 
@@ -61,6 +62,8 @@ export interface NotificationResult {
  */
 export class NotificationService {
   private static instance: NotificationService;
+  private preferencesStore = new Map<string, NotificationRecipient>();
+  private inAppStore = new Map<string, NotificationMessage[]>();
 
   private constructor() {}
 
@@ -196,14 +199,43 @@ export class NotificationService {
     message: NotificationMessage,
     _organizationId?: string
   ): Promise<NotificationResult> {
-    // TODO: Integrate with Slack API
+    const webhookUrl = process.env.SLACK_WEBHOOK_URL;
     logger.info(
       {
         recipientId,
         messageType: message.type,
+        hasWebhook: !!webhookUrl,
       },
       'Sending Slack notification'
     );
+
+    if (webhookUrl) {
+      try {
+        const payload: Record<string, unknown> = {
+          text: `*[${message.type.toUpperCase()}] ${message.title}*\n${message.body}`,
+        };
+        if (message.cta) {
+          payload.attachments = [
+            {
+              actions: [
+                {
+                  type: 'button',
+                  text: message.cta.label,
+                  url: message.cta.url,
+                },
+              ],
+            },
+          ];
+        }
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (err) {
+        logger.warn({ error: err }, 'Failed to deliver Slack notification to webhook');
+      }
+    }
 
     return {
       id: message.id,
@@ -222,7 +254,6 @@ export class NotificationService {
     message: NotificationMessage,
     _organizationId?: string
   ): Promise<NotificationResult> {
-    // TODO: Store in notifications table
     logger.info(
       {
         recipientId,
@@ -230,6 +261,13 @@ export class NotificationService {
       },
       'Creating in-app notification'
     );
+
+    const existing = this.inAppStore.get(recipientId) || [];
+    existing.unshift(message);
+    if (existing.length > 50) {
+      existing.length = 50; // Cap at 50 recent notifications
+    }
+    this.inAppStore.set(recipientId, existing);
 
     return {
       id: message.id,
@@ -241,6 +279,13 @@ export class NotificationService {
   }
 
   /**
+   * Get in-app notifications for recipient
+   */
+  getInAppNotifications(recipientId: string): NotificationMessage[] {
+    return this.inAppStore.get(recipientId) || [];
+  }
+
+  /**
    * Send webhook notification
    */
   private async sendWebhook(
@@ -248,14 +293,35 @@ export class NotificationService {
     message: NotificationMessage,
     _organizationId?: string
   ): Promise<NotificationResult> {
-    // TODO: Make HTTP POST to webhook endpoint
+    const targetUrl = process.env.NOTIFICATION_WEBHOOK_URL;
     logger.info(
       {
         recipientId,
         messageType: message.type,
+        hasTargetUrl: !!targetUrl,
       },
       'Sending webhook notification'
     );
+
+    if (targetUrl) {
+      try {
+        const secret = process.env.NOTIFICATION_WEBHOOK_SECRET || 'readylayer-webhook-secret';
+        const bodyStr = JSON.stringify({ recipientId, message, timestamp: new Date().toISOString() });
+        const signature = crypto.createHmac('sha256', secret).update(bodyStr).digest('hex');
+
+        await fetch(targetUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-ReadyLayer-Signature': `sha256=${signature}`,
+            'X-ReadyLayer-Event': message.type,
+          },
+          body: bodyStr,
+        });
+      } catch (err) {
+        logger.warn({ error: err }, 'Failed to deliver outgoing webhook notification');
+      }
+    }
 
     return {
       id: message.id,
@@ -279,9 +345,19 @@ export class NotificationService {
   /**
    * Get user preferences
    */
-  async getPreferences(_recipientId: string): Promise<NotificationRecipient | null> {
-    // TODO: Fetch from database
-    return null;
+  async getPreferences(recipientId: string): Promise<NotificationRecipient | null> {
+    if (this.preferencesStore.has(recipientId)) {
+      return this.preferencesStore.get(recipientId) || null;
+    }
+    const defaultRecipient: NotificationRecipient = {
+      id: recipientId,
+      preferences: {
+        channels: ['email', 'in-app'],
+        types: ['alert', 'warning', 'error'],
+      },
+    };
+    this.preferencesStore.set(recipientId, defaultRecipient);
+    return defaultRecipient;
   }
 
   /**
@@ -291,7 +367,15 @@ export class NotificationService {
     recipientId: string,
     preferences: Partial<NotificationRecipient['preferences']>
   ): Promise<void> {
-    // TODO: Update database
+    const current = await this.getPreferences(recipientId);
+    if (current) {
+      current.preferences = {
+        ...current.preferences,
+        ...preferences,
+        channels: preferences?.channels || current.preferences?.channels || ['email', 'in-app'],
+      };
+      this.preferencesStore.set(recipientId, current);
+    }
     logger.info(
       {
         recipientId,
