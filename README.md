@@ -4,49 +4,37 @@
 ![ReadyLayer — hero generated locally on the GPU stack](assets/repo-hero.png)
 <!-- END: REPO HERO -->
 
-**ReadyLayer provides governance tooling for AI-assisted software delivery.** It ships a web app, CLI, and a deterministic runner that help teams capture policy decisions, evidence, and review signals around generated code.
+**ReadyLayer is the open-source governance and trust plane for autonomous AI coding agents.** It bridges the critical enterprise gap between raw agent velocity (Cursor, Claude Code, Windsurf, Devin) and strict software delivery integrity with deterministic policy evaluation, package slopsquatting defense, and cryptographically verifiable in-toto/SLSA provenance.
 
 **Landing strip**
-- **Deterministic policy runner** with schema-defined input/output and evidence bundles (Go binary).  
-- **Web app + API** for viewing governance runs, policies, and evidence (Next.js + Prisma).  
-- **CLI workflows** for reviewing files and triggering governance-related actions (Node).  
-- **JobForge queue** for background processing and webhook/report workflows.  
-- **Self-hosted first**: runs locally with your infrastructure and credentials.
+- **AI Package Slopsquatting & Hallucination Guardrail**: Intercepts AI-hallucinated package additions before dependency installation or CI execution.
+- **Agent Blast Radius Containment Engine**: Enforces strict perimeter boundaries (Tier 0 to Tier 3) and dual-custody cryptographic gating for CI/CD, Terraform, IAM, and DB schema mutations.
+- **Cryptographic in-toto v1.0 & CycloneDX AIBOM**: Mints signed SLSA Level 2+ provenance statements and Generative AI Software Bill of Materials.
+- **Model Context Protocol (MCP) Agent Suite**: Real-time stdio/SSE MCP gateway for Cursor, Claude Code, and autonomous agent loops (`readylayer.preflight_check`, `readylayer.scan_package`).
+- **Turn-Key Regulatory Policies**: Pre-configured policy packs for OWASP LLM Top 10 (2025/2026), NIST AI RMF (SP 1270), and EU AI Act (Articles 14 & 50).
+- **Deterministic Policy Runner**: Single static Go binary sidecar with zero network calls and schema-validated JSON evidence bundles.
+- **Self-hosted & Air-Gapped First**: Runs 100% locally with zero external telemetry or cloud dependency.
 
-**Who this is for:** engineering teams, platform teams, and OSS contributors who need auditable governance around AI-assisted code changes.
+**Who this is for:** engineering leaders, security teams, platform architects, and open-source contributors deploying autonomous coding agents in production codebases.
 
 **Quick start:** Follow the steps in [Quick Start](#quick-start) to run the web app locally.
 
 ---
 
 ## Why This Exists
-AI-assisted coding makes it easy to ship faster than teams can review or audit. ReadyLayer exists to keep governance (policy checks, evidence capture, traceability) deterministic and reviewable without replacing your CI/CD or existing tooling.
+Autonomous coding agents can write code orders of magnitude faster than humans can review. However, this creates three critical enterprise vectors:
+1. **Supply Chain Slopsquatting**: LLMs hallucinate non-existent package dependencies that attackers register on package registries to gain RCE.
+2. **Blast Radius Escalation**: Agents silently modify CI/CD pipelines, IAM policies, and database migrations without human awareness.
+3. **The Accountability Void**: Regulated enterprises (finance, healthcare, defense) cannot merge agent-generated code without verifiable, signed cryptographic provenance.
 
-## What This Project Is
-- A **Next.js application** that surfaces governance runs, policies, and audit evidence.  
-- A **CLI** for interacting with ReadyLayer APIs and JobForge workflows.  
-- A **deterministic runner** that executes checks and emits structured JSON evidence.  
-- A **job queue subsystem (JobForge)** for background tasks and integrations.  
-
-## What This Project Is NOT
-- Not a replacement for your CI/CD pipeline, linters, or test frameworks.  
-- Not an AI code generator or IDE.  
-- Not a hosted SaaS-only product; this repo is self-hostable and must be run with your own infrastructure.
-
-## Where This Fits (If Part of a Larger System)
-ReadyLayer is designed to sit alongside your source control and CI/CD workflows:
-- **Inputs:** repositories, pull requests, policy configuration, and evidence from tests/scans.  
-- **Outputs:** deterministic governance results (pass/fail + evidence) surfaced in the UI or exported as JSON.  
-- **Dependencies:** Postgres + Supabase auth are required; Redis is optional for queue performance.  
+ReadyLayer provides the deterministic control plane to solve all three without slowing down developer velocity.
 
 ## Core Capabilities
-- Deterministic runner with schema-based input/output (`tools/ready-layer-runner`).  
-- Next.js web app with API routes under `app/` and supporting UI/components.  
-- CLI for review/test operations and JobForge administration (`cli/readylayer-cli.ts`).  
-- JobForge queue implementation and workers (`lib/jobforge`, `services/jobforge-worker`).  
-- Policy and SARIF helper scripts (`scripts/readylayer-*.mjs`).
-- AI Provenance Packs (internal + external) with hashed payloads, redaction controls, and pack-level drill-down views.
-- Deterministic evidence ZIP export that merges run/stage evidence, provenance artifacts, and policy checksums.
+- **Agent Guard CLI & MCP Gateway**: Run preflight containment checks directly from agent sessions (`readylayer agent-guard`, `readylayer attest`, `readylayer aibom`).
+- **Deterministic Go Policy Runner**: Schema-defined inputs and outputs with hashed artifacts (`tools/ready-layer-runner`).
+- **Cryptographic Attestation Vault**: Signed in-toto v1.0 statements and CycloneDX 1.6 Generative AI BOMs (`lib/agent-guard/attestation.ts`).
+- **Enterprise Web App & API**: Next.js App Router dashboard for real-time run inspection, policy overrides, and compliance reporting (`app/`).
+- **JobForge Queue Subsystem**: Resilient background job queue for async webhooks and compliance exports (`lib/jobforge`).
 
 ## Quick Start
 **Prerequisites:** Node.js 20, Postgres, Supabase project keys, and at least one LLM API key (OpenAI or Anthropic).

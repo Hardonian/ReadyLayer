@@ -69,27 +69,27 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mb-6">
                   <Badge variant="outline" className="flex items-center gap-1.5 flex-shrink-0">
                     <Shield className="h-3.5 w-3.5" />
-                    Open-source governance
+                    AI Agent Governance Plane
                   </Badge>
                   <Badge variant="info" className="flex items-center gap-1.5 flex-shrink-0">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Deterministic checks
+                    in-toto & SLSA Attestation
                   </Badge>
                 </div>
                  <h1 className="text-3xl sm:text-5xl lg:text-7xl font-display font-bold tracking-tight mb-6 leading-tight">
                    <span className="bg-gradient-to-r from-primary via-accent to-success bg-clip-text text-transparent animate-float">
-                     Open-source governance
+                     Autonomous Agent Velocity.
                    </span>
                    <br />
-                   <span className="text-text-primary">for AI-generated code</span>
+                   <span className="text-text-primary">Zero Uncontrolled Blast Radius.</span>
                  </h1>
                  <p className="text-lg sm:text-xl lg:text-2xl font-body text-text-muted max-w-2xl mb-4">
-                   ReadyLayer is a composable governance framework for AI-generated code. Integrate with Git and CI, apply deterministic policy checks, and ship traceable decisions.
+                   ReadyLayer is the trust and control plane for autonomous coding agents. Intercept package slopsquatting, contain perimeter blast radius, and mint cryptographically verifiable provenance.
                  </p>
                  <p className="text-base font-body text-text-subtle max-w-xl">
-                   Get your first governed PR in 10 minutes with OSS-first workflows.{' '}
-                   <Link href="/how-it-works" className="text-primary hover:text-primary-dark font-medium transition-colors">
-                     See how it works →
+                   Deploy in 10 minutes locally or explore our sovereign enterprise cloud.{' '}
+                   <Link href="/enterprise" className="text-primary hover:text-primary-dark font-medium transition-colors">
+                     Enterprise Trust Plane →
                    </Link>
                  </p>
               </motion.div>

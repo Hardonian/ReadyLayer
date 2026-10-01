@@ -257,14 +257,147 @@ export const soc2Template: PolicyTemplate = {
 };
 
 /**
+ * OWASP Top 10 for LLM Applications (2025/2026 Edition)
+ */
+export const owaspLlmTop10Template: PolicyTemplate = {
+  id: 'owasp-llm-top-10',
+  name: 'OWASP LLM Top 10',
+  description: 'OWASP Top 10 for Large Language Model & Agent Applications',
+  category: 'security',
+  rules: [
+    {
+      id: 'llm01-prompt-injection',
+      name: 'Prompt Injection Defense',
+      description: 'Mitigate direct and indirect prompt injection attacks against LLM interfaces',
+      severity: 'critical',
+      pattern: '(raw_prompt|unfiltered_prompt|eval_prompt|dangerouslyExecutePrompt)\\s*\\(|instructions\\s*\\+=\\s*userInput',
+      remediation: 'Sanitize external user input, use system message framing, and enforce strict token delimiters.',
+    },
+    {
+      id: 'llm02-sensitive-disclosure',
+      name: 'Sensitive Information & PII Disclosure',
+      description: 'Prevent leakage of proprietary prompts, training data, or customer PII in LLM completions',
+      severity: 'critical',
+      pattern: 'return\\s*completion\\.systemPrompt|exposeSystemInstructions|ssn|credit_card|apiKeyInPrompt',
+      remediation: 'Implement pre-call redaction filters and post-call completion scanning with ReadyLayer Privacy Guard.',
+    },
+    {
+      id: 'llm03-supply-chain',
+      name: 'AI Supply Chain & Package Slopsquatting',
+      description: 'Protect against hallucinated packages and unverified model checkpoints',
+      severity: 'critical',
+      pattern: 'fast-auth|jwt-helper|vault-client|crypto-fast-kit|super-logger',
+      remediation: 'Enforce deterministic package verification with ReadyLayer Slopsquatting Guardrail.',
+    },
+    {
+      id: 'llm06-excessive-agency',
+      name: 'Excessive Agent Agency & Blast Radius Containment',
+      description: 'Restrict autonomous agents from executing unconstrained destructive actions',
+      severity: 'critical',
+      pattern: 'exec\\s*\\(\\s*agentCommand\\)|allowAllTools\\s*:\\s*true|autoApproveDestructive',
+      remediation: 'Enforce ReadyLayer Blast Radius Tiers and dual-custody approval for Tier 0 perimeter changes.',
+    },
+    {
+      id: 'llm08-vector-insecurity',
+      name: 'Vector Database & RAG Insecurity',
+      description: 'Ensure semantic search embeddings cannot be poisoned or bypass ACLs',
+      severity: 'high',
+      pattern: 'vectorSearch\\s*\\(.*tenantId\\s*:\\s*null|rawVectorQuery\\s*\\(',
+      remediation: 'Filter vector searches by tenant ID and validate document chunk ACLs before retrieval.',
+    },
+  ],
+  minCoverage: 90,
+  enforcementLevel: 'required',
+};
+
+/**
+ * NIST AI Risk Management Framework 1.0 (Generative AI Profile)
+ */
+export const nistAiRmfTemplate: PolicyTemplate = {
+  id: 'nist-ai-rmf',
+  name: 'NIST AI RMF (SP 1270)',
+  description: 'NIST Artificial Intelligence Risk Management Framework for Generative AI Systems',
+  category: 'compliance',
+  rules: [
+    {
+      id: 'nist-govern-1',
+      name: 'Governance & Oversight (GOVERN-1)',
+      description: 'Ensure organizational risk management processes are established and transparent',
+      severity: 'high',
+      pattern: 'bypassGovernance|skipAuditLogs|governanceDisabled\\s*:\\s*true',
+      remediation: 'Maintain immutable audit records and adhere to enterprise AI risk policies.',
+    },
+    {
+      id: 'nist-map-1',
+      name: 'Context & Lineage Mapping (MAP-1)',
+      description: 'Track model provenance, prompt hashes, and training data contexts',
+      severity: 'high',
+      pattern: 'anonymousPrompt|untrackedModelVersion|syntheticDataNoOrigin',
+      remediation: 'Generate cryptographic in-toto provenance statements with model version and prompt SHA-256.',
+    },
+    {
+      id: 'nist-measure-1',
+      name: 'Deterministic Verification & Measurement (MEASURE-1)',
+      description: 'Rigorously measure model output quality, test coverage delta, and regression rates',
+      severity: 'high',
+      pattern: 'skipTests\\s*:\\s*true|ignoreCoverage|unmeasuredCodeGeneration',
+      remediation: 'Enforce deterministic test coverage delta gates (min 80%) before accepting AI code.',
+    },
+    {
+      id: 'nist-manage-1',
+      name: 'Risk Treatment & Incident Fallback (MANAGE-1)',
+      description: 'Ensure automatic degradation and human escalation pathways for anomalous AI behavior',
+      severity: 'critical',
+      pattern: 'disableFallback|unhandledAiException|infiniteRetryAgent',
+      remediation: 'Implement fail-closed circuit breakers and human-in-the-loop review queues.',
+    },
+  ],
+  minCoverage: 90,
+  enforcementLevel: 'required',
+};
+
+/**
+ * EU AI Act Code Governance Standard (Articles 14 & 50)
+ */
+export const euAiActTemplate: PolicyTemplate = {
+  id: 'eu-ai-act',
+  name: 'EU AI Act Compliance',
+  description: 'EU Artificial Intelligence Act Human Oversight (Art. 14) and Transparency (Art. 50)',
+  category: 'compliance',
+  rules: [
+    {
+      id: 'eu-art14-human-oversight',
+      name: 'Human Oversight Dual-Custody (Article 14)',
+      description: 'High-risk automated decisions and critical changes must permit human intervention and stop switches',
+      severity: 'critical',
+      pattern: 'autoDeployNoReview|bypassHumanInTheLoop|disallowHumanOverride',
+      remediation: 'Enforce ReadyLayer Dual-Custody sign-off before committing high-risk agent artifacts.',
+    },
+    {
+      id: 'eu-art50-transparency',
+      name: 'AI Code Marking & Transparency (Article 50)',
+      description: 'AI-generated or modified code must be identifiably marked in machine-readable format',
+      severity: 'high',
+      pattern: 'hideAiOrigin|stripProvenanceHeader|falsifyAuthorship',
+      remediation: 'Attach verifiable in-toto attestation and CycloneDX AIBOM headers to all generated PRs.',
+    },
+  ],
+  minCoverage: 95,
+  enforcementLevel: 'required',
+};
+
+/**
  * Get template by ID
  */
 export function getTemplate(templateId: string): PolicyTemplate | null {
   const templates: Record<string, PolicyTemplate> = {
     'owasp-top-10': owaspTop10Template,
+    'owasp-llm-top-10': owaspLlmTop10Template,
     'pci-dss': pciDssTemplate,
     hipaa: hipaaTemplate,
     'soc-2': soc2Template,
+    'nist-ai-rmf': nistAiRmfTemplate,
+    'eu-ai-act': euAiActTemplate,
   };
 
   return templates[templateId] || null;
@@ -274,7 +407,15 @@ export function getTemplate(templateId: string): PolicyTemplate | null {
  * Get all templates
  */
 export function getAllTemplates(): PolicyTemplate[] {
-  return [owaspTop10Template, pciDssTemplate, hipaaTemplate, soc2Template];
+  return [
+    owaspTop10Template,
+    owaspLlmTop10Template,
+    pciDssTemplate,
+    hipaaTemplate,
+    soc2Template,
+    nistAiRmfTemplate,
+    euAiActTemplate,
+  ];
 }
 
 /**

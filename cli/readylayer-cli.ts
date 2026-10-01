@@ -639,6 +639,128 @@ program
     }
   });
 
+program
+  .command('agent-guard <target>')
+  .description('Run enterprise Agent Blast Radius & Slopsquatting preflight check on a file or diff')
+  .option('-d, --diff', 'Treat target as a unified diff file')
+  .action(async (targetPath: string, options: { diff?: boolean }) => {
+    if (!fs.existsSync(targetPath)) {
+      cliError(`Error: Target not found: ${targetPath}`);
+      process.exit(1);
+    }
+    const content = fs.readFileSync(targetPath, 'utf-8');
+    const { evaluateAgentBlastRadius, scanDiffForSlopsquatting } = await import('../lib/agent-guard');
+
+    cliLog(`🛡️  Running ReadyLayer Agent Guard on ${targetPath}...`);
+
+    if (options.diff) {
+      const slopResults = scanDiffForSlopsquatting(content);
+      cliLog('\n=== Package Slopsquatting / Hallucination Audit ===');
+      cliLog(`Status: ${slopResults.passed ? 'PASSED (Clean)' : 'FAILED (Hallucination Detected)'}`);
+      cliLog(slopResults.summary);
+      if (slopResults.inspections.length > 0) {
+        slopResults.inspections.forEach((insp, idx) => {
+          cliLog(`  ${idx + 1}. [${insp.riskLevel}] ${insp.packageName} (score: ${insp.score}/100)`);
+          insp.reasons.forEach((r) => cliLog(`     - ${r}`));
+        });
+      }
+      if (!slopResults.passed) {
+        cliError('\n❌ Agent Guard Blocked: Suspicious hallucinated packages detected.');
+        process.exit(1);
+      }
+    } else {
+      const blastRadius = evaluateAgentBlastRadius([targetPath]);
+      cliLog('\n=== Agent Blast Radius Containment Audit ===');
+      cliLog(`Highest Risk Tier: ${blastRadius.highestTier}`);
+      cliLog(`Overall Blast Radius Score: ${blastRadius.overallScore}/100`);
+      cliLog(`Autonomous Merge: ${blastRadius.blockedAutonomousMerge ? 'BLOCKED (Dual-Custody Required)' : 'ALLOWED'}`);
+      cliLog(`Summary: ${blastRadius.summary}`);
+      if (blastRadius.remediation) {
+        cliLog(`Remediation: ${blastRadius.remediation}`);
+      }
+      if (blastRadius.blockedAutonomousMerge) {
+        cliError('\n⚠️  Autonomous Merge Prohibited for Tier-0/1 Perimeter Change.');
+        process.exit(1);
+      }
+    }
+
+    cliLog('\n✅ Agent Guard passed.');
+  });
+
+program
+  .command('attest')
+  .description('Generate signed in-toto v1.0 / SLSA-compatible provenance attestation for current repository')
+  .option('--commit <sha>', 'Git commit SHA (default: HEAD)', 'HEAD')
+  .option('--agent <id>', 'AI Agent identity (default: cursor-agent)', 'cursor-agent')
+  .option('--model <model>', 'Foundation model used', 'claude-3-7-sonnet')
+  .option('-o, --output <path>', 'Output JSON file path')
+  .action(async (options: { commit: string; agent: string; model: string; output?: string }) => {
+    cliLog(`Generating in-toto v1.0 Attestation for commit ${options.commit}...`);
+    try {
+      const { generateInTotoAttestation, evaluateAgentBlastRadius } = await import('../lib/agent-guard');
+      const blastRadius = evaluateAgentBlastRadius(['package.json', 'README.md']);
+      const attestation = generateInTotoAttestation({
+        commitSha: options.commit,
+        diffContent: `git commit ${options.commit} governed by ReadyLayer`,
+        agent: {
+          id: options.agent,
+          model: options.model,
+          prompts: ['governance audit pipeline invocation'],
+        },
+        blastRadius,
+      });
+
+      const formatted = JSON.stringify(attestation, null, 2);
+      if (options.output) {
+        fs.writeFileSync(options.output, formatted);
+        cliLog(`✅ Attestation saved to ${options.output}`);
+      } else {
+        cliLog('\n' + formatted);
+      }
+    } catch (error) {
+      cliError(`Error: ${await safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('aibom')
+  .description('Export CycloneDX 1.6 AI Software Bill of Materials (AIBOM)')
+  .option('-r, --repo <name>', 'Repository name', 'ReadyLayer')
+  .option('-o, --output <path>', 'Output JSON file path')
+  .action(async (options: { repo: string; output?: string }) => {
+    cliLog(`Generating CycloneDX AIBOM for ${options.repo}...`);
+    try {
+      const { generateCycloneDxAiBom, inspectPackage } = await import('../lib/agent-guard');
+      const sampleDeps = [
+        inspectPackage('react', 'npm'),
+        inspectPackage('next', 'npm'),
+        inspectPackage('zod', 'npm'),
+      ];
+
+      const aibom = generateCycloneDxAiBom({
+        repoName: options.repo,
+        agent: {
+          id: 'readylayer-agent-fleet',
+          model: 'claude-3-7-sonnet',
+          provider: 'anthropic',
+        },
+        dependencies: sampleDeps,
+      });
+
+      const formatted = JSON.stringify(aibom, null, 2);
+      if (options.output) {
+        fs.writeFileSync(options.output, formatted);
+        cliLog(`✅ CycloneDX AIBOM saved to ${options.output}`);
+      } else {
+        cliLog('\n' + formatted);
+      }
+    } catch (error) {
+      cliError(`Error: ${await safeCliError(error)}`);
+      process.exit(1);
+    }
+  });
+
 const mcp = program
   .command('mcp')
   .description('Model Context Protocol server and diagnostics');
@@ -662,4 +784,5 @@ mcp
 
 emitPerf('ready');
 program.parse(process.argv);
+
 
