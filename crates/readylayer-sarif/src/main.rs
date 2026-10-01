@@ -5,7 +5,11 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "readylayer-sarif", version, about = "Generate SARIF and summary JSON")]
+#[command(
+    name = "readylayer-sarif",
+    version,
+    about = "Generate SARIF and summary JSON"
+)]
 struct Cli {
     #[arg(long)]
     input: PathBuf,
@@ -30,11 +34,8 @@ fn main() -> Result<()> {
 
     fs::write(&cli.sarif, serde_json::to_string_pretty(&sarif)?)
         .with_context(|| format!("write sarif file {:?}", cli.sarif))?;
-    fs::write(
-        &cli.summary,
-        serde_json::to_string_pretty(&summary)?,
-    )
-    .with_context(|| format!("write summary file {:?}", cli.summary))?;
+    fs::write(&cli.summary, serde_json::to_string_pretty(&summary)?)
+        .with_context(|| format!("write summary file {:?}", cli.summary))?;
 
     Ok(())
 }

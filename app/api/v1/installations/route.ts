@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
       select: { organizationId: true },
     });
-    const userOrgIds = memberships.map((m: any) => m.organizationId);
+    const userOrgIds = memberships.map((m) => m.organizationId);
 
     if (userOrgIds.length === 0) {
       return NextResponse.json({ installations: [] });
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      installations: installations.map((inst: any) => ({
+      installations: installations.map((inst) => ({
         id: inst.id,
         provider: inst.provider,
         providerId: inst.providerId,

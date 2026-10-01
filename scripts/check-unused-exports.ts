@@ -89,7 +89,7 @@ async function findUnusedExports(): Promise<ExportInfo[]> {
   const allImports: Set<string> = new Set();
 
   for (const file of tsFiles) {
-    const relativePath = path.relative(process.cwd(), file);
+    const relativePath = path.relative(process.cwd(), file).split(path.sep).join('/');
     const content = await readFile(file, 'utf-8');
     
     // Skip ignored files

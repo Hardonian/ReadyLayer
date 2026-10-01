@@ -12,6 +12,9 @@
 /.next/
 /out/
 
+# Rust build output
+/target/
+
 # production
 /build
 

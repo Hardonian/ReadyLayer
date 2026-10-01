@@ -43,6 +43,7 @@ const config = [
   {
     ignores: [
       'node_modules/**',
+      '.kilo/**',
       '.next/**',
       'out/**',
       'build/**',

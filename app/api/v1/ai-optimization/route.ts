@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       where: { userId: user.id },
       select: { organizationId: true },
     });
-    const userOrgIds = memberships.map((m: any) => m.organizationId);
+    const userOrgIds = memberships.map((m) => m.organizationId);
 
     if (userOrgIds.length === 0) {
       return NextResponse.json({

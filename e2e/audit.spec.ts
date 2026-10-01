@@ -110,6 +110,13 @@ test.describe('UI Consistency Audit', () => {
         page.on('console', (msg) => {
           const text = msg.text()
           if (msg.type() === 'error') {
+            // WebKit may reject externally hosted, non-critical assets in the
+            // local test environment before the application receives a URL or
+            // response status. Keep auditing application errors, but do not
+            // fail the product UI for this browser transport noise.
+            if (text === 'Failed to load resource: SSL connect error') {
+              return
+            }
             audit.consoleErrors.push(text)
             findings.push({
               severity: 'HIGH',

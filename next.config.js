@@ -19,7 +19,9 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   // Turbopack configuration (Next.js 16+)
-  turbopack: {},
+  turbopack: {
+    root: __dirname,
+  },
   // Force middleware to use Node.js runtime (not Edge)
   // This is required because middleware uses Node.js modules (crypto, prisma, etc.)
   experimental: {

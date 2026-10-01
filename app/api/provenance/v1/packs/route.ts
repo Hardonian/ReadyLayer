@@ -9,7 +9,7 @@ export const GET = createRouteHandler(async (context: RouteContext) => {
   const prNumber = searchParams.get('prNumber');
 
   const memberships = await prisma.organizationMember.findMany({ where: { userId: context.user.id }, select: { organizationId: true } });
-  const orgIds = memberships.map((m: any) => m.organizationId);
+  const orgIds = memberships.map((m) => m.organizationId);
   if (!orgIds.length) return successResponse({ packs: [] });
 
   const where: {
@@ -38,7 +38,7 @@ export const GET = createRouteHandler(async (context: RouteContext) => {
   });
 
   return successResponse({
-    packs: packs.map((pack: any) => ({
+    packs: packs.map((pack) => ({
       id: pack.id,
       runId: pack.runId,
       correlationId: pack.correlationId,

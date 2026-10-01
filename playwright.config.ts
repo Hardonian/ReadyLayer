@@ -12,7 +12,7 @@ export default defineConfig({
   testDir: './e2e',
   /* Webkit mobile emulation is slow; the 30s default timeout was killing
      tests mid-run ("browser has been closed") */
-  testTimeout: 60_000,
+  timeout: 60_000,
   /* Only Playwright specs live in e2e/; *.test.ts files there belong to vitest */
   testMatch: /.*\.spec\.ts$/,
   /* Run tests in files in parallel */

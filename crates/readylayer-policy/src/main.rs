@@ -7,7 +7,11 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "readylayer-policy", version, about = "Deterministic policy evaluator")]
+#[command(
+    name = "readylayer-policy",
+    version,
+    about = "Deterministic policy evaluator"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -46,8 +50,8 @@ fn run_evaluate(args: EvaluateArgs) -> Result<()> {
     let rules_contents = fs::read_to_string(&args.rules)
         .with_context(|| format!("read rules file {:?}", args.rules))?;
 
-    let mut facts: PolicyFacts = serde_json::from_str(&facts_contents)
-        .with_context(|| "parse facts JSON".to_string())?;
+    let mut facts: PolicyFacts =
+        serde_json::from_str(&facts_contents).with_context(|| "parse facts JSON".to_string())?;
     let is_yaml = args
         .rules
         .extension()

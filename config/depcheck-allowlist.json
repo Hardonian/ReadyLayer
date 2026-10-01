@@ -2,7 +2,8 @@
   "ignoreUnused": [
     "tslib",
     "next-themes",
-    "@tailwindcss/postcss"
+    "@tailwindcss/postcss",
+    "depcheck"
   ],
   "ignoreMissing": []
 }

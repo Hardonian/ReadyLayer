@@ -142,9 +142,7 @@ pub enum PolicyError {
 pub fn normalize_facts(facts: &mut PolicyFacts) {
     if let Some(diff_summary) = &mut facts.diff_summary {
         diff_summary.changed_files.sort();
-        diff_summary
-            .languages
-            .sort_by(|a, b| a.name.cmp(&b.name));
+        diff_summary.languages.sort_by(|a, b| a.name.cmp(&b.name));
     }
 
     facts
@@ -201,7 +199,9 @@ pub fn evaluate_policy(
         }
     }
 
-    reasons.sort_by(|a, b| (a.rule_id.as_str(), a.message.as_str()).cmp(&(b.rule_id.as_str(), b.message.as_str())));
+    reasons.sort_by(|a, b| {
+        (a.rule_id.as_str(), a.message.as_str()).cmp(&(b.rule_id.as_str(), b.message.as_str()))
+    });
     required_actions.sort();
     required_actions.dedup();
 
@@ -362,6 +362,9 @@ mod tests {
 
         assert_eq!(decision.decision, Decision::Block);
         assert_eq!(decision.reasons.len(), 1);
-        assert_eq!(decision.required_actions, vec!["Rotate secrets".to_string()]);
+        assert_eq!(
+            decision.required_actions,
+            vec!["Rotate secrets".to_string()]
+        );
     }
 }

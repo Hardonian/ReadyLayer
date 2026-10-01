@@ -46,7 +46,7 @@ export async function GET(
         bundleId: bundle.id,
       },
       bundle,
-      auditTrail: auditLogs.map((log: any) => ({
+      auditTrail: auditLogs.map((log) => ({
         id: log.id,
         action: log.action,
         timestamp: log.createdAt,

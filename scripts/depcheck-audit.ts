@@ -35,8 +35,9 @@ function loadAllowlist(): DepcheckAllowlist {
 function runDepcheck(): DepcheckResult {
   // depcheck exits non-zero when it reports findings; the JSON report is still on stdout
   try {
-    const output = execFileSync('npx', [
-      'depcheck',
+    const depcheckBin = resolve('node_modules/depcheck/bin/depcheck.js');
+    const output = execFileSync(process.execPath, [
+      depcheckBin,
       '--json',
       '--ignore-dirs=node_modules,dist,build',
     ], { encoding: 'utf-8' });

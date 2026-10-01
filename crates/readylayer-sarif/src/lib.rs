@@ -63,8 +63,12 @@ pub fn generate_summary(findings: &NormalizedFindings) -> FindingsSummary {
     let mut by_category: BTreeMap<String, u32> = BTreeMap::new();
 
     for finding in &findings.findings {
-        *by_severity.entry(finding.severity.to_lowercase()).or_insert(0) += 1;
-        *by_category.entry(finding.category.to_lowercase()).or_insert(0) += 1;
+        *by_severity
+            .entry(finding.severity.to_lowercase())
+            .or_insert(0) += 1;
+        *by_category
+            .entry(finding.category.to_lowercase())
+            .or_insert(0) += 1;
     }
 
     FindingsSummary {
@@ -83,7 +87,10 @@ pub fn generate_sarif(findings: &NormalizedFindings) -> Result<serde_json::Value
         });
     }
 
-    let tool_name = findings.tool.clone().unwrap_or_else(|| "ReadyLayer".to_string());
+    let tool_name = findings
+        .tool
+        .clone()
+        .unwrap_or_else(|| "ReadyLayer".to_string());
 
     let rules: Vec<serde_json::Value> = findings
         .findings

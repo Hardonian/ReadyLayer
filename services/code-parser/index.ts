@@ -6,7 +6,7 @@
  */
 
 import * as babel from '@babel/parser';
-import * as t from '@babel/types';
+import * as t from '@babel/parser/node_modules/@babel/types';
 
 export interface ParseResult {
   language: string;
@@ -392,7 +392,7 @@ export class CodeParserService {
   /**
    * Traverse AST with visitor pattern
    */
-  private traverseAST(ast: any, visitors: Record<string, (node: t.Node) => void>): void {
+  private traverseAST(ast: t.File, visitors: Record<string, (node: t.Node) => void>): void {
     const traverse = (node: t.Node): void => {
       if (!node || typeof node !== 'object') {
         return;
