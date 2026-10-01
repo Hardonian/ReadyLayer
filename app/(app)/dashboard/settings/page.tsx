@@ -1,23 +1,81 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useOrganizationId } from '@/lib/hooks'
 import { Container } from '@/components/ui/container'
-import { Card, CardContent, CardHeader, CardTitle, ErrorState, Skeleton } from '@/components/ui'
+import { Card, CardContent, CardHeader, CardTitle, ErrorState, Skeleton, Button } from '@/components/ui'
 import { motion } from 'framer-motion'
 import { fadeIn } from '@/lib/design/motion'
-import { Settings, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Settings, ToggleLeft, ToggleRight, CheckCircle2, ExternalLink } from 'lucide-react'
 import { Github, Gitlab, Bitbucket } from '@/components/icons/brand-icons'
 import { Badge } from '@/components/ui/badge'
 
+interface InstallationItem {
+  id: string
+  provider: string
+  providerId: string
+  isActive: boolean
+}
+
 export default function SettingsPage(): React.JSX.Element {
   const { organizationId, loading } = useOrganizationId()
+  const [installations, setInstallations] = useState<InstallationItem[]>([])
+  const [installationsLoading, setInstallationsLoading] = useState(true)
+
   const [featureFlags, setFeatureFlags] = useState({
     aiAssistEnabled: true,
     advancedDetectorsEnabled: false,
     auditExportsEnabled: true,
     integrationsEnabled: true,
   })
+
+  // Load persisted feature flags from storage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('readylayer_feature_flags')
+      if (saved) {
+        setFeatureFlags(JSON.parse(saved) as typeof featureFlags)
+      }
+    } catch (_err) {
+      // Graceful fallback to default flags
+    }
+  }, [])
+
+  // Fetch real installation status from backend
+  useEffect(() => {
+    async function loadInstallations(): Promise<void> {
+      try {
+        const res = await fetch('/api/v1/installations')
+        if (res.ok) {
+          const data = (await res.json()) as { installations?: InstallationItem[] }
+          if (Array.isArray(data.installations)) {
+            setInstallations(data.installations)
+          }
+        }
+      } catch (_err) {
+        // Fallback to empty installations list
+      } finally {
+        setInstallationsLoading(false)
+      }
+    }
+    void loadInstallations()
+  }, [])
+
+  const handleToggle = (key: keyof typeof featureFlags): void => {
+    const updated = { ...featureFlags, [key]: !featureFlags[key] }
+    setFeatureFlags(updated)
+    try {
+      localStorage.setItem('readylayer_feature_flags', JSON.stringify(updated))
+    } catch (_err) {
+      // Fallback
+    }
+  }
+
+  const isConnected = (provider: string): boolean => {
+    return installations.some(
+      (inst) => inst.provider.toLowerCase() === provider.toLowerCase() && inst.isActive
+    )
+  }
 
   if (loading) {
     return (
@@ -57,6 +115,7 @@ export default function SettingsPage(): React.JSX.Element {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {/* GitHub */}
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Github className="h-5 w-5" />
@@ -65,9 +124,24 @@ export default function SettingsPage(): React.JSX.Element {
                     <div className="text-sm text-muted-foreground">Connect your GitHub repositories</div>
                   </div>
                 </div>
-                <Badge variant="outline">Not Connected</Badge>
+                {installationsLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : isConnected('github') ? (
+                  <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Connected
+                  </Badge>
+                ) : (
+                  <a href="/api/integrations/github/install?returnUrl=/dashboard/settings">
+                    <Button size="sm" variant="outline" className="flex items-center gap-1.5">
+                      Connect
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </a>
+                )}
               </div>
 
+              {/* GitLab */}
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Gitlab className="h-5 w-5" />
@@ -76,9 +150,24 @@ export default function SettingsPage(): React.JSX.Element {
                     <div className="text-sm text-muted-foreground">Connect your GitLab repositories</div>
                   </div>
                 </div>
-                <Badge variant="outline">Not Connected</Badge>
+                {installationsLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : isConnected('gitlab') ? (
+                  <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Connected
+                  </Badge>
+                ) : (
+                  <a href="/api/integrations/gitlab/install?returnUrl=/dashboard/settings">
+                    <Button size="sm" variant="outline" className="flex items-center gap-1.5">
+                      Connect
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </a>
+                )}
               </div>
 
+              {/* Bitbucket */}
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <Bitbucket className="h-5 w-5" />
@@ -87,7 +176,21 @@ export default function SettingsPage(): React.JSX.Element {
                     <div className="text-sm text-muted-foreground">Connect your Bitbucket repositories</div>
                   </div>
                 </div>
-                <Badge variant="outline">Not Connected</Badge>
+                {installationsLoading ? (
+                  <Skeleton className="h-8 w-24" />
+                ) : isConnected('bitbucket') ? (
+                  <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Connected
+                  </Badge>
+                ) : (
+                  <a href="/api/integrations/bitbucket/install?returnUrl=/dashboard/settings">
+                    <Button size="sm" variant="outline" className="flex items-center gap-1.5">
+                      Connect
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </a>
+                )}
               </div>
             </div>
           </CardContent>
@@ -108,9 +211,9 @@ export default function SettingsPage(): React.JSX.Element {
                   </div>
                 </div>
                 <button
-                  onClick={() =>
-                    setFeatureFlags({ ...featureFlags, aiAssistEnabled: !featureFlags.aiAssistEnabled })
-                  }
+                  type="button"
+                  aria-label="Toggle AI Assist"
+                  onClick={() => handleToggle('aiAssistEnabled')}
                   className="text-2xl"
                 >
                   {featureFlags.aiAssistEnabled ? (
@@ -129,12 +232,9 @@ export default function SettingsPage(): React.JSX.Element {
                   </div>
                 </div>
                 <button
-                  onClick={() =>
-                    setFeatureFlags({
-                      ...featureFlags,
-                      advancedDetectorsEnabled: !featureFlags.advancedDetectorsEnabled,
-                    })
-                  }
+                  type="button"
+                  aria-label="Toggle Advanced Detectors"
+                  onClick={() => handleToggle('advancedDetectorsEnabled')}
                   className="text-2xl"
                 >
                   {featureFlags.advancedDetectorsEnabled ? (
@@ -153,12 +253,9 @@ export default function SettingsPage(): React.JSX.Element {
                   </div>
                 </div>
                 <button
-                  onClick={() =>
-                    setFeatureFlags({
-                      ...featureFlags,
-                      auditExportsEnabled: !featureFlags.auditExportsEnabled,
-                    })
-                  }
+                  type="button"
+                  aria-label="Toggle Audit Exports"
+                  onClick={() => handleToggle('auditExportsEnabled')}
                   className="text-2xl"
                 >
                   {featureFlags.auditExportsEnabled ? (
@@ -177,12 +274,9 @@ export default function SettingsPage(): React.JSX.Element {
                   </div>
                 </div>
                 <button
-                  onClick={() =>
-                    setFeatureFlags({
-                      ...featureFlags,
-                      integrationsEnabled: !featureFlags.integrationsEnabled,
-                    })
-                  }
+                  type="button"
+                  aria-label="Toggle Integrations"
+                  onClick={() => handleToggle('integrationsEnabled')}
                   className="text-2xl"
                 >
                   {featureFlags.integrationsEnabled ? (

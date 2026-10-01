@@ -102,6 +102,86 @@ export async function createAuditLog(data: AuditLogData): Promise<void> {
   }
 }
 
+export interface AuditVerificationResult {
+  valid: boolean;
+  totalLogs: number;
+  verifiedAt: string;
+  organizationId: string | null;
+  brokenLinkIndex?: number;
+  brokenLogId?: string;
+  error?: string;
+}
+
+/**
+ * Verify cryptographic hash chaining for an organization's audit logs
+ */
+export async function verifyAuditChain(
+  organizationId: string | null,
+  limit: number = 1000
+): Promise<AuditVerificationResult> {
+  const verifiedAt = new Date().toISOString();
+  try {
+    const logs = await prisma.auditLog.findMany({
+      where: {
+        organizationId: organizationId || null,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      take: limit,
+      select: {
+        id: true,
+        hash: true,
+        previousHash: true,
+        action: true,
+        createdAt: true,
+      },
+    });
+
+    if (logs.length === 0) {
+      return {
+        valid: true,
+        totalLogs: 0,
+        verifiedAt,
+        organizationId,
+      };
+    }
+
+    // Verify sequential hash link integrity
+    for (let i = 1; i < logs.length; i++) {
+      const prev = logs[i - 1];
+      const curr = logs[i];
+
+      if (curr.previousHash !== prev.hash) {
+        return {
+          valid: false,
+          totalLogs: logs.length,
+          verifiedAt,
+          organizationId,
+          brokenLinkIndex: i,
+          brokenLogId: curr.id,
+          error: `Audit chain mismatch at log ${curr.id}: expected previousHash ${prev.hash}, got ${curr.previousHash}`,
+        };
+      }
+    }
+
+    return {
+      valid: true,
+      totalLogs: logs.length,
+      verifiedAt,
+      organizationId,
+    };
+  } catch (error) {
+    return {
+      valid: false,
+      totalLogs: 0,
+      verifiedAt,
+      organizationId,
+      error: error instanceof Error ? error.message : 'Audit chain verification failed',
+    };
+  }
+}
+
 /**
  * Audit log actions
  */

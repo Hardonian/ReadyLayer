@@ -285,6 +285,151 @@ async function generateTests(filePath: string, options: TestOptions): Promise<vo
   }
 }
 
+interface ScanOptions {
+  path?: string;
+  policy?: string;
+  repository?: string;
+  format?: 'console' | 'json' | 'sarif';
+  maxFiles?: string;
+}
+
+function collectCodeFiles(dir: string, maxFiles: number, collected: string[] = []): string[] {
+  if (collected.length >= maxFiles) return collected;
+  const ignoredDirs = new Set([
+    'node_modules', '.git', '.next', 'dist', 'target', 'build', '.coverage',
+    'coverage', '.venv', '__pycache__', '.turbo', '.vscode', '.husky'
+  ]);
+  const codeExtensions = new Set([
+    '.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.py', '.go', '.rs', '.java'
+  ]);
+
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (collected.length >= maxFiles) break;
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!ignoredDirs.has(entry.name) && !entry.name.startsWith('.')) {
+          collectCodeFiles(fullPath, maxFiles, collected);
+        }
+      } else if (entry.isFile()) {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (codeExtensions.has(ext)) {
+          collected.push(fullPath);
+        }
+      }
+    }
+  } catch (_err) {
+    // Skip unreadable directories gracefully
+  }
+  return collected;
+}
+
+async function scanDirectory(dirArg?: string, options: ScanOptions = {}): Promise<void> {
+  const targetDir = path.resolve(options.path || dirArg || '.');
+  if (!fs.existsSync(targetDir)) {
+    cliError(`Error: Directory not found: ${targetDir}`);
+    process.exit(1);
+  }
+
+  const maxFiles = parseInt(options.maxFiles || '500', 10);
+  const files = collectCodeFiles(targetDir, maxFiles);
+
+  cliLog(`🔍 Scanning ${targetDir} (${files.length} code files)...`);
+
+  const { StaticAnalysisService } = await import('../services/static-analysis');
+  const staticAnalyzer = new StaticAnalysisService();
+
+  const allIssues: Array<{
+    ruleId: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    file: string;
+    line: number;
+    column?: number;
+    message: string;
+    fix?: string;
+    confidence: number;
+  }> = [];
+
+  for (const file of files) {
+    try {
+      const content = fs.readFileSync(file, 'utf-8');
+      const relPath = path.relative(targetDir, file);
+      const issues = await staticAnalyzer.analyze(relPath, content);
+      allIssues.push(...issues);
+    } catch (_err) {
+      // Continue scanning other files gracefully
+    }
+  }
+
+  const counts = {
+    critical: allIssues.filter((i) => i.severity === 'critical').length,
+    high: allIssues.filter((i) => i.severity === 'high').length,
+    medium: allIssues.filter((i) => i.severity === 'medium').length,
+    low: allIssues.filter((i) => i.severity === 'low').length,
+  };
+
+  const isBlocked = counts.critical > 0 || counts.high > 0;
+
+  if (options.format === 'json') {
+    cliLog(JSON.stringify({
+      targetDir,
+      filesScanned: files.length,
+      issuesCount: allIssues.length,
+      severityCounts: counts,
+      isBlocked,
+      issues: allIssues,
+    }, null, 2));
+  } else if (options.format === 'sarif') {
+    const sarifReport = {
+      $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
+      version: '2.1.0',
+      runs: [{
+        tool: {
+          driver: {
+            name: 'ReadyLayer',
+            version: '1.0.0',
+            informationUri: 'https://readylayer.com',
+          },
+        },
+        results: allIssues.map((issue) => ({
+          ruleId: issue.ruleId,
+          level: issue.severity === 'critical' || issue.severity === 'high' ? 'error' : 'warning',
+          message: { text: issue.message },
+          locations: [{
+            physicalLocation: {
+              artifactLocation: { uri: issue.file },
+              region: { startLine: issue.line, startColumn: issue.column || 1 },
+            },
+          }],
+        })),
+      }],
+    };
+    cliLog(JSON.stringify(sarifReport, null, 2));
+  } else {
+    cliLog('\n=== ReadyLayer Scan Results ===');
+    if (allIssues.length === 0) {
+      cliLog('✅ Clean scan: No policy violations found.');
+    } else {
+      for (const issue of allIssues) {
+        const severityTag = issue.severity.toUpperCase().padEnd(8);
+        cliLog(`[${severityTag}] ${issue.file}:${issue.line} - ${issue.message} (${issue.ruleId})`);
+        if (issue.fix) {
+          cliLog(`  💡 Suggested Fix: ${issue.fix}`);
+        }
+      }
+      cliLog('\n----------------------------------------');
+      cliLog(`Total Files Scanned: ${files.length}`);
+      cliLog(`Total Findings: ${allIssues.length} (Critical: ${counts.critical}, High: ${counts.high}, Medium: ${counts.medium}, Low: ${counts.low})`);
+      cliLog(`Decision: ${isBlocked ? '❌ BLOCKED (Policy Violations Detected)' : '⚠️  PASSED WITH WARNINGS'}`);
+    }
+  }
+
+  if (isBlocked) {
+    process.exit(1);
+  }
+}
+
 // Initialize config
 function initConfig(): void {
   const configPath = path.join(process.cwd(), '.readylayer.json');
@@ -366,6 +511,16 @@ program
   .option('-r, --repository <id>', 'Repository ID')
   .option('--ref <ref>', 'Git ref (branch or commit SHA)', 'HEAD')
   .action(reviewFile);
+
+program
+  .command('scan [dir]')
+  .description('Recursively scan a repository directory for policy violations')
+  .option('-p, --path <path>', 'Root directory to scan (defaults to current directory or [dir])')
+  .option('--policy <path>', 'Policy file path')
+  .option('-r, --repository <id>', 'Repository ID')
+  .option('-f, --format <format>', 'Output format: console, json, sarif', 'console')
+  .option('--max-files <number>', 'Maximum files to scan', '500')
+  .action(scanDirectory);
 
 program
   .command('test <file>')

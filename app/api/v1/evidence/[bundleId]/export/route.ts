@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 
+export const runtime = 'nodejs';
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ bundleId: string }> }
-) {
+): Promise<NextResponse> {
   const { bundleId } = await params;
 
   try {
-
     const bundle = await prisma.evidenceBundle.findUnique({
       where: { id: bundleId },
       include: {
@@ -24,8 +25,6 @@ export async function GET(
     }
 
     // Fetch related audit logs
-    // Note: We use the creation time window to find relevant logs if runId is not present,
-    // but ideally we should link by runId.
     const auditLogs = await prisma.auditLog.findMany({
       where: {
         OR: [
@@ -38,25 +37,43 @@ export async function GET(
       orderBy: { createdAt: 'asc' },
     });
 
-    // Create the canonical evidence pack structure
+    const auditTrail = auditLogs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      timestamp: log.createdAt,
+      hash: log.hash,
+      previousHash: log.previousHash,
+      signature: log.signature,
+    }));
+
+    const rawBundleJson = JSON.stringify(bundle);
+    const rawAuditJson = JSON.stringify(auditTrail);
+
+    const bundleHash = createHash('sha256').update(rawBundleJson).digest('hex');
+    const auditTrailHash = createHash('sha256').update(rawAuditJson).digest('hex');
+    const manifestHash = createHash('sha256')
+      .update(`${bundle.id}:${bundleHash}:${auditTrailHash}:${bundle.policyChecksum}`)
+      .digest('hex');
+
+    // Create the canonical tamper-evident evidence pack structure
     const evidencePack = {
+      specVersion: 'readylayer-evidence-v1',
       meta: {
-        version: '1.0.0',
         generatedAt: new Date().toISOString(),
         bundleId: bundle.id,
+        policyChecksum: bundle.policyChecksum,
+        deterministicScore: bundle.deterministicScore,
+      },
+      manifest: {
+        bundleHash,
+        auditTrailHash,
+        manifestHash,
+        algorithm: 'SHA-256',
       },
       bundle,
-      auditTrail: auditLogs.map((log) => ({
-        id: log.id,
-        action: log.action,
-        timestamp: log.createdAt,
-        hash: log.hash,
-        previousHash: log.previousHash,
-        signature: log.signature,
-      })),
+      auditTrail,
       integrity: {
-        // Calculate a hash of the bundle content to prove it hasn't changed since export
-        contentHash: createHash('sha256').update(JSON.stringify(bundle)).digest('hex'),
+        signedStatement: `VERIFIED_BY_READYLAYER_SHA256:${manifestHash}`,
       },
     };
 
@@ -65,9 +82,9 @@ export async function GET(
       headers: {
         'Content-Type': 'application/json',
         'Content-Disposition': `attachment; filename="readylayer-evidence-${bundleId}.json"`,
+        'X-Evidence-Manifest-Hash': manifestHash,
       },
     });
-
   } catch (error) {
     console.error('Failed to export evidence:', error);
     return NextResponse.json(

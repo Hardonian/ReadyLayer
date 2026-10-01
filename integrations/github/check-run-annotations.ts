@@ -73,7 +73,7 @@ export function violationsToAnnotations(
     title: `${violation.ruleId}`,
     message: violation.message,
     raw_details: violation.fix
-      ? `**Suggested Fix:**\n\`\`\`\n${violation.fix}\n\`\`\``
+      ? `**Suggested Fix:**\n\`\`\`suggestion\n${violation.fix}\n\`\`\``
       : undefined,
   }));
 
