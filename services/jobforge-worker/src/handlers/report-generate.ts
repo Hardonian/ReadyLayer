@@ -176,11 +176,11 @@ export async function reportGenerateHandler(
     try {
       const resolvedRef = path.resolve(process.cwd(), validated.inputs_ref)
       if (fs.existsSync(resolvedRef)) {
-        inputsData = JSON.parse(fs.readFileSync(resolvedRef, 'utf8'))
+        inputsData = JSON.parse(fs.readFileSync(resolvedRef, 'utf8')) as Record<string, unknown>
       } else {
         const altRef = path.join(process.cwd(), '.artifacts', validated.inputs_ref)
         if (fs.existsSync(altRef)) {
-          inputsData = JSON.parse(fs.readFileSync(altRef, 'utf8'))
+          inputsData = JSON.parse(fs.readFileSync(altRef, 'utf8')) as Record<string, unknown>
         }
       }
     } catch {

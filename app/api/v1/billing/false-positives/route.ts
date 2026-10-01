@@ -4,7 +4,7 @@
  * GET /api/v1/billing/false-positives - Get false positive metrics
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
 import { getFalsePositiveMetrics, getRuleFalsePositiveRate, trackWaiverCreated } from '../../../../../lib/telemetry/false-positives';
@@ -12,11 +12,22 @@ import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
 
+interface DisputeFalsePositivePayload {
+  organizationId?: string;
+  repositoryId?: string;
+  reviewId?: string;
+  ruleId?: string;
+  severity?: string;
+  reason?: string;
+  action?: 'approve' | 'reject' | 'report';
+  refundCredits?: boolean;
+}
+
 /**
  * GET /api/v1/billing/false-positives
  * Get false positive metrics for organization
  */
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `fp_${Date.now()}`;
   const log = logger.child({ requestId });
 
@@ -73,7 +84,7 @@ export async function GET(request: NextRequest) {
  * POST /api/v1/billing/false-positives
  * Report or resolve a false positive finding dispute with credit refund
  */
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `fp_post_${Date.now()}`;
   const log = logger.child({ requestId });
 
@@ -87,17 +98,15 @@ export async function POST(request: NextRequest) {
       return authzResponse;
     }
 
-    const body = await request.json();
-    const {
-      organizationId,
-      repositoryId,
-      reviewId,
-      ruleId,
-      severity,
-      reason,
-      action = 'report',
-      refundCredits = false,
-    } = body;
+    const body = (await request.json()) as DisputeFalsePositivePayload;
+    const organizationId = body.organizationId;
+    const repositoryId = body.repositoryId ?? null;
+    const reviewId = body.reviewId;
+    const ruleId = body.ruleId;
+    const severity = body.severity || 'medium';
+    const reason = body.reason || '';
+    const action = body.action || 'report';
+    const refundCredits = Boolean(body.refundCredits);
 
     if (!organizationId || !ruleId) {
       return errorResponse('VALIDATION_ERROR', 'organizationId and ruleId are required', 400);
@@ -106,9 +115,9 @@ export async function POST(request: NextRequest) {
     // Track the waiver / false-positive report
     await trackWaiverCreated({
       organizationId,
-      repositoryId: repositoryId || null,
+      repositoryId,
       ruleId,
-      severity: severity || 'medium',
+      severity,
       reviewId,
     });
 
