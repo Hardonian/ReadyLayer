@@ -301,7 +301,14 @@ test.describe('Billing and Subscription Workflow', () => {
         totalTokens: 2000,
         costUSD: dailyCost / 100,
         requestDurationMs: 100,
-        timestamp: new Date(Date.now() - (30 - day) * 86400000),
+        // Spread across days 1-28 of the current calendar month so the
+        // month-scoped spend lookup is deterministic on any run date (a
+        // trailing-30-days window lands entirely in the previous month on
+        // the 1st and fails)
+        timestamp: (() => {
+          const now = new Date();
+          return new Date(now.getFullYear(), now.getMonth(), 1 + (day % 28));
+        })(),
         success: true,
       });
     }
