@@ -368,7 +368,7 @@ export async function mockAuthenticatedSession(page: Page): Promise<void> {
   // Cookie equivalents for SSR-side session reads. The Supabase storage key
   // is derived from the auth URL hostname ('sb-<host-first-label>-auth-token'),
   // so cover the stub host plus the legacy/simple names.
-  const cookieNames = ['sb-127-auth-token', 'sb-localhost-auth-token', 'sb-auth-token']
+  const cookieNames = ['sb-localhost-auth-token', 'sb-127-auth-token', 'sb-auth-token']
   await page.context().addCookies(
     cookieNames.map((name) => ({
       name,

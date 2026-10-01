@@ -167,8 +167,10 @@ export default defineConfig({
       timeout: 120 * 1000,
       env: {
         // Point Supabase at the mock auth stub so middleware session
-        // validation works during tests without real credentials
-        NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321',
+        // validation works during tests without real credentials.
+        // Use localhost (not 127.0.0.1): webkit/Mobile Safari emulation
+        // blocks fetches to the raw IP as local-network access
+        NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
         NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
         ...(process.env.DEMO_MODE_ENABLED
           ? {
