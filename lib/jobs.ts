@@ -356,3 +356,92 @@ export function transformJobResultForApi(result: {
     completedAt: result.completedAt?.toISOString(),
   };
 }
+
+/**
+ * Mark a job as dead and persist to DLQ
+ */
+export async function markJobDead(
+  jobId: string,
+  error: string,
+  errorStack?: string
+): Promise<boolean> {
+  const job = await prisma.job.findUnique({ where: { id: jobId } });
+  if (!job) return false;
+
+  await prisma.job.update({
+    where: { id: jobId },
+    data: {
+      status: 'dead',
+      error: errorStack ? `${error}\n${errorStack}` : error,
+      completedAt: new Date(),
+    },
+  });
+
+  logger.warn({ jobId, error }, 'Job moved to DLQ');
+  return true;
+}
+
+/**
+ * Redrive a dead letter job (re-enqueueing it for execution)
+ */
+export async function redriveDeadJob(
+  jobId: string,
+  tenantId?: string
+): Promise<{ success: boolean; newJobId?: string; error?: string }> {
+  const where: Record<string, unknown> = { id: jobId };
+  if (tenantId) {
+    where.organizationId = tenantId;
+  }
+
+  const job = await prisma.job.findFirst({
+    where: where as Record<string, unknown>,
+  });
+
+  if (!job) {
+    return { success: false, error: 'Job not found' };
+  }
+
+  if (job.status !== 'dead' && job.status !== 'failed') {
+    return { success: false, error: `Job is not in dead/failed state (status: ${job.status})` };
+  }
+
+  const orgId = (job as Record<string, unknown>).organizationId as string || 'default';
+
+  // Enqueue new attempt with fresh retry budget
+  const newJobId = await enqueueJob({
+    tenantId: orgId,
+    type: job.type,
+    payload: job.payload,
+    repositoryId: job.repositoryId ?? undefined,
+    userId: job.userId ?? undefined,
+    maxRetries: job.maxRetries || 3,
+  });
+
+  // Mark previous dead job as redriven
+  await prisma.job.update({
+    where: { id: jobId },
+    data: {
+      status: 'canceled',
+      error: `Redriven as new job: ${newJobId}`,
+    },
+  });
+
+  logger.info({ originalJobId: jobId, newJobId }, 'Dead job redriven successfully');
+  return { success: true, newJobId };
+}
+
+/**
+ * List all jobs in Dead Letter Queue (DLQ)
+ */
+export async function listDeadLetterJobs(
+  tenantId: string,
+  limit: number = 20,
+  offset: number = 0
+): Promise<{ jobs: JobData[]; total: number }> {
+  return listJobs({
+    tenantId,
+    status: 'dead',
+    limit,
+    offset,
+  });
+}

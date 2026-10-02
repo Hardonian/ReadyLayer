@@ -147,12 +147,14 @@ export default function RunDetailsPage(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchRun() {
+    let pollInterval: NodeJS.Timeout | null = null
+
+    async function fetchRun(isInitial = false) {
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
-          setError('Not authenticated')
+          if (isInitial) setError('Not authenticated')
           setLoading(false)
           return
         }
@@ -170,16 +172,41 @@ export default function RunDetailsPage(): React.JSX.Element {
         }
 
         const data = (await response.json()) as { data?: RunDetails }
-        setRun(data.data || null)
+        const currentRun = data.data || null
+        setRun(currentRun)
         setLoading(false)
+
+        // Automatically stop polling once terminal status is reached
+        if (
+          currentRun &&
+          (currentRun.status === 'completed' ||
+            currentRun.status === 'failed' ||
+            currentRun.status === 'cancelled')
+        ) {
+          if (pollInterval) {
+            clearInterval(pollInterval)
+            pollInterval = null
+          }
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load run')
+        if (isInitial) {
+          setError(err instanceof Error ? err.message : 'Failed to load run')
+        }
         setLoading(false)
       }
     }
 
     if (runId) {
-      fetchRun()
+      fetchRun(true)
+      pollInterval = setInterval(() => {
+        fetchRun(false)
+      }, 3000)
+    }
+
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval)
+      }
     }
   }, [runId])
 
