@@ -1,9 +1,5 @@
 # ReadyLayer
 
-<!-- BEGIN: REPO HERO -->
-![ReadyLayer — hero generated locally on the GPU stack](assets/repo-hero.png)
-<!-- END: REPO HERO -->
-
 **ReadyLayer is the open-source governance and trust plane for autonomous AI coding agents.** It bridges the critical enterprise gap between raw agent velocity (Cursor, Claude Code, Windsurf, Devin) and strict software delivery integrity with deterministic policy evaluation, package slopsquatting defense, and cryptographically verifiable in-toto/SLSA provenance.
 
 **Landing strip**
