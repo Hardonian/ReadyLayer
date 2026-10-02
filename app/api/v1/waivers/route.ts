@@ -12,6 +12,7 @@ import { requireAuth } from '../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../lib/authz';
 import { z } from 'zod';
 import { parseJsonBody } from '../../../../lib/api-route-helpers';
+import { signWaiver } from '../../../../lib/waivers';
 
 const createWaiverSchema = z.object({
   organizationId: z.string(),
@@ -126,6 +127,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     log.info({ waiverId: waiver.id, organizationId: validated.organizationId }, 'Waiver created');
 
+    const cert = signWaiver({
+      waiverId: waiver.id,
+      organizationId: waiver.organizationId,
+      repositoryId: waiver.repositoryId,
+      ruleId: waiver.ruleId,
+      scope: waiver.scope as 'repo' | 'branch' | 'path',
+      scopeValue: waiver.scopeValue,
+      reason: waiver.reason,
+      createdBy: waiver.createdBy,
+      createdAt: waiver.createdAt.toISOString(),
+      expiresAt: waiver.expiresAt ? waiver.expiresAt.toISOString() : null,
+    });
+
     return NextResponse.json(
       {
         id: waiver.id,
@@ -139,6 +153,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         createdBy: waiver.createdBy,
         createdAt: waiver.createdAt,
         updatedAt: waiver.updatedAt,
+        signature: cert.signature,
+        token: cert.token,
+        certificate: cert,
       },
       { status: 201 }
     );
@@ -259,19 +276,37 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     ]);
 
     return NextResponse.json({
-      waivers: waivers.map((waiver) => ({
-        id: waiver.id,
-        organizationId: waiver.organizationId,
-        repositoryId: waiver.repositoryId,
-        ruleId: waiver.ruleId,
-        scope: waiver.scope,
-        scopeValue: waiver.scopeValue,
-        reason: waiver.reason,
-        expiresAt: waiver.expiresAt,
-        createdBy: waiver.createdBy,
-        createdAt: waiver.createdAt,
-        updatedAt: waiver.updatedAt,
-      })),
+      waivers: waivers.map((waiver) => {
+        const cert = signWaiver({
+          waiverId: waiver.id,
+          organizationId: waiver.organizationId,
+          repositoryId: waiver.repositoryId,
+          ruleId: waiver.ruleId,
+          scope: waiver.scope as 'repo' | 'branch' | 'path',
+          scopeValue: waiver.scopeValue,
+          reason: waiver.reason,
+          createdBy: waiver.createdBy,
+          createdAt: waiver.createdAt.toISOString(),
+          expiresAt: waiver.expiresAt ? waiver.expiresAt.toISOString() : null,
+        });
+
+        return {
+          id: waiver.id,
+          organizationId: waiver.organizationId,
+          repositoryId: waiver.repositoryId,
+          ruleId: waiver.ruleId,
+          scope: waiver.scope,
+          scopeValue: waiver.scopeValue,
+          reason: waiver.reason,
+          expiresAt: waiver.expiresAt,
+          createdBy: waiver.createdBy,
+          createdAt: waiver.createdAt,
+          updatedAt: waiver.updatedAt,
+          signature: cert.signature,
+          token: cert.token,
+          certificate: cert,
+        };
+      }),
       pagination: {
         total,
         limit,

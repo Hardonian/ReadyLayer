@@ -10,6 +10,7 @@ import { prisma } from '../../../../../lib/prisma';
 import { logger } from '../../../../../observability/logging';
 import { requireAuth } from '../../../../../lib/auth';
 import { createAuthzMiddleware } from '../../../../../lib/authz';
+import { signWaiver } from '../../../../../lib/waivers';
 
 /**
  * GET /api/v1/waivers/:waiverId
@@ -88,6 +89,19 @@ export async function GET(
       );
     }
 
+    const cert = signWaiver({
+      waiverId: waiver.id,
+      organizationId: waiver.organizationId,
+      repositoryId: waiver.repositoryId,
+      ruleId: waiver.ruleId,
+      scope: waiver.scope as 'repo' | 'branch' | 'path',
+      scopeValue: waiver.scopeValue,
+      reason: waiver.reason,
+      createdBy: waiver.createdBy,
+      createdAt: waiver.createdAt.toISOString(),
+      expiresAt: waiver.expiresAt ? waiver.expiresAt.toISOString() : null,
+    });
+
     return NextResponse.json({
       id: waiver.id,
       organizationId: waiver.organizationId,
@@ -102,6 +116,9 @@ export async function GET(
       repository: waiver.repository,
       createdAt: waiver.createdAt,
       updatedAt: waiver.updatedAt,
+      signature: cert.signature,
+      token: cert.token,
+      certificate: cert,
     });
   } catch (error) {
     log.error(error, 'Failed to get waiver');

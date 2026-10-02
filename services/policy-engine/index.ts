@@ -44,6 +44,8 @@ export interface Waiver {
   scope: 'repo' | 'branch' | 'path';
   scopeValue?: string;
   expiresAt?: Date;
+  signature?: string;
+  token?: string;
 }
 
 export interface EvaluationResult {
@@ -397,8 +399,14 @@ export class PolicyEngineService {
    * Find applicable waiver for a finding
    */
   private findApplicableWaiver(finding: Issue, waivers: Waiver[]): Waiver | null {
+    const now = Date.now();
     for (const waiver of waivers) {
       if (waiver.ruleId !== finding.ruleId) {
+        continue;
+      }
+
+      // Check if waiver is expired
+      if (waiver.expiresAt && new Date(waiver.expiresAt).getTime() <= now) {
         continue;
       }
 
