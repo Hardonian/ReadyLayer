@@ -159,14 +159,14 @@ public class ReadyLayerClient {
     /**
      * Execute a synchronous HTTP request with retry logic.
      */
-    <T> T execute(HttpRequest request, Class<T> responseType) {
+    public <T> T execute(HttpRequest request, Class<T> responseType) {
         return executeWithRetry(request, responseType, 0);
     }
     
     /**
      * Execute an asynchronous HTTP request.
      */
-    <T> CompletableFuture<T> executeAsync(HttpRequest request, Class<T> responseType) {
+    public <T> CompletableFuture<T> executeAsync(HttpRequest request, Class<T> responseType) {
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> handleResponse(response, responseType));
     }
@@ -264,7 +264,7 @@ public class ReadyLayerClient {
     /**
      * Build an HTTP request with authentication headers.
      */
-    HttpRequest.Builder requestBuilder(String path) {
+    public HttpRequest.Builder requestBuilder(String path) {
         String url = config.getBaseUrl() + path;
         return HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -277,7 +277,7 @@ public class ReadyLayerClient {
     /**
      * Serialize an object to JSON.
      */
-    String toJson(Object obj) {
+    public String toJson(Object obj) {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (IOException e) {
@@ -285,7 +285,7 @@ public class ReadyLayerClient {
         }
     }
     
-    ReadyLayerConfig getConfig() {
+    public ReadyLayerConfig getConfig() {
         return config;
     }
 }
