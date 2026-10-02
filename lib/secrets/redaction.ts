@@ -73,7 +73,7 @@ const SECRET_PATTERNS: RedactionPattern[] = [
   },
   {
     type: 'database-url',
-    pattern: /(?:postgresql|postgres|mysql|mariadb|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\\^\[\]`]+/g,
+    pattern: /(?:postgresql|postgres|mysql|mariadb|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\^[\]`]+/g,
     example: 'postgresql://user:***@host/db',
   },
   {
@@ -308,7 +308,7 @@ export function isRedactedSafe(code: string): boolean {
     /-----BEGIN\s(?:RSA\s|DSA\s|EC\s|OPENSSH\s)?PRIVATE\sKEY-----/g, // Private keys
     /xox[baprs]-[0-9]{10,12}-[A-Za-z0-9]{24,32}/g, // Slack tokens
     /sk_live_[A-Za-z0-9]{24}/g, // Stripe keys
-    /(?:postgresql|postgres|mysql|mariadb|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\\^\[\]`]+/g, // DB URLs
+    /(?:postgresql|postgres|mysql|mariadb|mongodb|redis)(?:\+[a-z]+)?:\/\/[^\s<>"`{}|\\^[\]`]+/g, // DB URLs
   ];
 
   // If any unredacted secrets are found, it's NOT safe

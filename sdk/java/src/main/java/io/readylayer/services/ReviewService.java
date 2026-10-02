@@ -5,7 +5,6 @@ import io.readylayer.models.*;
 import lombok.RequiredArgsConstructor;
 
 import java.net.http.HttpRequest;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Service for code review operations.

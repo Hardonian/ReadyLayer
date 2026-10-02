@@ -196,7 +196,7 @@ function validateJsTsSyntax(code: string): { valid: boolean; error?: string } {
 
 function countJsAssertionsAndTests(testCode: string): { tests: number; assertions: number } {
   const tests = (testCode.match(/\b(it|test)\s*\(/g) || []).length || 1
-  const assertions = (testCode.match(/\b(expect|assert)\s*[\.(]/g) || []).length
+  const assertions = (testCode.match(/\b(expect|assert)\s*[.(]/g) || []).length
   return { tests, assertions }
 }
 
