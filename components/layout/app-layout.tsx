@@ -14,6 +14,7 @@ import { fadeIn } from '@/lib/design/motion'
 import { LogOut } from 'lucide-react'
 import { Github } from '@/components/icons/brand-icons'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { NotificationBell } from '@/components/dashboard/NotificationBell'
 import { MobileNav } from './mobile-nav'
 import { NavLink } from './nav-link'
 import { RuntimeTopNotice } from '@/components/layout/runtime-top-notice'
@@ -133,6 +134,7 @@ export function AppLayout({ children }: { children: React.ReactNode }): React.JS
                   <ThemeToggle />
                   {user ? (
                     <>
+                      <NotificationBell />
                       <span className="text-sm font-display font-medium text-text-muted hidden sm:inline truncate max-w-xs">
                         {user.user_metadata?.full_name || user.email}
                       </span>

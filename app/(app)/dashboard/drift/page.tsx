@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Activity, Gauge, ArrowUpRight, BarChart3, AlertCircle, CheckCircle, RefreshCcw } from 'lucide-react';
+import { VarianceHeatmap } from '@/components/dashboard/VarianceHeatmap';
 
 interface FeatureMetric {
   name: string;
@@ -126,6 +127,9 @@ export default function FeatureDriftDashboard(): React.JSX.Element {
           <CardContent className="text-xs text-slate-500">Rolling window comparison</CardContent>
         </Card>
       </div>
+
+      {/* Multi-Model Variance & Consensus Heatmap */}
+      <VarianceHeatmap />
 
       {/* Feature Table */}
       <Card className="border-slate-200 dark:border-slate-800">
