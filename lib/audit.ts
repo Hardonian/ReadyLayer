@@ -182,6 +182,8 @@ export async function verifyAuditChain(
   }
 }
 
+export const verifyAuditLogContinuity = verifyAuditChain;
+
 /**
  * Audit log actions
  */

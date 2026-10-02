@@ -84,6 +84,13 @@ async function processJob(payload: { type: string; data: unknown }): Promise<unk
           return await docSyncService.generateDocs(data);
         }
 
+      case 'usage_reset':
+        // Timezone-aware monthly usage quota rollover
+        {
+          const { resetMonthlyUsageForTimezones } = await import('../lib/billing/usage-reset');
+          return await resetMonthlyUsageForTimezones();
+        }
+
       default:
         throw new Error(`Unknown job type: ${type}`);
     }

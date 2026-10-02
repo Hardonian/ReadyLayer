@@ -267,3 +267,52 @@ export async function generateApiKey(
 export function canAccessResource(userId: string, resourceUserId: string): boolean {
   return userId === resourceUserId;
 }
+
+export interface EnterpriseSsoConfig {
+  domain: string;
+  providerType: 'saml' | 'oidc';
+  idpSsoUrl: string;
+  idpEntityId?: string;
+}
+
+/**
+ * Resolve enterprise SAML / OIDC single sign-on redirect
+ */
+export async function resolveEnterpriseSso(
+  domainOrEmail: string
+): Promise<{ ssoUrl: string; provider: string; domain: string } | null> {
+  if (!domainOrEmail || !domainOrEmail.trim()) {
+    return null;
+  }
+
+  const domain = domainOrEmail.includes('@')
+    ? domainOrEmail.split('@')[1].toLowerCase().trim()
+    : domainOrEmail.toLowerCase().trim();
+
+  // Support environment configured enterprise IDPs (e.g. Okta / Azure AD)
+  const envKey = `SSO_IDP_${domain.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
+  const envIdp = process.env[envKey];
+  if (envIdp) {
+    return {
+      ssoUrl: envIdp,
+      provider: 'saml',
+      domain,
+    };
+  }
+
+  // Supabase Enterprise SAML SSO provider integration
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (supabaseUrl) {
+    return {
+      ssoUrl: `${supabaseUrl}/auth/v1/sso?domain=${encodeURIComponent(domain)}`,
+      provider: 'saml',
+      domain,
+    };
+  }
+
+  return {
+    ssoUrl: `https://auth.readylayer.io/sso/${encodeURIComponent(domain)}`,
+    provider: 'saml',
+    domain,
+  };
+}

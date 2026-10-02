@@ -82,6 +82,35 @@ function SignInContent() {
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const [loading, setLoading] = useState<Provider | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [ssoInput, setSsoInput] = useState('')
+  const [ssoLoading, setSsoLoading] = useState(false)
+
+  const handleEnterpriseSso = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!ssoInput.trim()) return
+    setSsoLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/v1/auth/sso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domainOrEmail: ssoInput.trim() }),
+      })
+      const data = (await res.json()) as {
+        data?: { ssoUrl?: string };
+        error?: { message?: string };
+      };
+      if (res.ok && data.data?.ssoUrl) {
+        window.location.href = data.data.ssoUrl;
+      } else {
+        setError(data.error?.message ?? 'Failed to initiate SSO for this domain');
+      }
+    } catch {
+      setError('Network error connecting to SSO provider')
+    } finally {
+      setSsoLoading(false)
+    }
+  }
 
   const handleSignIn = async (provider: Provider) => {
     try {
@@ -213,6 +242,33 @@ function SignInContent() {
                     </motion.div>
                   ))}
                 </div>
+
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-700" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white/80 dark:bg-gray-900/80 px-2 text-gray-500">Or Enterprise SSO</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleEnterpriseSso} className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="name@company.com or domain"
+                    value={ssoInput}
+                    onChange={(e) => setSsoInput(e.target.value)}
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={ssoLoading || !ssoInput.trim()}
+                    variant="outline"
+                    className="w-full h-11 text-sm font-medium"
+                  >
+                    {ssoLoading ? 'Connecting...' : 'Continue with Enterprise SSO (SAML/OIDC)'}
+                  </Button>
+                </form>
 
                 <div className="pt-4 text-center">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
