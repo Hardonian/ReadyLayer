@@ -4,10 +4,10 @@ import {
   generateMerkleProof,
   verifyMerkleProof,
   anchorDailyAuditMerkleRoot,
-} from '@/lib/audit/truthcore';
-import { prisma } from '@/lib/prisma';
+} from '../../lib/audit/truthcore';
+import { prisma } from '../../lib/prisma';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('../../lib/prisma', () => ({
   prisma: {
     auditLog: {
       findMany: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
-vi.mock('@/lib/audit', () => ({
+vi.mock('../../lib/audit', () => ({
   createAuditLog: vi.fn().mockResolvedValue(undefined),
 }));
 

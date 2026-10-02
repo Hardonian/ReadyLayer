@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { checkForCliUpdate } from '@/cli/readylayer-cli';
+import { checkForCliUpdate } from '../../cli/readylayer-cli';
 
 describe('CLI Self-Update Checker', () => {
   it('detects when an update is available', async () => {

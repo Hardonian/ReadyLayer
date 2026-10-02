@@ -378,8 +378,8 @@
  * Glass morphism utility classes
  */
 .glass {
-  backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   background-color: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.125);
 }
@@ -390,8 +390,8 @@
 }
 
 .glass-strong {
-  backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
+  backdrop-filter: blur(24px) saturate(200%);
   background-color: rgba(255, 255, 255, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -475,8 +475,8 @@
 
 /* Backdrop blur effects from Stitch */
 .backdrop-blur-custom {
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 /* Terminal text shadow effect */

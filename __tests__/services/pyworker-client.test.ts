@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as net from 'net';
 import { EventEmitter } from 'events';
-import { PyWorkerIpcClient } from '@/services/worker-py/client';
+import { PyWorkerIpcClient } from '../../services/worker-py/client';
 
 class MockSocket extends EventEmitter {
   public write = vi.fn((data: string) => {

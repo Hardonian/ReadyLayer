@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateConfigYaml } from '@/lib/config/yaml-validator';
+import { validateConfigYaml, type ConfigValidationError } from '../../lib/config/yaml-validator';
 
 describe('YAML Config Validator with Line/Col Highlighting', () => {
   it('validates a correct .readylayer.yml configuration', () => {
@@ -34,7 +34,7 @@ review:
     const res = validateConfigYaml(invalidYaml);
     expect(res.valid).toBe(false);
     expect(res.errors.length).toBeGreaterThan(0);
-    expect(res.errors.some((e) => e.path === 'version')).toBe(true);
+    expect(res.errors.some((e: ConfigValidationError) => e.path === 'version')).toBe(true);
   });
 
   it('detects invalid strictness enum values', () => {
@@ -45,7 +45,7 @@ strictness: "super-ultra-hard"
 
     const res = validateConfigYaml(invalidYaml);
     expect(res.valid).toBe(false);
-    const strictnessErr = res.errors.find((e) => e.path === 'strictness');
+    const strictnessErr = res.errors.find((e: ConfigValidationError) => e.path === 'strictness');
     expect(strictnessErr).toBeDefined();
     expect(strictnessErr?.fixSuggestion).toContain('advisory, balanced, strict, hardened');
   });
