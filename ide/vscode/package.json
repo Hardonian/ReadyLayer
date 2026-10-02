@@ -1,0 +1,70 @@
+{
+  "name": "readylayer-vscode",
+  "displayName": "ReadyLayer AI Governance & Policy Verification",
+  "description": "Deterministic AI code change governance, policy enforcement, and provenance tracking in VS Code and Cursor",
+  "version": "1.0.0",
+  "publisher": "readylayer",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Linters",
+    "Security",
+    "Testing"
+  ],
+  "keywords": [
+    "ai",
+    "governance",
+    "policy",
+    "audit",
+    "readylayer"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "readylayer.scanFile",
+        "title": "ReadyLayer: Scan Current File for Policy Violations",
+        "category": "ReadyLayer"
+      },
+      {
+        "command": "readylayer.scanWorkspace",
+        "title": "ReadyLayer: Scan Entire Workspace",
+        "category": "ReadyLayer"
+      },
+      {
+        "command": "readylayer.showDashboard",
+        "title": "ReadyLayer: Open Governance Dashboard",
+        "category": "ReadyLayer"
+      }
+    ],
+    "configuration": {
+      "title": "ReadyLayer",
+      "properties": {
+        "readylayer.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable ReadyLayer real-time governance diagnostics."
+        },
+        "readylayer.apiUrl": {
+          "type": "string",
+          "default": "https://api.readylayer.io",
+          "description": "ReadyLayer API endpoint (or localhost for self-hosted instances)."
+        },
+        "readylayer.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "ReadyLayer API key for policy validation and provenance registration."
+        },
+        "readylayer.scanOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically evaluate policies when a file is saved."
+        }
+      }
+    }
+  }
+}

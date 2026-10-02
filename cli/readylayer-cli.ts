@@ -431,72 +431,78 @@ async function scanDirectory(dirArg?: string, options: ScanOptions = {}): Promis
 }
 
 // Initialize config
-function initConfig(): void {
+export interface InitOptions {
+  yes?: boolean;
+  apiKey?: string;
+  apiUrl?: string;
+  repo?: string;
+  provider?: string;
+}
+
+export function buildDefaultConfig(options: InitOptions = {}): ReadyLayerConfig {
+  return {
+    apiKey: options.apiKey || '${READYLAYER_API_KEY}',
+    apiUrl: options.apiUrl || 'https://api.readylayer.io',
+    repositoryId: options.repo || path.basename(process.cwd()),
+    llmProvider: {
+      name: options.provider || 'anthropic',
+    },
+  };
+}
+
+async function initConfig(options: InitOptions = {}): Promise<void> {
   const configPath = path.join(process.cwd(), '.readylayer.json');
   
-  if (fs.existsSync(configPath)) {
-    cliLog('.readylayer.json already exists');
+  if (fs.existsSync(configPath) && !options.yes && !options.apiKey) {
+    cliLog('.readylayer.json already exists. Pass flags or --yes to overwrite.');
     return;
   }
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  cliLog('🚀 ReadyLayer Configuration Wizard\n');
 
-  const config: ReadyLayerConfig = {
-    apiKey: '',
-    apiUrl: 'https://api.readylayer.com',
-  };
+  let apiKey = options.apiKey || '';
+  let apiUrl = options.apiUrl || 'https://api.readylayer.io';
+  let repositoryId = options.repo || path.basename(process.cwd());
+  let providerName = options.provider || 'anthropic';
 
-  rl.question('ReadyLayer API Key: ', (apiKey) => {
-    config.apiKey = apiKey;
-    
-    rl.question('Repository ID (optional): ', (repoId) => {
-      if (repoId) {
-        config.repositoryId = repoId;
-      }
-      
-      rl.question('LLM Provider (codex/claude/ollama/none): ', (provider) => {
-        if (provider && provider !== 'none') {
-          config.llmProvider = {
-            name: provider,
-          };
-          
-          if (provider === 'codex') {
-            rl.question('OpenAI API Key: ', (key) => {
-              config.llmProvider!.apiKey = key;
-              finishConfig(config, rl);
-            });
-          } else if (provider === 'claude') {
-            rl.question('Anthropic API Key: ', (key) => {
-              config.llmProvider!.apiKey = key;
-              finishConfig(config, rl);
-            });
-          } else if (provider === 'ollama') {
-            rl.question('Ollama Base URL (default: http://localhost:11434): ', (url) => {
-              config.llmProvider!.baseUrl = url || 'http://localhost:11434';
-              rl.question('Model name (default: llama2): ', (model) => {
-                config.llmProvider!.model = model || 'llama2';
-                finishConfig(config, rl);
-              });
-            });
-          } else {
-            finishConfig(config, rl);
-          }
-        } else {
-          finishConfig(config, rl);
-        }
-      });
+  if (!options.yes && (!options.apiKey || !options.repo)) {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
     });
-  });
-}
 
-function finishConfig(config: ReadyLayerConfig, rl: readline.Interface): void {
-  const configPath = path.join(process.cwd(), '.readylayer.json');
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    const ask = (query: string, defaultVal: string = ''): Promise<string> => {
+      return new Promise((resolve) => {
+        rl.question(defaultVal ? `${query} (${defaultVal}): ` : `${query}: `, (answer) => {
+          resolve(answer.trim() || defaultVal);
+        });
+      });
+    };
+
+    try {
+      if (!apiKey) {
+        apiKey = await ask('Enter ReadyLayer API Key (leave empty to use env READYLAYER_API_KEY)', '');
+      }
+      apiUrl = await ask('ReadyLayer API URL', apiUrl);
+      repositoryId = await ask('Repository Name / ID', repositoryId);
+      providerName = await ask('Primary AI Provider (anthropic/openai/ollama)', providerName);
+    } finally {
+      rl.close();
+    }
+  }
+
+  const config = buildDefaultConfig({
+    apiKey,
+    apiUrl,
+    repo: repositoryId,
+    provider: providerName,
+  });
+
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
   cliLog(`\n✅ Configuration saved to ${configPath}`);
-  rl.close();
+  cliLog('To verify setup, run:');
+  cliLog('  npx readylayer scan');
+  cliLog('  npx readylayer init-hooks\n');
 }
 
 // Setup program
@@ -532,7 +538,12 @@ program
 
 program
   .command('init')
-  .description('Initialize ReadyLayer configuration')
+  .description('Interactive configuration wizard for ReadyLayer repository onboarding')
+  .option('-y, --yes', 'Use defaults non-interactively')
+  .option('--api-key <key>', 'ReadyLayer API key')
+  .option('--api-url <url>', 'ReadyLayer API URL (default: https://api.readylayer.io)')
+  .option('--repo <id>', 'Repository identifier')
+  .option('--provider <name>', 'LLM Provider (openai, anthropic, ollama, local)', 'anthropic')
   .action(initConfig);
 
 program
@@ -937,7 +948,70 @@ mcp
     cliLog(JSON.stringify(result, null, 2));
   });
 
+export function generatePreCommitHookScript(runnerCmd: string = 'npx readylayer'): string {
+  return `#!/bin/sh
+# ReadyLayer Git Pre-Commit Governance Hook
+# Auto-generated by readylayer init-hooks
+
+echo "🛡️  ReadyLayer: Verifying staged files against governance policies..."
+${runnerCmd} scan --staged
+
+EXIT_CODE=$?
+if [ $EXIT_CODE -ne 0 ]; then
+  echo "❌ ReadyLayer: Commit blocked due to policy violations."
+  echo "Run 'readylayer scan' to inspect violations or apply an authorized waiver."
+  exit 1
+fi
+
+echo "✅ ReadyLayer: All pre-commit governance gates passed."
+exit 0
+`;
+}
+
+program
+  .command('init-hooks')
+  .description('Install ReadyLayer git pre-commit hook to verify policies on commit')
+  .option('--force', 'Overwrite existing pre-commit hook if present')
+  .option('--runner <runner>', 'Runner to invoke (npx, binary, bun)', 'npx')
+  .action(async (options: { force?: boolean; runner?: string }) => {
+    const gitDir = path.join(process.cwd(), '.git');
+    if (!fs.existsSync(gitDir)) {
+      cliError('Error: No .git directory found. Please run this command at the root of a git repository.');
+      process.exit(1);
+    }
+
+    const hooksDir = path.join(gitDir, 'hooks');
+    if (!fs.existsSync(hooksDir)) {
+      fs.mkdirSync(hooksDir, { recursive: true });
+    }
+
+    const hookPath = path.join(hooksDir, 'pre-commit');
+    if (fs.existsSync(hookPath) && !options.force) {
+      cliLog('ℹ️ Pre-commit hook already exists. Use --force to overwrite.');
+      return;
+    }
+
+    const runnerCmd = options.runner === 'binary' ? 'readylayer' : `${options.runner || 'npx'} readylayer`;
+    const hookContent = generatePreCommitHookScript(runnerCmd);
+
+    fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
+    try {
+      fs.chmodSync(hookPath, 0o755);
+    } catch {
+      // Ignore chmod error on platforms without POSIX permissions
+    }
+
+    cliLog(`✅ ReadyLayer pre-commit hook successfully installed at: ${hookPath}`);
+  });
+
 emitPerf('ready');
-program.parse(process.argv);
+const isDirectExecution = Boolean(
+  process.argv[1] &&
+    (process.argv[1].includes('readylayer-cli') || process.argv[1].endsWith('readylayer'))
+);
+
+if (isDirectExecution) {
+  program.parse(process.argv);
+}
 
 
