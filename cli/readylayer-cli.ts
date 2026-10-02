@@ -1004,6 +1004,65 @@ program
     cliLog(`✅ ReadyLayer pre-commit hook successfully installed at: ${hookPath}`);
   });
 
+export interface CliUpdateInfo {
+  currentVersion: string;
+  latestVersion: string;
+  hasUpdate: boolean;
+  installCommand: string;
+}
+
+export async function checkForCliUpdate(
+  currentVersion: string = '1.0.0',
+  fetchFn: typeof fetch = fetch
+): Promise<CliUpdateInfo> {
+  try {
+    const res = await fetchFn('https://registry.npmjs.org/@readylayer/cli/latest', {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) {
+      return {
+        currentVersion,
+        latestVersion: currentVersion,
+        hasUpdate: false,
+        installCommand: 'npm install -g @readylayer/cli@latest',
+      };
+    }
+    const data = (await res.json()) as { version?: string };
+    const latestVersion = data.version || currentVersion;
+    const hasUpdate = latestVersion !== currentVersion;
+    return {
+      currentVersion,
+      latestVersion,
+      hasUpdate,
+      installCommand: 'npm install -g @readylayer/cli@latest',
+    };
+  } catch {
+    return {
+      currentVersion,
+      latestVersion: currentVersion,
+      hasUpdate: false,
+      installCommand: 'npm install -g @readylayer/cli@latest',
+    };
+  }
+}
+
+program
+  .command('update')
+  .description('Check for updates and upgrade ReadyLayer CLI to the latest version')
+  .option('--check', 'Only check if an update is available without installing')
+  .action(async (_options: { check?: boolean }) => {
+    cliLog('🔍 Checking for ReadyLayer CLI updates...');
+    const info = await checkForCliUpdate('1.0.0');
+    if (!info.hasUpdate) {
+      cliLog(`✅ ReadyLayer CLI is up to date (v${info.currentVersion}).`);
+      return;
+    }
+
+    cliLog(`\n🚀 New version available: v${info.currentVersion} -> v${info.latestVersion}`);
+    cliLog(`Run the following command to update:\n  ${info.installCommand}\n`);
+  });
+
 emitPerf('ready');
 const isDirectExecution = Boolean(
   process.argv[1] &&

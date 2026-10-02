@@ -121,7 +121,7 @@
     --accent: 217 91% 60%;                   /* Primary action - Stitch blue */
     --accent-hover: 217 91% 65%;             /* Hover state */
     --accent-muted: 217 32% 18%;             /* Background tint */
-    --accent-foreground: 222 47% 11%;        /* Text on accent */
+    --accent-foreground: 0 0% 100%;          /* Text on accent (WCAG AAA contrast on blue) */
     
     /* STITCH PRIMARY VARIANTS - Dark mode */
     --primary: 217 91% 60%;                 /* Same as accent */

@@ -1,0 +1,36 @@
+<idea-plugin>
+    <id>io.readylayer.jetbrains</id>
+    <name>ReadyLayer Governance</name>
+    <vendor email="support@readylayer.io" url="https://readylayer.io">ReadyLayer Inc.</vendor>
+
+    <description><![CDATA[
+    Deterministic policy enforcement and AI code governance for JetBrains IDEs.
+    Features:
+    <ul>
+        <li>Real-time gutter annotations for policy violations and security risks</li>
+        <li>Instant project and file scanning via ReadyLayer CLI</li>
+        <li>One-click cryptographic policy waivers</li>
+    </ul>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <externalAnnotator language="" implementationClass="io.readylayer.ReadyLayerExternalAnnotator"/>
+        <notificationGroup id="ReadyLayer Notifications" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <group id="ReadyLayer.Menu" text="ReadyLayer" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="ReadyLayer.ScanFile"
+                    class="io.readylayer.ScanFileAction"
+                    text="Scan Current File with ReadyLayer"
+                    description="Run local policy checks on active buffer"/>
+            <action id="ReadyLayer.ScanProject"
+                    class="io.readylayer.ScanProjectAction"
+                    text="Scan Entire Project"
+                    description="Run full repository governance evaluation"/>
+        </group>
+    </actions>
+</idea-plugin>
