@@ -4,12 +4,15 @@ import { canIngestExternal, getApiKeyScopesFromRequest, getMembershipRole } from
 import { prisma } from '@/lib/prisma';
 import { buildDeterministicZip, deterministicManifest } from '@/lib/deterministic-zip';
 import { stableStringify } from '@/lib/provenance';
+import { generateCycloneDXAiBom } from '@/lib/provenance/cyclonedx';
 
 export const GET = createRouteHandler(async (context: RouteContext) => {
   const id = context.request.url.split('/').slice(-2)[0];
   if (!id) return errorResponse('VALIDATION_ERROR', 'Pack id is required', 400);
 
-  const includeRaw = new URL(context.request.url).searchParams.get('raw') === 'true';
+  const url = new URL(context.request.url);
+  const includeRaw = url.searchParams.get('raw') === 'true';
+  const format = url.searchParams.get('format');
 
   const pack = await prisma.provenancePack.findUnique({
     where: { id },
@@ -53,12 +56,31 @@ export const GET = createRouteHandler(async (context: RouteContext) => {
     ? await prisma.policyPack.findFirst({ where: { repositoryId: pack.repositoryId }, select: { source: true, checksum: true } })
     : null;
 
+  // Generate CycloneDX 1.6 AI-BOM
+  const aibom = generateCycloneDXAiBom({
+    organizationId: pack.organizationId,
+    repositoryName: pack.repositoryId || undefined,
+    commitSha: pack.prSha || undefined,
+  });
+
+  // Direct AI-BOM export if requested
+  if (format === 'cyclonedx' || format === 'aibom') {
+    return new NextResponse(JSON.stringify(aibom, null, 2), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/vnd.cyclonedx+json',
+        'Content-Disposition': `attachment; filename="readylayer-aibom-${pack.id}.json"`,
+      },
+    });
+  }
+
   const files = [
     { path: 'run.json', content: stableStringify(pack.run || {}) },
     { path: 'review.json', content: stableStringify(pack.run?.reviewGuardResult || {}) },
     { path: 'tests.json', content: stableStringify(pack.run?.testEngineResult || {}) },
     { path: 'docs.json', content: stableStringify(pack.run?.docSyncResult || {}) },
     { path: 'evidence_bundle.json', content: stableStringify(evidenceBundle || {}) },
+    { path: 'provenance/cyclonedx-aibom.json', content: JSON.stringify(aibom, null, 2) },
     { path: 'provenance/provenance_pack.json', content: stableStringify({ ...pack, payload: exposeRaw ? pack.payload : pack.safeSummary }) },
     { path: 'policy/effective_policy.json', content: stableStringify(policyPack ? { checksum: policyPack.checksum, source: policyPack.source } : {}) },
     ...pack.artifacts.map((artifact) => ({

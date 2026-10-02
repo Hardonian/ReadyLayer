@@ -59,3 +59,4 @@ export function encryptToken(plaintextToken: string): string {
 
 // Re-export crypto functions for backward compatibility
 export { encryptToString as encrypt, decryptFromString as decrypt, isEncrypted, redactSecret } from '../crypto';
+export * from './webhook-verification';

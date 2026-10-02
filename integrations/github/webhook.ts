@@ -16,6 +16,7 @@
 import { prisma } from '../../lib/prisma';
 import { queueService } from '../../queue';
 import { verifyHmacSignature } from '../../lib/security/webhook-signature';
+import { getGitHubWebhookCandidateSecrets, verifySignatureWithRotation } from '../../lib/secrets/webhook-verification';
 
 export interface GitHubPullRequest {
   id: number;
@@ -68,6 +69,10 @@ export class GitHubWebhookHandler {
    * Validate webhook signature with timing-attack resistant comparison.
    */
   validateSignature(payload: string, signature: string, secret: string): boolean {
+    const candidates = getGitHubWebhookCandidateSecrets(secret);
+    if (candidates.length > 0) {
+      return verifySignatureWithRotation(payload, signature, candidates, 'sha256=').valid;
+    }
     return verifyHmacSignature(payload, signature, secret, 'sha256=');
   }
 

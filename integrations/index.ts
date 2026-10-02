@@ -17,6 +17,7 @@ export { gitlabAPIClient, type Pipeline as GitLabPipeline, type PipelineVariable
 // Bitbucket exports
 export { bitbucketWebhookHandler, type NormalizedEvent as BitbucketNormalizedEvent } from './bitbucket/webhook';
 export { bitbucketAPIClient, type Pipeline as BitbucketPipeline, type PipelineVariable as BitbucketPipelineVariable } from './bitbucket/api-client';
+export { bitbucketCodeInsights, type BitbucketReportInput, type BitbucketAnnotationInput } from './bitbucket/code-insights';
 
 // Adapter exports
 export * from './git-provider-adapter';
