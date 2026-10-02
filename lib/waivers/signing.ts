@@ -259,13 +259,17 @@ export function verifyWaiverToken(
     const payloadEncoded = headerAndPayload.slice(separatorIdx + 1);
 
     const decodedJson = Buffer.from(payloadEncoded, 'base64url').toString('utf8');
-    const parsed = JSON.parse(decodedJson);
-    const payload = (parsed.p ? parsed.p : parsed) as WaiverPayload;
-    const issuedAt = parsed.iat as string | undefined;
+    const parsed = JSON.parse(decodedJson) as { p?: WaiverPayload; iat?: string };
+    const payload = (parsed.p ? parsed.p : (parsed as unknown as WaiverPayload));
+    const issuedAt = parsed.iat;
     const signature = Buffer.from(sigEncoded, 'base64url').toString('hex');
 
     return verifyWaiverSignature(payload, signature, { secret: secretKey, keyId, issuedAt });
   } catch (error) {
     return {
       valid: false,
-      isE
+      isExpired: false,
+      reason: error instanceof Error ? error.message : 'Failed to decode signed token',
+    };
+  }
+}

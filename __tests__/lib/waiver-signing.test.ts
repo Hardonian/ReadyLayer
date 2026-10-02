@@ -82,4 +82,23 @@ describe('Cryptographically Signed Policy Waivers', () => {
     expect(result.isExpired).toBe(true);
     expect(result.reason).toContain('expired');
   });
+
+  it('verifies waiver token via POST /api/v1/waivers/verify endpoint', async () => {
+    const { POST } = await import('../../app/api/v1/waivers/verify/route');
+    const { NextRequest } = await import('next/server');
+
+    const cert = signWaiver(samplePayload);
+    const req = new NextRequest('http://localhost:3000/api/v1/waivers/verify', {
+      method: 'POST',
+      body: JSON.stringify({ token: cert.token, checkDatabase: false }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.valid).toBe(true);
+    expect(data.isExpired).toBe(false);
+    expect(data.payload.ruleId).toBe(samplePayload.ruleId);
+  });
 });

@@ -33,6 +33,7 @@ import {
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useGitProvider } from '@/lib/git-provider-ui/hooks'
+import { PolicyVisualDiff, PolicyVersionItem } from '@/components/dashboard/PolicyVisualDiff'
 
 interface PolicyPack {
   id: string
@@ -73,6 +74,7 @@ export default function PolicyDetailPage() {
   const packId = params.packId as string
 
   const [policy, setPolicy] = useState<PolicyPack | null>(null)
+  const [versions, setVersions] = useState<PolicyVersionItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -95,25 +97,35 @@ export default function PolicyDetailPage() {
           return
         }
 
-        const response = await fetch(`/api/v1/policies/${packId}`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
+        const [policyRes, versionsRes] = await Promise.all([
+          fetch(`/api/v1/policies/${packId}`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          }),
+          fetch(`/api/v1/policies/${packId}/versions`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          }).catch(() => null),
+        ])
 
-        if (!response.ok) {
-          const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>
+        if (!policyRes.ok) {
+          const errorData = (await policyRes.json().catch(() => ({}))) as Record<string, unknown>
           throw new Error(getApiErrorMessage(errorData))
         }
 
-        const data = (await response.json()) as PolicyPack
+        const data = (await policyRes.json()) as PolicyPack
         setPolicy(data)
-        setLoading(false)
-        
-        // Trigger re-render to apply provider theme
-        if (data.repository) {
-          // Force component update to apply provider styling
+
+        if (versionsRes && versionsRes.ok) {
+          const vData = (await versionsRes.json()) as { versions?: PolicyVersionItem[] }
+          if (vData.versions) {
+            setVersions(vData.versions)
+          }
         }
+
+        setLoading(false)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load policy')
         setLoading(false)
@@ -362,27 +374,28 @@ export default function PolicyDetailPage() {
 
           {/* History Tab */}
           <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle>Version History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">Version {policy.version}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {new Date(policy.updatedAt).toLocaleString()}
-                      </div>
-                    </div>
-                    <Badge>Current</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Version history will show previous versions once multiple versions exist.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <PolicyVisualDiff
+              packId={packId}
+              versions={versions.length > 0 ? versions : [{
+                id: policy.id,
+                version: policy.version,
+                checksum: policy.checksum,
+                source: policy.source,
+                ruleCount: policy.rules.length,
+                rules: policy.rules,
+                isCurrent: true,
+                createdAt: policy.createdAt,
+                updatedAt: policy.updatedAt,
+              }]}
+              currentVersion={policy.version}
+              onRollbackSuccess={(newVersion) => {
+                toast({
+                  title: 'Policy Rolled Back',
+                  description: `Successfully restored version ${newVersion}. Refreshing...`,
+                })
+                window.location.reload()
+              }}
+            />
           </TabsContent>
         </Tabs>
       </motion.div>

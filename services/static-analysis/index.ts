@@ -6,6 +6,7 @@
  */
 
 import { CodeParserService, ParseResult } from '../code-parser';
+import { aiCodeDetector } from './ai-code-detector';
 
 export interface Rule {
   id: string;
@@ -1061,6 +1062,19 @@ export class StaticAnalysisService {
         return issues;
       },
     });
+
+    // AI-Touched Code Heuristics & Scrutiny
+    this.registerRule({
+      id: 'ai.heuristic-detection',
+      name: 'AI-Touched Code & Heuristic Scrutiny',
+      category: 'ai',
+      severity: 'high',
+      enabled: true,
+      evaluate: (parseResult, filePath, content) => {
+        const detection = aiCodeDetector.detect(parseResult, filePath, content);
+        return detection.issues;
+      },
+    });
   }
 
   /**
@@ -1128,3 +1142,5 @@ export class StaticAnalysisService {
 }
 
 export const staticAnalysisService = new StaticAnalysisService();
+export { aiCodeDetector, AiCodeDetector } from './ai-code-detector';
+export type { AiDetectionResult, AiDetectionSignal } from './ai-code-detector';
