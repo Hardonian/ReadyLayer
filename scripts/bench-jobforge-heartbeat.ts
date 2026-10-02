@@ -86,8 +86,12 @@ const run = async (): Promise<void> => {
   )
 }
 
-run().catch((error) => {
-  global.setInterval = originalSetInterval
-  console.error(error)
-  process.exit(1)
-})
+run()
+  .then(() => {
+    process.exit(0)
+  })
+  .catch((error) => {
+    global.setInterval = originalSetInterval
+    console.error(error)
+    process.exit(1)
+  })
