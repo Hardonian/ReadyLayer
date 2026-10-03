@@ -380,3 +380,6 @@ build/
 *.pyc
 *.log
 ui-consistency-report.md
+
+# Regenerable build artifacts (do not track)
+dist/
