@@ -4,52 +4,97 @@
  * Gets the current user's organization ID from their repositories
  */
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createSupabaseClient } from '@/lib/supabase/client'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
 
 interface UseOrganizationIdReturn {
   organizationId: string | null
+  organizationName: string | null
+  hasRepositories: boolean
   loading: boolean
   error: string | null
+  refetch: () => void
+}
+
+interface CurrentOrganizationResponse {
+  data?: {
+    organization?: {
+      id: string
+      name: string
+      repositoryCount: number
+    } | null
+  }
+  error?: unknown
 }
 
 export function useOrganizationId(): UseOrganizationIdReturn {
   const [organizationId, setOrganizationId] = useState<string | null>(null)
+  const [organizationName, setOrganizationName] = useState<string | null>(null)
+  const [hasRepositories, setHasRepositories] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const refetch = useCallback((): void => {
+    setRefreshKey((value) => value + 1)
+  }, [])
 
   useEffect(() => {
+    const controller = new AbortController()
+
     const fetchOrgId = async (): Promise<void> => {
+      setLoading(true)
+      setError(null)
+
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
         if (!session) {
-          setLoading(false)
+          setOrganizationId(null)
+          setOrganizationName(null)
+          setHasRepositories(false)
+          setError('Your session has expired. Sign in again to continue.')
           return
         }
 
-        // Get first repo to extract organizationId
-        const response = await fetch('/api/v1/repos?limit=1', {
+        const response = await fetch('/api/v1/organizations/current', {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
+          signal: controller.signal,
         })
 
-if (response.ok) {
-          const data = await response.json() as { repositories?: Array<{ organization?: { id: string } }> };
-          if (data.repositories?.[0]?.organization?.id) {
-            setOrganizationId(data.repositories[0].organization.id)
-          }
+        const payload = (await response.json().catch(() => ({}))) as CurrentOrganizationResponse
+        if (!response.ok) {
+          throw new Error(getApiErrorMessage(payload as Record<string, unknown>))
         }
-        setLoading(false)
+
+        const organization = payload.data?.organization ?? null
+        setOrganizationId(organization?.id ?? null)
+        setOrganizationName(organization?.name ?? null)
+        setHasRepositories((organization?.repositoryCount ?? 0) > 0)
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        setOrganizationId(null)
+        setOrganizationName(null)
+        setHasRepositories(false)
         setError(err instanceof Error ? err.message : 'Failed to fetch organization ID')
-        setLoading(false)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
 
-    fetchOrgId()
-  }, [])
+    void fetchOrgId()
+    return () => controller.abort()
+  }, [refreshKey])
 
-  return { organizationId, loading, error }
+  return {
+    organizationId,
+    organizationName,
+    hasRepositories,
+    loading,
+    error,
+    refetch,
+  }
 }

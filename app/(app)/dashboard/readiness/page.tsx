@@ -8,62 +8,21 @@
 
 import { ReadinessCommandCenter } from '@/components/dashboard/readiness-command-center';
 import { Container } from '@/components/ui/container';
-import { Skeleton } from '@/components/ui';
+import { ErrorState, Skeleton } from '@/components/ui';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
-import { createSupabaseClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useOrganizationId } from '@/lib/hooks';
 
 export default function ReadinessPage(): React.JSX.Element {
-  const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    organizationId,
+    organizationName,
+    hasRepositories,
+    loading,
+    error,
+    refetch,
+  } = useOrganizationId();
   const router = useRouter();
-
-  useEffect(() => {
-    async function fetchOrganizationId(): Promise<void> {
-      try {
-        const supabase = createSupabaseClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          router.push('/auth/signin');
-          return;
-        }
-
-        // Get organization ID from user's memberships
-        const response = await fetch('/api/v1/repos?limit=1', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json() as { repositories?: Array<{ id: string }> };
-          if (data.repositories && data.repositories.length > 0) {
-            // Get org ID from first repo
-            const repoResponse = await fetch(`/api/v1/repos/${data.repositories[0].id}`, {
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-              },
-            });
-            
-            if (repoResponse.ok) {
-              const repoData = await repoResponse.json() as { data?: { organizationId: string } };
-              if (repoData.data?.organizationId) {
-                setOrganizationId(repoData.data.organizationId);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch organization ID:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    void fetchOrganizationId();
-  }, [router]);
 
   if (loading) {
     return (
@@ -76,12 +35,28 @@ export default function ReadinessPage(): React.JSX.Element {
     );
   }
 
-  if (!organizationId) {
+  if (error) {
     return (
-      <Container className="py-8 space-y-6">
-        <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Container className="py-8">
+        <ErrorState
+          title="The workspace could not be loaded"
+          message={error}
+          action={{ label: 'Try again', onClick: refetch }}
+          secondaryAction={{
+            label: 'Sign in again',
+            onClick: () => router.replace('/auth/signin'),
+          }}
+        />
+      </Container>
+    );
+  }
+
+  return (
+    <Container className="space-y-6 py-8">
+      {!hasRepositories && (
+        <div className="flex flex-col justify-between gap-4 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <div className="font-semibold text-sm text-text-primary">
+            <div className="text-sm font-semibold text-text-primary">
               Start with an observed baseline
             </div>
             <div className="text-xs text-text-muted">
@@ -91,22 +66,18 @@ export default function ReadinessPage(): React.JSX.Element {
           <Button
             size="sm"
             onClick={() => router.push('/dashboard/repos/connect')}
-            className="shadow-glow whitespace-nowrap text-xs font-mono"
+            className="whitespace-nowrap text-xs font-mono shadow-glow"
           >
             Connect Repository
           </Button>
         </div>
+      )}
 
-        <ReadinessCommandCenter
-          organizationName="Your workspace"
-        />
-      </Container>
-    );
-  }
-
-  return (
-    <Container className="py-8">
-      <ReadinessCommandCenter organizationId={organizationId} />
+      <ReadinessCommandCenter
+        organizationId={organizationId ?? undefined}
+        organizationName={organizationName ?? 'Your workspace'}
+        hasConnectedRepository={hasRepositories}
+      />
     </Container>
   );
 }

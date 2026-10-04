@@ -54,6 +54,7 @@ export interface ReadinessCommandCenterProps {
   organizationId?: string;
   repositoryId?: string;
   organizationName?: string;
+  hasConnectedRepository?: boolean;
 }
 
 interface MetricsApiResponse {
@@ -216,12 +217,14 @@ export function ReadinessCommandCenter({
   organizationId,
   repositoryId,
   organizationName = 'Your workspace',
+  hasConnectedRepository,
 }: ReadinessCommandCenterProps): React.JSX.Element {
   const [metrics, setMetrics] = useState<ReadinessMetrics | null>(null);
   const [loading, setLoading] = useState(Boolean(organizationId));
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshKey, setRefreshKey] = useState(0);
+  const connected = hasConnectedRepository ?? Boolean(organizationId);
 
   const retry = (): void => {
     setRefreshKey((value) => value + 1);
@@ -279,11 +282,11 @@ export function ReadinessCommandCenter({
 
   const operatorActions = buildOperatorActions(
     metrics,
-    Boolean(organizationId),
+    connected,
     Boolean(error)
   );
 
-  const status = !organizationId
+  const status = !connected
     ? { label: 'SETUP MODE', tone: 'text-primary border-primary/30' }
     : loading
       ? { label: 'SYNCING TELEMETRY', tone: 'text-primary border-primary/30' }
@@ -355,7 +358,7 @@ export function ReadinessCommandCenter({
 
       <OperatorPulse
         metrics={metrics}
-        connected={Boolean(organizationId)}
+        connected={connected}
         loading={loading}
         failed={Boolean(error)}
       />

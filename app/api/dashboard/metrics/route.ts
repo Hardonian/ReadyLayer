@@ -327,7 +327,7 @@ export const GET = createRouteHandler(
       log.error(error, 'Failed to generate metrics snapshot')
       return errorResponse(
         'METRICS_CALCULATION_FAILED',
-        error instanceof Error ? error.message : 'Unknown error',
+        'Dashboard metrics could not be calculated. Retry the request or inspect recent runs.',
         500
       )
     }
