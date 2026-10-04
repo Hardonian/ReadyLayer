@@ -54,7 +54,7 @@ export function First90DaysPlaybook({
   const [copied, setCopied] = useState(false);
   const [showExecutiveModal, setShowExecutiveModal] = useState(false);
 
-  const storageKey = `readylayer_90days_progress_${organizationId}`;
+  const storageKey = `readylayer:90-days:v1:${organizationId}`;
 
   // Load persisted progress on mount
   useEffect(() => {

@@ -4,7 +4,8 @@
 
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   Activity,
@@ -24,13 +25,30 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import { First90DaysPlaybook } from '@/components/enterprise/First90DaysPlaybook';
+import { OperatorPulse } from '@/components/dashboard/operator-pulse';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { MetricsCard } from '@/components/ui/metrics-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ReadinessMetrics } from '@/lib/readiness-metrics';
+
+const First90DaysPlaybook = dynamic(
+  () =>
+    import('@/components/enterprise/First90DaysPlaybook').then(
+      (module) => module.First90DaysPlaybook
+    ),
+  {
+    loading: () => (
+      <Card className="flex min-h-48 items-center justify-center border-border/30 bg-surface/40">
+        <div className="flex items-center gap-2 text-sm text-text-muted">
+          <RefreshCw className="h-4 w-4 animate-spin text-primary" aria-hidden="true" />
+          Loading operator playbook…
+        </div>
+      </Card>
+    ),
+  }
+);
 
 export interface ReadinessCommandCenterProps {
   organizationId?: string;
@@ -171,10 +189,10 @@ function buildOperatorActions(
     });
   }
 
-  if (metrics.completedRuns > metrics.provenancePacks) {
+  if (metrics.completedRuns > 0 && metrics.provenancePacks === 0) {
     actions.push({
-      title: 'Close the provenance gap',
-      detail: `${metrics.completedRuns - metrics.provenancePacks} evaluated run${metrics.completedRuns - metrics.provenancePacks === 1 ? '' : 's'} do not have a provenance pack in this window.`,
+      title: 'Start the provenance trail',
+      detail: 'Evaluated runs exist, but no provenance packs were persisted in this window.',
       href: '/dashboard/provenance',
       label: 'Open provenance',
       tone: 'primary',
@@ -205,9 +223,9 @@ export function ReadinessCommandCenter({
   const [activeTab, setActiveTab] = useState('overview');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const retry = useCallback((): void => {
+  const retry = (): void => {
     setRefreshKey((value) => value + 1);
-  }, []);
+  };
 
   useEffect(() => {
     if (!organizationId) {
@@ -218,13 +236,14 @@ export function ReadinessCommandCenter({
     }
 
     const controller = new AbortController();
+    const requestedOrganizationId = organizationId;
 
     async function fetchMetrics(): Promise<void> {
       setLoading(true);
       setError(null);
 
       try {
-        const params = new URLSearchParams({ organizationId: organizationId as string });
+        const params = new URLSearchParams({ organizationId: requestedOrganizationId });
         if (repositoryId) params.set('repositoryId', repositoryId);
 
         const response = await fetch(`/api/v1/metrics?${params.toString()}`, {
@@ -258,9 +277,10 @@ export function ReadinessCommandCenter({
     return () => controller.abort();
   }, [organizationId, repositoryId, refreshKey]);
 
-  const operatorActions = useMemo(
-    () => buildOperatorActions(metrics, Boolean(organizationId), Boolean(error)),
-    [error, metrics, organizationId]
+  const operatorActions = buildOperatorActions(
+    metrics,
+    Boolean(organizationId),
+    Boolean(error)
   );
 
   const status = !organizationId
@@ -332,6 +352,13 @@ export function ReadinessCommandCenter({
           </Button>
         </Card>
       )}
+
+      <OperatorPulse
+        metrics={metrics}
+        connected={Boolean(organizationId)}
+        loading={loading}
+        failed={Boolean(error)}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
         <div className="overflow-x-auto pb-1">
