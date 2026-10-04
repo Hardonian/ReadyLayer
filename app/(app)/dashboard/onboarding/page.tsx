@@ -9,6 +9,7 @@ import { UpgradePrompt } from '@/components/billing/UpgradePrompt'
 import { useOnboardingProgress } from '@/lib/hooks/use-onboarding-progress'
 import { staggerContainer, staggerItem } from '@/lib/design/motion'
 import { ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 export default function OnboardingPage(): React.JSX.Element {
   const router = useRouter()
@@ -158,6 +159,30 @@ export default function OnboardingPage(): React.JSX.Element {
               <p className="text-xs text-muted-foreground">{tip.desc}</p>
             </div>
           ))}
+        </motion.div>
+
+        {/* Enterprise 90-Day Roadmap Callout */}
+        <motion.div variants={staggerItem}>
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="text-xs font-mono font-semibold text-primary uppercase">
+                Enterprise AI Governance
+              </div>
+              <h4 className="text-sm font-semibold text-text-primary">
+                First 90 Days Enterprise Adoption Playbook
+              </h4>
+              <p className="text-xs text-text-muted">
+                Explore the 3-phase rollout roadmap: shadow mode baseline, Tier-0 perimeter containment, and SLSA Level 2+ attestation.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/readiness"
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto"
+            >
+              <span>View 90-Day Plan</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </motion.div>
 
         {/* Help Section */}

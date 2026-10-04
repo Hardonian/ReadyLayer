@@ -24,6 +24,16 @@ if (outputFlagIndex >= 0 && !outputPath) {
 
 const binPath = resolveRunnerBinary();
 
+if (args.includes('--help') || args.includes('-h')) {
+  const child = spawn(binPath, ['--help'], { stdio: 'inherit' });
+  await new Promise((resolve) => {
+    child.on('close', (code) => {
+      resolve();
+      process.exit(code ?? 0);
+    });
+  });
+}
+
 if (!existsSync(configPath)) {
   console.error(`Runner config not found at ${configPath}.`);
   console.error('Create one or follow docs in docs/runner/QUICKSTART.md.');

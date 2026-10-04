@@ -7,7 +7,7 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./e2e/fixtures/test-setup.ts'],
     include: ['**/__tests__/**/*.test.ts', '**/*.test.ts'],
-    exclude: ['node_modules', 'dist', '.next', 'build'],
+    exclude: ['node_modules', 'dist', '.next', 'build', '.kilo/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

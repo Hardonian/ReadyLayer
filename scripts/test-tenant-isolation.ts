@@ -10,6 +10,11 @@ import { console } from './logger';
 async function testTenantIsolation(): Promise<void> {
   console.log('🔒 Testing Tenant Isolation...\n');
 
+  if (!process.env.DATABASE_URL) {
+    console.log('⏭️  Skipping: Tenant isolation test requires DATABASE_URL');
+    process.exit(0);
+  }
+
   // Test 1: Create test data
   console.log('1️⃣  Creating test organizations and users...');
   

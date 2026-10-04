@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const binary = resolveBinary('readylayer-policy', 'READYLAYER_POLICY_BIN');
+if (argv.includes('--help') || argv.includes('-h') || argv.includes('--version') || argv.includes('-V')) {
+  const result = spawnSync(binary, ['evaluate', ...argv], { stdio: 'inherit' });
+  process.exit(result.status ?? 0);
+}
+
 const { args, outPath, shouldPrint } = ensureOutArg(argv, 'policy-decision.json');
 
 const result = spawnSync(binary, ['evaluate', ...args], { stdio: 'inherit' });

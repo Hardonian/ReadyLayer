@@ -6,6 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 const argv = process.argv.slice(2);
 const binary = resolveBinary('readylayer-sarif', 'READYLAYER_SARIF_BIN');
+if (argv.includes('--help') || argv.includes('-h') || argv.includes('--version') || argv.includes('-V')) {
+  const result = spawnSync(binary, argv, { stdio: 'inherit' });
+  process.exit(result.status ?? 0);
+}
+
 const args = ensureOutputArgs(argv);
 
 const result = spawnSync(binary, args, { stdio: 'inherit' });

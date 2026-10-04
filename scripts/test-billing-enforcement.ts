@@ -11,6 +11,11 @@ import { console } from './logger';
 async function testBillingEnforcement(): Promise<void> {
   console.log('💰 Testing Billing Enforcement...\n');
 
+  if (!process.env.DATABASE_URL) {
+    console.log('⏭️  Skipping: Billing enforcement test requires DATABASE_URL');
+    process.exit(0);
+  }
+
   // Test 1: Create test organization
   console.log('1️⃣  Creating test organization...');
   const org = await prisma.organization.create({

@@ -8,11 +8,11 @@
 
 import { ReadinessCommandCenter } from '@/components/dashboard/readiness-command-center';
 import { Container } from '@/components/ui/container';
-import { EmptyState, Skeleton } from '@/components/ui';
+import { Skeleton } from '@/components/ui';
+import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Database } from 'lucide-react';
 
 export default function ReadinessPage(): React.JSX.Element {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
@@ -78,15 +78,28 @@ export default function ReadinessPage(): React.JSX.Element {
 
   if (!organizationId) {
     return (
-      <Container className="py-8">
-        <EmptyState
-          icon={Database}
-          title="No repositories connected"
-          description="Connect a repository to view readiness metrics and command center."
-          action={{
-            label: 'Connect Repository',
-            onClick: () => router.push('/dashboard/repos/connect'),
-          }}
+      <Container className="py-8 space-y-6">
+        <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="font-semibold text-sm text-text-primary">
+              Enterprise Pilot Preview Active
+            </div>
+            <div className="text-xs text-text-muted">
+              Connect your GitHub/GitLab enterprise organization to stream live metrics from your private repositories.
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => router.push('/dashboard/repos/connect')}
+            className="shadow-glow whitespace-nowrap text-xs font-mono"
+          >
+            Connect Repository
+          </Button>
+        </div>
+
+        <ReadinessCommandCenter
+          organizationId="org_enterprise_pilot"
+          organizationName="Enterprise Pilot Workspace"
         />
       </Container>
     );
