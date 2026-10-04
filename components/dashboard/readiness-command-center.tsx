@@ -190,7 +190,7 @@ function buildOperatorActions(
     });
   }
 
-  if (metrics.completedRuns > 0 && metrics.provenancePacks === 0) {
+  if (metrics.evaluatedRuns > 0 && metrics.provenancePacks === 0) {
     actions.push({
       title: 'Start the provenance trail',
       detail: 'Evaluated runs exist, but no provenance packs were persisted in this window.',
@@ -296,7 +296,7 @@ export function ReadinessCommandCenter({
           ? { label: 'AWAITING FIRST RUN', tone: 'text-text-muted border-border/40' }
           : { label: '30-DAY SNAPSHOT LIVE', tone: 'text-emerald-400 border-emerald-500/30' };
 
-  const riskTrend = metrics?.riskScoreTrend ?? null;
+  const riskTrend = metrics?.policyBlockRateDelta ?? null;
   const riskLabel = riskTrend === null
     ? 'Needs both 15-day windows'
     : riskTrend < 0
@@ -385,7 +385,7 @@ export function ReadinessCommandCenter({
             <MetricsCard
               title="Policy pass rate"
               value={metrics ? formatPercentage(metrics.gatePassRate) : '—'}
-              description={metrics ? `${metrics.completedRuns} evaluated runs in the window` : 'Pending evaluated run data'}
+              description={metrics ? `${metrics.evaluatedRuns} evaluated runs in the window` : 'Pending evaluated run data'}
               icon={Shield}
             />
             <MetricsCard

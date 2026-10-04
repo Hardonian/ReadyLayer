@@ -75,7 +75,7 @@ export function deriveOperatorPosture(
     };
   }
 
-  if (metrics.riskScoreTrend !== null && metrics.riskScoreTrend > 0.1) {
+  if (metrics.policyBlockRateDelta !== null && metrics.policyBlockRateDelta > 0.1) {
     return {
       label: 'WATCH',
       headline: 'Block rate is rising',
@@ -86,7 +86,7 @@ export function deriveOperatorPosture(
     };
   }
 
-  if (metrics.completedRuns > 0 && metrics.provenancePacks === 0) {
+  if (metrics.evaluatedRuns > 0 && metrics.provenancePacks === 0) {
     return {
       label: 'EVIDENCE SETUP',
       headline: 'Start the proof trail',

@@ -12,12 +12,12 @@ export interface ReadinessRunTelemetry {
 export interface ReadinessMetrics {
   windowDays: number;
   totalRuns: number;
-  completedRuns: number;
+  evaluatedRuns: number;
   aiTouchedCount: number;
   aiTouchedPercentage: number;
   gatePassRate: number | null;
   blockedRuns: number;
-  riskScoreTrend: number | null;
+  policyBlockRateDelta: number | null;
   averageLineCoverage: number | null;
   coverageDelta: number | null;
   docDriftIncidents: number;
@@ -68,8 +68,7 @@ export function calculateReadinessMetrics(
   counts: ReadinessMetricCounts,
   now: Date = new Date()
 ): ReadinessMetrics {
-  const midpoint = new Date(now);
-  midpoint.setDate(midpoint.getDate() - 15);
+  const midpoint = new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000);
 
   const evaluatedRuns = runs.filter(
     (run) => run.status === 'completed' || run.status === 'failed'
@@ -107,13 +106,13 @@ export function calculateReadinessMetrics(
   return {
     windowDays: 30,
     totalRuns: runs.length,
-    completedRuns: evaluatedRuns.length,
+    evaluatedRuns: evaluatedRuns.length,
     aiTouchedCount,
     aiTouchedPercentage: runs.length > 0 ? round(aiTouchedCount / runs.length, 3) : 0,
     gatePassRate:
       evaluatedRuns.length > 0 ? round(gatePassCount / evaluatedRuns.length, 3) : null,
     blockedRuns,
-    riskScoreTrend:
+    policyBlockRateDelta:
       recentFailureRate !== null && priorFailureRate !== null
         ? round(recentFailureRate - priorFailureRate, 3)
         : null,

@@ -46,12 +46,12 @@ describe('calculateReadinessMetrics', () => {
     expect(metrics).toMatchObject({
       windowDays: 30,
       totalRuns: 2,
-      completedRuns: 2,
+      evaluatedRuns: 2,
       aiTouchedCount: 1,
       aiTouchedPercentage: 0.5,
       gatePassRate: 0.5,
       blockedRuns: 1,
-      riskScoreTrend: 1,
+      policyBlockRateDelta: 1,
       averageLineCoverage: 75,
       coverageDelta: 10,
       docDriftIncidents: 1,
@@ -68,7 +68,7 @@ describe('calculateReadinessMetrics', () => {
       new Date('2026-10-31T12:00:00.000Z')
     );
 
-    expect(metrics.completedRuns).toBe(0);
+    expect(metrics.evaluatedRuns).toBe(0);
     expect(metrics.gatePassRate).toBeNull();
     expect(metrics.blockedRuns).toBe(0);
     expect(metrics.meanRunDurationMinutes).toBeNull();
@@ -83,6 +83,6 @@ describe('calculateReadinessMetrics', () => {
 
     expect(metrics.averageLineCoverage).toBeNull();
     expect(metrics.coverageDelta).toBeNull();
-    expect(metrics.riskScoreTrend).toBeNull();
+    expect(metrics.policyBlockRateDelta).toBeNull();
   });
 });

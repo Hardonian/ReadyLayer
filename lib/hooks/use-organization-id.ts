@@ -1,7 +1,7 @@
 /**
  * Organization ID Hook
  * 
- * Gets the current user's organization ID from their repositories
+ * Resolves the current user's organization and repository connection state.
  */
 
 import { useCallback, useEffect, useState } from 'react'

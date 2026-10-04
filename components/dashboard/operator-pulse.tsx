@@ -39,7 +39,7 @@ export function OperatorPulse({
   const runCount = metrics?.totalRuns ?? 0;
   const stages = [
     { label: 'Observe', value: runCount, detail: 'runs', icon: Eye },
-    { label: 'Decide', value: metrics?.completedRuns ?? 0, detail: 'evaluated', icon: Radar },
+    { label: 'Decide', value: metrics?.evaluatedRuns ?? 0, detail: 'evaluated', icon: Radar },
     { label: 'Enforce', value: metrics?.blockedRuns ?? 0, detail: 'blocked', icon: Gavel },
     { label: 'Prove', value: metrics?.provenancePacks ?? 0, detail: 'packs', icon: FileKey2 },
   ];
