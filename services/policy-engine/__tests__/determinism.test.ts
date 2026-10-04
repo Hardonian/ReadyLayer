@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { policyEngineService, type EffectivePolicy, type EvaluationResult } from '../index';
-import type { Issue } from '../../services/static-analysis';
+import type { Issue } from '../../static-analysis';
 
 // Mock prisma to avoid DATABASE_URL requirement
 vi.mock('../../lib/prisma', () => ({

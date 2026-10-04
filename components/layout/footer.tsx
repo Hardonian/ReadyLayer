@@ -80,7 +80,7 @@ export function Footer(): React.JSX.Element {
               <li>
                 <Link href="/security" className="text-text-muted hover:text-text-primary transition-colors flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Security
+                  Trust Center
                 </Link>
               </li>
               <li>

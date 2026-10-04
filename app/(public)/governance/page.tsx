@@ -131,7 +131,7 @@ export default function GovernancePage(): React.JSX.Element {
             <div className="space-y-1">
               <h3 className="text-lg font-display font-semibold text-text-primary">Deterministic Policy-as-Code Evaluation</h3>
               <p className="text-sm text-text-muted">
-                The portable Go runner evaluates OWASP LLM Top 10, NIST AI RMF, and custom enterprise rules locally in &lt;15ms with zero network calls and schema-validated JSON outputs.
+                The portable Go runner evaluates packaged and custom rules locally with no network calls and emits schema-validated JSON output. Benchmark it against your own repositories and hardware before setting a latency objective.
               </p>
             </div>
           </div>

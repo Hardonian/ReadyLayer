@@ -41,7 +41,7 @@ const MARKETPLACE_POLICIES: PolicyPackTemplate[] = [
     name: 'SOC 2 Type II Enterprise Guard',
     version: '2.1.0',
     category: 'compliance',
-    description: 'Enforces hard stops for unencrypted secrets, missing audit triggers, and untracked code modifications required for SOC 2 Type II certification.',
+    description: 'Checks for unencrypted secrets, missing audit triggers, and untracked code modifications that can contribute evidence to a SOC 2 control program.',
     author: 'ReadyLayer Security Engineering',
     isCertified: true,
     downloads: '12.4k',

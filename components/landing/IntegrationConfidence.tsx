@@ -47,7 +47,7 @@ const whatWeDontDo = [
   {
     icon: XCircle,
     title: 'No code modification',
-    description: 'ReadyLayer never modifies your code. It only reads diffs and posts comments.',
+    description: 'The governance runner reads declared inputs and emits artifacts. Review provider write permissions separately.',
   },
   {
     icon: XCircle,
@@ -57,7 +57,7 @@ const whatWeDontDo = [
   {
     icon: XCircle,
     title: 'No force pushes',
-    description: 'ReadyLayer never performs destructive git operations.',
+    description: 'The runner does not require destructive git operations; review every integration permission before rollout.',
   },
   {
     icon: XCircle,

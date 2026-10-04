@@ -4,22 +4,22 @@ import { POST as gitHubWebhookPost } from '@/app/api/webhooks/github/route';
 import { GET as reposGet } from '@/app/api/v1/repos/route';
 
 describe('Chaos lite failure injection', () => {
-  it('returns a stable error shape when the health checker fails upstream', async () => {
+  it('returns a stable readiness error when a dependency check fails upstream', async () => {
     vi.resetModules();
     vi.doMock('@/observability/health', () => ({
       healthChecker: {
-        checkHealth: vi.fn(async () => {
+        checkReady: vi.fn(async () => {
           throw new Error('upstream failure');
         }),
       },
     }));
 
-    const { GET: healthGet } = await import('@/app/api/health/route');
-    const response = await healthGet();
+    const { GET: readinessGet } = await import('@/app/api/ready/route');
+    const response = await readinessGet();
 
     expect(response.status).toBe(503);
     const body = await response.json();
-    expect(body.status).toBe('unhealthy');
+    expect(body.status).toBe('not_ready');
 
     vi.resetModules();
   });

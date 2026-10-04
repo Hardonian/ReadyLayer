@@ -1,9 +1,0 @@
-{
-  "ignoreUnused": [
-    "tslib",
-    "next-themes",
-    "@tailwindcss/postcss",
-    "depcheck"
-  ],
-  "ignoreMissing": []
-}

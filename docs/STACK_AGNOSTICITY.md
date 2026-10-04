@@ -281,7 +281,7 @@ DATABASE_URL=mysql://user:pass@localhost:3306/readylayer
 ### ✅ Minimum Requirements
 
 **Runtime:**
-- Node.js 20+ (for CLI and self-hosted)
+- Node.js 24 (for CLI and self-hosted)
 - OR Docker (for containerized deployment)
 
 **Storage:**

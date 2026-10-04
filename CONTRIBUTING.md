@@ -9,7 +9,7 @@ Thank you for investing time in ReadyLayer. This guide explains how to run the p
 
 ## Project Setup
 **Prerequisites**
-- Node.js 20
+- Node.js 24
 - Postgres database
 - Supabase project credentials (URL + anon/service keys)
 - At least one LLM API key (OpenAI or Anthropic)

@@ -40,7 +40,7 @@ export function useOrganizationId(): UseOrganizationIdReturn {
     setRefreshKey((value) => value + 1)
   }, [])
 
-  useEffect(() => {
+  useEffect((): (() => void) => {
     const controller = new AbortController()
 
     const fetchOrgId = async (): Promise<void> => {

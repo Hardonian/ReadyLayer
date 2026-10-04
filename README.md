@@ -33,7 +33,7 @@ ReadyLayer provides the deterministic control plane to solve all three without s
 - **JobForge Queue Subsystem**: Resilient background job queue for async webhooks and compliance exports (`lib/jobforge`).
 
 ## Quick Start
-**Prerequisites:** Node.js 20, Postgres, Supabase project keys, and at least one LLM API key (OpenAI or Anthropic).
+**Prerequisites:** Node.js 24, Postgres, Supabase project keys, and at least one LLM API key (OpenAI or Anthropic).
 
 ```bash
 git clone https://github.com/Hardonian/ReadyLayer.git

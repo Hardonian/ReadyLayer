@@ -1,200 +1,120 @@
 /**
- * Test Tenant Isolation
- * 
- * Verifies that RLS policies and API-level checks prevent cross-tenant access
+ * Database-backed tenant query-scope verification.
+ *
+ * This test proves the application query pattern does not return another
+ * organization's repositories. It does not claim to validate Supabase RLS;
+ * deployment-specific RLS is covered by the database verification runbook.
  */
 
-import { prisma } from '../lib/prisma';
-import { console } from './logger';
+import { prisma } from '../lib/prisma'
+import { console } from './logger'
+
+function assertCondition(condition: boolean, message: string): void {
+  if (!condition) throw new Error(message)
+}
 
 async function testTenantIsolation(): Promise<void> {
-  console.log('🔒 Testing Tenant Isolation...\n');
+  console.log('Testing database-backed tenant query scope...')
 
   if (!process.env.DATABASE_URL) {
-    console.log('⏭️  Skipping: Tenant isolation test requires DATABASE_URL');
-    process.exit(0);
+    const message = 'Tenant query-scope test requires DATABASE_URL'
+    if (process.env.REQUIRE_DATABASE_TESTS === 'true') throw new Error(message)
+    console.log(`Skipping: ${message}`)
+    return
   }
 
-  // Test 1: Create test data
-  console.log('1️⃣  Creating test organizations and users...');
-  
-  const org1 = await prisma.organization.create({
-    data: {
-      name: 'Test Org 1',
-      slug: 'test-org-1',
-      plan: 'starter',
-    },
-  });
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const organizationIds: string[] = []
+  const userIds: string[] = []
+  const repositoryIds: string[] = []
 
-  const org2 = await prisma.organization.create({
-    data: {
-      name: 'Test Org 2',
-      slug: 'test-org-2',
-      plan: 'starter',
-    },
-  });
+  try {
+    const [org1, org2] = await Promise.all([
+      prisma.organization.create({ data: { name: 'Tenant Scope A', slug: `tenant-scope-a-${suffix}`, plan: 'starter' } }),
+      prisma.organization.create({ data: { name: 'Tenant Scope B', slug: `tenant-scope-b-${suffix}`, plan: 'starter' } }),
+    ])
+    organizationIds.push(org1.id, org2.id)
 
-  // Create test users (using Supabase auth user IDs format)
-  const user1Id = 'test-user-1-' + Date.now();
-  const user2Id = 'test-user-2-' + Date.now();
+    const [user1, user2] = await Promise.all([
+      prisma.user.create({ data: { id: `tenant-user-a-${suffix}`, email: `tenant-a-${suffix}@example.invalid` } }),
+      prisma.user.create({ data: { id: `tenant-user-b-${suffix}`, email: `tenant-b-${suffix}@example.invalid` } }),
+    ])
+    userIds.push(user1.id, user2.id)
 
-  const user1 = await prisma.user.create({
-    data: {
-      id: user1Id,
-      email: 'user1@test.com',
-      name: 'Test User 1',
-    },
-  });
+    await Promise.all([
+      prisma.organizationMember.create({ data: { organizationId: org1.id, userId: user1.id, role: 'owner' } }),
+      prisma.organizationMember.create({ data: { organizationId: org2.id, userId: user2.id, role: 'owner' } }),
+    ])
 
-  const user2 = await prisma.user.create({
-    data: {
-      id: user2Id,
-      email: 'user2@test.com',
-      name: 'Test User 2',
-    },
-  });
-
-  // Add users to organizations
-  await prisma.organizationMember.create({
-    data: {
-      organizationId: org1.id,
-      userId: user1.id,
-      role: 'owner',
-    },
-  });
-
-  await prisma.organizationMember.create({
-    data: {
-      organizationId: org2.id,
-      userId: user2.id,
-      role: 'owner',
-    },
-  });
-
-  // Create repositories
-  const repo1 = await prisma.repository.create({
-    data: {
-      organizationId: org1.id,
-      name: 'test-repo-1',
-      fullName: 'org1/test-repo-1',
-      provider: 'github',
-      defaultBranch: 'main',
-    },
-  });
-
-  const repo2 = await prisma.repository.create({
-    data: {
-      organizationId: org2.id,
-      name: 'test-repo-2',
-      fullName: 'org2/test-repo-2',
-      provider: 'github',
-      defaultBranch: 'main',
-    },
-  });
-
-  console.log('✅ Test data created\n');
-
-  // Test 2: Verify user1 can see org1's repo
-  console.log('2️⃣  Testing: User 1 can access Org 1 repositories...');
-  const user1Repos = await prisma.repository.findMany({
-    where: {
-      organization: {
-        members: {
-          some: {
-            userId: user1.id,
-          },
+    const [repo1, repo2] = await Promise.all([
+      prisma.repository.create({
+        data: {
+          organizationId: org1.id,
+          name: 'tenant-scope-a',
+          fullName: `tenant-a-${suffix}/repository`,
+          provider: 'github',
+          defaultBranch: 'main',
         },
-      },
-    },
-  });
-
-  const user1CanSeeRepo1 = user1Repos.some(r => r.id === repo1.id);
-  const user1CannotSeeRepo2 = !user1Repos.some(r => r.id === repo2.id);
-
-  if (user1CanSeeRepo1 && user1CannotSeeRepo2) {
-    console.log('✅ User 1 can only see Org 1 repositories\n');
-  } else {
-    console.log('❌ Tenant isolation FAILED: User 1 can see wrong repositories');
-    console.log(`   Can see repo1: ${user1CanSeeRepo1}`);
-    console.log(`   Cannot see repo2: ${user1CannotSeeRepo2}`);
-  }
-
-  // Test 3: Verify user2 can see org2's repo
-  console.log('3️⃣  Testing: User 2 can access Org 2 repositories...');
-  const user2Repos = await prisma.repository.findMany({
-    where: {
-      organization: {
-        members: {
-          some: {
-            userId: user2.id,
-          },
+      }),
+      prisma.repository.create({
+        data: {
+          organizationId: org2.id,
+          name: 'tenant-scope-b',
+          fullName: `tenant-b-${suffix}/repository`,
+          provider: 'github',
+          defaultBranch: 'main',
         },
-      },
-    },
-  });
+      }),
+    ])
+    repositoryIds.push(repo1.id, repo2.id)
 
-  const user2CanSeeRepo2 = user2Repos.some(r => r.id === repo2.id);
-  const user2CannotSeeRepo1 = !user2Repos.some(r => r.id === repo1.id);
+    const repositoriesFor = async (userId: string): Promise<Array<{ id: string }>> => {
+      return prisma.repository.findMany({
+        where: { organization: { members: { some: { userId } } } },
+        select: { id: true },
+      })
+    }
 
-  if (user2CanSeeRepo2 && user2CannotSeeRepo1) {
-    console.log('✅ User 2 can only see Org 2 repositories\n');
-  } else {
-    console.log('❌ Tenant isolation FAILED: User 2 can see wrong repositories');
-    console.log(`   Can see repo2: ${user2CanSeeRepo2}`);
-    console.log(`   Cannot see repo1: ${user2CannotSeeRepo1}`);
-  }
+    const [user1Repos, user2Repos] = await Promise.all([
+      repositoriesFor(user1.id),
+      repositoriesFor(user2.id),
+    ])
 
-  // Test 4: Direct query test (simulating RLS)
-  console.log('4️⃣  Testing: Direct repository queries respect organization membership...');
-  
-  // This simulates what RLS would do
-  const user1Memberships = await prisma.organizationMember.findMany({
-    where: { userId: user1.id },
-    select: { organizationId: true },
-  });
-  const user1OrgIds = user1Memberships.map(m => m.organizationId);
+    assertCondition(user1Repos.some((repository) => repository.id === repo1.id), 'Tenant A cannot read its repository')
+    assertCondition(!user1Repos.some((repository) => repository.id === repo2.id), 'Tenant A can read Tenant B repository')
+    assertCondition(user2Repos.some((repository) => repository.id === repo2.id), 'Tenant B cannot read its repository')
+    assertCondition(!user2Repos.some((repository) => repository.id === repo1.id), 'Tenant B can read Tenant A repository')
 
-  const user1FilteredRepos = await prisma.repository.findMany({
-    where: {
-      organizationId: { in: user1OrgIds },
-    },
-  });
+    const user1Memberships = await prisma.organizationMember.findMany({
+      where: { userId: user1.id },
+      select: { organizationId: true },
+    })
+    const explicitlyScopedRepositories = await prisma.repository.findMany({
+      where: { organizationId: { in: user1Memberships.map((membership) => membership.organizationId) } },
+      select: { id: true },
+    })
 
-  const filteredCorrectly = 
-    user1FilteredRepos.some(r => r.id === repo1.id) &&
-    !user1FilteredRepos.some(r => r.id === repo2.id);
+    assertCondition(
+      explicitlyScopedRepositories.length === 1 && explicitlyScopedRepositories[0]?.id === repo1.id,
+      'Explicit organization scope returned cross-tenant data'
+    )
 
-  if (filteredCorrectly) {
-    console.log('✅ Organization filtering works correctly\n');
-  } else {
-    console.log('❌ Organization filtering FAILED\n');
-  }
-
-  // Cleanup
-  console.log('5️⃣  Cleaning up test data...');
-  await prisma.repository.deleteMany({ where: { id: { in: [repo1.id, repo2.id] } } });
-  await prisma.organizationMember.deleteMany({ where: { organizationId: { in: [org1.id, org2.id] } } });
-  await prisma.organization.deleteMany({ where: { id: { in: [org1.id, org2.id] } } });
-  await prisma.user.deleteMany({ where: { id: { in: [user1.id, user2.id] } } });
-  console.log('✅ Test data cleaned up\n');
-
-  // Summary
-  const allTestsPassed = user1CanSeeRepo1 && user1CannotSeeRepo2 && 
-                         user2CanSeeRepo2 && user2CannotSeeRepo1 && 
-                         filteredCorrectly;
-
-  if (allTestsPassed) {
-    console.log('🎉 Tenant isolation tests PASSED!');
-    console.log('✅ Users can only access their own organization\'s data');
-    process.exit(0);
-  } else {
-    console.log('❌ Tenant isolation tests FAILED');
-    console.log('⚠️  Review the errors above');
-    process.exit(1);
+    console.log('Tenant query-scope verification passed')
+  } finally {
+    if (repositoryIds.length > 0) await prisma.repository.deleteMany({ where: { id: { in: repositoryIds } } })
+    if (organizationIds.length > 0) {
+      await prisma.organizationMember.deleteMany({ where: { organizationId: { in: organizationIds } } })
+      await prisma.organization.deleteMany({ where: { id: { in: organizationIds } } })
+    }
+    if (userIds.length > 0) await prisma.user.deleteMany({ where: { id: { in: userIds } } })
   }
 }
 
-testTenantIsolation().catch(error => {
-  console.error('❌ Test failed:', error);
-  process.exit(1);
-});
+testTenantIsolation()
+  .catch((error: unknown) => {
+    console.error('Tenant query-scope verification failed', error)
+    process.exitCode = 1
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

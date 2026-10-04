@@ -94,7 +94,7 @@ export function FailureModes({ className }: FailureModesProps): React.JSX.Elemen
           What if something goes wrong?
         </h2>
         <p className="text-text-muted">
-          Every failure mode has a defined fallback behavior. ReadyLayer never blocks PRs due to its own failures.
+          Every dependency failure needs an explicit fail-open or fail-closed policy owned by the deploying team.
         </p>
       </div>
 
@@ -162,8 +162,8 @@ export function FailureModes({ className }: FailureModesProps): React.JSX.Elemen
             <div className="flex-1">
               <div className="font-semibold mb-2">Fail-open policy</div>
               <p className="text-sm text-text-muted">
-                ReadyLayer never blocks PRs due to its own failures. If ReadyLayer encounters an error, the PR is
-                allowed with a warning so governance never becomes a blocker.
+                The demo defaults optional analysis failures to a warning. Production deployments should fail closed for
+                the protected change classes their owners identify as safety-critical.
               </p>
             </div>
           </div>

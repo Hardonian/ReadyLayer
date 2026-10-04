@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24
 - PostgreSQL 15+
 - Redis 7+ (optional, falls back to database)
 - OpenAI API key OR Anthropic API key (at least one required)

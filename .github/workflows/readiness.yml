@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npm run lint 2>&1 | tee lint-output.txt || true
@@ -46,7 +46,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npm test 2>&1 | tee test-output.txt || true
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npm run build 2>&1 | tee build-output.txt || true
@@ -86,7 +86,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npx playwright install --with-deps chromium firefox webkit
@@ -113,14 +113,12 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit
-      # CI baselines are platform-specific. Generate them in this isolated
-      # runner before verifying the same rendered output.
-      - run: npm run test:visual:ci -- --update-snapshots
-      - run: npm run test:visual:ci
+      - name: Verify committed desktop visual baselines
+        run: npx playwright test e2e/visual.spec.ts --project=visual-desktop
       - name: Upload visual test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -149,7 +147,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: '.nvmrc'
           cache: 'npm'
       
       - name: Install Node dependencies

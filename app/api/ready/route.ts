@@ -1,53 +1,61 @@
-import { NextResponse } from 'next/server';
-import { healthChecker } from '../../../observability/health';
-import { logger } from '../../../observability/logging';
-import { isKeyConfigured, getAvailableKeyVersions } from '../../../lib/crypto';
+import { NextResponse } from 'next/server'
+import type { ReadinessResponseContract } from '@/lib/contracts/health'
+import { isKeyConfigured } from '@/lib/crypto'
+import { healthChecker } from '@/observability/health'
+import { logger } from '@/observability/logging'
 
-export async function GET() {
+const REQUIRED_ENVIRONMENT = [
+  'DATABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+] as const
+
+export async function GET(): Promise<NextResponse<ReadinessResponseContract>> {
   try {
-    const ready = await healthChecker.checkReady();
-    
-    // Add secrets health check
-    const secretsConfigured = isKeyConfigured();
-    const keyVersions = secretsConfigured ? getAvailableKeyVersions() : [];
-    
-    const checks = {
-      ...ready.checks,
-      secrets: secretsConfigured ? 'ready' : 'degraded',
-    };
+    const environmentReady = REQUIRED_ENVIRONMENT.every((name) => Boolean(process.env[name]))
+    const secretsReady = isKeyConfigured()
+    const dependencies = await healthChecker.checkReady()
 
-    const status = ready.status === 'ready' && secretsConfigured ? 'ready' : 'degraded';
-    const statusCode = status === 'ready' ? 200 : 503;
+    if (dependencies.details) {
+      logger.warn({ details: dependencies.details }, 'Readiness schema check reported deployment drift')
+    }
+
+    const checks: ReadinessResponseContract['checks'] = {
+      ...dependencies.checks,
+      environment: environmentReady ? 'ready' : 'not_ready',
+      secrets: secretsReady ? 'ready' : 'not_ready',
+    }
+    const isReady = dependencies.status === 'ready' && environmentReady && secretsReady
 
     return NextResponse.json(
       {
-        ...ready,
-        status,
+        status: isReady ? 'ready' : 'not_ready',
         checks,
-        secrets: {
-          configured: secretsConfigured,
-          keyVersions,
-          message: secretsConfigured
-            ? 'Encryption keys configured'
-            : 'No encryption keys configured - provider calls will be disabled',
-        },
+        timestamp: new Date().toISOString(),
+        ...(!isReady ? { message: 'One or more required deployment checks are not ready' } : {}),
       },
-      { status: statusCode }
-    );
+      {
+        status: isReady ? 200 : 503,
+        headers: { 'Cache-Control': 'no-store' },
+      }
+    )
   } catch (error) {
-    logger.error(error, 'Readiness check failed');
-    // Return not ready status on error
+    logger.error(error, 'Readiness check failed')
     return NextResponse.json(
       {
         status: 'not_ready',
         checks: {
+          environment: 'not_ready',
           database: 'not_ready',
-          secrets: 'unknown',
+          secrets: 'not_ready',
         },
         timestamp: new Date().toISOString(),
-        error: 'Readiness check failed',
+        message: 'Readiness check failed',
       },
-      { status: 503 }
-    );
+      {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store' },
+      }
+    )
   }
 }

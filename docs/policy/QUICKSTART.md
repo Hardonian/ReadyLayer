@@ -5,7 +5,7 @@ This guide shows how to generate deterministic policy decisions and SARIF report
 ## Prerequisites
 
 - Rust toolchain installed (stable).
-- Node.js 20.x for wrapper scripts.
+- Node.js 24.x for wrapper scripts.
 
 ## Build the CLIs
 

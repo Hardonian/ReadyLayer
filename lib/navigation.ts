@@ -37,7 +37,7 @@ export const PUBLIC_NAV_ITEMS: NavItem[] = [
   { href: '/governance', label: 'Governance' },
   { href: '/docs', label: 'Docs' },
   { href: '/integrations', label: 'Integrations' },
-  { href: '/security', label: 'Security' },
+  { href: '/security', label: 'Trust' },
   { href: '/enterprise', label: 'Enterprise' },
   { href: '/about', label: 'About' },
   { href: '/changelog', label: 'Changelog' },

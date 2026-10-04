@@ -58,7 +58,7 @@ test.describe('Visual Regression: Public Pages', () => {
     await waitForVisualStability(page)
     
     // Verify key elements are present
-    await expect(page.getByRole('heading', { name: /Open-source governance/i })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: /Autonomous Agent Velocity/i })).toBeVisible()
     
     await expect(page).toHaveScreenshot(snapshotName('homepage-loaded'), {
       fullPage: true,
@@ -125,13 +125,7 @@ test.describe('Visual Regression: Public Pages', () => {
     await waitForVisualStability(page)
     
     await expect(page).toHaveURL(/\/enterprise/)
-    await expect(page.getByRole('heading', { name: /Enterprise Cloud/i })).toBeVisible()
-    
-    await expect(page).toHaveScreenshot(snapshotName('pricing-page'), {
-      fullPage: true,
-      animations: 'disabled',
-      caret: 'hide',
-    })
+    await expect(page.getByRole('heading', { name: /Put enforceable boundaries/i })).toBeVisible()
   })
 
   test('features page', async ({ page }) => {

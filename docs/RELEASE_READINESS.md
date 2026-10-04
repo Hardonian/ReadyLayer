@@ -1,101 +1,79 @@
 # Release Readiness Checklist
 
-Pre-release validation for ReadyLayer v1.0.0
+This checklist is a gate, not a status claim. Check an item only in the release record that contains the command output,
+owner, timestamp, environment, and artifact link.
 
-## Performance Validation
+## Source gate
 
-### Hot Paths Verified
-- [ ] Webhook processor completes in <500ms (p95)
-- [ ] Cache hit rate >80% for repository lookups
-- [ ] Dashboard metrics load in <200ms
-- [ ] PR diff processing <2s for typical PRs
-
-### Benchmarks Run
 ```bash
-npm run benchmark:webhook
-npm run benchmark:cache
-npm run benchmark:dashboard
+npm ci
+npm run verify:fast
+npm run deps:check
+npm audit --audit-level=high
+npm test
+npm run verify:docs
+npm run build
 ```
 
-## Feature Gating
+- [ ] The commands above pass from a clean checkout on Node.js 24.
+- [ ] No dependency vulnerability at the configured audit threshold is accepted without a dated risk record.
+- [ ] Claim verification passes for public and GTM surfaces.
+- [ ] Generated, local-cache, secret, and environment files are absent from the diff.
 
-### Core Features (Always Enabled)
-- ✅ Review Guard - Security scanning
-- ✅ Test Engine - Coverage analysis
-- ✅ Doc Sync - Documentation validation
-- ✅ Policy Engine - Deterministic evaluation
-- ✅ Webhook Processing - Git provider integration
+## Database and tenant gate
 
-### Experimental Features (Gated)
-- 🧪 AI Risk Index - Set `NEXT_PUBLIC_ENABLE_AI_RISK_INDEX=1`
-- 🧪 Bundle Execution - Set `NEXT_PUBLIC_ENABLE_BUNDLE_EXECUTION=1`
-- 🧪 RAG Context - Set `NEXT_PUBLIC_ENABLE_RAG_CONTEXT=1`
-- 🧪 TruthCore Integration - Set `NEXT_PUBLIC_ENABLE_TRUTHCORE=1`
+- [ ] The target schema is backed up and the restore path is tested.
+- [ ] Forward and rollback migration steps are recorded.
+- [ ] `REQUIRE_DATABASE_TESTS=true npm run test:tenant-isolation` passes against an isolated database.
+- [ ] `npm run db:verify` and `npm run db:smoke` pass against the release candidate environment.
+- [ ] RLS and application-level membership checks are both verified; one is not treated as proof of the other.
 
-## Integration Health
+## Runtime gate
 
-### JobForge (Required)
-- [ ] Migration applied: `npm run db:jobforge:migrate`
-- [ ] Worker running: `npm run jobforge:worker`
-- [ ] Smoke test passes: `npm run jobforge:smoke`
+- [ ] The release image is built from the committed Dockerfile.
+- [ ] `/api/health` returns process liveness without depending on Postgres, Redis, or external providers.
+- [ ] `/api/ready` returns 200 only when required configuration, database/schema, optional configured Redis, and encryption
+      key checks are ready.
+- [ ] The worker, webhook, queue, and evidence-export smoke paths pass in the target topology.
+- [ ] Logs and traces contain correlation IDs and no tokens, provider payload secrets, or source-code fragments outside policy.
 
-### TruthCore (Planned)
-- 🔄 Integration planned for Q2 2026
-- ✅ Local audit trail functional
-- ✅ SHA-256 hashing for provenance
+## Failure gate
 
-## CI Enforcement
+- [ ] Database loss, Redis loss, provider timeout, invalid webhook signature, duplicate delivery, and worker retry are tested.
+- [ ] Each dependency has an explicit fail-open or fail-closed decision.
+- [ ] Dead-letter redrive is tested without duplicate side effects.
+- [ ] Rollback is rehearsed using [the rollback runbook](./runbooks/rollback.md).
+- [ ] Incident roles and escalation paths are confirmed using [the incident runbook](./runbooks/incident-response.md).
 
-### Merge Blockers
-- ✅ Lint errors block merge
-- ✅ Type errors block merge
-- ✅ Unused exports block merge
-- ✅ Test failures block merge
-- ✅ Build failures block merge
+## Product and GTM gate
 
-### Verification Commands
-```bash
-npm run verify          # Full verification
-npm run verify:fast     # Lint + types only
-npm run verify:full     # Everything + build
-```
+- [ ] Public capability maturity matches `lib/product/capability-catalog.ts`.
+- [ ] Screenshots and demos use deterministic fixtures and contain no customer data.
+- [ ] Pricing, trial, support, service-level, hosting, and certification language matches an approved active offer.
+- [ ] No invented testimonials, logos, adoption counters, or outcome metrics appear in launch material.
+- [ ] The evaluation path, support address, security policy, privacy policy, terms, and installation links resolve.
 
-## Documentation
+## Browser gate
 
-### Updated
-- ✅ README.md - Problem-focused messaging
-- ✅ docs/PERFORMANCE.md - Hot paths documented
-- ✅ docs/INTEGRATION.md - Service dependencies
-- ✅ docs/jobforge.md - Background jobs
+- [ ] Functional Playwright tests pass in Chromium, Firefox, WebKit, Mobile Chrome, and Mobile Safari.
+- [ ] The committed desktop visual baseline passes without regenerating snapshots inside the assertion job.
+- [ ] Any baseline update is reviewed as an artifact of the same commit that changed the UI.
+- [ ] Keyboard navigation, visible focus, reduced motion, and primary responsive breakpoints are manually checked.
 
-### Required Reading
-- [Architecture](./architecture/README.md)
-- [Security](./SECURITY.md)
-- [Contributing](./CONTRIBUTING.md)
+## Release record
 
-## Final Checks
+| Field | Value |
+|---|---|
+| Commit | |
+| Image digest | |
+| Environment | |
+| Release owner | |
+| Database owner | |
+| Security approver | |
+| Verification artifact | |
+| Backup / restore evidence | |
+| Rollback decision deadline | |
+| Known accepted risks | |
+| Final decision | GO / NO-GO |
 
-### Pre-Release
-- [ ] All tests passing
-- [ ] No console errors in dev
-- [ ] Build succeeds
-- [ ] Environment variables documented
-- [ ] Database migrations tested
-
-### Release
-- [ ] Tag version: `git tag v1.0.0`
-- [ ] Push tag: `git push origin v1.0.0`
-- [ ] GitHub Release notes
-- [ ] Docker image published
-- [ ] Documentation site updated
-
-## Sign-Off
-
-- [ ] Performance: _____________
-- [ ] Features: _____________
-- [ ] Integrations: _____________
-- [ ] CI/CD: _____________
-- [ ] Documentation: _____________
-
-**Release Date**: _____________
-**Released By**: _____________
+Follow [the go-live runbook](./runbooks/go-live.md) for sequencing, observation, and rollback.

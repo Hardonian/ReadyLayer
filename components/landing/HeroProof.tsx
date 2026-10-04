@@ -81,15 +81,15 @@ export function HeroProof({ user: _user }: HeroProofProps): React.JSX.Element {
                      Autonomous Agent Velocity.
                    </span>
                    <br />
-                   <span className="text-text-primary">Zero Uncontrolled Blast Radius.</span>
+                   <span className="text-text-primary">Bounded, Reviewable Blast Radius.</span>
                  </h1>
                  <p className="text-lg sm:text-xl lg:text-2xl font-body text-text-muted max-w-2xl mb-4">
                    ReadyLayer is the trust and control plane for autonomous coding agents. Intercept package slopsquatting, contain perimeter blast radius, and mint cryptographically verifiable provenance.
                  </p>
                  <p className="text-base font-body text-text-subtle max-w-xl">
-                   Deploy in 10 minutes locally or explore our sovereign enterprise cloud.{' '}
+                   Run it in your own infrastructure or scope a design-partner pilot.{' '}
                    <Link href="/enterprise" className="text-primary hover:text-primary-dark font-medium transition-colors">
-                     Enterprise Trust Plane →
+                     Enterprise evaluation →
                    </Link>
                  </p>
               </motion.div>

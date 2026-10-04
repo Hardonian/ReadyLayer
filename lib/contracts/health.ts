@@ -1,23 +1,25 @@
-import { z } from 'zod';
+import { z } from 'zod'
 
 export const healthResponseSchema = z.object({
-  status: z.enum(['healthy', 'unhealthy']),
+  status: z.literal('healthy'),
   checks: z.object({
-    database: z.enum(['healthy', 'unhealthy']),
-    databaseSchema: z.enum(['healthy', 'unhealthy', 'degraded']).optional(),
-    redis: z.enum(['healthy', 'unhealthy']).optional(),
-    environment: z.enum(['healthy', 'unhealthy', 'unknown']).optional(),
+    process: z.literal('healthy'),
   }),
-  timestamp: z.string(),
-  details: z
-    .object({
-      missingEnvVars: z.array(z.string()).optional(),
-      missingTables: z.array(z.string()).optional(),
-      rlsNotEnabled: z.array(z.string()).optional(),
-      missingFunctions: z.array(z.string()).optional(),
-    })
-    .optional(),
-  error: z.string().optional(),
-});
+  timestamp: z.string().datetime(),
+})
 
-export type HealthResponseContract = z.infer<typeof healthResponseSchema>;
+export const readinessResponseSchema = z.object({
+  status: z.enum(['ready', 'not_ready']),
+  checks: z.object({
+    environment: z.enum(['ready', 'not_ready']),
+    database: z.enum(['ready', 'not_ready']),
+    databaseSchema: z.enum(['ready', 'not_ready', 'degraded']).optional(),
+    redis: z.enum(['ready', 'not_ready']).optional(),
+    secrets: z.enum(['ready', 'not_ready']),
+  }),
+  timestamp: z.string().datetime(),
+  message: z.string().optional(),
+})
+
+export type HealthResponseContract = z.infer<typeof healthResponseSchema>
+export type ReadinessResponseContract = z.infer<typeof readinessResponseSchema>

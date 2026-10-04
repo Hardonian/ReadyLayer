@@ -14,7 +14,7 @@
 
 **Optional:**
 - Docker (for self-hosted mode)
-- Node.js 20+ (for local CLI)
+- Node.js 24 (for local CLI)
 
 ---
 
@@ -176,7 +176,7 @@ readylayer:
 ```yaml
 readylayer:
   stage: governance
-  image: node:20
+  image: node:24
   script:
     - npm install -g readylayer-cli
     - readylayer review $(git diff --name-only HEAD~1)
