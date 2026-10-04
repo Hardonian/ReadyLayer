@@ -82,10 +82,10 @@ export default function ReadinessPage(): React.JSX.Element {
         <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="font-semibold text-sm text-text-primary">
-              Enterprise Pilot Preview Active
+              Start with an observed baseline
             </div>
             <div className="text-xs text-text-muted">
-              Connect your GitHub/GitLab enterprise organization to stream live metrics from your private repositories.
+              Connect a repository to replace setup mode with live governance metrics from your own runs.
             </div>
           </div>
           <Button
@@ -98,8 +98,7 @@ export default function ReadinessPage(): React.JSX.Element {
         </div>
 
         <ReadinessCommandCenter
-          organizationId="org_enterprise_pilot"
-          organizationName="Enterprise Pilot Workspace"
+          organizationName="Your workspace"
         />
       </Container>
     );

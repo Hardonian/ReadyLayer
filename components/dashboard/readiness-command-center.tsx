@@ -1,572 +1,595 @@
 /**
- * Enterprise Readiness Command Center Dashboard
- * 
- * Provides comprehensive operational intelligence, blast-radius containment,
- * cryptographic provenance tracking, and the First 90 Days adoption playbook.
+ * Operator-facing readiness dashboard built entirely from persisted telemetry.
  */
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MetricsCard } from '@/components/ui/metrics-card';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import {
+  Activity,
+  ArrowRight,
+  CheckCircle2,
+  CircleAlert,
+  ExternalLink,
+  FileKey2,
+  GitBranch,
+  Lock,
+  Minus,
+  Radar,
+  RefreshCw,
+  Shield,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+  Zap,
+} from 'lucide-react';
+import { First90DaysPlaybook } from '@/components/enterprise/First90DaysPlaybook';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { First90DaysPlaybook } from '@/components/enterprise/First90DaysPlaybook';
-import {
-  Shield,
-  Lock,
-  TrendingDown,
-  Sparkles,
-  RefreshCw,
-  ExternalLink,
-} from 'lucide-react';
-import Link from 'next/link';
-
-export interface ReadinessMetrics {
-  aiTouchedPercentage: number;
-  riskScoreTrend: number; // -1 to 1 (negative = improving)
-  gatePassRate: number;
-  coverageDelta: number;
-  docDriftIncidents: number;
-  meanTimeToSafeMerge: number; // minutes
-  totalRuns?: number;
-  aiTouchedCount?: number;
-  slopsquattingBlockedCount?: number;
-  attestationsMinted?: number;
-  tier0Interceptions?: number;
-}
+import { Card } from '@/components/ui/card';
+import { MetricsCard } from '@/components/ui/metrics-card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { ReadinessMetrics } from '@/lib/readiness-metrics';
 
 export interface ReadinessCommandCenterProps {
-  organizationId: string;
+  organizationId?: string;
   repositoryId?: string;
   organizationName?: string;
+}
+
+interface MetricsApiResponse {
+  data?: {
+    metrics?: ReadinessMetrics;
+  };
+  error?: {
+    message?: string;
+  };
+}
+
+interface OperatorAction {
+  title: string;
+  detail: string;
+  href: string;
+  label: string;
+  tone: 'primary' | 'warning' | 'success';
+}
+
+const RISK_TIERS = [
+  {
+    tier: 'Tier 0',
+    title: 'Critical perimeter',
+    paths: '.github/workflows, IAM, Terraform, Kubernetes',
+    control: 'Dual-custody approval',
+    tone: 'border-rose-500/30 bg-rose-500/5 text-rose-400',
+  },
+  {
+    tier: 'Tier 1',
+    title: 'Core domain logic',
+    paths: 'Authentication, billing, migrations, services',
+    control: 'Human review + test gate',
+    tone: 'border-amber-500/30 bg-amber-500/5 text-amber-400',
+  },
+  {
+    tier: 'Tier 2',
+    title: 'Standard feature surface',
+    paths: 'Application routes, components, shared libraries',
+    control: 'Deterministic policy pass',
+    tone: 'border-primary/30 bg-primary/5 text-primary',
+  },
+  {
+    tier: 'Tier 3',
+    title: 'Low-risk change surface',
+    paths: 'Documentation, tests, examples, content',
+    control: 'Fast-path review',
+    tone: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400',
+  },
+] as const;
+
+const CONTROL_RECIPES = [
+  ['Dependency integrity', 'Inspect new packages for suspicious or hallucinated names before install.'],
+  ['Agent loop circuit breaker', 'Bound recursive edit attempts and require a human handoff at the limit.'],
+  ['Time-bound waiver', 'Record an owner, reason, and expiration for every policy exception.'],
+  ['Documentation invariant', 'Detect contract changes that do not include the required documentation.'],
+] as const;
+
+const FRAMEWORK_MAPPINGS = [
+  ['OWASP LLM Top 10', 'Evidence inputs for prompt, output, and supply-chain controls'],
+  ['NIST AI RMF', 'Govern, Map, Measure, and Manage evidence'],
+  ['EU AI Act', 'Human-oversight and transparency evidence inputs'],
+  ['SOC 2 / ISO 42001', 'Change-control and AI-management evidence inputs'],
+] as const;
+
+function formatPercentage(value: number | null): string {
+  return value === null ? '—' : `${(value * 100).toFixed(1)}%`;
+}
+
+function formatNumber(value: number | null, suffix = ''): string {
+  return value === null ? '—' : `${value.toLocaleString()}${suffix}`;
+}
+
+function buildOperatorActions(
+  metrics: ReadinessMetrics | null,
+  connected: boolean,
+  failed: boolean
+): OperatorAction[] {
+  if (!connected) {
+    return [
+      {
+        title: 'Connect the first repository',
+        detail: 'Start a truthful 30-day baseline with run, policy, and provenance telemetry.',
+        href: '/dashboard/repos/connect',
+        label: 'Connect repository',
+        tone: 'primary',
+      },
+    ];
+  }
+
+  if (failed) {
+    return [
+      {
+        title: 'Restore the telemetry feed',
+        detail: 'The control plane is reachable, but this snapshot could not be loaded.',
+        href: '/dashboard/runs',
+        label: 'Inspect runs',
+        tone: 'warning',
+      },
+    ];
+  }
+
+  if (!metrics || metrics.totalRuns === 0) {
+    return [
+      {
+        title: 'Generate the first governed run',
+        detail: 'Exercise the runner once to replace setup mode with observed evidence.',
+        href: '/dashboard/runs',
+        label: 'Open runs',
+        tone: 'primary',
+      },
+    ];
+  }
+
+  const actions: OperatorAction[] = [];
+
+  if (metrics.supplyChainViolations > 0) {
+    actions.push({
+      title: `Triage ${metrics.supplyChainViolations} supply-chain finding${metrics.supplyChainViolations === 1 ? '' : 's'}`,
+      detail: 'Resolve dependency findings before expanding autonomous agent permissions.',
+      href: '/dashboard/findings',
+      label: 'Review findings',
+      tone: 'warning',
+    });
+  }
+
+  if (metrics.gatePassRate !== null && metrics.gatePassRate < 0.9) {
+    actions.push({
+      title: 'Tune the policy baseline',
+      detail: `${formatPercentage(metrics.gatePassRate)} of evaluated runs passed in this window. Review the most common blocks.`,
+      href: '/dashboard/runs',
+      label: 'Inspect blocked runs',
+      tone: 'warning',
+    });
+  }
+
+  if (metrics.completedRuns > metrics.provenancePacks) {
+    actions.push({
+      title: 'Close the provenance gap',
+      detail: `${metrics.completedRuns - metrics.provenancePacks} evaluated run${metrics.completedRuns - metrics.provenancePacks === 1 ? '' : 's'} do not have a provenance pack in this window.`,
+      href: '/dashboard/provenance',
+      label: 'Open provenance',
+      tone: 'primary',
+    });
+  }
+
+  if (actions.length === 0) {
+    actions.push({
+      title: 'Expand the governed rollout',
+      detail: 'The current window has no obvious telemetry gaps. Move the next repository through the playbook.',
+      href: '/dashboard/repos/connect',
+      label: 'Add repository',
+      tone: 'success',
+    });
+  }
+
+  return actions.slice(0, 3);
 }
 
 export function ReadinessCommandCenter({
   organizationId,
   repositoryId,
-  organizationName = 'Enterprise Workspace',
+  organizationName = 'Your workspace',
 }: ReadinessCommandCenterProps): React.JSX.Element {
   const [metrics, setMetrics] = useState<ReadinessMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(organizationId));
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const retry = useCallback((): void => {
+    setRefreshKey((value) => value + 1);
+  }, []);
 
   useEffect(() => {
-    async function fetchMetrics(): Promise<void> {
-      try {
-        const url = repositoryId
-          ? `/api/v1/metrics?organizationId=${organizationId}&repositoryId=${repositoryId}`
-          : `/api/v1/metrics?organizationId=${organizationId}`;
+    if (!organizationId) {
+      setMetrics(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
 
-        const response = await fetch(url);
+    const controller = new AbortController();
+
+    async function fetchMetrics(): Promise<void> {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams({ organizationId: organizationId as string });
+        if (repositoryId) params.set('repositoryId', repositoryId);
+
+        const response = await fetch(`/api/v1/metrics?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        const payload = (await response.json().catch(() => ({}))) as MetricsApiResponse;
+
         if (!response.ok) {
-          throw new Error('Failed to fetch metrics');
+          throw new Error(payload.error?.message || 'Readiness telemetry is temporarily unavailable.');
         }
 
-        const data = (await response.json()) as { metrics?: ReadinessMetrics };
-        setMetrics(data.metrics || null);
-      } catch (error) {
-        console.error('Failed to fetch readiness metrics:', error);
-        // Resilient fallback with genuine zero-state or computed default structure
-        setMetrics({
-          aiTouchedPercentage: 0.38,
-          riskScoreTrend: -0.14,
-          gatePassRate: 0.96,
-          coverageDelta: 1.8,
-          docDriftIncidents: 2,
-          meanTimeToSafeMerge: 22,
-          totalRuns: 148,
-          aiTouchedCount: 56,
-          slopsquattingBlockedCount: 9,
-          attestationsMinted: 142,
-          tier0Interceptions: 6,
-        });
+        if (!payload.data?.metrics) {
+          throw new Error('The readiness snapshot returned no metrics.');
+        }
+
+        setMetrics(payload.data.metrics);
+      } catch (fetchError) {
+        if (fetchError instanceof DOMException && fetchError.name === 'AbortError') return;
+        setMetrics(null);
+        setError(
+          fetchError instanceof Error
+            ? fetchError.message
+            : 'Readiness telemetry is temporarily unavailable.'
+        );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     void fetchMetrics();
-  }, [organizationId, repositoryId]);
+    return () => controller.abort();
+  }, [organizationId, repositoryId, refreshKey]);
 
-  if (loading) {
-    return (
-      <div className="p-8 space-y-6">
-        <div className="flex items-center gap-3">
-          <RefreshCw className="h-5 w-5 animate-spin text-primary" />
-          <span className="text-sm font-mono text-text-muted">Loading enterprise readiness telemetry...</span>
-        </div>
-      </div>
-    );
-  }
+  const operatorActions = useMemo(
+    () => buildOperatorActions(metrics, Boolean(organizationId), Boolean(error)),
+    [error, metrics, organizationId]
+  );
 
-  const effectiveMetrics: ReadinessMetrics = metrics || {
-    aiTouchedPercentage: 0.38,
-    riskScoreTrend: -0.14,
-    gatePassRate: 0.96,
-    coverageDelta: 1.8,
-    docDriftIncidents: 2,
-    meanTimeToSafeMerge: 22,
-    totalRuns: 148,
-    aiTouchedCount: 56,
-    slopsquattingBlockedCount: 9,
-    attestationsMinted: 142,
-    tier0Interceptions: 6,
-  };
+  const status = !organizationId
+    ? { label: 'SETUP MODE', tone: 'text-primary border-primary/30' }
+    : loading
+      ? { label: 'SYNCING TELEMETRY', tone: 'text-primary border-primary/30' }
+      : error
+        ? { label: 'TELEMETRY DEGRADED', tone: 'text-amber-400 border-amber-500/30' }
+        : metrics?.totalRuns === 0
+          ? { label: 'AWAITING FIRST RUN', tone: 'text-text-muted border-border/40' }
+          : { label: '30-DAY SNAPSHOT LIVE', tone: 'text-emerald-400 border-emerald-500/30' };
+
+  const riskTrend = metrics?.riskScoreTrend ?? null;
+  const riskLabel = riskTrend === null
+    ? 'Needs both 15-day windows'
+    : riskTrend < 0
+      ? 'Block rate improving'
+      : riskTrend > 0
+        ? 'Block rate increasing'
+        : 'Block rate stable';
 
   return (
     <div className="space-y-8">
-      {/* Header and Status */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/30 pb-6">
+      <div className="flex flex-col gap-4 border-b border-border/30 pb-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-mono font-medium mb-2">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>ENTERPRISE GOVERNANCE COMMAND CENTER</span>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="font-mono">OPERATOR CONTROL PLANE</span>
           </div>
-          <h1 className="text-3xl font-display font-bold text-text-primary">
-            Readiness &amp; Trust Control Plane
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            Real-time telemetry, blast-radius containment, and the First 90 Days adoption roadmap for {organizationName}
+          <h1 className="text-3xl font-bold text-text-primary">Readiness &amp; trust command center</h1>
+          <p className="mt-1 max-w-3xl text-sm text-text-muted">
+            A decision-ready view of policy outcomes, evidence coverage, and the next best governance action for {organizationName}.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="font-mono text-xs text-emerald-400 border-emerald-500/30">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5 inline-block" />
-            AIR-GAPPED RUNNER ACTIVE
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge variant="outline" className={`font-mono text-xs ${status.tone}`}>
+            <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-current" />
+            {status.label}
           </Badge>
-          <Button asChild variant="outline" size="sm" className="font-mono text-xs gap-1.5">
+          <Button asChild variant="outline" size="sm" className="gap-1.5 font-mono text-xs">
             <Link href="/enterprise">
-              <span>Enterprise Specs</span>
-              <ExternalLink className="h-3.5 w-3.5" />
+              Capability map
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
           </Button>
         </div>
       </div>
 
+      {loading && (
+        <Card className="flex items-center gap-3 border-primary/20 bg-primary/5 p-4" role="status">
+          <RefreshCw className="h-4 w-4 animate-spin text-primary" aria-hidden="true" />
+          <span className="text-sm text-text-muted">Building the latest operator snapshot…</span>
+        </Card>
+      )}
+
+      {error && !loading && (
+        <Card className="flex flex-col gap-4 border-amber-500/30 bg-amber-500/5 p-5 sm:flex-row sm:items-center sm:justify-between" role="alert">
+          <div className="flex gap-3">
+            <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">Telemetry could not be refreshed</p>
+              <p className="mt-1 text-xs text-text-muted">{error} No sample data has been substituted.</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={retry} className="gap-2 self-start">
+            <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+            Retry
+          </Button>
+        </Card>
+      )}
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-6">
-        <TabsList className="bg-surface/60 border border-border/30 p-1 rounded-xl">
-          <TabsTrigger value="overview" className="text-xs font-mono">Overview</TabsTrigger>
-          <TabsTrigger value="playbook" className="text-xs font-mono">First 90 Days Setup</TabsTrigger>
-          <TabsTrigger value="gates" className="text-xs font-mono">Blast Radius &amp; Gates</TabsTrigger>
-          <TabsTrigger value="compliance" className="text-xs font-mono">Compliance &amp; Provenance</TabsTrigger>
-          <TabsTrigger value="trends" className="text-xs font-mono">Risk Telemetry</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="min-w-max rounded-xl border border-border/30 bg-surface/60 p-1">
+            <TabsTrigger value="overview" className="font-mono text-xs">Operator brief</TabsTrigger>
+            <TabsTrigger value="playbook" className="font-mono text-xs">First 90 days</TabsTrigger>
+            <TabsTrigger value="gates" className="font-mono text-xs">Blast radius</TabsTrigger>
+            <TabsTrigger value="compliance" className="font-mono text-xs">Evidence map</TabsTrigger>
+            <TabsTrigger value="trends" className="font-mono text-xs">Risk telemetry</TabsTrigger>
+          </TabsList>
+        </div>
 
-        {/* TAB 1: OVERVIEW */}
-        <TabsContent value="overview" className="space-y-8 animate-in fade-in">
-          {/* Top KPI Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <TabsContent value="overview" className="space-y-8">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MetricsCard
-              title="AI-Touched Diff %"
-              value={`${(effectiveMetrics.aiTouchedPercentage * 100).toFixed(1)}%`}
-              change={{
-                value: effectiveMetrics.aiTouchedPercentage * 100,
-                label: 'of all commits',
-                trend: effectiveMetrics.aiTouchedPercentage > 0.5 ? 'up' : 'down',
-              }}
-              description="Proportion of code synthesized by AI agents"
+              title="AI-touched runs"
+              value={metrics ? formatPercentage(metrics.aiTouchedPercentage) : '—'}
+              description={metrics ? `${metrics.aiTouchedCount} of ${metrics.totalRuns} observed runs` : 'Available after the first observed run'}
+              icon={GitBranch}
             />
-
             <MetricsCard
-              title="Gate Pass Rate"
-              value={`${(effectiveMetrics.gatePassRate * 100).toFixed(1)}%`}
-              change={{
-                value: effectiveMetrics.gatePassRate * 100,
-                label: 'pass rate',
-                trend: effectiveMetrics.gatePassRate >= 0.9 ? 'up' : 'down',
-              }}
-              description="Deterministic policy conformance on PRs"
+              title="Policy pass rate"
+              value={metrics ? formatPercentage(metrics.gatePassRate) : '—'}
+              description={metrics ? `${metrics.completedRuns} evaluated runs in the window` : 'Pending evaluated run data'}
+              icon={Shield}
             />
-
             <MetricsCard
-              title="Slopsquatting Blocks"
-              value={(effectiveMetrics.slopsquattingBlockedCount ?? 0).toString()}
-              change={{
-                value: effectiveMetrics.slopsquattingBlockedCount ?? 0,
-                label: 'attacks intercepted',
-                trend: 'up',
-              }}
-              description="Hallucinated dependencies blocked before execution"
+              title="Supply-chain findings"
+              value={metrics ? metrics.supplyChainViolations : '—'}
+              description="Dependency-related violations recorded in 30 days"
+              icon={CircleAlert}
             />
-
             <MetricsCard
-              title="Signed Attestations"
-              value={(effectiveMetrics.attestationsMinted ?? 0).toString()}
-              change={{
-                value: effectiveMetrics.attestationsMinted ?? 0,
-                label: 'in-toto statements',
-                trend: 'up',
-              }}
-              description="Cryptographic SLSA Level 2+ evidence minted"
+              title="Provenance packs"
+              value={metrics ? metrics.provenancePacks : '—'}
+              description="Persisted evidence packs in the 30-day window"
+              icon={FileKey2}
             />
           </div>
 
-          {/* Secondary Metric Highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="border-border/30 bg-surface/40 p-5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-text-subtle uppercase">Mean Time to Safe Merge</span>
-                <span className="text-xs font-mono text-emerald-400">&lt; 30m SLA</span>
+          <Card className="overflow-hidden border-primary/30 bg-gradient-to-br from-primary/10 via-surface/60 to-surface/40">
+            <div className="border-b border-border/20 p-5 sm:flex sm:items-end sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-mono text-primary">
+                  <Radar className="h-4 w-4" aria-hidden="true" />
+                  PRIORITIZED FROM LIVE SIGNALS
+                </div>
+                <h2 className="mt-2 text-xl font-bold text-text-primary">Operator queue</h2>
+                <p className="mt-1 text-sm text-text-muted">ReadyLayer turns the snapshot into a short, explainable action list.</p>
               </div>
-              <div className="text-2xl font-bold font-display text-text-primary">
-                {effectiveMetrics.meanTimeToSafeMerge} min
-              </div>
-              <p className="text-xs text-text-muted">
-                Average duration from PR creation through dual-custody verification to merge.
-              </p>
-            </Card>
+              <Badge variant="outline" className="mt-3 font-mono text-xs sm:mt-0">
+                {operatorActions.length} NEXT {operatorActions.length === 1 ? 'MOVE' : 'MOVES'}
+              </Badge>
+            </div>
+            <div className="grid gap-px bg-border/20 md:grid-cols-3">
+              {operatorActions.map((action, index) => (
+                <div key={action.title} className="flex min-h-48 flex-col bg-surface/80 p-5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs text-text-subtle">0{index + 1}</span>
+                    {action.tone === 'warning' ? (
+                      <CircleAlert className="h-4 w-4 text-amber-400" aria-hidden="true" />
+                    ) : action.tone === 'success' ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                    ) : (
+                      <Zap className="h-4 w-4 text-primary" aria-hidden="true" />
+                    )}
+                  </div>
+                  <h3 className="mt-6 text-base font-semibold text-text-primary">{action.title}</h3>
+                  <p className="mt-2 flex-1 text-xs leading-relaxed text-text-muted">{action.detail}</p>
+                  <Button asChild variant="ghost" size="sm" className="mt-4 w-fit gap-1.5 px-0 text-primary hover:bg-transparent">
+                    <Link href={action.href}>
+                      {action.label}
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-            <Card className="border-border/30 bg-surface/40 p-5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-text-subtle uppercase">Test Coverage Delta</span>
-                <span className="text-xs font-mono text-primary">Continuous Guard</span>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Card className="border-border/30 bg-surface/40 p-5">
+              <span className="text-xs font-mono uppercase text-text-subtle">Mean pipeline run</span>
+              <div className="mt-2 text-2xl font-bold text-text-primary">
+                {metrics ? formatNumber(metrics.meanRunDurationMinutes, ' min') : '—'}
               </div>
-              <div className="text-2xl font-bold font-display text-text-primary">
-                {effectiveMetrics.coverageDelta >= 0 ? '+' : ''}{effectiveMetrics.coverageDelta}%
-              </div>
-              <p className="text-xs text-text-muted">
-                Average delta in suite coverage across AI-assisted code additions.
-              </p>
+              <p className="mt-2 text-xs text-text-muted">Started-to-completed ReadyLayer processing time.</p>
             </Card>
-
-            <Card className="border-border/30 bg-surface/40 p-5 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-text-subtle uppercase">Risk Score Trend</span>
-                <span className="text-xs font-mono text-emerald-400">Improving</span>
+            <Card className="border-border/30 bg-surface/40 p-5">
+              <span className="text-xs font-mono uppercase text-text-subtle">Average line coverage</span>
+              <div className="mt-2 text-2xl font-bold text-text-primary">
+                {metrics ? formatNumber(metrics.averageLineCoverage, '%') : '—'}
               </div>
-              <div className="text-2xl font-bold font-display text-emerald-400 flex items-center gap-1.5">
-                <TrendingDown className="h-5 w-5" />
-                <span>{effectiveMetrics.riskScoreTrend <= 0 ? 'Decreasing Risk' : 'Increasing Risk'}</span>
+              <p className="mt-2 text-xs text-text-muted">Reported only by runs that supplied line coverage.</p>
+            </Card>
+            <Card className="border-border/30 bg-surface/40 p-5">
+              <span className="text-xs font-mono uppercase text-text-subtle">Documentation drift</span>
+              <div className="mt-2 text-2xl font-bold text-text-primary">
+                {metrics ? metrics.docDriftIncidents : '—'}
               </div>
-              <p className="text-xs text-text-muted">
-                15-day rolling variance in critical policy violations and blocked PRs.
-              </p>
+              <p className="mt-2 text-xs text-text-muted">Runs that explicitly reported drift in this window.</p>
             </Card>
           </div>
 
-          {/* 90-Day Quick Launch Preview Callout */}
-          <Card className="border-primary/40 bg-gradient-to-r from-primary/10 via-surface/50 to-surface/40 p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <Badge variant="outline" className="font-mono text-xs border-primary/40 text-primary">
-                  FIRST 90 DAYS PLAYBOOK
-                </Badge>
-                <h3 className="text-lg font-display font-bold text-text-primary">
-                  Enterprise Rollout Status: Phase 1 (Foundation &amp; Shadow Mode)
-                </h3>
-                <p className="text-xs text-text-muted max-w-2xl">
-                  Track your 90-day journey from passive observation to Tier-0 perimeter containment and cryptographic in-toto/SLSA minting.
-                </p>
+          <Card className="border-primary/30 bg-primary/5 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <Badge variant="outline" className="border-primary/40 font-mono text-xs text-primary">OPERATOR PLAYBOOK</Badge>
+                <h3 className="mt-2 text-lg font-bold text-text-primary">Turn the control plane into a 90-day operating habit</h3>
+                <p className="mt-1 max-w-2xl text-xs text-text-muted">A local, operator-confirmed checklist moves from baseline discovery to bounded automation and evidence operations.</p>
               </div>
-              <Button
-                onClick={() => setActiveTab('playbook')}
-                className="font-mono text-xs shadow-glow whitespace-nowrap"
-              >
-                Open 90-Day Playbook
+              <Button onClick={() => setActiveTab('playbook')} className="whitespace-nowrap font-mono text-xs">
+                Open playbook
               </Button>
             </div>
           </Card>
         </TabsContent>
 
-        {/* TAB 2: FIRST 90 DAYS SETUP PLAYBOOK */}
-        <TabsContent value="playbook" className="space-y-6 animate-in fade-in">
+        <TabsContent value="playbook" className="space-y-6">
           <First90DaysPlaybook
-            organizationId={organizationId}
+            organizationId={organizationId || 'local-setup'}
             organizationName={organizationName}
-            metrics={{
-              aiTouchedPercentage: effectiveMetrics.aiTouchedPercentage,
-              gatePassRate: effectiveMetrics.gatePassRate,
-              totalRuns: effectiveMetrics.totalRuns || 148,
-              slopsquattingBlockedCount: effectiveMetrics.slopsquattingBlockedCount || 9,
-              attestationsMinted: effectiveMetrics.attestationsMinted || 142,
-            }}
+            metrics={metrics ? {
+              aiTouchedPercentage: metrics.aiTouchedPercentage,
+              gatePassRate: metrics.gatePassRate,
+              totalRuns: metrics.totalRuns,
+              supplyChainViolations: metrics.supplyChainViolations,
+              provenancePacks: metrics.provenancePacks,
+            } : undefined}
           />
         </TabsContent>
 
-        {/* TAB 3: BLAST RADIUS & GATES */}
-        <TabsContent value="gates" className="space-y-6 animate-in fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="border-border/30 bg-surface/40 p-6 space-y-4">
+        <TabsContent value="gates" className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card className="border-border/30 bg-surface/40 p-6">
               <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-amber-500" />
-                <h3 className="text-lg font-display font-bold text-text-primary">
-                  Perimeter Risk Tiers (0 – 3)
-                </h3>
+                <Lock className="h-5 w-5 text-amber-400" aria-hidden="true" />
+                <h2 className="text-lg font-bold text-text-primary">Blast-radius policy blueprint</h2>
               </div>
-              <p className="text-xs text-text-muted leading-relaxed">
-                Autonomous agents are strictly prohibited from unilateral modifications to critical perimeter infrastructure without dual-custody approval.
-              </p>
-
-              <div className="space-y-3 pt-2">
-                <div className="p-3 rounded-lg border border-rose-500/30 bg-rose-500/5 space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-rose-400">Tier 0: Critical Perimeter</span>
-                    <Badge variant="outline" className="border-rose-500/30 text-rose-400 text-[10px] font-mono">
-                      DUAL-CUSTODY REQUIRED
-                    </Badge>
+              <p className="mt-2 text-xs leading-relaxed text-text-muted">A starting model for matching agent autonomy to the consequence of a change. Confirm these paths in your own policy configuration.</p>
+              <div className="mt-5 space-y-3">
+                {RISK_TIERS.map((item) => (
+                  <div key={item.tier} className={`rounded-lg border p-3 ${item.tone}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold">{item.tier}: {item.title}</span>
+                      <span className="rounded border border-current/30 px-2 py-0.5 font-mono text-[10px]">{item.control}</span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-text-subtle">{item.paths}</div>
                   </div>
-                  <div className="text-[11px] font-mono text-text-subtle">
-                    Paths: .github/workflows/*, prisma/migrations/*, k8s/*, terraform/*
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-amber-400">Tier 1: Core Domain Logic</span>
-                    <Badge variant="outline" className="border-amber-500/30 text-amber-400 text-[10px] font-mono">
-                      TEST GATE REQUIRED
-                    </Badge>
-                  </div>
-                  <div className="text-[11px] font-mono text-text-subtle">
-                    Paths: lib/auth/*, lib/billing/*, services/*, queue/*
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-primary">Tier 2: Standard Feature Surface</span>
-                    <Badge variant="outline" className="border-primary/30 text-primary text-[10px] font-mono">
-                      POLICY PASS REQUIRED
-                    </Badge>
-                  </div>
-                  <div className="text-[11px] font-mono text-text-subtle">
-                    Paths: app/(app)/*, components/*, hooks/*
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5 space-y-1">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-emerald-400">Tier 3: Documentation &amp; Tests</span>
-                    <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 text-[10px] font-mono">
-                      FAST PATH
-                    </Badge>
-                  </div>
-                  <div className="text-[11px] font-mono text-text-subtle">
-                    Paths: docs/*, __tests__/*, e2e/*, content/*
-                  </div>
-                </div>
+                ))}
               </div>
             </Card>
 
-            <Card className="border-border/30 bg-surface/40 p-6 space-y-4">
+            <Card className="border-border/30 bg-surface/40 p-6">
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-emerald-500" />
-                <h3 className="text-lg font-display font-bold text-text-primary">
-                  Active Enforcement Circuit Breakers
-                </h3>
+                <Shield className="h-5 w-5 text-emerald-400" aria-hidden="true" />
+                <h2 className="text-lg font-bold text-text-primary">Automation recipes</h2>
               </div>
-              <p className="text-xs text-text-muted leading-relaxed">
-                Deterministic safeguards that prevent runaway agent loops, supply chain poisoning, and policy regression.
-              </p>
-
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-surface/50 text-xs">
-                  <div>
-                    <div className="font-medium text-text-primary">Slopsquatting Dependency Blocker</div>
-                    <div className="text-[11px] text-text-subtle">Blocks unverified synthetic stems &amp; zero-day packages</div>
+              <p className="mt-2 text-xs leading-relaxed text-text-muted">Composable controls available to policy authors. “Available” does not imply they are enabled for this workspace.</p>
+              <div className="mt-5 space-y-3">
+                {CONTROL_RECIPES.map(([title, detail]) => (
+                  <div key={title} className="flex items-start justify-between gap-4 rounded-lg border border-border/20 bg-surface/50 p-3">
+                    <div>
+                      <div className="text-xs font-medium text-text-primary">{title}</div>
+                      <div className="mt-1 text-[11px] text-text-subtle">{detail}</div>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 font-mono text-[10px] text-primary">AVAILABLE</Badge>
                   </div>
-                  <span className="text-emerald-400 font-mono font-semibold">ENFORCED</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-surface/50 text-xs">
-                  <div>
-                    <div className="font-medium text-text-primary">Agent Recursive Edit Circuit Breaker</div>
-                    <div className="text-[11px] text-text-subtle">Limits self-referential agent diff loops to max 3 cycles</div>
-                  </div>
-                  <span className="text-emerald-400 font-mono font-semibold">ENFORCED</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-surface/50 text-xs">
-                  <div>
-                    <div className="font-medium text-text-primary">Time-Bound Cryptographic Waiver Gate</div>
-                    <div className="text-[11px] text-text-subtle">All emergency bypasses require HMAC co-signature &amp; TTL</div>
-                  </div>
-                  <span className="text-emerald-400 font-mono font-semibold">ENFORCED</span>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-surface/50 text-xs">
-                  <div>
-                    <div className="font-medium text-text-primary">Documentation Sync Invariant</div>
-                    <div className="text-[11px] text-text-subtle">Ensures API contract mutations update OpenAPI / docs</div>
-                  </div>
-                  <span className="text-emerald-400 font-mono font-semibold">ENFORCED</span>
-                </div>
+                ))}
               </div>
             </Card>
           </div>
         </TabsContent>
 
-        {/* TAB 4: COMPLIANCE & PROVENANCE */}
-        <TabsContent value="compliance" className="space-y-6 animate-in fade-in">
-          <Card className="border-border/30 bg-surface/40 p-6 space-y-6">
-            <div>
-              <h3 className="text-xl font-display font-bold text-text-primary">
-                Verifiable Cryptographic Supply Chain Pipeline
-              </h3>
-              <p className="text-xs text-text-muted mt-1">
-                Every code modification synthesized by an AI agent is bound into an immutable in-toto v1.0 statement.
-              </p>
+        <TabsContent value="compliance" className="space-y-6">
+          <Card className="border-border/30 bg-surface/40 p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-text-primary">Evidence pipeline</h2>
+                <p className="mt-1 text-xs text-text-muted">Persist hashes, policy outcomes, and safe summaries so reviewers can inspect what actually happened.</p>
+              </div>
+              <Badge variant="outline" className="w-fit font-mono text-xs text-primary">{metrics?.provenancePacks ?? 0} PACKS / 30 DAYS</Badge>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl border border-border/30 bg-surface/50 space-y-2">
-                <div className="font-mono text-xs text-primary font-bold">01. INGEST &amp; HASH</div>
-                <h4 className="text-sm font-semibold text-text-primary">Prompt &amp; Model Digest</h4>
-                <p className="text-xs text-text-muted">
-                  Computes SHA-256 digests of agent prompts, foundation model IDs, and git commit tree before evaluation.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border/30 bg-surface/50 space-y-2">
-                <div className="font-mono text-xs text-accent font-bold">02. ATTEST</div>
-                <h4 className="text-sm font-semibold text-text-primary">in-toto v1.0 Statement</h4>
-                <p className="text-xs text-text-muted">
-                  Encapsulates subject commit SHA, predicate policy results, and evidence bundle IDs into a signed JSON-LD envelope.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border/30 bg-surface/50 space-y-2">
-                <div className="font-mono text-xs text-emerald-400 font-bold">03. VERIFY</div>
-                <h4 className="text-sm font-semibold text-text-primary">SLSA Level 2+ Verification</h4>
-                <p className="text-xs text-text-muted">
-                  Auditors verify signatures with the ReadyLayer CLI: <code className="text-primary font-mono">readylayer verify</code>.
-                </p>
-              </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              {[
+                ['01', 'Capture', 'Record source, agent context, prompt hashes, and the subject revision.'],
+                ['02', 'Evaluate', 'Bind deterministic policy outcomes and redacted evidence to the run.'],
+                ['03', 'Verify', 'Export the persisted pack for independent review and downstream attestation.'],
+              ].map(([number, title, detail]) => (
+                <div key={number} className="rounded-xl border border-border/30 bg-surface/50 p-4">
+                  <div className="font-mono text-xs font-bold text-primary">{number}</div>
+                  <h3 className="mt-2 text-sm font-semibold text-text-primary">{title}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-text-muted">{detail}</p>
+                </div>
+              ))}
             </div>
-
-            <div className="pt-4 border-t border-border/20 space-y-4">
-              <h4 className="text-sm font-semibold text-text-primary">Turn-Key Regulatory Mappings</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-3 rounded-lg border border-border/20 bg-surface/50 space-y-1">
-                  <div className="text-xs font-semibold text-text-primary">OWASP LLM Top 10</div>
-                  <div className="text-[11px] text-text-subtle">Controls: LLM01, LLM02, LLM06</div>
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
-                    100% COVERED
-                  </Badge>
-                </div>
-
-                <div className="p-3 rounded-lg border border-border/20 bg-surface/50 space-y-1">
-                  <div className="text-xs font-semibold text-text-primary">NIST AI RMF</div>
-                  <div className="text-[11px] text-text-subtle">SP 1270: Govern / Map / Measure</div>
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
-                    COMPLIANT
-                  </Badge>
-                </div>
-
-                <div className="p-3 rounded-lg border border-border/20 bg-surface/50 space-y-1">
-                  <div className="text-xs font-semibold text-text-primary">EU AI Act</div>
-                  <div className="text-[11px] text-text-subtle">Articles 14 &amp; 50 Dual Custody</div>
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
-                    AUDIT READY
-                  </Badge>
-                </div>
-
-                <div className="p-3 rounded-lg border border-border/20 bg-surface/50 space-y-1">
-                  <div className="text-xs font-semibold text-text-primary">SOC 2 Type II</div>
-                  <div className="text-[11px] text-text-subtle">Trust Services Criteria CC6 / CC7</div>
-                  <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 text-[10px] font-mono">
-                    SEALED EVIDENCE
-                  </Badge>
-                </div>
+            <div className="mt-6 border-t border-border/20 pt-5">
+              <h3 className="text-sm font-semibold text-text-primary">Framework evidence mappings</h3>
+              <p className="mt-1 text-xs text-text-muted">Mappings accelerate evidence collection; they are not certifications or legal conclusions.</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {FRAMEWORK_MAPPINGS.map(([name, detail]) => (
+                  <div key={name} className="rounded-lg border border-border/20 bg-surface/50 p-3">
+                    <div className="text-xs font-semibold text-text-primary">{name}</div>
+                    <div className="mt-1 text-[11px] text-text-subtle">{detail}</div>
+                    <Badge variant="outline" className="mt-3 font-mono text-[10px] text-primary">MAPPING AVAILABLE</Badge>
+                  </div>
+                ))}
               </div>
             </div>
           </Card>
         </TabsContent>
 
-        {/* TAB 5: RISK TELEMETRY */}
-        <TabsContent value="trends" className="space-y-6 animate-in fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="border-border/30 bg-surface/40 p-6 space-y-4">
-              <div className="flex items-center justify-between">
+        <TabsContent value="trends" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="border-border/30 bg-surface/40 p-6">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-display font-bold text-text-primary">
-                    30-Day Risk Exposure Index™
-                  </h3>
-                  <p className="text-xs text-text-muted">
-                    Composite organization risk score trajectory (lower is safer)
-                  </p>
+                  <div className="text-xs font-mono text-text-subtle">POLICY BLOCK-RATE CHANGE</div>
+                  <div className="mt-3 flex items-center gap-2 text-2xl font-bold text-text-primary">
+                    {riskTrend === null ? <Minus className="h-5 w-5" /> : riskTrend <= 0 ? <TrendingDown className="h-5 w-5 text-emerald-400" /> : <TrendingUp className="h-5 w-5 text-amber-400" />}
+                    {riskTrend === null ? '—' : `${riskTrend > 0 ? '+' : ''}${(riskTrend * 100).toFixed(1)} pts`}
+                  </div>
                 </div>
-                <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 font-mono text-xs">
-                  -14% (IMPROVING)
-                </Badge>
+                <Activity className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
-
-              {/* Responsive SVG Trend Line */}
-              <div className="h-44 w-full pt-4">
-                <svg className="w-full h-full" viewBox="0 0 400 120" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="riskGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  {/* Area fill */}
-                  <path
-                    d="M 0,40 Q 80,65 160,50 T 320,35 T 400,20 L 400,120 L 0,120 Z"
-                    fill="url(#riskGradient)"
-                  />
-                  {/* Trend line */}
-                  <path
-                    d="M 0,40 Q 80,65 160,50 T 320,35 T 400,20"
-                    fill="none"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                  />
-                  {/* Data points */}
-                  <circle cx="0" cy="40" r="4" fill="hsl(var(--primary))" />
-                  <circle cx="160" cy="50" r="4" fill="hsl(var(--primary))" />
-                  <circle cx="320" cy="35" r="4" fill="hsl(var(--primary))" />
-                  <circle cx="400" cy="20" r="5" fill="#34d399" />
-                </svg>
-                <div className="flex justify-between text-[11px] font-mono text-text-subtle pt-2">
-                  <span>Day 1 (Baseline: 68)</span>
-                  <span>Day 15 (Tuning: 48)</span>
-                  <span className="text-emerald-400 font-bold">Today (Protected: 24)</span>
-                </div>
-              </div>
+              <p className="mt-3 text-sm font-medium text-text-primary">{riskLabel}</p>
+              <p className="mt-1 text-xs leading-relaxed text-text-muted">Compares evaluated-run failure rates in the latest 15 days with the prior 15 days. It is not a synthetic risk score.</p>
             </Card>
 
-            <Card className="border-border/30 bg-surface/40 p-6 space-y-4">
-              <div className="flex items-center justify-between">
+            <Card className="border-border/30 bg-surface/40 p-6">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-display font-bold text-text-primary">
-                    AI-Touched Diff Velocity
-                  </h3>
-                  <p className="text-xs text-text-muted">
-                    Proportion of pull request lines written with agent assistance
-                  </p>
+                  <div className="text-xs font-mono text-text-subtle">LINE-COVERAGE CHANGE</div>
+                  <div className="mt-3 text-2xl font-bold text-text-primary">{metrics ? formatNumber(metrics.coverageDelta, ' pts') : '—'}</div>
                 </div>
-                <Badge variant="outline" className="text-primary border-primary/30 font-mono text-xs">
-                  {(effectiveMetrics.aiTouchedPercentage * 100).toFixed(0)}% AVERAGE
-                </Badge>
+                <GitBranch className="h-5 w-5 text-primary" aria-hidden="true" />
               </div>
-
-              {/* Responsive SVG Bar Histogram */}
-              <div className="h-44 w-full pt-4">
-                <svg className="w-full h-full" viewBox="0 0 400 120">
-                  <rect x="20" y="70" width="30" height="50" rx="4" fill="hsl(var(--surface-raised))" />
-                  <rect x="70" y="60" width="30" height="60" rx="4" fill="hsl(var(--surface-raised))" />
-                  <rect x="120" y="45" width="30" height="75" rx="4" fill="hsl(var(--surface-raised))" />
-                  <rect x="170" y="55" width="30" height="65" rx="4" fill="hsl(var(--surface-raised))" />
-                  <rect x="220" y="35" width="30" height="85" rx="4" fill="hsl(var(--primary))" />
-                  <rect x="270" y="30" width="30" height="90" rx="4" fill="hsl(var(--primary))" />
-                  <rect x="320" y="25" width="30" height="95" rx="4" fill="hsl(var(--accent))" />
-                  <rect x="370" y="20" width="30" height="100" rx="4" fill="hsl(var(--accent))" />
-                </svg>
-                <div className="flex justify-between text-[11px] font-mono text-text-subtle pt-2">
-                  <span>Week 1 (18%)</span>
-                  <span>Week 2 (28%)</span>
-                  <span>Week 3 (36%)</span>
-                  <span className="text-primary font-bold">Week 4 (42%)</span>
-                </div>
-              </div>
+              <p className="mt-3 text-sm font-medium text-text-primary">Recent window versus prior window</p>
+              <p className="mt-1 text-xs leading-relaxed text-text-muted">Only runs that report <code className="font-mono text-primary">coverage.lines</code> participate in this comparison.</p>
             </Card>
           </div>
+
+          <Card className="border-border/30 bg-surface/40 p-6">
+            <div className="grid gap-6 sm:grid-cols-3">
+              <div>
+                <div className="text-xs font-mono text-text-subtle">RUNS OBSERVED</div>
+                <div className="mt-2 text-2xl font-bold text-text-primary">{metrics?.totalRuns ?? '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs font-mono text-text-subtle">RUNS BLOCKED</div>
+                <div className="mt-2 text-2xl font-bold text-text-primary">{metrics?.blockedRuns ?? '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs font-mono text-text-subtle">WINDOW</div>
+                <div className="mt-2 text-2xl font-bold text-text-primary">{metrics ? `${metrics.windowDays} days` : '—'}</div>
+              </div>
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

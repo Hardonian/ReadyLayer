@@ -334,34 +334,38 @@ export function calculateOverallAdoption(completedIds: string[]): {
 export function generateExecutiveBriefingMarkdown(params: {
   organizationName: string;
   completedMilestoneIds: string[];
-  metrics: {
+  metrics?: {
     aiTouchedPercentage: number;
-    gatePassRate: number;
+    gatePassRate: number | null;
     totalRuns: number;
-    slopsquattingBlockedCount: number;
-    attestationsMinted: number;
+    supplyChainViolations: number;
+    provenancePacks: number;
   };
 }): string {
   const { organizationName, completedMilestoneIds, metrics } = params;
   const overall = calculateOverallAdoption(completedMilestoneIds);
   const timestamp = new Date().toISOString();
+  const safeOrganizationName = organizationName.replace(/[\r\n|]/g, ' ').trim() || 'Organization';
+  const telemetrySummary = metrics
+    ? `- **Total Observed Runs:** ${metrics.totalRuns}
+- **AI-Touched Run Proportion:** ${(metrics.aiTouchedPercentage * 100).toFixed(1)}%
+- **Policy Gate Pass Rate:** ${metrics.gatePassRate === null ? 'Not available' : `${(metrics.gatePassRate * 100).toFixed(1)}%`}
+- **Supply-Chain Findings:** ${metrics.supplyChainViolations} recorded violations
+- **Provenance Packs:** ${metrics.provenancePacks} persisted packs`
+    : '- **Observed Telemetry:** Not connected. This briefing currently contains operator-confirmed checklist progress only.';
 
-  return `# READY共同LAYER ENTERPRISE AI AGENT READINESS & 90-DAY AUDIT BRIEFING
-**Document Classification:** RESTRICTED — INTERNAL GOVERNANCE ONLY
-**Organization:** ${organizationName}
+  return `# READYLAYER AI GOVERNANCE — 90-DAY OPERATOR BRIEFING
+**Document Type:** Internal operating report — not a compliance certification
+**Organization:** ${safeOrganizationName}
 **Generated Date:** ${timestamp}
-**Adoption Maturity:** ${overall.percentage}% (${overall.currentPhase.title})
+**Operator-Confirmed Progress:** ${overall.percentage}% (${overall.currentPhase.title})
 
 ---
 
 ## 1. EXECUTIVE SUMMARY
-ReadyLayer has established deterministic operational control over autonomous coding agents across ${organizationName}'s software delivery lifecycle.
+This report combines operator-confirmed rollout milestones with observed ReadyLayer telemetry for ${safeOrganizationName}. Checklist completion is self-reported and should be validated against the listed verification methods.
 
-- **Total Evaluated Code Runs:** ${metrics.totalRuns}
-- **AI-Touched Code Proportion:** ${(metrics.aiTouchedPercentage * 100).toFixed(1)}%
-- **Policy Gate Pass Rate:** ${(metrics.gatePassRate * 100).toFixed(1)}%
-- **Supply-Chain / Slopsquatting Interceptions:** ${metrics.slopsquattingBlockedCount} blocked attacks
-- **Cryptographic in-toto/SLSA Attestations Minted:** ${metrics.attestationsMinted} verifiable statements
+${telemetrySummary}
 
 ---
 
@@ -388,16 +392,18 @@ ${phase.deliverables.map((d) => `- [${progress === 100 ? 'x' : ' '}] ${d}`).join
 
 ---
 
-## 3. COMPLIANCE & REGULATORY ALIGNMENT
-The policy boundaries enforced by ReadyLayer directly map to external standards:
-- **OWASP Top 10 for LLM Applications (2025/2026):** Enforcing controls LLM01, LLM02, and LLM06.
-- **NIST AI Risk Management Framework (SP 1270):** Governed, measured, and mapped controls.
-- **EU Artificial Intelligence Act (Articles 14 & 50):** Dual-custody technical measures and AI-generated transparency attestations.
-- **SOC 2 Type II & ISO 42001:** Cryptographic evidence bundles with immutable audit chains.
+## 3. EVIDENCE MAPPING TARGETS
+ReadyLayer evidence can support control mapping and audit preparation for:
+- **OWASP Top 10 for LLM Applications:** Prompt, output, and supply-chain control evidence.
+- **NIST AI Risk Management Framework:** Govern, Map, Measure, and Manage evidence.
+- **EU Artificial Intelligence Act:** Human-oversight and transparency evidence inputs.
+- **SOC 2 & ISO 42001:** Change-control and AI-management evidence inputs.
+
+These mappings are starting points for review by the organization's security, compliance, and legal teams. They do not establish certification or legal compliance.
 
 ---
 
 **Prepared by:** ReadyLayer Enterprise Control Plane
-**Attestation Hash:** sha256:${Buffer.from(`${organizationName}:${timestamp}:${overall.percentage}`).toString('hex').slice(0, 32)}
+**Report Scope:** Operator-confirmed checklist plus available 30-day product telemetry
 `;
 }
