@@ -42,7 +42,7 @@ const TIER_0_PATTERNS = [
   { pattern: /(?:^|\/)docker-compose(?:\.[^/]+)?\.ya?ml$/i, reason: 'Container orchestration composition' },
   { pattern: /(?:^|\/)terraform\/|(?:\.tf|\.tfvars)$/i, reason: 'Infrastructure as Code / Cloud Resource provisioning' },
   { pattern: /(?:^|\/)k8s\/|(?:^|\/)kubernetes\/|\.ya?ml$/i, isK8s: true, reason: 'Kubernetes cluster deployment specs' },
-  { pattern: /(?:^|\/)lib\/secrets\/|(?:^|\/)lib\/auth\/|(?:^|\/)middleware\.ts$/i, reason: 'Authentication guards, session token handler, secret redaction' },
+  { pattern: /(?:^|\/)lib\/secrets\/|(?:^|\/)lib\/auth\/|(?:^|\/)(?:middleware|proxy)\.ts$/i, reason: 'Authentication guards, session token handler, secret redaction' },
   { pattern: /(?:^|\/)crypto\/|(?:^|\/)certificates\/|\.pem$|\.key$/i, reason: 'Cryptographic primitives and secret key material' },
 ];
 

@@ -53,7 +53,7 @@ const config = [
       'eslint.config.js',
       'next.config.js',
       'tailwind.config.ts',
-      'vitest.config.ts',
+      'vitest.config.mts',
       'playwright.config.ts',
       'postcss.config.js',
       'tests/behavior/**',

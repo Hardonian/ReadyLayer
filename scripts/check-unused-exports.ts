@@ -40,8 +40,8 @@ const IGNORE_PATTERNS = [
   /ErrorBoundary\.tsx$/,
   /failure-explainer\.tsx$/,
   /FailureModes\.tsx$/,
-  // Next.js middleware and layout config
-  /middleware\.ts$/,
+  // Next.js proxy and layout config
+  /proxy\.ts$/,
   /usage-limit-banner\.tsx$/,
   // Contract/schema files (often exported for external use)
   /contracts\//,

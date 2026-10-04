@@ -6,7 +6,7 @@ import { edgeRateLimit } from '../lib/middleware/edge-rate-limit'
 import { isPublicApiRoute, isPublicRoute } from '../lib/access-control'
 
 /**
- * Static asset patterns that should never be processed by middleware
+ * Static asset patterns that should never be processed by the request proxy
  */
 const STATIC_ASSET_PATTERNS = [
   /\.(ico|png|jpg|jpeg|gif|svg|webp|css|js|map|woff|woff2|ttf|eot)$/i,
@@ -86,10 +86,10 @@ function createEdgeSupabaseClient(request: NextRequest): {
 }
 
 /**
- * Handle middleware errors gracefully
+ * Handle proxy errors gracefully
  * Never throws - always returns a response
  */
-function handleMiddlewareError(
+function handleProxyError(
   error: unknown,
   request: NextRequest,
   context: string
@@ -98,13 +98,13 @@ function handleMiddlewareError(
 
   // Safe logging - never throw
   try {
-    edgeLogger.error(error, `Middleware error in ${context}`, {
+    edgeLogger.error(error, `Proxy error in ${context}`, {
       path: request.nextUrl.pathname,
       method: request.method,
     })
   } catch {
     // Even logging failed - use console as last resort
-    console.error('Middleware error:', {
+    console.error('Proxy error:', {
       context,
       path: request.nextUrl.pathname,
       error: errorMessage,
@@ -135,19 +135,19 @@ function handleMiddlewareError(
 }
 
 /**
- * Main middleware function
- * Edge runtime compatible - no Node.js dependencies
+ * Main Next.js request proxy.
+ * Node-runtime compatible and free of database dependencies.
  */
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Ultimate safety net - catch any unhandled errors
   try {
-    return await executeMiddleware(request)
+    return await executeProxy(request)
   } catch (error) {
-    return handleMiddlewareError(error, request, 'middleware top-level')
+    return handleProxyError(error, request, 'proxy top-level')
   }
 }
 
-async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
+async function executeProxy(request: NextRequest): Promise<NextResponse> {
   const pathname = request.nextUrl.pathname
 
   // Skip static assets immediately
@@ -235,7 +235,7 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
 
       // If no user, check for API key in header
       // Note: Full API key validation requires Prisma (Node runtime)
-      // For middleware, we only check presence - actual validation happens in route handler
+      // The proxy only checks presence; route handlers perform full API-key validation.
       if (!user) {
         const apiKey = extractApiKeyFromHeader(request)
         if (!apiKey) {
@@ -323,19 +323,3 @@ async function executeMiddleware(request: NextRequest): Promise<NextResponse> {
   return NextResponse.next()
 }
 
-/**
- * Middleware matcher configuration
- * Only match routes that need processing - exclude static assets
- */
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, robots.txt, sitemap.xml
-     * - Static files with extensions (png, jpg, etc.)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|woff|woff2|ttf|eot)$).*)',
-  ],
-}
