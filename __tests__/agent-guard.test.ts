@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { generateKeyPairSync } from 'node:crypto';
 import {
   inspectPackage,
   scanDiffForSlopsquatting,
@@ -6,7 +7,10 @@ import {
   evaluateAgentBlastRadius,
   generateInTotoAttestation,
   generateCycloneDxAiBom,
+  verifyInTotoAttestation,
 } from '../lib/agent-guard';
+
+const ATTESTATION_SECRET = 'test-attestation-secret-with-at-least-32-bytes';
 
 describe('AI Package Slopsquatting & Hallucination Detector', () => {
   it('identifies verified high-reputation packages as SAFE', () => {
@@ -93,6 +97,12 @@ describe('Cryptographic in-toto Attestation & CycloneDX AIBOM', () => {
         prompts: ['create a button component'],
       },
       blastRadius,
+      policyChecksum: 'policy-sha256-test',
+      signing: {
+        algorithm: 'hmac-sha256',
+        secret: ATTESTATION_SECRET,
+        keyId: 'test-key-v1',
+      },
     });
 
     expect(attestation._type).toBe('https://in-toto.io/Statement/v1');
@@ -102,6 +112,65 @@ describe('Cryptographic in-toto Attestation & CycloneDX AIBOM', () => {
     expect(attestation.predicate.invocation.agent.promptHashes.length).toBe(1);
     expect(attestation.signature.algorithm).toBe('hmac-sha256');
     expect(attestation.signature.sig.length).toBe(64);
+    expect(
+      verifyInTotoAttestation(attestation, {
+        algorithm: 'hmac-sha256',
+        secret: ATTESTATION_SECRET,
+      })
+    ).toBe(true);
+  });
+
+  it('rejects a tampered attestation', () => {
+    const attestation = generateInTotoAttestation({
+      commitSha: 'a1b2c3d4e5f6',
+      diffContent: '+ secure change',
+      agent: { id: 'test-agent' },
+      blastRadius: evaluateAgentBlastRadius(['components/Button.tsx']),
+      signing: { algorithm: 'hmac-sha256', secret: ATTESTATION_SECRET },
+    });
+    const tampered = {
+      ...attestation,
+      predicate: {
+        ...attestation.predicate,
+        governanceVerdict: {
+          ...attestation.predicate.governanceVerdict,
+          decision: 'PASSED' as const,
+          deterministicScore: 0,
+        },
+      },
+    };
+
+    expect(
+      verifyInTotoAttestation(tampered, {
+        algorithm: 'hmac-sha256',
+        secret: ATTESTATION_SECRET,
+      })
+    ).toBe(false);
+  });
+
+  it('signs and verifies attestations with Ed25519 key material', () => {
+    const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+    const privatePem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+    const publicPem = publicKey.export({ type: 'spki', format: 'pem' }).toString();
+    const attestation = generateInTotoAttestation({
+      commitSha: 'a1b2c3d4e5f6',
+      diffContent: '+ cryptographically verified change',
+      agent: { id: 'test-agent' },
+      blastRadius: evaluateAgentBlastRadius(['components/Button.tsx']),
+      signing: {
+        algorithm: 'ed25519',
+        privateKey: privatePem,
+        keyId: 'test-ed25519-v1',
+      },
+    });
+
+    expect(attestation.signature.algorithm).toBe('ed25519');
+    expect(
+      verifyInTotoAttestation(attestation, {
+        algorithm: 'ed25519',
+        publicKey: publicPem,
+      })
+    ).toBe(true);
   });
 
   it('generates a compliant CycloneDX 1.6 AIBOM', () => {
@@ -118,5 +187,7 @@ describe('Cryptographic in-toto Attestation & CycloneDX AIBOM', () => {
     expect(aibom.specVersion).toBe('1.6');
     expect(aibom.components.some((c) => c.type === 'machine-learning-model')).toBe(true);
     expect(aibom.declarations?.compliance.frameworks).toContain('NIST AI RMF 1.0 (SP 1270)');
+    expect(aibom.declarations?.compliance.humanInTheLoopVerified).toBe(false);
+    expect(aibom.declarations?.compliance.slopsquattingAudited).toBe(false);
   });
 });

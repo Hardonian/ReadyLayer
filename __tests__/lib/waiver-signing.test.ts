@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   signWaiver,
   verifyWaiverSignature,
@@ -8,6 +8,21 @@ import {
 } from '../../lib/waivers';
 
 describe('Cryptographically Signed Policy Waivers', () => {
+  const signingKey = 'test-waiver-signing-key-with-at-least-32-bytes';
+  const originalSigningKey = process.env.WAIVER_SIGNING_KEY;
+
+  beforeAll(() => {
+    process.env.WAIVER_SIGNING_KEY = signingKey;
+  });
+
+  afterAll(() => {
+    if (originalSigningKey === undefined) {
+      delete process.env.WAIVER_SIGNING_KEY;
+    } else {
+      process.env.WAIVER_SIGNING_KEY = originalSigningKey;
+    }
+  });
+
   const samplePayload: WaiverPayload = {
     waiverId: 'waiver_test_123',
     organizationId: 'org_enterprise_456',

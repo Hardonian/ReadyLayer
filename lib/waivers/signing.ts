@@ -41,24 +41,31 @@ export interface WaiverVerificationResult {
   expiresAt?: Date | null;
 }
 
-const DEFAULT_SECRET_SALT = 'readylayer-waiver-signing-salt-2026';
+const MINIMUM_SIGNING_KEY_BYTES = 32;
 
 /**
  * Resolve waiver signing secret from environment
  */
 export function getWaiverSigningSecret(customSecret?: string): string {
-  if (customSecret) {
-    return customSecret;
-  }
-
-  const envSecret =
+  const secret = customSecret ||
     process.env.WAIVER_SIGNING_KEY ||
     process.env.READY_LAYER_MASTER_KEY ||
     process.env.READY_LAYER_KMS_KEY ||
-    process.env.ENCRYPTION_KEY ||
-    DEFAULT_SECRET_SALT;
+    process.env.ENCRYPTION_KEY;
 
-  return envSecret;
+  if (!secret) {
+    throw new Error(
+      'Waiver signing is not configured. Set WAIVER_SIGNING_KEY or READY_LAYER_MASTER_KEY.'
+    );
+  }
+
+  if (Buffer.byteLength(secret, 'utf8') < MINIMUM_SIGNING_KEY_BYTES) {
+    throw new Error(
+      `Waiver signing key must contain at least ${MINIMUM_SIGNING_KEY_BYTES} bytes`
+    );
+  }
+
+  return secret;
 }
 
 /**
