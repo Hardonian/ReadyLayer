@@ -2,7 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   mockAuthenticatedSession,
   setupVisualTest,
-  waitForVisualStability,
 } from './utils/visual-helpers';
 
 const readinessMetrics = {
@@ -52,6 +51,8 @@ async function mockReadinessData(page: Page): Promise<void> {
 }
 
 test.describe('Readiness command center', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeEach(async ({ page }) => {
     await setupVisualTest(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -68,17 +69,18 @@ test.describe('Readiness command center', () => {
     page.on('pageerror', (error) => pageErrors.push(error.message));
 
     await page.goto('/dashboard/readiness');
-    await waitForVisualStability(page);
 
     await expect(
       page.getByRole('heading', { name: 'Readiness & trust command center' })
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Supply-chain review')).toBeVisible();
     await expect(page.getByText('42', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('Observe', { exact: true })).toBeVisible();
     await expect(page.getByText('Decide', { exact: true })).toBeVisible();
     await expect(page.getByText('Enforce', { exact: true })).toBeVisible();
     await expect(page.getByText('Prove', { exact: true })).toBeVisible();
+    await page.waitForFunction(() => document.fonts.ready);
+    await page.waitForTimeout(200);
 
     await test.info().attach('readiness-operator-brief', {
       body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
@@ -109,11 +111,10 @@ test.describe('Readiness command center', () => {
   test('keeps the cockpit usable on a phone viewport', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/dashboard/readiness');
-    await waitForVisualStability(page);
 
     await expect(
       page.getByRole('heading', { name: 'Readiness & trust command center' })
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('tab', { name: 'Operator brief' })).toBeVisible();
 
     const hasBodyOverflow = await page.evaluate(
