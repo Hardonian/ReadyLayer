@@ -17,14 +17,13 @@ import {
   Shield,
   Lock,
   FileCheck2,
-  Terminal,
   Download,
   Copy,
   Check,
   ChevronRight,
   TrendingUp,
-  AlertTriangle,
   Sparkles,
+  X,
 } from 'lucide-react';
 
 export interface First90DaysPlaybookProps {
@@ -32,23 +31,23 @@ export interface First90DaysPlaybookProps {
   organizationName?: string;
   metrics?: {
     aiTouchedPercentage: number;
-    gatePassRate: number;
+    gatePassRate: number | null;
     totalRuns: number;
-    slopsquattingBlockedCount?: number;
-    attestationsMinted?: number;
+    supplyChainViolations: number;
+    provenancePacks: number;
   };
 }
+
+const MILESTONE_IDS = new Set(
+  ENTERPRISE_90_DAYS_PHASES.flatMap((phase) =>
+    phase.milestones.map((milestone) => milestone.id)
+  )
+);
 
 export function First90DaysPlaybook({
   organizationId,
   organizationName = 'Enterprise Organization',
-  metrics = {
-    aiTouchedPercentage: 0.42,
-    gatePassRate: 0.94,
-    totalRuns: 284,
-    slopsquattingBlockedCount: 14,
-    attestationsMinted: 268,
-  },
+  metrics,
 }: First90DaysPlaybookProps): React.JSX.Element {
   const [selectedPhaseId, setSelectedPhaseId] = useState<EnterprisePhase['id']>('days_1_30');
   const [completedIds, setCompletedIds] = useState<string[]>([]);
@@ -62,9 +61,13 @@ export function First90DaysPlaybook({
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
-        const parsed = JSON.parse(saved);
+        const parsed: unknown = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          setCompletedIds(parsed);
+          setCompletedIds(
+            parsed.filter(
+              (value): value is string => typeof value === 'string' && MILESTONE_IDS.has(value)
+            )
+          );
           return;
         }
       }
@@ -72,8 +75,7 @@ export function First90DaysPlaybook({
       // Ignore localStorage errors
     }
 
-    // Default seeded progress for high-fidelity initial display
-    setCompletedIds(['m1_git_integration', 'm1_shadow_mode_activation']);
+    setCompletedIds([]);
   }, [storageKey]);
 
   // Persist progress changes
@@ -99,13 +101,7 @@ export function First90DaysPlaybook({
   const executiveBriefing = generateExecutiveBriefingMarkdown({
     organizationName,
     completedMilestoneIds: completedIds,
-    metrics: {
-      aiTouchedPercentage: metrics.aiTouchedPercentage,
-      gatePassRate: metrics.gatePassRate,
-      totalRuns: metrics.totalRuns,
-      slopsquattingBlockedCount: metrics.slopsquattingBlockedCount || 0,
-      attestationsMinted: metrics.attestationsMinted || 0,
-    },
+    metrics,
   });
 
   const handleCopyBriefing = async () => {
@@ -163,8 +159,8 @@ export function First90DaysPlaybook({
               The First 90 Days: Enterprise AI Governance Roadmap
             </CardTitle>
             <CardDescription className="text-sm text-text-muted mt-1 max-w-3xl leading-relaxed">
-              Systematic operational blueprint for scaling autonomous coding agent delivery
-              (Cursor, Claude Code, Windsurf, Devin) across engineering teams with zero perimeter breach.
+              An operator-confirmed blueprint for scaling autonomous coding-agent delivery
+              while keeping high-impact changes inside explicit human and policy boundaries.
             </CardDescription>
           </div>
         </CardHeader>
@@ -195,13 +191,13 @@ export function First90DaysPlaybook({
             <div className="border-l border-border/20 pl-4 space-y-1">
               <div className="text-[11px] font-mono text-text-subtle uppercase">Target Risk Tiers</div>
               <div className="text-lg font-bold font-display text-text-primary">Tier 0 – 3</div>
-              <div className="text-[11px] text-emerald-400 font-mono">Dual-custody active</div>
+              <div className="text-[11px] text-text-subtle font-mono">Configuration target</div>
             </div>
 
             <div className="border-l border-border/20 pl-4 space-y-1">
               <div className="text-[11px] font-mono text-text-subtle uppercase">Provenance Standard</div>
               <div className="text-lg font-bold font-display text-text-primary">in-toto v1.0</div>
-              <div className="text-[11px] text-primary font-mono">SLSA Level 2+ verified</div>
+              <div className="text-[11px] text-text-subtle font-mono">Evidence target</div>
             </div>
           </div>
 
@@ -278,10 +274,12 @@ export function First90DaysPlaybook({
                   const isDone = completedIds.includes(milestone.id);
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={milestone.id}
                       onClick={() => toggleMilestone(milestone.id)}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer select-none ${
+                      aria-pressed={isDone}
+                      className={`w-full p-4 rounded-xl border text-left transition-all cursor-pointer select-none ${
                         isDone
                           ? 'border-emerald-500/30 bg-emerald-500/5'
                           : 'border-border/30 bg-surface/50 hover:border-primary/40'
@@ -336,7 +334,7 @@ export function First90DaysPlaybook({
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -352,7 +350,7 @@ export function First90DaysPlaybook({
                       key={idx}
                       className="p-3 rounded-lg border border-border/20 bg-surface/30 flex items-center gap-2.5 text-xs text-text-muted"
                     >
-                      <Check className="h-4 w-4 text-emerald-400 flex-shrink-0" />
+                      <Circle className="h-4 w-4 text-primary flex-shrink-0" />
                       <span>{deliverable}</span>
                     </div>
                   ))}
@@ -390,7 +388,7 @@ export function First90DaysPlaybook({
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                 <Lock className="h-4 w-4 text-amber-500" />
-                <span>Active Governance Gates</span>
+                <span>Target Governance Gates</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-2.5">
@@ -408,7 +406,7 @@ export function First90DaysPlaybook({
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                 <FileCheck2 className="h-4 w-4 text-emerald-500" />
-                <span>Regulatory Crosswalk</span>
+                <span>Evidence Mapping Reference</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-xs">
@@ -418,15 +416,15 @@ export function First90DaysPlaybook({
               </div>
               <div className="flex items-center justify-between p-2 rounded bg-surface/50 border border-border/20">
                 <span className="text-text-muted">NIST AI RMF</span>
-                <span className="font-mono text-emerald-400 font-medium">SP 1270 Aligned</span>
+                <span className="font-mono text-primary font-medium">Govern / Map / Measure</span>
               </div>
               <div className="flex items-center justify-between p-2 rounded bg-surface/50 border border-border/20">
                 <span className="text-text-muted">EU AI Act</span>
-                <span className="font-mono text-emerald-400 font-medium">Art. 14 Dual-Custody</span>
+                <span className="font-mono text-primary font-medium">Human Oversight</span>
               </div>
               <div className="flex items-center justify-between p-2 rounded bg-surface/50 border border-border/20">
                 <span className="text-text-muted">SOC 2 Type II</span>
-                <span className="font-mono text-emerald-400 font-medium">Immutable Evidence</span>
+                <span className="font-mono text-primary font-medium">Evidence Inputs</span>
               </div>
             </CardContent>
           </Card>
@@ -436,10 +434,15 @@ export function First90DaysPlaybook({
       {/* Executive Briefing Modal */}
       {showExecutiveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-          <Card className="max-w-3xl w-full max-h-[85vh] flex flex-col border-primary/40 bg-surface shadow-2xl">
+          <Card
+            className="max-w-3xl w-full max-h-[85vh] flex flex-col border-primary/40 bg-surface shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="executive-briefing-title"
+          >
             <CardHeader className="border-b border-border/30 flex flex-row items-center justify-between pb-4">
               <div>
-                <CardTitle className="text-xl font-display font-bold">
+                <CardTitle id="executive-briefing-title" className="text-xl font-display font-bold">
                   Executive 90-Day Governance Briefing
                 </CardTitle>
                 <CardDescription className="text-xs font-mono text-text-subtle">
@@ -468,8 +471,9 @@ export function First90DaysPlaybook({
                   size="sm"
                   variant="ghost"
                   onClick={() => setShowExecutiveModal(false)}
+                  aria-label="Close executive briefing"
                 >
-                  ✕
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </CardHeader>
