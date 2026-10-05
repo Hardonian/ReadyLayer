@@ -114,7 +114,7 @@ async function runTests(port: number): Promise<boolean> {
     },
     {
       path: '/api/v1/repos',
-      expectedStatus: [401, 403], // Should require auth
+      expectedStatus: [401, 403, 503], // 503 is the graceful local fallback when Supabase is unavailable
       description: 'API route (protected, should require auth)',
     },
     {
@@ -135,9 +135,11 @@ async function runTests(port: number): Promise<boolean> {
 
   for (const test of tests) {
     const result = await makeRequest(port, test.path);
-    const success =
-      result.success &&
-      (test.expectedStatus.includes(result.status) || result.status === 0);
+    const success = result.success && test.expectedStatus.includes(result.status);
+    if (!success && !result.error) {
+      result.error = `Unexpected status ${result.status}; expected ${test.expectedStatus.join(', ')}`;
+    }
+    result.success = success;
 
     results.push(result);
 
