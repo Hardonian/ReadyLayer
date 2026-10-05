@@ -346,16 +346,43 @@ export class PolicyInheritanceService {
    * Suggest policy improvements
    */
   async suggestImprovements(
-    _organizationId: string,
-    _currentPolicy: InheritedPolicy
+    organizationId: string,
+    currentPolicy: InheritedPolicy
   ): Promise<Array<{ suggestion: string; impact: string }>> {
-    // TODO: Analyze org's pull requests and suggest policy improvements
-    return [
-      {
-        suggestion: 'Enable PCI-DSS compliance rules',
-        impact: 'Will enforce payment data protection',
+    const repositories = await prisma.repository.findMany({
+      where: { organizationId },
+      select: { id: true },
+    });
+    if (repositories.length === 0) return [];
+
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const violations = await prisma.violation.findMany({
+      where: {
+        repositoryId: { in: repositories.map((repository) => repository.id) },
+        detectedAt: { gte: since },
       },
-    ];
+      select: { ruleId: true, severity: true },
+    });
+    const enabledByRule = new Map(currentPolicy.rules.map((rule) => [rule.id, rule.enabled]));
+    const counts = new Map<string, { count: number; critical: number }>();
+    for (const violation of violations) {
+      const current = counts.get(violation.ruleId) ?? { count: 0, critical: 0 };
+      current.count += 1;
+      if (violation.severity === 'critical' || violation.severity === 'high') current.critical += 1;
+      counts.set(violation.ruleId, current);
+    }
+
+    return [...counts.entries()]
+      .filter(([ruleId]) => enabledByRule.get(ruleId) !== true)
+      .sort(([, a], [, b]) => b.critical - a.critical || b.count - a.count)
+      .slice(0, 5)
+      .map(([ruleId, stats]) => ({
+        suggestion: `Enable ${ruleId}; it appeared in ${stats.count} violation${stats.count === 1 ? '' : 's'} during the last 30 days.`,
+        impact: stats.critical > 0
+          ? `${stats.critical} high-severity finding${stats.critical === 1 ? '' : 's'} indicate this rule should be enforced before merge.`
+          : 'This rule would turn a recurring finding into an explicit governance control.',
+      }));
   }
 }
 

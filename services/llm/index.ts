@@ -14,6 +14,7 @@ import {
   setCachedResponse as setCached,
 } from '../../lib/cache/llm-cache';
 import { getCircuitBreaker } from '../../lib/circuit-breaker';
+import { metrics } from '../../observability/metrics';
 
 export interface LLMRequest {
   prompt: string;
@@ -158,7 +159,7 @@ class OpenAIProvider implements LLMProvider {
     cost: number
   ): Promise<void> {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     await prisma.costTracking.upsert({
       where: {
@@ -306,7 +307,7 @@ class AnthropicProvider implements LLMProvider {
     cost: number
   ): Promise<void> {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     await prisma.costTracking.upsert({
       where: {
@@ -448,7 +449,7 @@ class OpenCodeProvider implements LLMProvider {
     cost: number
   ): Promise<void> {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     await prisma.costTracking.upsert({
       where: {
@@ -560,28 +561,45 @@ export class LLMService {
       providerName = 'opencode';
     }
 
-    const provider = this.providers.get(providerName);
-    if (!provider) {
-      throw new Error(`Provider ${providerName} not available`);
+    const providerOrder = [
+      providerName,
+      ...Array.from(this.providers.keys()).filter((name) => name !== providerName),
+    ];
+    const failures: Array<{ provider: string; error: unknown }> = [];
+
+    for (const candidateName of providerOrder) {
+      const provider = this.providers.get(candidateName);
+      if (!provider) continue;
+      try {
+        const response = await provider.complete({
+          ...request,
+          // A provider-specific model must not be sent to a different API on fallback.
+          model: candidateName === providerName ? request.model : undefined,
+        });
+
+        if (candidateName !== providerName) {
+          metrics.increment('llm_provider_fallback', { from: providerName, to: candidateName });
+        }
+        // A cache write is best-effort and must never turn a successful model
+        // response into a provider failure or trigger a duplicate API call.
+        if (request.cache !== false) {
+          try {
+            await this.cacheResponse(request, response);
+          } catch (cacheError) {
+            metrics.increment('llm_cache_write_failure', { provider: candidateName });
+            const { logger } = await import('../../observability/logging');
+            logger.warn({ err: cacheError, provider: candidateName }, 'Failed to cache LLM response');
+          }
+        }
+        return response;
+      } catch (error) {
+        failures.push({ provider: candidateName, error });
+        metrics.increment('llm_provider_failure', { provider: candidateName });
+      }
     }
 
-    try {
-      const response = await provider.complete(request);
-
-      // Cache response if enabled
-      if (request.cache !== false) {
-        await this.cacheResponse(request, response);
-      }
-
-      return response;
-    } catch (_error) {
-      // If primary provider fails, try fallback
-      if (providerName !== this.defaultProvider && this.providers.has(this.defaultProvider)) {
-        const fallbackProvider = this.providers.get(this.defaultProvider)!;
-        return fallbackProvider.complete(request);
-      }
-      throw _error;
-    }
+    const summary = failures.map(({ provider, error }) => `${provider}: ${error instanceof Error ? error.message : String(error)}`).join('; ');
+    throw new Error(`All configured LLM providers failed${summary ? `: ${summary}` : ''}`);
   }
 
   // Removed checkBudget - now handled by usageEnforcementService

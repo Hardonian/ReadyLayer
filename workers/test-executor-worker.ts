@@ -322,10 +322,7 @@ export function validateTestJob(job: unknown): job is TestExecutionJob {
   );
 }
 
-/**
- * Enqueue test execution job
- * TODO: Implement proper job queue (Redis/Bull)
- */
+/** Enqueue a test execution job on the durable Redis/DB-backed queue. */
 export async function enqueueTestExecutionJob(
   job: TestExecutionJob
 ): Promise<{ id: string; status: string }> {

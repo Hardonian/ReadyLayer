@@ -61,17 +61,11 @@ export class UsageEnforcementService {
     const tier = await billingService.getOrganizationTier(organizationId);
     const limits = tier.limits;
 
-    // P2-FIX: Get organization timezone for accurate daily limit reset
-    const org = await prisma.organization.findUnique({
-      where: { id: organizationId },
-      select: { timezone: true },
-    });
-    const orgTimezone = org?.timezone || 'UTC';
-
-    // Check daily limit (reset at midnight in organization's timezone)
+    // CostTracking is stored as a UTC calendar date, so all aggregate boundaries
+    // use UTC as well. This prevents the writer and enforcement queries drifting
+    // across time zones at midnight.
     const now = new Date();
-    const todayInOrgTZ = new Date(now.toLocaleString('en-US', { timeZone: orgTimezone }));
-    const today = new Date(todayInOrgTZ.getFullYear(), todayInOrgTZ.getMonth(), todayInOrgTZ.getDate());
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     const todayUsage = await prisma.costTracking.aggregate({
       where: {
@@ -99,9 +93,7 @@ export class UsageEnforcementService {
     }
 
     // Check monthly limit
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
     const monthUsage = await prisma.costTracking.aggregate({
       where: {
@@ -172,7 +164,7 @@ export class UsageEnforcementService {
     const limits = tier.limits;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     // Count reviews and tests created today
     const todayRuns = await prisma.review.count({
@@ -404,11 +396,9 @@ export class UsageEnforcementService {
     const tier = await billingService.getOrganizationTier(organizationId);
     const limits = tier.limits;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
     const [todayUsage, monthUsage, todayRuns, concurrentJobs, budget] = await Promise.all([
       prisma.costTracking.aggregate({

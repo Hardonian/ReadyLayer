@@ -60,7 +60,7 @@ async function getCachedOrganizationTier(
  */
 async function getCachedUsageStats(
   organizationId: string,
-  orgTimezone: string
+  _orgTimezone: string
 ): Promise<{
   dailyTokens: number;
   monthlyTokens: number;
@@ -81,11 +81,8 @@ async function getCachedUsageStats(
 
   // Calculate time ranges
   const now = new Date();
-  const todayInOrgTZ = new Date(now.toLocaleString('en-US', { timeZone: orgTimezone }));
-  const today = new Date(todayInOrgTZ.getFullYear(), todayInOrgTZ.getMonth(), todayInOrgTZ.getDate());
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
   // Execute all queries in parallel
   const [

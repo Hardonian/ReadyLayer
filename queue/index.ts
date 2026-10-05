@@ -100,21 +100,32 @@ export class QueueService {
     const data = payload.data as { repositoryId?: string; repoId?: string } | undefined;
     const repositoryId = data?.repositoryId ?? data?.repoId ?? null;
 
-    // Create job in database (for durability)
-    await prisma.job.create({
-      data: {
-        id: jobId,
-        type: payload.type,
-        status: 'pending',
-        payload: toJsonValue(payload.data),
-        maxRetries: payload.maxRetries || 3,
-        scheduledAt: new Date(),
-        repositoryId,
-        organizationId: payload.organizationId || null,
-        userId: payload.userId || null,
-        idempotencyKey: payload.idempotencyKey || null,
-      },
-    });
+    // Create job in database (for durability). The unique idempotency index is
+    // the final race-safe guard when two producers enqueue concurrently.
+    try {
+      await prisma.job.create({
+        data: {
+          id: jobId,
+          // `type` identifies the durable queue. The event/job subtype remains
+          // in the serialized payload and is available to the handler.
+          type: queueName,
+          status: 'pending',
+          payload: toJsonValue(payload.data),
+          maxRetries: payload.maxRetries || 3,
+          scheduledAt: new Date(),
+          repositoryId,
+          organizationId: payload.organizationId || null,
+          userId: payload.userId || null,
+          idempotencyKey: payload.idempotencyKey || null,
+        },
+      });
+    } catch (error) {
+      if (payload.idempotencyKey && isPrismaUniqueConstraint(error)) {
+        const racedJob = await this.getJobByIdempotencyKey(payload.idempotencyKey, queueName, payload.organizationId);
+        if (racedJob) return racedJob.id;
+      }
+      throw error;
+    }
 
     // Add to Redis queue (for processing)
     if (this.isConnected && this.redis) {
@@ -170,18 +181,16 @@ const jobData = JSON.parse(result.element) as { id: string };
       where: { id: jobId },
     });
 
-    if (!job || job.status !== 'pending') {
+    if (!job || !['pending', 'retrying'].includes(job.status)) {
       return;
     }
 
-    // Update status to processing
-    await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        status: 'processing',
-        startedAt: new Date(),
-      },
+    // Claim atomically so duplicate deliveries cannot execute the same job twice.
+    const claim = await prisma.job.updateMany({
+      where: { id: jobId, status: { in: ['pending', 'retrying'] } },
+      data: { status: 'processing', startedAt: new Date() },
     });
+    if (claim.count !== 1) return;
 
     try {
       // Execute handler
@@ -286,22 +295,27 @@ const jobData = JSON.parse(result.element) as { id: string };
         // Reset counter when jobs found
         emptyPollCount = 0;
 
-        // Mark all jobs as processing in one batch
-        const jobIds = jobs.map(j => j.id);
-        await prisma.job.updateMany({
-          where: { id: { in: jobIds } },
-          data: {
-            status: 'processing',
-            startedAt: new Date(),
-          },
-        });
+        // Claim each job atomically. Multiple fallback workers may poll the
+        // same rows, so only the worker that changes the state may execute it.
+        const claimedJobs = [] as typeof jobs;
+        for (const job of jobs) {
+          const claim = await prisma.job.updateMany({
+            where: { id: job.id, status: { in: ['pending', 'retrying'] } },
+            data: { status: 'processing', startedAt: new Date() },
+          });
+          if (claim.count === 1) claimedJobs.push(job);
+        }
+        if (claimedJobs.length === 0) {
+          await this.sleep(100);
+          continue;
+        }
 
         // Process jobs with limited concurrency (5 at a time)
         const CONCURRENCY = 5;
         const results: Array<{ jobId: string; success: boolean; error?: string }> = [];
         
-        for (let i = 0; i < jobs.length; i += CONCURRENCY) {
-          const batch = jobs.slice(i, i + CONCURRENCY);
+        for (let i = 0; i < claimedJobs.length; i += CONCURRENCY) {
+          const batch = claimedJobs.slice(i, i + CONCURRENCY);
           const batchResults = await Promise.all(
             batch.map(async (job) => {
               try {
@@ -332,7 +346,7 @@ const jobData = JSON.parse(result.element) as { id: string };
         // Handle failed jobs (need individual updates for retry count)
         const failedResults = results.filter(r => !r.success);
         for (const failed of failedResults) {
-          const job = jobs.find(j => j.id === failed.jobId)!;
+          const job = claimedJobs.find(j => j.id === failed.jobId)!;
           const retryCount = job.retryCount + 1;
           
           if (retryCount < job.maxRetries) {
@@ -377,11 +391,9 @@ const jobData = JSON.parse(result.element) as { id: string };
     queueName: string,
     organizationId?: string,
   ): Promise<{ id: string } | null> {
-    if (!organizationId) return null;
-
     return prisma.job.findFirst({
       where: {
-        organizationId,
+        organizationId: organizationId ?? null,
         type: queueName,
         idempotencyKey: key,
       },
@@ -425,3 +437,7 @@ const jobData = JSON.parse(result.element) as { id: string };
 }
 
 export const queueService = new QueueService();
+
+function isPrismaUniqueConstraint(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'code' in error && (error as { code?: unknown }).code === 'P2002';
+}
