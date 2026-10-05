@@ -53,9 +53,10 @@ export function Logo({
           <Image
             src={isDark ? '/logo-header-dark.png' : '/logo-header.png'}
             alt="ReadyLayer"
-            width={dimensions.w}
-            height={dimensions.h}
+            width={1050}
+            height={205}
             className={`h-auto max-w-full w-auto ${className}`}
+            style={{ width: 'auto', height: dimensions.h }}
             priority
           />
         </>
@@ -69,6 +70,7 @@ export function Logo({
             width={dimensions.w}
             height={dimensions.h}
             className={`h-auto max-w-full w-auto ${isDark ? 'invert' : ''} ${className}`}
+            style={{ width: dimensions.w, height: dimensions.h }}
             priority
           />
         </>
@@ -79,9 +81,10 @@ export function Logo({
           <Image
             src="/logo-header.png"
             alt="ReadyLayer"
-            width={dimensions.w}
-            height={dimensions.h}
+            width={1050}
+            height={205}
             className={`h-auto max-w-full w-auto ${isDark ? 'invert' : ''} ${className}`}
+            style={{ width: 'auto', height: dimensions.h }}
             priority
           />
         </>

@@ -107,8 +107,8 @@ export function AppLayout({ children }: { children: React.ReactNode }): React.JS
                     <Image
                       src="/logo-header.png"
                       alt="ReadyLayer"
-                      width={140}
-                      height={28}
+                      width={1050}
+                      height={205}
                       priority
                       className="h-7 w-auto dark:invert"
                       style={{ width: 'auto', height: '28px' }}

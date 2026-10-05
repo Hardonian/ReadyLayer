@@ -176,10 +176,11 @@ export function MobileNav({ navItems, homeHref = '/dashboard' }: MobileNavProps)
                     <Image
                       src="/logo-header.png"
                       alt="ReadyLayer"
-                      width={120}
-                      height={24}
+                      width={1050}
+                      height={205}
                       priority
                       className="h-6 w-auto dark:invert"
+                      style={{ width: 'auto', height: '24px' }}
                     />
                   </picture>
                 </Link>

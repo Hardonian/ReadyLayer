@@ -1,157 +1,200 @@
 /**
- * Policy Gates API Route
- * 
- * GET /api/v1/policies/gates - List policy gates
- * POST /api/v1/policies/gates - Create policy gate
+ * Policy gate compatibility API.
+ *
+ * Gates are represented by rules in immutable, versioned PolicyPacks. This
+ * route exposes the operator-friendly gate shape without creating a second
+ * persistence model that could drift from enforcement.
  */
+import { createHash } from 'crypto'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+import { prisma } from '../../../../../lib/prisma'
+import { logger } from '../../../../../observability/logging'
+import { requireAuth, hasRole } from '../../../../../lib/auth'
+import { createAuthzMiddleware } from '../../../../../lib/authz'
+import { errorResponse, parseJsonBody, successResponse } from '../../../../../lib/api-route-helpers'
 
-import { NextRequest, NextResponse } from 'next/server';
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-// Use Node.js runtime for Prisma access
-export const runtime = 'nodejs';
-import { prisma } from '../../../../../lib/prisma';
-import { logger } from '../../../../../observability/logging';
-import { requireAuth } from '../../../../../lib/auth';
-import { createAuthzMiddleware } from '../../../../../lib/authz';
-import { parseJsonBody } from '../../../../../lib/api-route-helpers';
+const CreateGateSchema = z.object({
+  organizationId: z.string().min(1),
+  repositoryId: z.string().min(1).nullable().optional(),
+  template: z.string().min(1).max(160),
+  name: z.string().trim().min(1).max(160).optional(),
+  enforcementMode: z.enum(['warn', 'block']).default('block'),
+  enabled: z.boolean().default(true),
+})
 
-/**
- * GET /api/v1/policies/gates
- * List policy gates (tenant-isolated)
- */
-export async function GET(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
+type EnforcementMode = 'warn' | 'block'
 
+function readEnforcementMode(value: unknown): EnforcementMode {
+  if (!value || typeof value !== 'object') return 'warn'
+  const mapping = value as Record<string, unknown>
+  return Object.values(mapping).some((entry) => entry === 'block') ? 'block' : 'warn'
+}
+
+function readPolicyName(source: string, fallback: string): string {
   try {
-    const user = await requireAuth(request);
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['read'],
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
-    }
-
-    const { searchParams } = new URL(request.url);
-    // organizationId and repositoryId reserved for future use
-    searchParams.get('organizationId');
-    searchParams.get('repositoryId');
-
-    // Get user's organization memberships
-    const memberships = await prisma.organizationMember.findMany({
-      where: { userId: user.id },
-      select: { organizationId: true },
-    });
-    const userOrgIds = memberships.map((m) => m.organizationId);
-
-    if (userOrgIds.length === 0) {
-      return NextResponse.json({ gates: [] });
-    }
-
-    // Policy gates are stored in PolicyPack rules
-    // For now, return empty array (gates will be implemented via PolicyPack)
-    // Filter by organizationId if provided (reserved for future use)
-    // const filteredOrgIds = organizationId && userOrgIds.includes(organizationId)
-    //   ? [organizationId]
-    //   : userOrgIds;
-
-    return NextResponse.json({ gates: [] });
-  } catch (error) {
-    log.error(error, 'Failed to list policy gates');
-    return NextResponse.json(
-      {
-        error: {
-          code: 'LIST_GATES_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        },
-      },
-      { status: 500 }
-    );
+    const parsed = JSON.parse(source) as { name?: unknown }
+    return typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name : fallback
+  } catch {
+    return fallback
   }
 }
 
-/**
- * POST /api/v1/policies/gates
- * Create policy gate
- */
-export async function POST(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`;
-  const log = logger.child({ requestId });
+function toGate(
+  pack: {
+    id: string
+    organizationId: string
+    repositoryId: string | null
+    version: string
+    checksum: string
+    source: string
+    organization: { name: string }
+    repository: { fullName: string } | null
+  },
+  rule: { id: string; ruleId: string; enabled: boolean; severityMapping: unknown },
+) {
+  return {
+    id: rule.id,
+    name: readPolicyName(pack.source, rule.ruleId),
+    template: rule.ruleId,
+    enforcementMode: readEnforcementMode(rule.severityMapping),
+    exceptions: {},
+    enabled: rule.enabled,
+    organizationId: pack.organizationId,
+    organizationName: pack.organization.name,
+    repositoryId: pack.repositoryId,
+    repositoryName: pack.repository?.fullName ?? null,
+    policyPackId: pack.id,
+    policyVersion: pack.version,
+    checksum: pack.checksum,
+  }
+}
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`
+  const log = logger.child({ requestId })
 
   try {
-    const user = await requireAuth(request);
-    const authzResponse = await createAuthzMiddleware({
-      requiredScopes: ['write'],
-    })(request);
-    if (authzResponse) {
-      return authzResponse;
+    const user = await requireAuth(request)
+    const authzResponse = await createAuthzMiddleware({ requiredScopes: ['read'] })(request)
+    if (authzResponse) return authzResponse
+
+    const { searchParams } = new URL(request.url)
+    const organizationId = searchParams.get('organizationId')
+    const repositoryId = searchParams.get('repositoryId')
+    const memberships = await prisma.organizationMember.findMany({
+      where: { userId: user.id },
+      select: { organizationId: true },
+    })
+    const organizationIds = memberships.map((membership) => membership.organizationId)
+
+    if (organizationId && !organizationIds.includes(organizationId)) {
+      return errorResponse('FORBIDDEN', 'Access denied to organization', 403)
     }
+    const scopedOrganizationIds = organizationId ? [organizationId] : organizationIds
+    if (scopedOrganizationIds.length === 0) return NextResponse.json({ gates: [] })
 
-    const bodyResult = await parseJsonBody(request);
-    if (!bodyResult.success) {
-      return bodyResult.response;
-    }
-
-    const body = bodyResult.data as {
-      organizationId?: string;
-    };
-    const { organizationId } = body;
-
-    if (!organizationId || typeof organizationId !== 'string') {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'organizationId is required',
-          },
-        },
-        { status: 400 }
-      );
-    }
-
-    // Verify user belongs to organization
-    const membership = await prisma.organizationMember.findUnique({
+    const packs = await prisma.policyPack.findMany({
       where: {
-        organizationId_userId: {
-          organizationId,
-          userId: user.id,
-        },
+        organizationId: { in: scopedOrganizationIds },
+        ...(repositoryId ? { repositoryId } : {}),
       },
-    });
+      include: {
+        rules: true,
+        organization: { select: { name: true } },
+        repository: { select: { fullName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
 
-    if (!membership || !['owner', 'admin'].includes(membership.role)) {
-      return NextResponse.json(
-        {
-          error: {
-            code: 'FORBIDDEN',
-            message: 'Access denied',
-          },
-        },
-        { status: 403 }
-      );
+    return NextResponse.json({
+      gates: packs.flatMap((pack) => pack.rules.map((rule) => toGate(pack, rule))),
+    })
+  } catch (error) {
+    log.error(error, 'Failed to list policy gates')
+    return errorResponse('LIST_GATES_FAILED', 'Policy gates could not be loaded. Retry the request.', 500)
+  }
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = request.headers.get('x-request-id') || `req_${Date.now()}`
+  const log = logger.child({ requestId })
+
+  try {
+    const user = await requireAuth(request)
+    const authzResponse = await createAuthzMiddleware({ requiredScopes: ['write'] })(request)
+    if (authzResponse) return authzResponse
+
+    const bodyResult = await parseJsonBody(request)
+    if (!bodyResult.success) return bodyResult.response
+    const validation = CreateGateSchema.safeParse(bodyResult.data)
+    if (!validation.success) {
+      return errorResponse('VALIDATION_ERROR', 'Invalid policy gate configuration', 400, {
+        errors: validation.error.issues,
+      })
     }
 
-    // Policy gates are implemented via PolicyPack
-    // This endpoint is a placeholder for future implementation
-    return NextResponse.json(
-      {
-        error: {
-          code: 'NOT_IMPLEMENTED',
-          message: 'Policy gates are implemented via Policy Packs',
+    const { organizationId, repositoryId, template, name, enforcementMode, enabled } = validation.data
+    if (!(await hasRole(user.id, organizationId, 'admin'))) {
+      return errorResponse('FORBIDDEN', 'Only organization admins can create policy gates', 403)
+    }
+
+    if (repositoryId) {
+      const repository = await prisma.repository.findFirst({
+        where: { id: repositoryId, organizationId },
+        select: { id: true },
+      })
+      if (!repository) return errorResponse('NOT_FOUND', 'Repository not found in this organization', 404)
+    }
+
+    // Millisecond precision keeps rapid, repeated gate creation from colliding
+    // on the PolicyPack (organization, repository, version) unique key.
+    const version = `1.0.${Date.now()}`
+    const gateName = name || template
+    const source = JSON.stringify({
+      name: gateName,
+      type: 'policy-gate',
+      template,
+      enforcementMode,
+      enabled,
+      version,
+    }, null, 2)
+    const severityMapping = Object.fromEntries(
+      ['critical', 'high', 'medium', 'low'].map((severity) => [severity, enforcementMode]),
+    )
+    const pack = await prisma.policyPack.create({
+      data: {
+        organizationId,
+        repositoryId: repositoryId || null,
+        version,
+        source,
+        checksum: createHash('sha256').update(source, 'utf8').digest('hex'),
+        rules: {
+          create: {
+            ruleId: template,
+            severityMapping,
+            enabled,
+            params: { template, name: gateName },
+          },
         },
       },
-      { status: 501 }
-    );
+      include: {
+        rules: true,
+        organization: { select: { name: true } },
+        repository: { select: { fullName: true } },
+      },
+    })
+
+    log.info({ organizationId, policyPackId: pack.id, template }, 'Policy gate created')
+    return successResponse({ gate: toGate(pack, pack.rules[0]) }, 201)
   } catch (error) {
-    log.error(error, 'Failed to create policy gate');
-    return NextResponse.json(
-      {
-        error: {
-          code: 'CREATE_GATE_FAILED',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        },
-      },
-      { status: 500 }
-    );
+    log.error(error, 'Failed to create policy gate')
+    if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002') {
+      return errorResponse('DUPLICATE_ENTRY', 'A gate with this configuration already exists. Retry with a new version.', 409)
+    }
+    return errorResponse('CREATE_GATE_FAILED', 'Policy gate could not be created. Retry the request.', 500)
   }
 }

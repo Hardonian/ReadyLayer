@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { dump as dumpYaml, load as loadYaml } from 'js-yaml'
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -25,11 +26,12 @@ import {
 import Link from 'next/link'
 import { useToast } from '@/lib/hooks/use-toast'
 import { useGitProvider } from '@/lib/git-provider-ui/hooks'
+import { useOrganizationId } from '@/lib/hooks/use-organization-id'
 
 export default function NewPolicyPage() {
   const { toast } = useToast()
   const router = useRouter()
-  const [organizationId, setOrganizationId] = useState('')
+  const { organizationId, organizationName, loading: organizationLoading, error: organizationError } = useOrganizationId()
   const [repositoryId, setRepositoryId] = useState('')
   const [version, setVersion] = useState('1.0.0')
   const [source, setSource] = useState(`{
@@ -42,6 +44,18 @@ export default function NewPolicyPage() {
   
   // Get provider theme (will adapt when repository is selected)
   const { theme } = useGitProvider()
+
+  const switchViewMode = (nextMode: 'json' | 'yaml'): void => {
+    if (nextMode === viewMode) return
+    try {
+      const parsed: unknown = viewMode === 'json' ? (JSON.parse(source) as unknown) : (loadYaml(source) as unknown)
+      setSource(nextMode === 'json' ? JSON.stringify(parsed, null, 2) : dumpYaml(parsed))
+      setViewMode(nextMode)
+      setError(null)
+    } catch {
+      setError(`Fix the ${viewMode.toUpperCase()} source before switching formats.`)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,29 +71,45 @@ export default function NewPolicyPage() {
         return
       }
 
-      // Parse source to extract rules if needed
+      if (!organizationId) throw new Error('No organization is available for this account.')
+
+      // Parse source to extract rules and keep the stored source/version aligned.
       let parsedSource: Record<string, unknown>
       try {
-        parsedSource = JSON.parse(source) as Record<string, unknown>
+        const parsed: unknown = viewMode === 'json' ? (JSON.parse(source) as unknown) : (loadYaml(source) as unknown)
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          throw new Error('Policy source must be an object.')
+        }
+        parsedSource = parsed as Record<string, unknown>
       } catch {
-        setError('Invalid JSON in policy source')
+        setError(`Invalid ${viewMode.toUpperCase()} in policy source`)
         setLoading(false)
         return
       }
 
-      const rules = parsedSource.rules || []
+      if (!Array.isArray(parsedSource.rules)) {
+        setError('Policy source must include a rules array.')
+        setLoading(false)
+        return
+      }
+      parsedSource.version = version
+      const rules = parsedSource.rules
+      const normalizedSource = viewMode === 'json'
+        ? JSON.stringify(parsedSource, null, 2)
+        : dumpYaml(parsedSource)
 
-      const response = await fetch('/api/v1/policies', {
+      const response = await fetch(`/api/v1/policies?organizationId=${encodeURIComponent(organizationId)}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
+          'x-organization-id': organizationId,
         },
         body: JSON.stringify({
           organizationId,
           repositoryId: repositoryId || null,
           version,
-          source,
+          source: normalizedSource,
           rules,
         }),
       })
@@ -89,14 +119,15 @@ export default function NewPolicyPage() {
         throw new Error(getApiErrorMessage(errorData))
       }
 
-      const policy = (await response.json()) as { id?: string }
+      const policy = (await response.json()) as { data?: { id?: string } }
+      if (!policy.data?.id) throw new Error('Policy pack was created but no ID was returned.')
 
       toast({
         title: 'Success',
         description: 'Policy pack created successfully',
       })
 
-      router.push(`/dashboard/policies/${policy.id}`)
+      router.push(`/dashboard/policies/${policy.data.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create policy pack')
       setLoading(false)
@@ -127,9 +158,9 @@ export default function NewPolicyPage() {
           </div>
         </div>
 
-        {error && (
+        {(error || organizationError) && (
           <ErrorState
-            message={error}
+            message={error || organizationError || 'Unable to load your organization.'}
             action={{
               label: 'Try Again',
               onClick: () => setError(null),
@@ -147,16 +178,12 @@ export default function NewPolicyPage() {
               <CardContent className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Organization ID *
+                    Organization
                   </label>
-                  <input
-                    type="text"
-                    value={organizationId}
-                    onChange={(e) => setOrganizationId(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="org_123"
-                  />
+                  <div className="rounded-lg border border-border bg-surface-muted px-4 py-2 text-sm">
+                    {organizationLoading ? 'Loading organization...' : organizationName || 'No organization selected'}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">The policy is scoped to your current organization.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">
@@ -203,7 +230,7 @@ export default function NewPolicyPage() {
                       type="button"
                       variant={viewMode === 'json' ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setViewMode('json')}
+                      onClick={() => switchViewMode('json')}
                     >
                       <Code className="h-4 w-4 mr-2" />
                       JSON
@@ -212,8 +239,7 @@ export default function NewPolicyPage() {
                       type="button"
                       variant={viewMode === 'yaml' ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setViewMode('yaml')}
-                      disabled
+                      onClick={() => switchViewMode('yaml')}
                     >
                       <FileText className="h-4 w-4 mr-2" />
                       YAML
@@ -228,10 +254,10 @@ export default function NewPolicyPage() {
                   required
                   rows={15}
                   className="w-full px-4 py-2 border border-border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder='{"version": "1.0.0", "rules": []}'
+                  placeholder={viewMode === 'json' ? '{"version": "1.0.0", "rules": []}' : 'version: 1.0.0\nrules: []'}
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  Policy source in JSON format. Rules can be defined here or added via the API.
+                  Policy source in {viewMode.toUpperCase()} format. Rules must be an array of ruleId, severityMapping, and enabled values.
                 </p>
               </CardContent>
             </Card>
@@ -244,7 +270,7 @@ export default function NewPolicyPage() {
                 Cancel
               </Button>
             </Link>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || organizationLoading || !organizationId}>
               <Save className="h-4 w-4 mr-2" />
               {loading ? 'Creating...' : 'Create Policy Pack'}
             </Button>

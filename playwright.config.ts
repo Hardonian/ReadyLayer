@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const isDemoMode = Boolean(process.env.DEMO_MODE_ENABLED)
+const testPort = process.env.PLAYWRIGHT_TEST_PORT ?? (isDemoMode ? '3001' : '3000')
+const testBaseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || `http://localhost:${testPort}`
+const testServerUrl = `http://localhost:${testPort}`
+
 /**
  * Visual Regression & E2E Test Configuration
  * 
@@ -32,7 +37,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+    baseURL: testBaseUrl,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     /* Screenshot on failure */
@@ -161,9 +166,11 @@ export default defineConfig({
       timeout: 30 * 1000,
     },
     {
-      command: 'npm run dev',
-      url: 'http://localhost:3000',
-      reuseExistingServer: !process.env.CI,
+      command: `npm run dev -- --port ${testPort}`,
+      url: testServerUrl,
+      // Demo runs must own their server so a normal dev process cannot mask
+      // missing demo-only routes or environment configuration.
+      reuseExistingServer: !isDemoMode && !process.env.CI,
       timeout: 120 * 1000,
       env: {
         // Point Supabase at the mock auth stub so middleware session

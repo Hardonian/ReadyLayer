@@ -10,6 +10,7 @@ import { Shield, AlertTriangle, CheckCircle2, XCircle, Plus } from 'lucide-react
 import { createSupabaseClient } from '@/lib/supabase/client'
 import { useToast } from '@/lib/hooks/use-toast'
 import { getApiErrorMessage } from '@/lib/utils/api-helpers'
+import { useOrganizationId } from '@/lib/hooks/use-organization-id'
 
 interface PolicyGate {
   id: string
@@ -47,13 +48,21 @@ const GATE_TEMPLATES = [
 ]
 
 export default function PolicyGatesPage() {
+  const { organizationId, loading: organizationLoading, error: organizationError } = useOrganizationId()
   const [gates, setGates] = useState<PolicyGate[]>([])
   const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
+  const [enforcementMode, setEnforcementMode] = useState<'warn' | 'block'>('block')
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
     async function fetchGates() {
+      if (!organizationId) {
+        setLoading(false)
+        return
+      }
       try {
         const supabase = createSupabaseClient()
         const { data: { session } } = await supabase.auth.getSession()
@@ -63,9 +72,10 @@ export default function PolicyGatesPage() {
           return
         }
 
-        const response = await fetch('/api/v1/policies/gates', {
+        const response = await fetch(`/api/v1/policies/gates?organizationId=${encodeURIComponent(organizationId)}`, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
+            'x-organization-id': organizationId,
           },
         })
 
@@ -83,10 +93,48 @@ export default function PolicyGatesPage() {
       }
     }
 
-    fetchGates()
-  }, [])
+    void fetchGates()
+  }, [organizationId])
 
-  if (loading) {
+  const createGate = async (): Promise<void> => {
+    if (!organizationId || !selectedTemplate) return
+    setCreating(true)
+    setError(null)
+    try {
+      const supabase = createSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Your session has expired. Sign in again to configure a gate.')
+
+      const response = await fetch(`/api/v1/policies/gates?organizationId=${encodeURIComponent(organizationId)}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'x-organization-id': organizationId,
+        },
+        body: JSON.stringify({
+          organizationId,
+          template: selectedTemplate,
+          enforcementMode,
+          enabled: true,
+        }),
+      })
+      const payload = (await response.json().catch(() => ({}))) as {
+        data?: { gate?: PolicyGate }
+        error?: unknown
+      }
+      if (!response.ok) throw new Error(getApiErrorMessage(payload as Record<string, unknown>))
+      if (payload.data?.gate) setGates((current) => [payload.data!.gate!, ...current])
+      setSelectedTemplate(null)
+      toast({ title: 'Policy gate created', description: 'The gate is now represented in a versioned policy pack.' })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create policy gate')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  if (organizationLoading || loading) {
     return (
       <Container className="py-8">
         <div className="space-y-4">
@@ -97,14 +145,14 @@ export default function PolicyGatesPage() {
     )
   }
 
-  if (error) {
+  if (error || organizationError) {
     return (
       <Container className="py-8">
         <Card className="border-red-500/20">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="h-5 w-5" />
-              <span>{error}</span>
+              <span>{error || organizationError}</span>
             </div>
           </CardContent>
         </Card>
@@ -128,13 +176,7 @@ export default function PolicyGatesPage() {
               Configure enforcement rules to block or warn on policy violations
             </p>
           </div>
-          <Button onClick={() => {
-            toast({
-              variant: 'default',
-              title: 'Policy Gates',
-              description: 'Policy gates are configured via Policy Packs. Use the Policy Packs page to set up enforcement rules.',
-            })
-          }}>
+          <Button onClick={() => setSelectedTemplate(GATE_TEMPLATES[0]?.id || null)} disabled={!organizationId}>
             <Plus className="h-4 w-4 mr-2" />
             Create Gate
           </Button>
@@ -158,7 +200,7 @@ export default function PolicyGatesPage() {
                 <li><strong>Warn:</strong> Allow merges but show warnings</li>
               </ul>
               <p className="pt-2">
-                Policy gates are currently implemented via Policy Packs. Use the{' '}
+                Each gate is stored as a versioned Policy Pack rule, so enforcement and audit evidence share one source of truth. Use the{' '}
                 <Link href="/dashboard/policies" className="text-primary hover:underline">
                   Policy Packs
                 </Link>{' '}
@@ -179,7 +221,7 @@ export default function PolicyGatesPage() {
                   <CardDescription>{template.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => setSelectedTemplate(template.id)}>
                     Configure Gate
                   </Button>
                 </CardContent>
@@ -187,6 +229,35 @@ export default function PolicyGatesPage() {
             ))}
           </div>
         </div>
+
+        {selectedTemplate && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Configure {GATE_TEMPLATES.find((template) => template.id === selectedTemplate)?.name}</CardTitle>
+              <CardDescription>Choose how this gate behaves when a governed run evaluates it.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <label className="space-y-2 text-sm font-medium">
+                <span>Enforcement mode</span>
+                <select
+                  value={enforcementMode}
+                  onChange={(event) => setEnforcementMode(event.target.value as 'warn' | 'block')}
+                  className="block h-10 rounded-md border border-border bg-surface px-3 text-sm"
+                  disabled={creating}
+                >
+                  <option value="block">Block merges</option>
+                  <option value="warn">Warn only</option>
+                </select>
+              </label>
+              <div className="flex gap-2">
+                <Button onClick={() => void createGate()} disabled={creating}>
+                  {creating ? 'Creating...' : 'Create gate'}
+                </Button>
+                <Button variant="outline" onClick={() => setSelectedTemplate(null)} disabled={creating}>Cancel</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Existing Gates */}
         {gates.length > 0 && (
