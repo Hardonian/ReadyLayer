@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   sandboxManager,
+  SandboxManager,
   getRunnerForLanguage,
   GoTestRunner,
   RustTestRunner,
@@ -11,6 +12,10 @@ import {
 } from '../../services/test-engine';
 
 describe('Batch 9: Dynamic Sandbox & Test Execution', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   describe('SandboxManager (Item #30)', () => {
     it('executes a safe command in an isolated temporary process sandbox', async () => {
       const result = await sandboxManager.runInSandbox(
@@ -34,6 +39,28 @@ describe('Batch 9: Dynamic Sandbox & Test Execution', () => {
 
       expect(result.timedOut).toBe(true);
       expect(result.exitCode).toBe(124);
+    });
+
+    it('fails closed in production when a container sandbox is unavailable', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      const manager = new SandboxManager();
+      vi.spyOn(manager, 'isDockerAvailable').mockResolvedValue(false);
+
+      const result = await manager.runInSandbox([process.execPath, '-e', 'console.log("must not run")']);
+
+      expect(result.exitCode).toBe(-1);
+      expect(result.sandboxType).toBe('unavailable');
+      expect(result.stderr).toContain('Container sandbox is required');
+    });
+
+    it('rejects virtual file paths that escape the sandbox workspace', async () => {
+      const manager = new SandboxManager();
+      vi.spyOn(manager, 'isDockerAvailable').mockResolvedValue(false);
+
+      await expect(manager.runInSandbox(
+        [process.execPath, '-e', 'console.log("must not run")'],
+        [{ path: '../outside.txt', content: 'must not be written' }]
+      )).rejects.toThrow('Sandbox file path escapes the workspace');
     });
   });
 

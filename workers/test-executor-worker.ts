@@ -220,21 +220,28 @@ async function executeTestsWithTimeout(
     return [];
   }
 
-  const results = await Promise.race([
-    Promise.all(tests.map((test) => executeTests({
-      filePath: test.targetFile,
-      testContent: test.code,
-      framework: test.framework,
-      sourceCode: test.sourceCode ?? '',
-    }))),
-    new Promise<TestExecutionResult[]>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Test execution timeout after ${timeoutMs}ms`)),
-        timeoutMs
-      )
-    ),
-  ]);
-  return results as TestExecutionResult[];
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const results = await Promise.race([
+      Promise.all(tests.map((test) => executeTests({
+        filePath: test.targetFile,
+        testContent: test.code,
+        framework: test.framework,
+        sourceCode: test.sourceCode ?? '',
+      }, timeoutMs))),
+      new Promise<TestExecutionResult[]>((_, reject) => {
+        timeoutHandle = setTimeout(
+          () => reject(new Error(`Test execution timeout after ${timeoutMs}ms`)),
+          timeoutMs
+        );
+      }),
+    ]);
+    return results as TestExecutionResult[];
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
 }
 
 /**

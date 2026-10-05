@@ -79,10 +79,10 @@ describe('test executor worker contracts', () => {
     expect(mocks.executeTests).toHaveBeenCalledTimes(2);
     expect(mocks.executeTests).toHaveBeenNthCalledWith(1, expect.objectContaining({
       filePath: 'src/one.ts', sourceCode: 'export const one = 1;',
-    }));
+    }), 300000);
     expect(mocks.executeTests).toHaveBeenNthCalledWith(2, expect.objectContaining({
       filePath: 'src/two.ts', sourceCode: 'export const two = 2;',
-    }));
+    }), 300000);
     expect(execution.status).toBe('failure');
     expect(execution.results).toHaveLength(2);
     expect(mocks.info).toHaveBeenCalledWith(expect.objectContaining({ avgCoverage: 80 }), 'Test execution completed');
@@ -105,10 +105,32 @@ describe('test executor worker contracts', () => {
     expect(execution.status).toBe('timeout');
   });
 
+  it('clears the aggregate timeout after a completed job', async () => {
+    vi.useFakeTimers();
+    mocks.executeTests.mockResolvedValue(result('src/fast.ts', 'passed', 90));
+
+    try {
+      const execution = await executeTestJob({
+        id: 'job-3',
+        testRunId: 'run-3',
+        organizationId: 'org-1',
+        projectId: 'project-1',
+        generatedTests: [
+          { id: 'test-1', framework: 'vitest', code: 'it("fast", () => {})', targetFile: 'src/fast.ts' },
+        ],
+      });
+
+      expect(execution.status).toBe('success');
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects malformed optional source code in queued jobs', () => {
     expect(validateTestJob({
-      id: 'job-3',
-      testRunId: 'run-3',
+      id: 'job-4',
+      testRunId: 'run-4',
       organizationId: 'org-1',
       projectId: 'project-1',
       generatedTests: [{ id: 'test-1', framework: 'vitest', code: 'test()', targetFile: 'src/a.ts', sourceCode: 42 }],

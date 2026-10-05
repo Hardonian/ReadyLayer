@@ -54,6 +54,29 @@ export interface TestExecutionResult {
   error?: string
 }
 
+function simulatedExecutionAllowed(): boolean {
+  return process.env.NODE_ENV !== 'production' || process.env.READYLAYER_ALLOW_SIMULATED_TEST_EXECUTION === 'true'
+}
+
+function simulatedExecutionDisabledResult(
+  filePath: string,
+  framework: string,
+  startTime: number
+): TestExecutionResult {
+  return {
+    filePath,
+    status: 'failed',
+    framework,
+    testsPassed: 0,
+    testsFailed: 0,
+    totalTests: 0,
+    coverage: createEmptyCoverage(),
+    meetsThreshold: false,
+    durationMs: Math.max(1, Date.now() - startTime),
+    error: 'Simulated test execution is disabled in production. Configure a container-backed test runner before executing generated tests.',
+  }
+}
+
 /**
  * Execute tests and measure coverage
  */
@@ -69,13 +92,20 @@ export async function executeTests(
     'Starting test execution'
   )
 
+  if (!simulatedExecutionAllowed()) {
+    metrics.increment('test_execution_rejected', { reason: 'simulated_execution_disabled' })
+    logger.error({ filePath, framework }, 'Rejected simulated test execution in production')
+    return simulatedExecutionDisabledResult(filePath, framework, startTime)
+  }
+
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined
   try {
     // Determine framework and create executor
     const executor = getExecutor(framework)
 
     // Create timeout promise
     const timeoutPromise = new Promise<TestExecutionResult>((_, reject) => {
-      setTimeout(() => {
+      timeoutHandle = setTimeout(() => {
         const error = new Error(`Test execution timeout after ${timeoutMs}ms`)
         reject(error)
       }, timeoutMs)
@@ -148,6 +178,10 @@ export async function executeTests(
       meetsThreshold: false,
       durationMs,
       error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle)
     }
   }
 }

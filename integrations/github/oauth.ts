@@ -5,7 +5,7 @@
  * to prevent CSRF attacks.
  */
 
-import { randomBytes, createHmac } from 'crypto';
+import { randomBytes, createHmac, timingSafeEqual } from 'crypto';
 import { logger } from '@/observability/logging';
 
 interface GitHubOAuthResponse {
@@ -76,13 +76,12 @@ export function validateOAuthStateToken(
     return false;
   }
 
-  const isValid = receivedState === storedState;
+  const receivedBuffer = Buffer.from(receivedState, 'utf8');
+  const storedBuffer = Buffer.from(storedState, 'utf8');
+  const isValid = receivedBuffer.length === storedBuffer.length && timingSafeEqual(receivedBuffer, storedBuffer);
 
   if (!isValid) {
-    logger.warn('State token mismatch - possible CSRF attack', {
-      receivedState: receivedState.substring(0, 8) + '...',
-      storedState: storedState.substring(0, 8) + '...',
-    });
+    logger.warn('State token mismatch - possible CSRF attack');
   }
 
   return isValid;
@@ -140,8 +139,13 @@ export async function exchangeOAuthCodeForToken(
       return null;
     }
 
+    if (!data.access_token) {
+      logger.error('GitHub OAuth token response did not contain an access token');
+      return null;
+    }
+
     return {
-      accessToken: data.access_token ?? '',
+      accessToken: data.access_token,
       tokenType: data.token_type ?? '',
       scope: data.scope ?? '',
     };
@@ -258,16 +262,15 @@ export function verifyGitHubWebhookSignature(
   secret: string
 ): boolean {
   try {
-    // Remove "sha256=" prefix if present
-    const cleanSignature = signature.replace('sha256=', '');
+    if (!/^sha256=[a-f0-9]{64}$/i.test(signature)) {
+      return false;
+    }
 
-    // Calculate HMAC
-    const hmac = createHmac('sha256', secret);
-    hmac.update(payload);
-    const calculated = hmac.digest('hex');
+    const calculated = `sha256=${createHmac('sha256', secret).update(payload).digest('hex')}`;
+    const calculatedBuffer = Buffer.from(calculated, 'utf8');
+    const receivedBuffer = Buffer.from(signature, 'utf8');
 
-    // Constant-time comparison to prevent timing attacks
-    return calculated === cleanSignature;
+    return calculatedBuffer.length === receivedBuffer.length && timingSafeEqual(calculatedBuffer, receivedBuffer);
   } catch (error) {
     logger.error(
       {

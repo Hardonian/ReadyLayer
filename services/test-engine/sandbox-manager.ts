@@ -3,7 +3,8 @@
  *
  * Provides isolated sandbox execution environments for running untrusted AI-generated code
  * and test suites with CPU, memory, network, and timeout constraints.
- * Falls back to isolated temporary directory process sandboxing when Docker is unavailable.
+ * Development may use an isolated temporary directory process fallback. Production fails
+ * closed when a container sandbox is unavailable.
  */
 
 import * as fs from 'fs';
@@ -20,6 +21,7 @@ export interface SandboxOptions {
   timeoutMs?: number;
   env?: Record<string, string>;
   workingDir?: string;
+  allowProcessFallback?: boolean;
 }
 
 export interface SandboxFile {
@@ -33,7 +35,7 @@ export interface SandboxExecutionResult {
   stderr: string;
   durationMs: number;
   timedOut: boolean;
-  sandboxType: 'docker' | 'process';
+  sandboxType: 'docker' | 'process' | 'unavailable';
 }
 
 export class SandboxManager {
@@ -74,11 +76,26 @@ export class SandboxManager {
       try {
         return await this.runDockerSandbox(command, files, options);
       } catch (err) {
-        logger.warn({ err }, 'Docker sandbox execution failed, falling back to process sandbox');
+        logger.warn({ err }, 'Docker sandbox execution failed');
       }
     }
 
+    if (!this.canUseProcessFallback(options)) {
+      return {
+        exitCode: -1,
+        stdout: '',
+        stderr: 'Container sandbox is required in production. Configure Docker and a sandbox image.',
+        durationMs: 0,
+        timedOut: false,
+        sandboxType: 'unavailable',
+      };
+    }
+
     return this.runProcessSandbox(command, files, options);
+  }
+
+  private canUseProcessFallback(options: SandboxOptions): boolean {
+    return process.env.NODE_ENV !== 'production' && options.allowProcessFallback !== false;
   }
 
   /**
@@ -214,7 +231,16 @@ export class SandboxManager {
 
   private writeFilesToDir(targetDir: string, files: SandboxFile[]): void {
     for (const file of files) {
-      const fullPath = path.join(targetDir, file.path);
+      const fullPath = path.resolve(targetDir, file.path);
+      const relativePath = path.relative(targetDir, fullPath);
+      if (
+        !relativePath ||
+        relativePath === '..' ||
+        relativePath.startsWith(`..${path.sep}`) ||
+        path.isAbsolute(relativePath)
+      ) {
+        throw new Error(`Sandbox file path escapes the workspace: ${file.path}`);
+      }
       const dirName = path.dirname(fullPath);
       if (!fs.existsSync(dirName)) {
         fs.mkdirSync(dirName, { recursive: true });
