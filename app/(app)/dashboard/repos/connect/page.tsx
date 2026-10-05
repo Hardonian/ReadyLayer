@@ -94,9 +94,11 @@ export default function ConnectRepositoryPage(): React.JSX.Element {
         return
       }
 
-      // Redirect to provider OAuth flow
-      const oauthUrl = `/api/auth/${provider}`
-      window.location.href = oauthUrl
+      // Use the provider install routes so OAuth state is persisted with the
+      // authenticated user and organization before leaving the app.
+      const installPath = `/api/integrations/${provider}/install`
+      const oauthUrl = `${installPath}?returnUrl=${encodeURIComponent('/dashboard/repos/connect')}`
+      window.location.assign(oauthUrl)
       
     } catch (_error) {
       toast({

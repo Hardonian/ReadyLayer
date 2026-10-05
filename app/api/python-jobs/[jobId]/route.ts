@@ -41,6 +41,10 @@ export async function GET(
         completedAt: true,
         repositoryId: true,
         userId: true,
+        organizationId: true,
+        repository: {
+          select: { organizationId: true },
+        },
       },
     });
 
@@ -48,10 +52,31 @@ export async function GET(
       return NextResponse.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Verify user has access (must match userId or be org member)
-    if (job.userId && job.userId !== user.id) {
-      // TODO: Check if user is org member for this job's org
-      // For now, restrict to job owner
+    // Verify ownership through the job's organization. Jobs created by a
+    // worker may not have a userId, so checking only the owner would either
+    // leak those jobs or make legitimate org members unable to poll them.
+    const jobOrganizationId = job.organizationId ?? job.repository?.organizationId ?? null;
+    if (jobOrganizationId) {
+      const membership = await prisma.organizationMember.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: jobOrganizationId,
+            userId: user.id,
+          },
+        },
+        select: { organizationId: true },
+      });
+
+      if (!membership) {
+        logger.warn({
+          msg: 'User attempted to access a job outside their organization',
+          jobId,
+          userId: user.id,
+          organizationId: jobOrganizationId,
+        });
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    } else if (job.userId !== user.id) {
       logger.warn({
         msg: 'User attempted to access job they do not own',
         jobId,
