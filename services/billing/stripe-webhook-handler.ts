@@ -11,7 +11,7 @@
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
 import Stripe from 'stripe';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 // Lazily constructed so importing this module (tests, tooling) does not
 // require STRIPE_SECRET_KEY to be configured.
@@ -482,11 +482,30 @@ export function verifyWebhookSignature(
   secret: string
 ): boolean {
   try {
-    const hash = createHmac('sha256', secret)
-      .update(payload)
-      .digest('hex');
+    const parts = signature.split(',').reduce<Record<string, string[]>>((acc, part) => {
+      const separator = part.indexOf('=');
+      if (separator < 1) return acc;
+      const key = part.slice(0, separator).trim();
+      const value = part.slice(separator + 1).trim();
+      acc[key] = [...(acc[key] ?? []), value];
+      return acc;
+    }, {});
+    const timestamp = Number(parts.t?.[0]);
+    const candidates = parts.v1 ?? [];
+    const now = Math.floor(Date.now() / 1000);
+    if (!Number.isSafeInteger(timestamp) || Math.abs(now - timestamp) > 300 || candidates.length === 0) {
+      return false;
+    }
 
-    return `t=${Date.now()},v1=${hash}` === signature.split(',')[1];
+    const expected = createHmac('sha256', secret)
+      .update(`${timestamp}.${typeof payload === 'string' ? payload : payload.toString('utf8')}`)
+      .digest();
+
+    return candidates.some((candidate) => {
+      if (!/^[a-f0-9]{64}$/i.test(candidate)) return false;
+      const provided = Buffer.from(candidate, 'hex');
+      return provided.length === expected.length && timingSafeEqual(provided, expected);
+    });
   } catch (error) {
     logger.error(
       {

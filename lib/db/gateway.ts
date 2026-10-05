@@ -250,19 +250,29 @@ export async function healthCheck(prisma: PrismaClient): Promise<boolean> {
 /**
  * Connection pool metrics
  */
-export async function getPoolMetrics(_prisma: PrismaClient): Promise<{
+export async function getPoolMetrics(prisma: PrismaClient): Promise<{
   activeConnections: number
   idleConnections: number
   totalConnections: number
 }> {
-  // Prisma doesn't expose pool metrics directly
-  // This is a placeholder for custom metrics implementation
-  // In production, integrate with Prisma metrics or pg pool
-
-  return {
-    activeConnections: 0, // TODO: Implement via Prisma.$metrics or pg instrumentation
-    idleConnections: 0,
-    totalConnections: 0,
+  try {
+    const rows = await prisma.$queryRaw<Array<{ total: bigint | number; active: bigint | number }>>`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE state = 'active')::int AS active
+      FROM pg_stat_activity
+      WHERE datname = current_database()
+    `;
+    const totalConnections = Number(rows[0]?.total ?? 0);
+    const activeConnections = Number(rows[0]?.active ?? 0);
+    return {
+      activeConnections,
+      idleConnections: Math.max(0, totalConnections - activeConnections),
+      totalConnections,
+    };
+  } catch (error) {
+    logger.warn({ err: error instanceof Error ? error : new Error(String(error)) }, 'Unable to read PostgreSQL pool metrics');
+    return { activeConnections: 0, idleConnections: 0, totalConnections: 0 };
   }
 }
 

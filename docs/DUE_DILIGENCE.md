@@ -72,7 +72,7 @@
 - ✅ **Review Guard** — AI-aware code review with enforcement
 - ✅ **Test Engine** — Automatic test generation with coverage enforcement
 - ✅ **Doc Sync** — API documentation sync with drift prevention
-- ⚠️ **Billing** — Service exists, Stripe integration incomplete
+- ✅ **Billing** — Stripe webhook verification, idempotency, subscription persistence, and plan enforcement are implemented; provider credentials and live-event validation remain release gates
 
 **Evidence:**
 - `services/review-guard/index.ts` — Core service
@@ -92,10 +92,10 @@
 
 ### 2.3 Integrations
 - ✅ **GitHub** — Webhook handler, API client
-- ⚠️ **GitLab** — Structure exists, not fully implemented
-- ⚠️ **Bitbucket** — Structure exists, not fully implemented
+- ✅ **GitLab** — OAuth, webhook, merge-request discussion, and status adapter paths are implemented
+- ✅ **Bitbucket** — OAuth, webhook, Code Insights, and status adapter paths are implemented
 - ✅ **Supabase** — Auth and database
-- ⚠️ **Stripe** — Billing service exists, webhooks not implemented
+- ✅ **Stripe** — Signature validation, replay/idempotency protection, subscription lifecycle persistence, and failure recording are implemented
 
 **Evidence:**
 - `integrations/github/` — Complete GitHub integration
@@ -109,7 +109,7 @@
 - ✅ **Tier definitions** — Starter (free), Growth ($99), Scale ($499)
 - ✅ **Feature gates** — Review Guard, Test Engine, Doc Sync
 - ✅ **Limits enforced** — Repository limits, LLM budget
-- ⚠️ **Stripe integration** — Service exists, webhooks missing
+- ⚠️ **Stripe live operations** — Code paths are implemented; live-mode event fixtures, tax/invoice configuration, and provider dashboard setup remain deployment tasks
 - ✅ **Billing middleware** — Enforces limits in API routes
 
 **Evidence:**
@@ -156,11 +156,11 @@
 - `npm run type-check` — Passes
 
 ### 4.2 Testing
-- ❌ **Unit tests** — Not implemented
-- ❌ **Integration tests** — Not implemented
-- ❌ **E2E tests** — Not implemented
+- ✅ **Unit and contract tests** — Vitest suite covers governance, auth, billing contracts, queue durability, webhook security, and provider adapters
+- ✅ **Integration tests** — Tenant isolation, policy gates, API contracts, and failure-path suites are present
+- ✅ **E2E tests** — Playwright demo and browser flows are present; production credentials and multi-browser release runs remain environment gates
 
-**Gap:** Testing infrastructure needed for production readiness.
+**Current baseline:** `npm test` runs 60 files (453 passing tests, 37 intentionally skipped in the current environment). The release record must attach the clean-checkout output.
 
 ### 4.3 Documentation
 - ✅ **API documentation** — Route comments and README
@@ -214,13 +214,12 @@
 ### 6.1 Technical Risks
 
 **High:**
-- ❌ **No test coverage** — Risk of regressions
-- ⚠️ **Stripe integration incomplete** — Cannot process payments
+- ⚠️ **External provider readiness** — Stripe/Git provider credentials, webhook delivery, and production callback configuration must be verified in the target environment
 - ⚠️ **LLM API dependency** — Single point of failure if API down
 
 **Medium:**
 - ⚠️ **Redis dependency** — Falls back to DB, but slower
-- ⚠️ **GitLab/Bitbucket incomplete** — Limited to GitHub initially
+- ⚠️ **Provider variance** — GitLab and Bitbucket paths are implemented but need live contract verification per account configuration
 
 **Low:**
 - ✅ **Database migrations** — Safe and tested

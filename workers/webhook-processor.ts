@@ -30,6 +30,9 @@ import {
 import { ValidationError } from '../lib/errors';
 import { createHmac } from 'crypto';
 import { getCachedRepository } from '../lib/db/repository-cache';
+import { getGitProviderAdapter } from '../integrations/git-provider-adapter';
+import { toJsonValue } from '../lib/prisma-json';
+import { parseCoverageArtifact } from '../lib/coverage';
 
 /**
  * Validate webhook signature
@@ -821,8 +824,6 @@ async function processCIEvent(
   const ciRun = event.run;
   log.info({ repositoryId: String(repository.id), ciRunName: ciRun?.name }, 'Processing CI event');
 
-  // Check coverage when CI workflow completes
-  // This integrates with GitHub Actions coverage reports
   if (ciRun?.headSha && repository.id) {
     try {
       // Get repository to find organization (with caching)
@@ -833,21 +834,50 @@ async function processCIEvent(
         return;
       }
 
-      // Parse coverage from CI artifacts (would fetch from GitHub Actions artifacts)
-      // For now, this is a placeholder - actual implementation would:
-      // 1. Fetch coverage report from GitHub Actions artifacts
-      // 2. Parse lcov or coverage JSON
-      // 3. Call testEngineService.checkCoverage()
-      // 4. Create GitHub check run if coverage below threshold
+      const provider = repository.provider as 'github' | 'gitlab' | 'bitbucket';
+      const adapter = getGitProviderAdapter(provider);
+      const artifact = await adapter.getPipelineArtifacts(
+        repo.fullName,
+        String(ciRun.id),
+        _accessToken,
+      );
+      const coverageData = artifact ? await parseCoverageArtifact(artifact) : null;
+      const coverageResult = coverageData && event.pr
+        ? await testEngineService.checkCoverage(
+            String(repository.id),
+            event.pr.number,
+            ciRun.headSha,
+            coverageData,
+          )
+        : null;
 
-      log.info({ repositoryId: String(repository.id), headSha: ciRun?.headSha }, 'CI event processed (coverage check placeholder)');
+      await prisma.testRun.updateMany({
+        where: {
+          repositoryId: String(repository.id),
+          prSha: ciRun.headSha,
+          workflowRunId: String(ciRun.id),
+        },
+        data: {
+          status: ciRun.status === 'completed' ? 'completed' : 'in_progress',
+          conclusion: ciRun.conclusion ?? null,
+          coverage: coverageData ? toJsonValue(coverageData) : undefined,
+          artifactsUrl: ciRun.url ?? undefined,
+          completedAt: ciRun.status === 'completed' ? new Date() : null,
+        },
+      });
+
+      log.info({
+        repositoryId: String(repository.id),
+        headSha: ciRun.headSha,
+        coverageAvailable: Boolean(coverageData),
+        coverageBlocked: coverageResult?.isBlocked ?? false,
+      }, 'CI event processed');
     } catch (error) {
       log.error({ err: error, repositoryId: String(repository.id) }, 'Failed to process CI event');
       // Don't throw - CI event processing is non-blocking
     }
   }
 }
-
 
 /**
  * Start webhook processor worker

@@ -1,6 +1,6 @@
 # Release Checklist
 
-**Generated:** 2024-12-19  
+**Updated:** 2026-10-05  
 **Purpose:** Pre-release verification checklist for UI interaction hardening
 
 ## Environment Variables
@@ -56,7 +56,7 @@
 - [x] Active state highlights current page
 - [x] Theme toggle works (light/dark/system)
 - [x] Sign-out button works
-- [ ] Mobile navigation menu (not implemented, nav hidden on mobile)
+- [x] Mobile navigation menu opens and closes on mobile
 
 ### Homepage
 - [x] Sign-in buttons link to `/auth/signin`
@@ -86,7 +86,7 @@
 - [x] List page exists (`/dashboard/repos`)
 - [x] Search input works (with debounce)
 - [x] Repository cards link to detail pages
-- [x] Connect page exists (placeholder)
+- [x] Connect page starts provider installation flows with return URL/state handling
 - [x] Detail page loads repository data
 - [x] Toggle enable/disable works with loading state
 - [x] Toast notifications on success/failure
@@ -159,7 +159,7 @@
 - [x] Session refresh handled
 - [x] Error states don't leave stale data
 - [x] Optimistic updates reconcile on error
-- [ ] Cache invalidation after mutations (not implemented - uses refetch)
+- [x] Mutation views refetch authoritative data after writes; cache invalidation remains an optimization item
 
 ## Performance
 
@@ -171,11 +171,10 @@
 
 ## Known Limitations
 
-1. **Mobile Navigation:** Nav is hidden on mobile (no hamburger menu)
-2. **Cache Invalidation:** No automatic cache invalidation - relies on refetch
-3. **Connect Repository:** Placeholder page - actual connection not implemented
-4. **Error Boundaries:** Global error boundaries exist but not tested with real errors
-5. **Screen Reader Testing:** Not verified with actual screen readers
+1. **External provider validation:** OAuth callbacks and webhooks require live provider credentials and registered URLs
+2. **Cache invalidation:** Current mutations refetch authoritative data; push-based invalidation is not yet enabled
+3. **Error Boundaries:** Global boundaries exist; production fault-injection evidence is still required
+4. **Screen Reader Testing:** Automated accessibility checks exist; manual assistive-technology verification remains a release task
 
 ## Verification Commands
 

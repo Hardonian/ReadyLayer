@@ -4,6 +4,8 @@ import { logger } from '../../../../../observability/logging';
 import { getGitProviderAdapter } from '../../../../../integrations/git-provider-adapter';
 import { getInstallationByProviderWithDecryptedToken } from '../../../../../lib/secrets/installation-helpers';
 import { errorResponse, successResponse } from '../../../../../lib/api-route-helpers';
+import { parseCoverageArtifact } from '../../../../../lib/coverage';
+import { toJsonValue } from '../../../../../lib/prisma-json';
 
 // Webhook routes must use Node runtime for signature verification and raw body access
 export const runtime = 'nodejs';
@@ -307,7 +309,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Try to fetch artifacts and extract coverage/summary
-    const coverage: Record<string, unknown> | null = null;
+    let coverage: Record<string, unknown> | null = null;
     const summary: Record<string, unknown> | null = null;
     let artifactsUrl: string | null = pipelineUrl || null;
 
@@ -320,8 +322,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (artifactsBlob) {
-        // For MVP, we'll store the URL and let the frontend handle artifact parsing
-        // In production, you'd want to extract and parse the JSON here
+        coverage = await parseCoverageArtifact(artifactsBlob);
         artifactsUrl = pipelineUrl || artifactsUrl;
       }
     } catch (error) {
@@ -338,7 +339,7 @@ export async function POST(request: NextRequest) {
       data: {
         status: status === 'completed' ? 'completed' : status === 'in_progress' ? 'in_progress' : 'pending',
         conclusion: conclusion,
-        coverage: coverage || undefined,
+        coverage: coverage ? toJsonValue(coverage) : undefined,
         summary: summary || undefined,
         artifactsUrl: artifactsUrl || undefined,
         completedAt: status === 'completed' ? new Date() : null,

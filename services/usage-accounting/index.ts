@@ -129,6 +129,30 @@ export class UsageAccountingService {
 
     return { totalTokens, totalCost, byService };
   }
+
+  /** Get token usage for a single repository over a time window. */
+  async getRepositoryUsage(
+    repositoryId: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{ totalTokens: number; totalCost: number; byService: Record<string, number> }> {
+    const usageRecords = await prisma.tokenUsage.findMany({
+      where: {
+        repositoryId,
+        ...(startDate || endDate
+          ? { createdAt: { ...(startDate ? { gte: startDate } : {}), ...(endDate ? { lte: endDate } : {}) } }
+          : {}),
+      },
+    });
+    return {
+      totalTokens: usageRecords.reduce((sum, usage) => sum + usage.totalTokens, 0),
+      totalCost: usageRecords.reduce((sum, usage) => sum + Number(usage.cost), 0),
+      byService: usageRecords.reduce((acc, usage) => {
+        acc[usage.service] = (acc[usage.service] ?? 0) + usage.totalTokens;
+        return acc;
+      }, {} as Record<string, number>),
+    };
+  }
 }
 
 export const usageAccountingService = new UsageAccountingService();

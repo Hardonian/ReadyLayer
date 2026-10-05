@@ -11,8 +11,8 @@
  * Essential for Startup CTOs to understand and optimize costs
  */
 
-// TODO: Uncomment when costEvent model is implemented in schema
-// import { prisma } from '../../lib/prisma';
+import { prisma } from '../../lib/prisma';
+import { toJsonValue } from '../../lib/prisma-json';
 import { logger } from '../../observability/logging';
 
 export interface CostBreakdown {
@@ -102,6 +102,43 @@ const DEFAULT_PRICING = {
 };
 
 class CostAttributionService {
+  private async recordCostEvent(params: {
+    organizationId: string;
+    service: string;
+    provider: string;
+    amount: number;
+    units: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<void> {
+    const now = new Date();
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    await prisma.costTracking.upsert({
+      where: {
+        organizationId_date_service_provider: {
+          organizationId: params.organizationId,
+          date,
+          service: params.service,
+          provider: params.provider,
+        },
+      },
+      create: {
+        organizationId: params.organizationId,
+        date,
+        service: params.service,
+        provider: params.provider,
+        amount: params.amount,
+        units: params.units,
+        metadata: params.metadata ? toJsonValue(params.metadata) : undefined,
+      },
+      update: {
+        amount: { increment: params.amount },
+        units: { increment: params.units },
+        metadata: params.metadata ? toJsonValue(params.metadata) : undefined,
+      },
+    });
+  }
+
   /**
    * Record LLM API call cost
    */
@@ -120,25 +157,14 @@ class CostAttributionService {
       const outputCost = (outputTokens / 1_000_000) * pricing.output;
       const totalCost = inputCost + outputCost;
 
-      // TODO: Implement costEvent model in Prisma schema
-      // await prisma.costEvent.create({
-      //   data: {
-      //     organizationId,
-      //     type: 'llm',
-      //     category: model,
-      //     quantity: inputTokens + outputTokens,
-      //     unitCost: (inputCost + outputCost) / (inputTokens + outputTokens || 1),
-      //     totalCost,
-      //     metadata: {
-      //       model,
-      //       inputTokens,
-      //       outputTokens,
-      //       inputCost,
-      //       outputCost,
-      //     },
-      //     recordedAt: new Date(),
-      //   },
-      // });
+      await this.recordCostEvent({
+        organizationId,
+        service: 'llm',
+        provider: model,
+        amount: totalCost,
+        units: inputTokens + outputTokens,
+        metadata: { model, inputTokens, outputTokens, inputCost, outputCost },
+      });
 
       logger.debug(
         { organizationId, model, inputTokens, outputTokens, totalCost },
@@ -167,19 +193,14 @@ class CostAttributionService {
 
       const totalCost = (tokens / 1_000_000) * pricing.cost;
 
-      // TODO: Implement costEvent model in Prisma schema
-      // await prisma.costEvent.create({
-      //   data: {
-      //     organizationId,
-      //     type: 'embedding',
-      //     category: model,
-      //     quantity: tokens,
-      //     unitCost: pricing.cost / 1_000_000,
-      //     totalCost,
-      //     metadata: { model, tokens },
-      //     recordedAt: new Date(),
-      //   },
-      // });
+      await this.recordCostEvent({
+        organizationId,
+        service: 'embedding',
+        provider: model,
+        amount: totalCost,
+        units: tokens,
+        metadata: { model, tokens },
+      });
 
       logger.debug({ organizationId, tokens, totalCost }, 'Embedding cost recorded');
     } catch (error) {
@@ -202,21 +223,14 @@ class CostAttributionService {
           : DEFAULT_PRICING.database.write;
 
       const totalCost = count * unitCost;
-      void totalCost; // Will be used when costEvent model is implemented
-
-      // TODO: Implement costEvent model in Prisma schema
-      // await prisma.costEvent.create({
-      //   data: {
-      //     organizationId,
-      //     type: 'database',
-      //     category: operation,
-      //     quantity: count,
-      //     unitCost,
-      //     totalCost,
-      //     metadata: { operation, count },
-      //     recordedAt: new Date(),
-      //   },
-      // });
+      await this.recordCostEvent({
+        organizationId,
+        service: 'database',
+        provider: 'postgres',
+        amount: totalCost,
+        units: count,
+        metadata: { operation, count },
+      });
     } catch (error) {
       logger.error({ error, organizationId }, 'Failed to record database cost');
     }
@@ -228,23 +242,33 @@ class CostAttributionService {
   async recordAPICost(organizationId: string, requests: number = 1): Promise<void> {
     try {
       const totalCost = requests * DEFAULT_PRICING.api;
-      void totalCost; // Will be used when costEvent model is implemented
-
-      // TODO: Implement costEvent model in Prisma schema
-      // await prisma.costEvent.create({
-      //   data: {
-      //     organizationId,
-      //     type: 'api',
-      //     category: 'request',
-      //     quantity: requests,
-      //     unitCost: DEFAULT_PRICING.api,
-      //     totalCost,
-      //     metadata: { requests },
-      //     recordedAt: new Date(),
-      //   },
-      // });
+      await this.recordCostEvent({
+        organizationId,
+        service: 'api',
+        provider: 'api',
+        amount: totalCost,
+        units: requests,
+        metadata: { requests },
+      });
     } catch (error) {
       logger.error({ error, organizationId }, 'Failed to record API cost');
+    }
+  }
+
+  /** Record object/storage usage for the organization. */
+  async recordStorageCost(organizationId: string, usageGb: number): Promise<void> {
+    try {
+      const totalCost = Math.max(0, usageGb) * DEFAULT_PRICING.storage;
+      await this.recordCostEvent({
+        organizationId,
+        service: 'storage',
+        provider: 'object-storage',
+        amount: totalCost,
+        units: Math.round(Math.max(0, usageGb) * 1000),
+        metadata: { usage: usageGb },
+      });
+    } catch (error) {
+      logger.error({ error, organizationId }, 'Failed to record storage cost');
     }
   }
 
@@ -256,17 +280,20 @@ class CostAttributionService {
     startDate: Date,
     endDate: Date
   ): Promise<CostBreakdown> {
-    // TODO: Implement costEvent model in Prisma schema
-    // const events = await prisma.costEvent.findMany({
-    //   where: {
-    //     organizationId,
-    //     recordedAt: {
-    //       gte: startDate,
-    //       lte: endDate,
-    //     },
-    //   },
-    // });
-    const events: CostEvent[] = [];
+    const persistedEvents = await prisma.costTracking.findMany({
+      where: {
+        organizationId,
+        date: { gte: startDate, lte: endDate },
+      },
+      orderBy: { date: 'asc' },
+    });
+    const events: CostEvent[] = persistedEvents.map((event) => ({
+      type: event.service as CostEvent['type'],
+      totalCost: Number(event.amount),
+      metadata: event.metadata && typeof event.metadata === 'object' && !Array.isArray(event.metadata)
+        ? event.metadata as Record<string, unknown>
+        : undefined,
+    }));
 
     const costs = {
       llm: { model: 'aggregate', inputTokens: 0, outputTokens: 0, costPerInputMillion: 0, costPerOutputMillion: 0, totalCost: 0 },

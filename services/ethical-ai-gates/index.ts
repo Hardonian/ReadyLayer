@@ -160,29 +160,48 @@ export class EthicalAIGatesService {
    * 
    * Monitors for bias in AI decisions.
    */
-  async calculateBiasMetrics(_organizationId: string): Promise<BiasMetrics> {
-    // Get recent reviews (reserved for future bias calculation)
-    // const thirtyDaysAgo = new Date();
-    // thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    // const reviews = await prisma.review.findMany({...});
-
-    // Calculate false positive rate (would need feedback data)
-    const falsePositiveRate = 0.05; // Placeholder
-
-    // Calculate false negative rate (would need feedback data)
-    const falseNegativeRate = 0.02; // Placeholder
-
-    // Temporal bias (compare recent vs historical)
-    // Note: Would calculate from recentReviews vs historicalReviews in production
-    const recentAccuracy = 0.95; // Placeholder
-    const historicalAccuracy = 0.93; // Placeholder
+  async calculateBiasMetrics(organizationId: string): Promise<BiasMetrics> {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const sixtyDaysAgo = new Date(now);
+    sixtyDaysAgo.setDate(now.getDate() - 60);
+    const [feedback, reviews] = await Promise.all([
+      prisma.auditLog.findMany({
+        where: {
+          organizationId,
+          action: { in: ['false_positive', 'false_negative'] },
+          createdAt: { gte: sixtyDaysAgo, lte: now },
+        },
+        select: { action: true, createdAt: true },
+      }),
+      prisma.review.findMany({
+        where: {
+          repository: { organizationId },
+          createdAt: { gte: sixtyDaysAgo, lte: now },
+        },
+        select: { createdAt: true },
+      }),
+    ]);
+    const totalLabels = feedback.length;
+    const falsePositives = feedback.filter((entry) => entry.action === 'false_positive').length;
+    const falseNegatives = feedback.filter((entry) => entry.action === 'false_negative').length;
+    const recentFeedback = feedback.filter((entry) => entry.createdAt >= thirtyDaysAgo);
+    const historicalFeedback = feedback.filter((entry) => entry.createdAt < thirtyDaysAgo);
+    const accuracy = (entries: typeof feedback, reviewCount: number): number => {
+      if (reviewCount === 0) return 0;
+      const errors = entries.length;
+      return Math.max(0, 1 - errors / reviewCount);
+    };
+    const recentReviewCount = reviews.filter((review) => review.createdAt >= thirtyDaysAgo).length;
+    const historicalReviewCount = reviews.filter((review) => review.createdAt < thirtyDaysAgo).length;
 
     return {
-      falsePositiveRate,
-      falseNegativeRate,
+      falsePositiveRate: totalLabels > 0 ? falsePositives / totalLabels : 0,
+      falseNegativeRate: totalLabels > 0 ? falseNegatives / totalLabels : 0,
       temporalBias: {
-        recentAccuracy,
-        historicalAccuracy,
+        recentAccuracy: accuracy(recentFeedback, recentReviewCount),
+        historicalAccuracy: accuracy(historicalFeedback, historicalReviewCount),
       },
     };
   }
@@ -224,6 +243,30 @@ export class EthicalAIGatesService {
 
     // Update false positive tracking (would be in a separate table)
     // For now, just log it
+  }
+
+  /** Record a missed finding for recall and temporal-bias reporting. */
+  async trackFalseNegative(
+    reviewId: string,
+    findingId: string,
+    userId: string,
+    reason: string
+  ): Promise<void> {
+    const review = await prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { repository: { select: { organizationId: true } } },
+    });
+    if (!review) throw new Error(`Review ${reviewId} not found`);
+    await prisma.auditLog.create({
+      data: {
+        organizationId: review.repository.organizationId,
+        userId,
+        action: 'false_negative',
+        resourceType: 'review',
+        resourceId: reviewId,
+        details: { findingId, reason } as Prisma.InputJsonValue,
+      },
+    });
   }
 
   /**

@@ -80,15 +80,12 @@ export class QueueService {
    */
   async enqueue(queueName: string, payload: JobPayload): Promise<string> {
     await this.ensureRedisInitialized();
-    const jobId = payload.idempotencyKey || this.generateJobId();
+    const existingJob = payload.idempotencyKey
+      ? await this.getJobByIdempotencyKey(payload.idempotencyKey, queueName, payload.organizationId)
+      : null;
+    if (existingJob) return existingJob.id;
 
-    // Check idempotency
-    if (payload.idempotencyKey) {
-      const existing = await this.getJobByIdempotencyKey(payload.idempotencyKey);
-      if (existing) {
-        return existing.id;
-      }
-    }
+    const jobId = this.generateJobId();
 
     // Check usage limits before enqueueing (if organizationId provided)
     if (payload.organizationId) {
@@ -113,7 +110,9 @@ export class QueueService {
         maxRetries: payload.maxRetries || 3,
         scheduledAt: new Date(),
         repositoryId,
+        organizationId: payload.organizationId || null,
         userId: payload.userId || null,
+        idempotencyKey: payload.idempotencyKey || null,
       },
     });
 
@@ -151,7 +150,7 @@ export class QueueService {
         }
 
 const jobData = JSON.parse(result.element) as { id: string };
-        await this.processJob(jobData.id, handler);
+        await this.processJob(jobData.id, queueName, handler);
       } catch (error) {
         logger.error(error, 'Queue processing error');
         await this.sleep(1000); // Wait before retrying
@@ -164,6 +163,7 @@ const jobData = JSON.parse(result.element) as { id: string };
    */
   private async processJob(
     jobId: string,
+    queueName: string,
     handler: QueueHandler
   ): Promise<void> {
     const job = await prisma.job.findUnique({
@@ -217,13 +217,11 @@ const jobData = JSON.parse(result.element) as { id: string };
 
         // Re-enqueue for retry
         if (this.isConnected && this.redis) {
-          await this.redis.lPush(
-            `queue:retry`,
-            JSON.stringify({
-              id: jobId,
-              scheduledAt: scheduledAt.getTime(),
-            })
-          );
+          const redis = this.redis;
+          setTimeout(() => {
+            void redis.lPush(`queue:${queueName}`, JSON.stringify({ id: jobId, type: job.type }))
+              .catch((retryError: unknown) => logger.error({ err: retryError, jobId }, 'Failed to requeue job retry'));
+          }, delay);
         }
       } else {
         // Max retries exceeded, move to DLQ
@@ -374,9 +372,21 @@ const jobData = JSON.parse(result.element) as { id: string };
   /**
    * Get job by idempotency key
    */
-  private async getJobByIdempotencyKey(_key: string): Promise<{ id: string } | null> {
-    // Would check Redis cache first, then database
-    return null; // Simplified
+  private async getJobByIdempotencyKey(
+    key: string,
+    queueName: string,
+    organizationId?: string,
+  ): Promise<{ id: string } | null> {
+    if (!organizationId) return null;
+
+    return prisma.job.findFirst({
+      where: {
+        organizationId,
+        type: queueName,
+        idempotencyKey: key,
+      },
+      select: { id: true },
+    });
   }
 
   /**

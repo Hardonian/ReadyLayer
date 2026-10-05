@@ -93,6 +93,28 @@ function verifySignature(
   }
 }
 
+function validateStripeEventPayload(event: Stripe.Event): string | null {
+  switch (event.type) {
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated':
+    case 'customer.subscription.deleted':
+      return StripeSubscriptionSchema.safeParse(event.data.object).success
+        ? null
+        : 'Invalid subscription payload';
+    case 'invoice.payment_succeeded':
+    case 'invoice.payment_failed':
+      return StripeInvoiceSchema.safeParse(event.data.object).success
+        ? null
+        : 'Invalid invoice payload';
+    case 'checkout.session.completed':
+      return StripeCheckoutSessionSchema.safeParse(event.data.object).success
+        ? null
+        : 'Invalid checkout session payload';
+    default:
+      return null;
+  }
+}
+
 /**
  * POST /api/webhooks/stripe
  * Handle Stripe webhooks
@@ -100,6 +122,7 @@ function verifySignature(
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const requestId = request.headers.get('x-request-id') || `stripe_${Date.now()}`;
   const log = logger.child({ requestId });
+  let webhookEventId: string | null = null;
 
   try {
     // Check if Stripe is configured
@@ -159,6 +182,61 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         { status: 400 }
       );
+    }
+
+    const payloadError = validateStripeEventPayload(event);
+    if (payloadError) {
+      log.warn({ eventType: event.type, payloadError }, 'Stripe event payload validation failed');
+      return NextResponse.json(
+        { error: { code: 'INVALID_EVENT', message: payloadError } },
+        { status: 400 }
+      );
+    }
+
+    const existingEvent = await prisma.webhookEvent.findUnique({
+      where: { eventId: event.id },
+      select: { id: true, status: true, receivedAt: true },
+    });
+    if (existingEvent) {
+      if (existingEvent.status === 'completed') {
+        log.info({ eventId: event.id, status: existingEvent.status }, 'Duplicate Stripe webhook ignored');
+        return NextResponse.json({ received: true, duplicate: true }, { status: 200 });
+      }
+      if (existingEvent.status === 'processing' && Date.now() - existingEvent.receivedAt.getTime() < 10 * 60 * 1000) {
+        log.info({ eventId: event.id, status: existingEvent.status }, 'Stripe webhook is already being processed');
+        return NextResponse.json({ received: true, duplicate: true }, { status: 200 });
+      }
+      await prisma.webhookEvent.update({
+        where: { id: existingEvent.id },
+        data: {
+          status: 'processing',
+          error: null,
+          lastRetryAt: new Date(),
+          retryCount: { increment: 1 },
+        },
+      });
+      webhookEventId = existingEvent.id;
+    }
+
+    if (!webhookEventId) {
+      try {
+        const claimedEvent = await prisma.webhookEvent.create({
+          data: {
+            eventId: event.id,
+            provider: 'stripe',
+            eventType: event.type,
+            installationId: event.account || 'stripe',
+            status: 'processing',
+          },
+          select: { id: true },
+        });
+        webhookEventId = claimedEvent.id;
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002') {
+          return NextResponse.json({ received: true, duplicate: true }, { status: 200 });
+        }
+        throw error;
+      }
     }
 
     log.info({ eventType: event.type }, 'Received Stripe webhook');
@@ -245,10 +323,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         log.warn({ eventType: event.type }, 'Unhandled Stripe webhook event type');
     }
 
+    if (webhookEventId) {
+      await prisma.webhookEvent.update({
+        where: { id: webhookEventId },
+        data: {
+          status: 'completed',
+          processedAt: new Date(),
+          result: { eventType: event.type },
+        },
+      });
+    }
+
     metrics.increment('webhooks.received', { provider: 'stripe', event: event.type });
 
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
+    if (webhookEventId) {
+      try {
+        await prisma.webhookEvent.update({
+          where: { id: webhookEventId },
+          data: {
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            lastRetryAt: new Date(),
+          },
+        });
+      } catch (statusError) {
+        log.error(statusError, 'Failed to persist Stripe webhook failure state');
+      }
+    }
     log.error(error, 'Stripe webhook handling failed');
     metrics.increment('webhooks.failed', { provider: 'stripe' });
 

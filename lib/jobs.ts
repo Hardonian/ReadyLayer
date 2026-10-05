@@ -14,6 +14,31 @@ import { logger } from '@/observability/logging';
  */
 export type JobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'dead' | 'canceled';
 
+function normalizeJobStatus(status: string): JobStatus {
+  switch (status) {
+    case 'pending':
+    case 'retrying':
+      return 'queued';
+    case 'processing':
+      return 'running';
+    case 'completed':
+      return 'succeeded';
+    case 'dead':
+      return 'dead';
+    case 'canceled':
+      return 'canceled';
+    default:
+      return 'failed';
+  }
+}
+
+function toDatabaseStatusFilter(status: JobStatus): string | { in: string[] } {
+  if (status === 'queued') return { in: ['pending', 'retrying'] };
+  if (status === 'running') return 'processing';
+  if (status === 'succeeded') return 'completed';
+  return status;
+}
+
 /**
  * Job data returned by API
  */
@@ -148,7 +173,7 @@ export async function getJob(jobId: string): Promise<JobData | null> {
   return {
     id: job.id,
     type: job.type,
-    status: job.status as JobStatus,
+    status: normalizeJobStatus(job.status),
     payload: job.payload,
     result: job.result ?? undefined,
     error: job.error ?? undefined,
@@ -192,7 +217,7 @@ export async function listJobs({
   }
 
   if (status) {
-    where.status = status;
+    where.status = toDatabaseStatusFilter(status);
   }
 
   const [jobs, total] = await Promise.all([
@@ -209,7 +234,7 @@ export async function listJobs({
     jobs: jobs.map((job) => ({
       id: job.id,
       type: job.type,
-      status: job.status as JobStatus,
+      status: normalizeJobStatus(job.status),
       payload: job.payload,
       result: job.result ?? undefined,
       error: job.error ?? undefined,
@@ -254,7 +279,7 @@ export async function getJobResult(jobId: string): Promise<{
   }
 
   return {
-    status: job.status as JobStatus,
+    status: normalizeJobStatus(job.status),
     result: job.result ?? undefined,
     error: job.error ?? undefined,
     completedAt: job.completedAt ?? undefined,
@@ -284,7 +309,7 @@ export async function cancelJob(
   }
 
   // Can only cancel queued or running jobs
-  if (!['queued', 'running'].includes(job.status)) {
+  if (!['pending', 'processing', 'retrying'].includes(job.status)) {
     return false;
   }
 

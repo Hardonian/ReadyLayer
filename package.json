@@ -19,6 +19,7 @@
     "prisma:validate": "prisma validate",
     "worker:webhook": "tsx workers/webhook-processor.ts",
     "worker:job": "tsx workers/job-processor.ts",
+    "worker:test": "tsx workers/test-executor-worker.ts",
     "worker:py": "cd services/worker-py && uv run python -m src.worker",
     "worker:py:docker": "cd services/worker-py && docker-compose up -d",
     "worker:py:docker:logs": "cd services/worker-py && docker-compose logs -f",

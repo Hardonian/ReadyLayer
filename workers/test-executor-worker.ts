@@ -9,6 +9,7 @@ import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
 import { TestExecutionResult } from '@/lib/types/test-run';
 import { executeTests } from '@/services/test-engine/executor';
+import { queueService } from '@/queue';
 
 export interface TestExecutionJob {
   id: string;
@@ -326,10 +327,41 @@ export function validateTestJob(job: unknown): job is TestExecutionJob {
  * TODO: Implement proper job queue (Redis/Bull)
  */
 export async function enqueueTestExecutionJob(
-  _job: TestExecutionJob
+  job: TestExecutionJob
 ): Promise<{ id: string; status: string }> {
-  // TODO: Queue job in Redis/Bull and return job info
-  const jobId = `test_job_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-  logger.debug({ jobId }, 'Test execution job queued (stub)');
+  if (!validateTestJob(job)) {
+    throw new Error('Invalid test execution job payload');
+  }
+
+  const jobId = await queueService.enqueue('test-execution', {
+    type: 'test-execution',
+    data: job,
+    idempotencyKey: `test-execution:${job.testRunId}`,
+    maxRetries: job.maxRetries ?? 2,
+    organizationId: job.organizationId,
+  });
+
+  logger.debug({ jobId, testRunId: job.testRunId }, 'Test execution job queued');
   return { id: jobId, status: 'queued' };
+}
+
+/**
+ * Start the durable test-execution worker. The same queue service is used for
+ * Redis-backed production deployments and the database fallback.
+ */
+export async function startTestExecutorWorker(): Promise<void> {
+  logger.info('Starting test executor worker');
+  await queueService.processQueue('test-execution', async (payload: unknown) => {
+    if (!validateTestJob(payload)) {
+      throw new Error('Invalid test execution job payload');
+    }
+    return executeTestJob(payload);
+  });
+}
+
+if (require.main === module) {
+  startTestExecutorWorker().catch((error: unknown) => {
+    logger.error({ error: String(error) }, 'Test executor worker failed to start');
+    process.exit(1);
+  });
 }

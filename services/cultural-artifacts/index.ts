@@ -239,8 +239,19 @@ export class CulturalArtifactsService {
     });
     const testCoverage = testRuns.length > 0
       ? testRuns.reduce((sum, tr) => {
-          const coverage = tr.coverage as { total?: number } | null;
-          return sum + (coverage?.total || 0);
+          const coverage = tr.coverage as {
+            total?: number;
+            lines?: number | { percentage?: number };
+          } | null;
+          const lineCoverage = typeof coverage?.lines === 'object'
+            ? coverage.lines.percentage
+            : coverage?.lines;
+          const percentage = typeof lineCoverage === 'number'
+            ? lineCoverage
+            : typeof coverage?.total === 'number'
+              ? coverage.total
+              : 0;
+          return sum + percentage;
         }, 0) / testRuns.length / 100
       : 0;
 
