@@ -115,6 +115,7 @@ export async function executeTestJob(
     const passedTests = results.filter(r => r.status === 'passed').length;
     const failedTests = results.filter(r => r.status === 'failed').length;
     const timedOutTests = results.filter(r => r.status === 'timeout').length;
+    const coverageFailures = results.filter(r => !r.meetsThreshold).length;
     const skippedTests = 0; // Results only have passed/failed/timeout status
     const erroredTests = 0; // Results only have passed/failed/timeout status
 
@@ -129,7 +130,7 @@ export async function executeTestJob(
 
     const status: TestExecutionJobResult['status'] = timedOutTests > 0
       ? 'timeout'
-      : failedTests > 0
+      : failedTests > 0 || coverageFailures > 0
         ? 'failure'
         : 'success';
 
@@ -141,6 +142,7 @@ export async function executeTestJob(
         passedTests,
         failedTests,
         timedOutTests,
+        coverageFailures,
         skippedTests,
         erroredTests,
         avgCoverage: Math.round(avgCoverage),

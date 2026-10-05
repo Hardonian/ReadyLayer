@@ -19,7 +19,7 @@ describe('test execution production guard', () => {
     });
 
     expect(result.status).toBe('failed');
-    expect(result.error).toContain('Simulated test execution is disabled in production');
+    expect(result.error).toContain('READYLAYER_TEST_RUNNER_IMAGE is required');
   });
 
   it('keeps deterministic simulation available when explicitly enabled for a controlled environment', async () => {

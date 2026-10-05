@@ -10,6 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { randomUUID } from 'crypto';
 import { spawn } from 'child_process';
 import { logger } from '../../observability/logging';
 
@@ -22,6 +23,7 @@ export interface SandboxOptions {
   env?: Record<string, string>;
   workingDir?: string;
   allowProcessFallback?: boolean;
+  maxOutputBytes?: number;
 }
 
 export interface SandboxFile {
@@ -50,14 +52,28 @@ export class SandboxManager {
     }
 
     return new Promise<boolean>((resolve) => {
+      let settled = false;
+      const finish = (available: boolean): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        this.isDockerAvailableCache = available;
+        resolve(available);
+      };
+
       const proc = spawn('docker', ['--version']);
+      const timeout = setTimeout(() => {
+        proc.kill();
+        finish(false);
+      }, 5_000);
       proc.on('error', () => {
-        this.isDockerAvailableCache = false;
-        resolve(false);
+        clearTimeout(timeout);
+        finish(false);
       });
       proc.on('close', (code) => {
-        this.isDockerAvailableCache = code === 0;
-        resolve(this.isDockerAvailableCache);
+        clearTimeout(timeout);
+        finish(code === 0);
       });
     });
   }
@@ -108,6 +124,10 @@ export class SandboxManager {
   ): Promise<SandboxExecutionResult> {
     const startTime = Date.now();
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rl-docker-sandbox-'));
+    const containerName = `readylayer-test-${randomUUID().replace(/-/g, '')}`;
+    const volumeName = `readylayer-workspace-${randomUUID().replace(/-/g, '')}`;
+    let volumeCreated = false;
+    let containerCreated = false;
 
     try {
       this.writeFilesToDir(tempDir, files);
@@ -116,15 +136,31 @@ export class SandboxManager {
       const cpuLimit = options.cpuLimit ? `--cpus=${options.cpuLimit}` : '--cpus=1.0';
       const netFlag = options.networkEnabled ? '--net=bridge' : '--net=none';
       const imageName = options.image || 'node:20-alpine';
+      const volumeMount = `type=volume,source=${volumeName},target=/workspace,volume-nocopy`;
+      const setupTimeoutMs = Math.max(5_000, options.timeoutMs || 30_000);
+
+      await this.runDockerSetup(['volume', 'create', volumeName], tempDir, setupTimeoutMs);
+      volumeCreated = true;
 
       const dockerArgs = [
-        'run',
-        '--rm',
+        'create',
+        '--name',
+        containerName,
+        '--init',
+        '--read-only',
+        '--cap-drop',
+        'ALL',
+        '--security-opt',
+        'no-new-privileges=true',
+        '--pids-limit',
+        '128',
+        '--tmpfs',
+        '/tmp:rw,nosuid,nodev,size=64m',
         memLimit,
         cpuLimit,
         netFlag,
-        '-v',
-        `${tempDir}:/workspace`,
+        '--mount',
+        volumeMount,
         '-w',
         '/workspace',
       ];
@@ -136,10 +172,82 @@ export class SandboxManager {
       }
 
       dockerArgs.push(imageName, ...command);
+      await this.runDockerSetup(dockerArgs, tempDir, setupTimeoutMs);
+      containerCreated = true;
 
-      return await this.spawnWithTimeout('docker', dockerArgs, tempDir, options.timeoutMs || 30000, 'docker', startTime);
+      // Docker Desktop bind mounts can hang on Windows. A managed volume keeps the
+      // untrusted workspace inside Docker while docker cp uses its Engine API.
+      await this.runDockerSetup(
+        ['cp', `${tempDir}${path.sep}.`, `${containerName}:/workspace`],
+        tempDir,
+        setupTimeoutMs
+      );
+      await this.runDockerSetup(
+        [
+          'run',
+          '--rm',
+          '--user',
+          '0:0',
+          '--network',
+          'none',
+          '--read-only',
+          '--tmpfs',
+          '/tmp:rw,nosuid,nodev,size=64m',
+          '--mount',
+          volumeMount,
+          imageName,
+          'chown',
+          '-R',
+          '10001:10001',
+          '/workspace',
+        ],
+        tempDir,
+        setupTimeoutMs
+      );
+
+      return await this.spawnWithTimeout(
+        'docker',
+        ['start', '--attach', containerName],
+        tempDir,
+        options.timeoutMs || 30000,
+        'docker',
+        startTime,
+        undefined,
+        options.maxOutputBytes,
+        () => this.stopDockerContainer(containerName)
+      );
     } finally {
+      if (containerCreated) {
+        await this.removeDockerContainer(containerName);
+      }
+      if (volumeCreated) {
+        await this.removeDockerVolume(volumeName);
+      }
       this.cleanupDir(tempDir);
+    }
+  }
+
+  private async runDockerSetup(args: string[], cwd: string, timeoutMs: number): Promise<void> {
+    const result = await this.spawnWithTimeout('docker', args, cwd, timeoutMs, 'docker', Date.now());
+    if (result.timedOut || result.exitCode !== 0) {
+      const output = `${result.stdout}\n${result.stderr}`.trim();
+      throw new Error(output || `Docker setup command failed: docker ${args.join(' ')}`);
+    }
+  }
+
+  private async removeDockerContainer(containerName: string): Promise<void> {
+    await this.runDockerCleanup(['rm', '--force', containerName]);
+  }
+
+  private async removeDockerVolume(volumeName: string): Promise<void> {
+    await this.runDockerCleanup(['volume', 'rm', '--force', volumeName]);
+  }
+
+  private async runDockerCleanup(args: string[]): Promise<void> {
+    try {
+      await this.spawnWithTimeout('docker', args, os.tmpdir(), 5_000, 'docker', Date.now());
+    } catch {
+      // A failed cleanup cannot make a completed sandbox execution unsafe.
     }
   }
 
@@ -164,7 +272,16 @@ export class SandboxManager {
         SANDBOX_ACTIVE: '1',
       };
 
-      return await this.spawnWithTimeout(binary, args, tempDir, options.timeoutMs || 30000, 'process', startTime, env);
+      return await this.spawnWithTimeout(
+        binary,
+        args,
+        tempDir,
+        options.timeoutMs || 30000,
+        'process',
+        startTime,
+        env,
+        options.maxOutputBytes
+      );
     } finally {
       this.cleanupDir(tempDir);
     }
@@ -177,12 +294,17 @@ export class SandboxManager {
     timeoutMs: number,
     sandboxType: 'docker' | 'process',
     startTime: number,
-    env?: NodeJS.ProcessEnv
+    env?: NodeJS.ProcessEnv,
+    maxOutputBytes: number = 1_000_000,
+    onTerminate?: () => void
   ): Promise<SandboxExecutionResult> {
     return new Promise<SandboxExecutionResult>((resolve) => {
       let stdout = '';
       let stderr = '';
       let timedOut = false;
+      let outputLimitExceeded = false;
+      let outputBytes = 0;
+      let completed = false;
 
       const child = spawn(cmd, args, {
         cwd,
@@ -190,22 +312,52 @@ export class SandboxManager {
         shell: false,
       });
 
+      const finish = (result: SandboxExecutionResult): void => {
+        if (completed) {
+          return;
+        }
+        completed = true;
+        clearTimeout(timer);
+        resolve(result);
+      };
+
+      const terminate = (): void => {
+        onTerminate?.();
+        child.kill('SIGKILL');
+      };
+
       const timer = setTimeout(() => {
         timedOut = true;
-        child.kill('SIGKILL');
+        terminate();
       }, timeoutMs);
 
-      child.stdout?.on('data', (data: Buffer | string) => {
-        stdout += data.toString();
-      });
+      const appendOutput = (stream: 'stdout' | 'stderr', data: Buffer | string): void => {
+        if (outputLimitExceeded) {
+          return;
+        }
 
-      child.stderr?.on('data', (data: Buffer | string) => {
-        stderr += data.toString();
-      });
+        const chunk = Buffer.from(data.toString(), 'utf8');
+        const remainingBytes = Math.max(0, maxOutputBytes - outputBytes);
+        const retained = chunk.subarray(0, remainingBytes);
+        outputBytes += retained.byteLength;
+        if (stream === 'stdout') {
+          stdout += retained.toString('utf8');
+        } else {
+          stderr += retained.toString('utf8');
+        }
+
+        if (retained.byteLength < chunk.byteLength) {
+          outputLimitExceeded = true;
+          stderr += '\nSandbox output limit exceeded; execution terminated.';
+          terminate();
+        }
+      };
+
+      child.stdout?.on('data', (data: Buffer | string) => appendOutput('stdout', data));
+      child.stderr?.on('data', (data: Buffer | string) => appendOutput('stderr', data));
 
       child.on('error', (err) => {
-        clearTimeout(timer);
-        resolve({
+        finish({
           exitCode: -1,
           stdout,
           stderr: stderr + '\n' + err.message,
@@ -216,9 +368,8 @@ export class SandboxManager {
       });
 
       child.on('close', (code) => {
-        clearTimeout(timer);
-        resolve({
-          exitCode: timedOut ? 124 : (code ?? 0),
+        finish({
+          exitCode: timedOut ? 124 : (outputLimitExceeded ? 137 : (code ?? 0)),
           stdout,
           stderr,
           durationMs: Date.now() - startTime,
@@ -227,6 +378,15 @@ export class SandboxManager {
         });
       });
     });
+  }
+
+  private stopDockerContainer(containerName: string): void {
+    const stopProcess = spawn('docker', ['kill', containerName], {
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    stopProcess.once('error', () => undefined);
+    stopProcess.unref();
   }
 
   private writeFilesToDir(targetDir: string, files: SandboxFile[]): void {

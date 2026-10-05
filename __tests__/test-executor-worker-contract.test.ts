@@ -105,6 +105,22 @@ describe('test executor worker contracts', () => {
     expect(execution.status).toBe('timeout');
   });
 
+  it('fails a job when executed tests do not meet the coverage threshold', async () => {
+    mocks.executeTests.mockResolvedValue(result('src/low-coverage.ts', 'passed', 70));
+
+    const execution = await executeTestJob({
+      id: 'job-coverage',
+      testRunId: 'run-coverage',
+      organizationId: 'org-1',
+      projectId: 'project-1',
+      generatedTests: [
+        { id: 'test-1', framework: 'vitest', code: 'it("low coverage", () => {})', targetFile: 'src/low-coverage.ts' },
+      ],
+    });
+
+    expect(execution.status).toBe('failure');
+  });
+
   it('clears the aggregate timeout after a completed job', async () => {
     vi.useFakeTimers();
     mocks.executeTests.mockResolvedValue(result('src/fast.ts', 'passed', 90));

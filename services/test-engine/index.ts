@@ -712,6 +712,7 @@ async executeTestsSync(
 export const testEngineService = new TestEngineService();
 
 export * from './sandbox-manager';
+export * from './container-executor';
 export * from './runners';
 export * from './flaky-detector';
 export * from './bench-runner';

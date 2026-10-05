@@ -8,6 +8,7 @@
 
 import { logger } from '../../observability/logging'
 import { metrics } from '../../observability/metrics'
+import { executeContainerTests } from './container-executor'
 
 export interface TestExecutionRequest {
   filePath: string
@@ -58,6 +59,14 @@ function simulatedExecutionAllowed(): boolean {
   return process.env.NODE_ENV !== 'production' || process.env.READYLAYER_ALLOW_SIMULATED_TEST_EXECUTION === 'true'
 }
 
+function shouldUseContainerExecution(): boolean {
+  const configuredMode = process.env.READYLAYER_TEST_EXECUTION_MODE
+  if (configuredMode === 'container') {
+    return true
+  }
+  return !configuredMode && process.env.NODE_ENV === 'production' && !simulatedExecutionAllowed()
+}
+
 function simulatedExecutionDisabledResult(
   filePath: string,
   framework: string,
@@ -91,6 +100,17 @@ export async function executeTests(
     { filePath, framework, coverageThreshold },
     'Starting test execution'
   )
+
+  if (shouldUseContainerExecution()) {
+    return executeContainerTests({
+      filePath,
+      testContent,
+      framework,
+      sourceCode,
+      coverageThreshold,
+      timeoutMs,
+    })
+  }
 
   if (!simulatedExecutionAllowed()) {
     metrics.increment('test_execution_rejected', { reason: 'simulated_execution_disabled' })

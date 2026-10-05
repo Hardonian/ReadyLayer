@@ -41,6 +41,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test-runner:build": "docker build -t readylayer-test-runner:local -f services/test-engine/Dockerfile services/test-engine",
+    "test-runner:smoke": "tsx scripts/smoke-test-container-runner.ts",
     "test:tenant-isolation": "tsx scripts/test-tenant-isolation.ts",
     "test:billing": "tsx scripts/test-billing-enforcement.ts",
     "middleware:smoke": "tsx scripts/middleware-smoke.ts",

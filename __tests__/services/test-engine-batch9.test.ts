@@ -62,6 +62,21 @@ describe('Batch 9: Dynamic Sandbox & Test Execution', () => {
         [{ path: '../outside.txt', content: 'must not be written' }]
       )).rejects.toThrow('Sandbox file path escapes the workspace');
     });
+
+    it('terminates a process that exceeds the sandbox output limit', async () => {
+      const manager = new SandboxManager();
+      vi.spyOn(manager, 'isDockerAvailable').mockResolvedValue(false);
+
+      const result = await manager.runInSandbox(
+        [process.execPath, '-e', 'process.stdout.write("x".repeat(4096)); setInterval(() => {}, 1000);'],
+        [],
+        { timeoutMs: 5_000, maxOutputBytes: 128 }
+      );
+
+      expect(result.exitCode).toBe(137);
+      expect(result.stderr).toContain('Sandbox output limit exceeded');
+      expect(Buffer.byteLength(result.stdout, 'utf8')).toBeLessThanOrEqual(128);
+    });
   });
 
   describe('Multi-Language Test Runners (Item #31)', () => {
