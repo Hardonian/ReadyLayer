@@ -160,7 +160,7 @@
 - ✅ **Integration tests** — Tenant isolation, policy gates, API contracts, and failure-path suites are present
 - ✅ **E2E tests** — Playwright demo and browser flows are present; production credentials and multi-browser release runs remain environment gates
 
-**Current baseline:** `npm test` runs 60 files (453 passing tests, 37 intentionally skipped in the current environment). The release record must attach the clean-checkout output.
+**Current baseline:** `npm test` runs 60 files (454 passing tests, 37 intentionally skipped in the current environment). The release record must attach the clean-checkout output.
 
 ### 4.3 Documentation
 - ✅ **API documentation** — Route comments and README

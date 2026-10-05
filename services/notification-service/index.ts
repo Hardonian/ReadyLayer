@@ -11,6 +11,7 @@
 import * as crypto from 'crypto';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
+import { emailService } from '@/services/email/sender';
 
 export type NotificationChannel = 'email' | 'slack' | 'in-app' | 'webhook';
 export type NotificationType = 'alert' | 'info' | 'warning' | 'error' | 'success';
@@ -173,21 +174,20 @@ export class NotificationService {
     message: NotificationMessage,
     _organizationId?: string
   ): Promise<NotificationResult> {
-    // TODO: Integrate with SendGrid/Postmark
-    logger.info(
-      {
-        recipientId,
-        messageType: message.type,
-      },
-      'Sending email notification'
-    );
+    const result = await emailService.send({
+      to: recipientId,
+      subject: message.title,
+      html: `<p>${escapeHtml(message.body)}</p>${message.cta ? `<p><a href="${escapeHtml(message.cta.url)}">${escapeHtml(message.cta.label)}</a></p>` : ''}`,
+      text: `${message.body}${message.cta ? `\n${message.cta.label}: ${message.cta.url}` : ''}`,
+    });
 
     return {
       id: message.id,
       recipientId,
       channel: 'email',
-      status: 'sent',
-      sentAt: new Date(),
+      status: result.status === 'sent' ? 'sent' : 'failed',
+      sentAt: result.status === 'sent' ? result.timestamp : undefined,
+      error: result.error,
     };
   }
 
@@ -241,8 +241,9 @@ export class NotificationService {
       id: message.id,
       recipientId,
       channel: 'slack',
-      status: 'sent',
-      sentAt: new Date(),
+      status: webhookUrl ? 'sent' : 'skipped',
+      sentAt: webhookUrl ? new Date() : undefined,
+      error: webhookUrl ? undefined : 'SLACK_WEBHOOK_URL is not configured',
     };
   }
 
@@ -327,8 +328,9 @@ export class NotificationService {
       id: message.id,
       recipientId,
       channel: 'webhook',
-      status: 'sent',
-      sentAt: new Date(),
+      status: targetUrl ? 'sent' : 'skipped',
+      sentAt: targetUrl ? new Date() : undefined,
+      error: targetUrl ? undefined : 'NOTIFICATION_WEBHOOK_URL is not configured',
     };
   }
 
@@ -407,3 +409,13 @@ export class NotificationService {
 
 // Export singleton
 export const notificationService = NotificationService.getInstance();
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  })[character] ?? character);
+}

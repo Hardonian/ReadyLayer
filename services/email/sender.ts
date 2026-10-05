@@ -48,12 +48,15 @@ export class EmailService {
    */
   async send(message: EmailMessage): Promise<EmailResult> {
     try {
+      if (!this.apiKey && this.provider !== 'smtp') {
+        throw new Error(`${this.provider} email provider is not configured (EMAIL_API_KEY)`);
+      }
       const id = `email_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
       logger.info(
         {
           provider: this.provider,
-          to: message.to,
+          recipientCount: Array.isArray(message.to) ? message.to.length : 1,
           subject: message.subject,
         },
         'Sending email'
@@ -203,25 +206,10 @@ export class EmailService {
    * Send via SMTP (fallback)
    */
   private async sendViaSMTP(
-    message: EmailMessage,
-    id: string
+    _message: EmailMessage,
+    _id: string
   ): Promise<EmailResult> {
-    // TODO: Implement SMTP using nodemailer
-    logger.info(
-      {
-        id,
-        to: message.to,
-      },
-      'Email sent via SMTP'
-    );
-
-    metrics.increment('email_sent', { provider: 'smtp' });
-
-    return {
-      id,
-      status: 'sent',
-      timestamp: new Date(),
-    };
+    throw new Error('SMTP delivery is not configured; use SendGrid or Postmark, or install an SMTP adapter');
   }
 
   /**
@@ -235,16 +223,36 @@ export class EmailService {
    * Send templated email
    */
   async sendTemplate(
-    _to: string | string[],
-    _templateId: string,
-    _variables: Record<string, string>
+    to: string | string[],
+    templateId: string,
+    variables: Record<string, string>
   ): Promise<EmailResult> {
-    // TODO: Implement template support
-    return {
-      id: `email_${Date.now()}`,
-      status: 'queued',
-      timestamp: new Date(),
+    const templates: Record<string, { subject: string; html: string }> = {
+      'billing-payment-failed': {
+        subject: 'ReadyLayer payment requires attention',
+        html: '<p>Your ReadyLayer payment requires attention.</p><p>{{actionUrl}}</p>',
+      },
+      'invite': {
+        subject: 'You have been invited to ReadyLayer',
+        html: '<p>You have been invited to join a ReadyLayer organization.</p><p>{{actionUrl}}</p>',
+      },
     };
+    const template = templates[templateId];
+    if (!template) {
+      return {
+        id: `email_${Date.now()}`,
+        status: 'failed',
+        error: `Unknown email template: ${templateId}`,
+        timestamp: new Date(),
+      };
+    }
+    const replaceVariables = (value: string): string => value.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => variables[key] ?? '');
+    return this.send({
+      to,
+      subject: replaceVariables(template.subject),
+      html: replaceVariables(template.html),
+      text: replaceVariables(template.html.replace(/<[^>]+>/g, '')),
+    });
   }
 }
 
