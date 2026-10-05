@@ -312,7 +312,7 @@ const jobData = JSON.parse(result.element) as { id: string };
 
         // Process jobs with limited concurrency (5 at a time)
         const CONCURRENCY = 5;
-        const results: Array<{ jobId: string; success: boolean; error?: string }> = [];
+        const results: Array<{ jobId: string; success: boolean; result?: unknown; error?: string }> = [];
         
         for (let i = 0; i < claimedJobs.length; i += CONCURRENCY) {
           const batch = claimedJobs.slice(i, i + CONCURRENCY);
@@ -340,6 +340,16 @@ const jobData = JSON.parse(result.element) as { id: string };
               completedAt: new Date(),
             },
           });
+          // Preserve individual handler results for the job-result API. The
+          // status update stays batched while JSON values are written per job.
+          await Promise.all(
+            results
+              .filter((result) => result.success && result.result !== undefined)
+              .map((result) => prisma.job.update({
+                where: { id: result.jobId },
+                data: { result: toJsonValue(result.result) },
+              }))
+          );
           metrics.increment('jobs.batch.completed', { count: completedJobIds.length.toString() });
         }
 

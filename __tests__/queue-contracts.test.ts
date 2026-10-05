@@ -4,6 +4,9 @@ const mockPrisma = vi.hoisted(() => ({
   job: {
     findFirst: vi.fn(),
     create: vi.fn(),
+    findUnique: vi.fn(),
+    updateMany: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
@@ -54,5 +57,32 @@ describe('durable queue contracts', () => {
       idempotencyKey: 'test-execution:run_1',
     })).resolves.toBe('job_existing');
     expect(mockPrisma.job.create).not.toHaveBeenCalled();
+  });
+
+  it('claims retrying Redis jobs exactly once before executing them', async () => {
+    mockPrisma.job.findUnique.mockResolvedValue({
+      id: 'job_retry',
+      status: 'retrying',
+      retryCount: 1,
+      maxRetries: 3,
+      payload: { work: true },
+      type: 'webhook',
+    });
+    mockPrisma.job.updateMany.mockResolvedValue({ count: 1 });
+    mockPrisma.job.update.mockResolvedValue({});
+    const service = new QueueService();
+    const processJob = (service as unknown as {
+      processJob: (id: string, queue: string, handler: (payload: unknown) => Promise<unknown>) => Promise<void>;
+    }).processJob.bind(service);
+
+    await processJob('job_retry', 'webhook', async () => ({ ok: true }));
+
+    expect(mockPrisma.job.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'job_retry', status: { in: ['pending', 'retrying'] } },
+    }));
+    expect(mockPrisma.job.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'job_retry' },
+      data: expect.objectContaining({ status: 'completed' }),
+    }));
   });
 });
