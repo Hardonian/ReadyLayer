@@ -614,7 +614,7 @@ export class TestEngineService {
     organizationId: string,
     filePath: string,
     testContent: string,
-    _sourceCode: string,
+    sourceCode: string,
     framework: string = 'jest',
     _coverageThreshold: number = 80
   ): Promise<{ jobId: string; queuedAt: Date }> {
@@ -639,6 +639,7 @@ export class TestEngineService {
         framework: framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
         code: testContent,
         targetFile: filePath,
+        sourceCode,
       }],
     }) satisfies { id: string; status: string };
 

@@ -77,7 +77,7 @@ export class EmailService {
 
       logger.error(
         {
-          to: message.to,
+          recipientCount: Array.isArray(message.to) ? message.to.length : 1,
           error: errorMessage,
         },
         'Email sending failed'
@@ -142,7 +142,7 @@ export class EmailService {
     logger.info(
       {
         id,
-        to: message.to,
+        recipientCount: Array.isArray(message.to) ? message.to.length : 1,
       },
       'Email sent via SendGrid'
     );
@@ -188,7 +188,7 @@ export class EmailService {
     logger.info(
       {
         id,
-        to: message.to,
+        recipientCount: Array.isArray(message.to) ? message.to.length : 1,
       },
       'Email sent via Postmark'
     );

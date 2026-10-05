@@ -84,7 +84,7 @@ export class NotificationService {
     try {
       logger.info(
         {
-          recipientId: request.recipientId,
+          recipientRef: redactRecipient(request.recipientId),
           channels: request.channels,
           messageType: request.message.type,
         },
@@ -125,7 +125,7 @@ export class NotificationService {
     } catch (error) {
       logger.error(
         {
-          recipientId: request.recipientId,
+          recipientRef: redactRecipient(request.recipientId),
           error: error instanceof Error ? error.message : 'Unknown error',
         },
         'Error sending notification'
@@ -202,7 +202,7 @@ export class NotificationService {
     const webhookUrl = process.env.SLACK_WEBHOOK_URL;
     logger.info(
       {
-        recipientId,
+        recipientRef: redactRecipient(recipientId),
         messageType: message.type,
         hasWebhook: !!webhookUrl,
       },
@@ -227,13 +227,26 @@ export class NotificationService {
             },
           ];
         }
-        await fetch(webhookUrl, {
+        const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (!response.ok) {
+          throw new Error(`Slack webhook returned HTTP ${response.status}`);
+        }
       } catch (err) {
-        logger.warn({ error: err }, 'Failed to deliver Slack notification to webhook');
+        logger.warn(
+          { error: err instanceof Error ? err.message : 'Unknown error' },
+          'Failed to deliver Slack notification to webhook'
+        );
+        return {
+          id: message.id,
+          recipientId,
+          channel: 'slack',
+          status: 'failed',
+          error: err instanceof Error ? err.message : 'Slack notification failed',
+        };
       }
     }
 
@@ -257,7 +270,7 @@ export class NotificationService {
   ): Promise<NotificationResult> {
     logger.info(
       {
-        recipientId,
+        recipientRef: redactRecipient(recipientId),
         messageType: message.type,
       },
       'Creating in-app notification'
@@ -297,7 +310,7 @@ export class NotificationService {
     const targetUrl = process.env.NOTIFICATION_WEBHOOK_URL;
     logger.info(
       {
-        recipientId,
+        recipientRef: redactRecipient(recipientId),
         messageType: message.type,
         hasTargetUrl: !!targetUrl,
       },
@@ -306,11 +319,14 @@ export class NotificationService {
 
     if (targetUrl) {
       try {
-        const secret = process.env.NOTIFICATION_WEBHOOK_SECRET || 'readylayer-webhook-secret';
+        const secret = process.env.NOTIFICATION_WEBHOOK_SECRET;
+        if (!secret) {
+          throw new Error('NOTIFICATION_WEBHOOK_SECRET is not configured');
+        }
         const bodyStr = JSON.stringify({ recipientId, message, timestamp: new Date().toISOString() });
         const signature = crypto.createHmac('sha256', secret).update(bodyStr).digest('hex');
 
-        await fetch(targetUrl, {
+        const response = await fetch(targetUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -319,8 +335,21 @@ export class NotificationService {
           },
           body: bodyStr,
         });
+        if (!response.ok) {
+          throw new Error(`Notification webhook returned HTTP ${response.status}`);
+        }
       } catch (err) {
-        logger.warn({ error: err }, 'Failed to deliver outgoing webhook notification');
+        logger.warn(
+          { error: err instanceof Error ? err.message : 'Unknown error' },
+          'Failed to deliver outgoing webhook notification'
+        );
+        return {
+          id: message.id,
+          recipientId,
+          channel: 'webhook',
+          status: 'failed',
+          error: err instanceof Error ? err.message : 'Webhook notification failed',
+        };
       }
     }
 
@@ -380,7 +409,7 @@ export class NotificationService {
     }
     logger.info(
       {
-        recipientId,
+        recipientRef: redactRecipient(recipientId),
         preferences,
       },
       'Updated notification preferences'
@@ -418,4 +447,8 @@ function escapeHtml(value: string): string {
     '"': '&quot;',
     "'": '&#39;',
   })[character] ?? character);
+}
+
+function redactRecipient(recipientId: string): string {
+  return crypto.createHash('sha256').update(recipientId).digest('hex').slice(0, 12);
 }

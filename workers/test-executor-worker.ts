@@ -21,6 +21,7 @@ export interface TestExecutionJob {
     framework: string;
     code: string;
     targetFile: string;
+    sourceCode?: string;
   }>;
   sandboxId?: string;
   timeout?: number; // milliseconds
@@ -113,17 +114,24 @@ export async function executeTestJob(
     const totalTests = results.length;
     const passedTests = results.filter(r => r.status === 'passed').length;
     const failedTests = results.filter(r => r.status === 'failed').length;
+    const timedOutTests = results.filter(r => r.status === 'timeout').length;
     const skippedTests = 0; // Results only have passed/failed/timeout status
     const erroredTests = 0; // Results only have passed/failed/timeout status
 
     const avgCoverage =
       results.length > 0
         ? results.reduce((sum, r) => {
-            const coverage = (r as { coverage?: { percentage?: number } }).coverage;
-            return sum + (coverage?.percentage ?? 0);
+            const coverage = (r as { coverage?: { lines?: { percentage?: number } } }).coverage;
+            return sum + (coverage?.lines?.percentage ?? 0);
           }, 0) /
           results.length
         : 0;
+
+    const status: TestExecutionJobResult['status'] = timedOutTests > 0
+      ? 'timeout'
+      : failedTests > 0
+        ? 'failure'
+        : 'success';
 
     logger.info(
       {
@@ -132,6 +140,7 @@ export async function executeTestJob(
         totalTests,
         passedTests,
         failedTests,
+        timedOutTests,
         skippedTests,
         erroredTests,
         avgCoverage: Math.round(avgCoverage),
@@ -142,7 +151,7 @@ export async function executeTestJob(
 
     metrics.increment('test_execution_job_completed', {
       organizationId: job.organizationId,
-      status: 'success',
+      status,
     });
 
     const metricsWithTiming = metrics as {
@@ -155,7 +164,7 @@ export async function executeTestJob(
     return {
       jobId: job.id,
       testRunId: job.testRunId,
-      status: 'success',
+      status,
       results,
       startedAt: new Date(startTime),
       completedAt: new Date(),
@@ -203,25 +212,21 @@ export async function executeTestJob(
  * Execute tests with timeout enforcement
  */
 async function executeTestsWithTimeout(
-  tests: Array<{ id: string; framework: string; code: string; targetFile: string }>,
+  tests: Array<{ id: string; framework: string; code: string; targetFile: string; sourceCode?: string }>,
   timeoutMs: number,
   _sandboxId?: string
 ): Promise<TestExecutionResult[]> {
-  // Convert test format to match executeTests expectations
-  const testRequest = tests.length > 0 ? {
-    filePath: tests[0].targetFile,
-    testContent: tests[0].code,
-    framework: tests[0].framework as 'jest' | 'mocha' | 'pytest' | 'vitest' | 'other',
-    sourceCode: '',
-  } : {
-    filePath: '',
-    testContent: '',
-    framework: 'jest' as const,
-    sourceCode: '',
-  };
+  if (tests.length === 0) {
+    return [];
+  }
 
   const results = await Promise.race([
-    executeTests(testRequest).then(result => [result]),
+    Promise.all(tests.map((test) => executeTests({
+      filePath: test.targetFile,
+      testContent: test.code,
+      framework: test.framework,
+      sourceCode: test.sourceCode ?? '',
+    }))),
     new Promise<TestExecutionResult[]>((_, reject) =>
       setTimeout(
         () => reject(new Error(`Test execution timeout after ${timeoutMs}ms`)),
@@ -311,12 +316,19 @@ export function validateTestJob(job: unknown): job is TestExecutionJob {
       if (!test || typeof test !== 'object') {
         return false;
       }
-      const testRecord = test as { id?: unknown; framework?: unknown; code?: unknown; targetFile?: unknown };
+      const testRecord = test as {
+        id?: unknown;
+        framework?: unknown;
+        code?: unknown;
+        targetFile?: unknown;
+        sourceCode?: unknown;
+      };
       return (
         typeof testRecord.id === 'string' &&
         typeof testRecord.framework === 'string' &&
         typeof testRecord.code === 'string' &&
-        typeof testRecord.targetFile === 'string'
+        typeof testRecord.targetFile === 'string' &&
+        (testRecord.sourceCode === undefined || typeof testRecord.sourceCode === 'string')
       );
     })
   );

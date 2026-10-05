@@ -6,11 +6,22 @@
  * Tests that public routes work and protected routes redirect properly
  */
 
-import { spawn } from 'child_process';
+import { spawn, spawnSync, type ChildProcess } from 'child_process';
 import * as http from 'http';
+import { dirname, join } from 'path';
 import { console } from './logger';
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+const npmCliPath = join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
+
+function stopServer(serverProcess: ChildProcess): void {
+  if (!serverProcess.pid) return;
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/pid', serverProcess.pid.toString(), '/T', '/F'], { stdio: 'ignore' });
+    return;
+  }
+  serverProcess.kill('SIGTERM');
+}
 
 interface TestResult {
   path: string;
@@ -170,9 +181,8 @@ async function main(): Promise<void> {
   const buildOnly = process.argv.includes('--build-only');
 
   console.log('🔨 Building Next.js application...');
-  const buildProcess = spawn('npm', ['run', 'build'], {
+  const buildProcess = spawn(process.execPath, [npmCliPath, 'run', 'build'], {
     stdio: 'inherit',
-    shell: true,
   });
 
   const buildSuccess = await new Promise<boolean>((resolve) => {
@@ -195,9 +205,8 @@ async function main(): Promise<void> {
   }
 
   console.log(`\n🚀 Starting Next.js server on port ${port}...`);
-  const serverProcess = spawn('npm', ['run', 'start'], {
+  const serverProcess = spawn(process.execPath, [npmCliPath, 'run', 'start'], {
     stdio: 'pipe',
-    shell: true,
     env: {
       ...process.env,
       PORT: port.toString(),
@@ -224,7 +233,7 @@ async function main(): Promise<void> {
 
     if (!serverReady) {
       console.error('❌ Server failed to start within timeout');
-      serverProcess.kill();
+      stopServer(serverProcess);
       process.exit(1);
     }
 
@@ -232,7 +241,7 @@ async function main(): Promise<void> {
     const testsPassed = await runTests(port);
 
     // Cleanup
-    serverProcess.kill();
+    stopServer(serverProcess);
 
     if (!testsPassed) {
       console.error('\n❌ Smoke tests failed');
@@ -243,7 +252,7 @@ async function main(): Promise<void> {
     process.exit(0);
   } catch (error) {
     console.error('❌ Test execution failed:', error);
-    serverProcess.kill();
+    stopServer(serverProcess);
     process.exit(1);
   }
 }

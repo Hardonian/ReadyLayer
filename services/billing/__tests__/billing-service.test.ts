@@ -1,93 +1,89 @@
-/**
- * Billing Service Tests
- *
- * Critical test coverage for Stripe integration and usage enforcement
- */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+const mockPrisma = vi.hoisted(() => ({
+  costTracking: { aggregate: vi.fn() },
+  auditLog: { create: vi.fn() },
+}));
 
-describe('Billing Service', () => {
-  describe('Usage Limit Enforcement', () => {
-    it('should block requests when daily limit exceeded', async () => {
-      // TODO: Mock daily usage at limit
-      // TODO: Verify request blocked
-      // TODO: Verify error message includes quota info
-    });
+const mockBilling = vi.hoisted(() => ({
+  getOrganizationTier: vi.fn(),
+  checkLLMBudget: vi.fn(),
+}));
 
-    it('should block requests when monthly limit exceeded', async () => {
-      // TODO: Mock monthly usage at limit
-      // TODO: Verify request blocked
-      // TODO: Test limit reset on new billing period
-    });
+vi.mock('@/lib/prisma', () => ({ prisma: mockPrisma }));
+vi.mock('@/billing', () => ({ billingService: mockBilling }));
 
-    it('should allow requests within quota', async () => {
-      // TODO: Mock usage below limits
-      // TODO: Verify request allowed
-      // TODO: Verify remaining quota calculated correctly
+import { LimitType, UsageEnforcementService } from '@/lib/usage-enforcement';
+import { calculateLLMCost } from '@/lib/telemetry/llm-costs';
+
+const limits = {
+  llmTokensPerDay: 100,
+  llmTokensPerMonth: 1_000,
+  llmBudget: 50,
+  runsPerDay: 10,
+  concurrentJobs: 2,
+  failOpenOnLimit: false,
+};
+
+describe('Billing service', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockBilling.getOrganizationTier.mockResolvedValue({ limits });
+    mockBilling.checkLLMBudget.mockResolvedValue({ allowed: true, currentSpend: 0, budget: 50, remaining: 50 });
+    mockPrisma.auditLog.create.mockResolvedValue({});
+  });
+
+  it('blocks a daily LLM request above the organization limit', async () => {
+    mockPrisma.costTracking.aggregate.mockResolvedValueOnce({ _sum: { units: 95 } });
+
+    const result = await new UsageEnforcementService().checkLLMTokenLimit('org_1', 10);
+
+    expect(result).toMatchObject({
+      allowed: false,
+      limitType: LimitType.LLM_TOKENS_DAILY,
+      current: 95,
+      limit: 100,
+      remaining: 5,
     });
   });
 
-  describe('Cost Calculation', () => {
-    it('should calculate correct cost for LLM usage', async () => {
-      // TODO: Test various models (GPT-4, Claude, etc.)
-      // TODO: Verify token count → cost conversion
-      // TODO: Test different pricing tiers
-    });
+  it('blocks a monthly request after passing the daily limit', async () => {
+    mockPrisma.costTracking.aggregate
+      .mockResolvedValueOnce({ _sum: { units: 50 } })
+      .mockResolvedValueOnce({ _sum: { units: 995 } });
 
-    it('should track costs per organization', async () => {
-      // TODO: Verify tenant isolation in cost tracking
-      // TODO: Test cost aggregation per org
-      // TODO: Verify cost rollups (daily, monthly)
+    const result = await new UsageEnforcementService().checkLLMTokenLimit('org_1', 10);
+
+    expect(result).toMatchObject({
+      allowed: false,
+      limitType: LimitType.LLM_TOKENS_MONTHLY,
+      current: 995,
+      limit: 1_000,
+      remaining: 5,
     });
   });
 
-  describe('Stripe Integration', () => {
-    it('should create Stripe customers for new organizations', async () => {
-      // TODO: Mock Stripe API
-      // TODO: Verify customer creation
-      // TODO: Verify metadata attached
-    });
+  it('allows requests within quota and records the remaining daily allowance', async () => {
+    mockPrisma.costTracking.aggregate
+      .mockResolvedValueOnce({ _sum: { units: 25 } })
+      .mockResolvedValueOnce({ _sum: { units: 250 } });
 
-    it('should handle subscription webhooks correctly', async () => {
-      // TODO: Test subscription.created webhook
-      // TODO: Test subscription.updated webhook
-      // TODO: Test subscription.deleted webhook
-      // TODO: Verify database updates
-    });
+    const result = await new UsageEnforcementService().checkLLMTokenLimit('org_1', 10);
 
-    it('should handle payment method webhooks', async () => {
-      // TODO: Test payment_method.attached
-      // TODO: Test payment_method.detached
-      // TODO: Verify customer payment methods updated
-    });
+    expect(result).toMatchObject({ allowed: true, current: 25, limit: 100, remaining: 65 });
   });
 
-  describe('Fail-Open Behavior', () => {
-    it('should allow requests when billing check fails', async () => {
-      // TODO: Mock database error during billing check
-      // TODO: Verify request NOT blocked (availability over strict billing)
-      // TODO: Verify error logged for investigation
-    });
+  it('honors explicit fail-open policy while retaining exceeded-limit evidence', async () => {
+    mockBilling.getOrganizationTier.mockResolvedValue({ limits: { ...limits, failOpenOnLimit: true } });
+    mockPrisma.costTracking.aggregate.mockResolvedValueOnce({ _sum: { units: 100 } });
+
+    const result = await new UsageEnforcementService().checkLLMTokenLimit('org_1', 1);
+
+    expect(result).toMatchObject({ allowed: true, limitType: LimitType.LLM_TOKENS_DAILY, current: 100 });
   });
 
-  describe('Timezone Handling', () => {
-    it('should handle daily limits in server timezone', async () => {
-      // TODO: Test daily limit reset at midnight server time
-      // TODO: Document timezone behavior for users
-    });
+  it('calculates provider-specific LLM costs deterministically', () => {
+    expect(calculateLLMCost('openai', 'gpt-4-turbo', 1_000, 1_000)).toBe(0.04);
+    expect(calculateLLMCost('anthropic', 'claude-3-haiku', 1_000, 1_000)).toBeCloseTo(0.0015);
   });
 });
-
-/**
- * Coverage Goals:
- * - Usage limit enforcement: CRITICAL (prevents overspending)
- * - Stripe webhooks: CRITICAL (billing accuracy)
- * - Cost calculation: HIGH (billing correctness)
- * - Fail-open: HIGH (availability vs strict billing)
- *
- * Next Steps:
- * 1. Implement usage limit tests (most critical for cost control)
- * 2. Add Stripe webhook tests (ensures billing sync)
- * 3. Add cost calculation tests (prevents billing errors)
- * 4. Add integration tests with Stripe test mode
- */

@@ -8,8 +8,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
 import { z } from 'zod';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export const SlackEventDataSchema = z.object({
   type: z.string(),
@@ -29,12 +31,58 @@ export const SlackEventPayloadSchema = z.object({
 
 type SlackEventData = z.infer<typeof SlackEventDataSchema>;
 
+const SLACK_SIGNATURE_MAX_AGE_SECONDS = 60 * 5;
+
+export function verifySlackSignature(
+  payload: string,
+  timestamp: string | null,
+  signature: string | null,
+  signingSecret: string,
+  nowMs: number = Date.now()
+): boolean {
+  if (!timestamp || !signature || !signingSecret || !/^v0=[a-f0-9]{64}$/i.test(signature)) {
+    return false;
+  }
+
+  const issuedAt = Number(timestamp);
+  if (!Number.isSafeInteger(issuedAt) || Math.abs(Math.floor(nowMs / 1000) - issuedAt) > SLACK_SIGNATURE_MAX_AGE_SECONDS) {
+    return false;
+  }
+
+  const expected = `v0=${createHmac('sha256', signingSecret).update(`v0:${timestamp}:${payload}`).digest('hex')}`;
+  const expectedBuffer = Buffer.from(expected, 'utf8');
+  const signatureBuffer = Buffer.from(signature, 'utf8');
+  return expectedBuffer.length === signatureBuffer.length && timingSafeEqual(expectedBuffer, signatureBuffer);
+}
+
 /**
  * POST /integrations/slack/events
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const payload = await request.json() as Record<string, unknown>;
+    const signingSecret = process.env.SLACK_SIGNING_SECRET;
+    if (!signingSecret) {
+      logger.error('Slack events received without SLACK_SIGNING_SECRET configured');
+      return NextResponse.json({ error: 'Slack integration is not configured' }, { status: 503 });
+    }
+
+    const payloadText = await request.text();
+    if (!verifySlackSignature(
+      payloadText,
+      request.headers.get('x-slack-request-timestamp'),
+      request.headers.get('x-slack-signature'),
+      signingSecret
+    )) {
+      metrics.increment('slack_event_signature_rejected');
+      return NextResponse.json({ error: 'Invalid Slack signature' }, { status: 401 });
+    }
+
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(payloadText) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
     const parsed = SlackEventPayloadSchema.safeParse(payload);
     if (!parsed.success) {
       logger.warn({ issues: parsed.error.issues }, 'Invalid Slack event payload');
@@ -133,17 +181,21 @@ async function handleAppMention(event: SlackEventData, teamId?: string): Promise
   metrics.increment('slack_app_mention');
 
   // Parse command from text
-  const command = text?.toLowerCase().split(/\s+/)[1];
+  const command = text
+    ?.replace(/<@[^>]+>/g, '')
+    .trim()
+    .split(/\s+/)[0]
+    ?.toLowerCase();
 
   switch (command) {
     case 'status':
-      await sendStatus(channel, teamId);
+      await sendStatus(channel);
       break;
     case 'help':
-      await sendHelp(channel, teamId);
+      await sendHelp(channel);
       break;
     default:
-      await sendUnknownCommand(channel, teamId);
+      await sendUnknownCommand(channel);
   }
 }
 
@@ -192,23 +244,56 @@ async function handleReaction(event: SlackEventData, teamId?: string): Promise<v
 /**
  * Send status message
  */
-async function sendStatus(_channel: string, _teamId: string): Promise<void> {
-  // TODO: Fetch ReadyLayer status and send to Slack
-  logger.info('Sending status message to Slack');
+async function sendStatus(channel: string): Promise<void> {
+  const dependencies = [
+    `database: ${process.env.DATABASE_URL ? 'configured' : 'not configured'}`,
+    `queue: ${process.env.REDIS_URL ? 'configured' : 'database fallback'}`,
+    `LLM: ${hasConfiguredLLMProvider() ? 'configured' : 'not configured'}`,
+  ];
+  await postSlackMessage(channel, `ReadyLayer is online. ${dependencies.join(' | ')}`);
+  metrics.increment('slack_command_completed', { command: 'status' });
 }
 
 /**
  * Send help message
  */
-async function sendHelp(_channel: string, _teamId: string): Promise<void> {
-  // TODO: Send help text to Slack
-  logger.info('Sending help message to Slack');
+async function sendHelp(channel: string): Promise<void> {
+  await postSlackMessage(channel, 'ReadyLayer commands: `@ReadyLayer status` shows service configuration. `@ReadyLayer help` shows this message.');
+  metrics.increment('slack_command_completed', { command: 'help' });
 }
 
 /**
  * Send unknown command message
  */
-async function sendUnknownCommand(_channel: string, _teamId: string): Promise<void> {
-  // TODO: Send error message to Slack
-  logger.info('Sending unknown command message to Slack');
+async function sendUnknownCommand(channel: string): Promise<void> {
+  await postSlackMessage(channel, 'Unknown ReadyLayer command. Use `@ReadyLayer help`.');
+  metrics.increment('slack_command_completed', { command: 'unknown' });
+}
+
+async function postSlackMessage(channel: string, text: string): Promise<void> {
+  const token = process.env.SLACK_BOT_TOKEN;
+  if (!token) {
+    throw new Error('SLACK_BOT_TOKEN is not configured');
+  }
+
+  const response = await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json; charset=utf-8',
+    },
+    body: JSON.stringify({ channel, text, unfurl_links: false, unfurl_media: false }),
+  });
+  if (!response.ok) {
+    throw new Error(`Slack chat.postMessage returned HTTP ${response.status}`);
+  }
+
+  const body = await response.json() as { ok?: unknown; error?: unknown };
+  if (body.ok !== true) {
+    throw new Error(`Slack chat.postMessage failed: ${typeof body.error === 'string' ? body.error : 'unknown error'}`);
+  }
+}
+
+function hasConfiguredLLMProvider(): boolean {
+  return Boolean(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENCODE_API_KEY);
 }

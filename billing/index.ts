@@ -157,9 +157,8 @@ export class BillingService {
     const tier = await this.getOrganizationTier(organizationId);
 
     // Get current month spend
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
     const monthSpend = await prisma.costTracking.aggregate({
       where: {
