@@ -4,8 +4,10 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Trash2 } from 'lucide-react'
+import { AlertCircle, Plus, Trash2 } from 'lucide-react'
 
 export interface PolicyRule {
   id: string
@@ -29,9 +31,13 @@ export function PolicyBuilder({
   const [name, setName] = useState(initialPolicy?.name || '')
   const [rules, setRules] = useState<PolicyRule[]>(initialPolicy?.rules || [])
   const [newRuleName, setNewRuleName] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   const addRule = () => {
-    if (!newRuleName.trim()) return
+    if (!newRuleName.trim()) {
+      setError('Add a rule name before adding it to the policy.')
+      return
+    }
 
     const newRule: PolicyRule = {
       id: `rule_${Date.now()}`,
@@ -43,6 +49,7 @@ export function PolicyBuilder({
 
     setRules([...rules, newRule])
     setNewRuleName('')
+    setError(null)
   }
 
   const removeRule = (id: string) => {
@@ -59,10 +66,11 @@ export function PolicyBuilder({
 
   const handleSave = () => {
     if (!name.trim()) {
-      alert('Please enter a policy name')
+      setError('Enter a policy name before saving.')
       return
     }
 
+    setError(null)
     onSave?.({ name, rules })
   }
 
@@ -77,6 +85,13 @@ export function PolicyBuilder({
         />
       </div>
 
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Rules</CardTitle>
@@ -88,7 +103,7 @@ export function PolicyBuilder({
           {rules.map(rule => (
             <div
               key={rule.id}
-              className="flex items-start gap-3 p-3 border rounded"
+              className="grid grid-cols-[auto_1fr_auto_auto] items-start gap-3 p-3 border rounded"
             >
               <Checkbox
                 checked={rule.enabled}
@@ -102,18 +117,25 @@ export function PolicyBuilder({
                   </p>
                 )}
               </div>
-              <span className={`text-xs px-2 py-1 rounded ${
-                rule.severity === 'critical' ? 'bg-red-100 text-red-800' :
-                rule.severity === 'high' ? 'bg-orange-100 text-orange-800' :
-                rule.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-blue-100 text-blue-800'
-              }`}>
-                {rule.severity.charAt(0).toUpperCase() + rule.severity.slice(1)}
-              </span>
+              <Select
+                value={rule.severity}
+                onValueChange={(severity: PolicyRule['severity']) => {
+                  setRules(rules.map((candidate) => candidate.id === rule.id ? { ...candidate, severity } : candidate))
+                }}
+              >
+                <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => removeRule(rule.id)}
+                aria-label={`Remove ${rule.name}`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

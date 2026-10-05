@@ -42,9 +42,51 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (code) {
       try {
         const supabase = createSupabaseRouteHandlerClient(request, response)
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
+          const metadata = data.user?.user_metadata as {
+            readylayer_organization_id?: unknown
+            readylayer_organization_role?: unknown
+          } | null | undefined
+          const organizationId = typeof metadata?.readylayer_organization_id === 'string'
+            ? metadata.readylayer_organization_id
+            : null
+          const requestedRole = metadata?.readylayer_organization_role
+          const role = requestedRole === 'admin' || requestedRole === 'lead' ? requestedRole : 'member'
+
+          // Invitation metadata is the hand-off between Supabase Auth and the
+          // tenant database. Provisioning is idempotent and never blocks login
+          // when an invite was not issued by ReadyLayer.
+          if (data.user && organizationId) {
+            try {
+              const { prisma } = await import('@/lib/prisma')
+              await prisma.user.upsert({
+                where: { id: data.user.id },
+                create: {
+                  id: data.user.id,
+                  email: data.user.email,
+                  name: (data.user.user_metadata as { full_name?: string } | null)?.full_name,
+                },
+                update: {
+                  email: data.user.email,
+                  name: (data.user.user_metadata as { full_name?: string } | null)?.full_name,
+                },
+              })
+              await prisma.organizationMember.upsert({
+                where: {
+                  organizationId_userId: {
+                    organizationId,
+                    userId: data.user.id,
+                  },
+                },
+                create: { organizationId, userId: data.user.id, role },
+                update: { role },
+              })
+            } catch (provisioningError) {
+              logger.warn({ error: provisioningError }, 'Invite accepted but membership provisioning was deferred')
+            }
+          }
           return NextResponse.redirect(new URL(redirect, request.url))
         }
 

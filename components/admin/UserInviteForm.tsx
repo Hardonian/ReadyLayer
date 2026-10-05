@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { createSupabaseClient } from '@/lib/supabase/client'
+import { getApiErrorMessage } from '@/lib/utils/api-helpers'
+import { parseInviteEmails } from '@/lib/admin/invite'
 
 export interface UserInviteFormProps {
   organizationId: string
@@ -13,7 +16,7 @@ export interface UserInviteFormProps {
 }
 
 export function UserInviteForm({
-  organizationId: _organizationId,
+  organizationId,
   onSuccess,
   onError,
 }: UserInviteFormProps): React.JSX.Element {
@@ -22,31 +25,43 @@ export function UserInviteForm({
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault()
     setLoading(true)
     setMessage(null)
 
     try {
-      const emailList = emails
-        .split(/[,\n]/)
-        .map(e => e.trim())
-        .filter(Boolean)
+      const emailList = parseInviteEmails(emails)
 
       if (emailList.length === 0) {
         throw new Error('Please enter at least one email address')
       }
 
-      // TODO: Call API to invite users
-      // const response = await fetch('/api/v1/admin/users/invite', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ emails: emailList, role, organizationId }),
-      // })
+      const supabase = createSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Your session has expired. Sign in again to invite teammates.')
+
+      const response = await fetch('/api/v1/admin/users/invite', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+          'x-organization-id': organizationId,
+        },
+        body: JSON.stringify({ emails: emailList, role }),
+      })
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        data?: { sentCount?: number }
+        error?: unknown
+      }
+      if (!response.ok) throw new Error(getApiErrorMessage(payload as Record<string, unknown>))
+
+      const sentCount = payload.data?.sentCount ?? emailList.length
 
       setMessage({
         type: 'success',
-        text: `Invitations sent to ${emailList.length} user(s)`,
+        text: `Invitation${sentCount === 1 ? '' : 's'} sent to ${sentCount} teammate${sentCount === 1 ? '' : 's'}.`,
       })
       setEmails('')
       setRole('member')
@@ -63,8 +78,9 @@ export function UserInviteForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Email Addresses</label>
+        <label htmlFor="invite-emails" className="text-sm font-medium">Email Addresses</label>
         <textarea
+          id="invite-emails"
           value={emails}
           onChange={e => setEmails(e.target.value)}
           placeholder="Enter email addresses, separated by commas or new lines"
@@ -101,7 +117,7 @@ export function UserInviteForm({
         </Alert>
       )}
 
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" disabled={loading || !organizationId}>
         {loading ? 'Sending...' : 'Send Invitations'}
       </Button>
     </form>

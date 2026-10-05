@@ -10,6 +10,7 @@ import { createRouteHandler, errorResponse, successResponse, parseJsonBody } fro
 import { logger } from '@/observability/logging';
 import { metrics } from '@/observability/metrics';
 import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,18 +33,26 @@ export const POST = createRouteHandler(
 
     const { emails, role } = validation.data;
 
-    // Get user's organization (users must belong to exactly one org for now)
+    const organizationId = request.headers.get('x-organization-id')
+      || new URL(request.url).searchParams.get('organizationId');
+    if (!organizationId) {
+      return errorResponse('BAD_REQUEST', 'Organization ID required', 400);
+    }
+
+    // Resolve the selected organization, never the first organization returned for a user.
     const { prisma } = await import('@/lib/prisma');
-    const membership = await prisma.organizationMember.findFirst({
-      where: { userId: user.id },
-      include: { organization: true },
+    const membership = await prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: user.id,
+        },
+      },
     });
 
     if (!membership) {
       return errorResponse('FORBIDDEN', 'User does not belong to an organization', 403);
     }
-
-    const organizationId = membership.organizationId;
 
     logger.info(
       {
@@ -60,23 +69,55 @@ export const POST = createRouteHandler(
       role,
     });
 
-    // TODO: Send invitations to each email
-    const invitations = emails.map(email => ({
-      email,
-      role,
-      organizationId,
-      createdAt: new Date(),
-    }));
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceRoleKey) {
+      return errorResponse(
+        'CONFIGURATION_ERROR',
+        'Invitation delivery is not configured. Set SUPABASE_SERVICE_ROLE_KEY on the server.',
+        503,
+      );
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/callback?redirect=/dashboard`;
+    const results = await Promise.all(
+      emails.map(async (email) => {
+        try {
+          const result = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+            redirectTo,
+            data: {
+              readylayer_organization_id: organizationId,
+              readylayer_organization_role: role,
+            },
+          });
+          return { email, ok: !result.error };
+        } catch {
+          return { email, ok: false };
+        }
+      }),
+    );
+    const sentCount = results.filter((result) => result.ok).length;
+    const failedEmails = results.filter((result) => !result.ok).map((result) => result.email);
+
+    if (sentCount === 0) {
+      return errorResponse('INVITE_DELIVERY_FAILED', 'No invitations could be delivered. Check the email provider configuration and try again.', 502, {
+        failedCount: failedEmails.length,
+      });
+    }
 
     return successResponse({
-      invitations,
-      sentCount: invitations.length,
+      sentCount,
+      failedCount: failedEmails.length,
+      failedEmails,
     }, 200);
   },
   {
     authz: {
       requireOrganization: true,
-      requireRole: 'admin' // Only admins and owners can invite users
+      requireRole: 'admin',
     }
   }
 );

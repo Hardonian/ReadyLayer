@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, TrendingUp, Activity, Zap } from 'lucide-react'
+import { AlertCircle, TrendingUp, Activity, Zap, Loader2 } from 'lucide-react'
+import { createSupabaseClient } from '@/lib/supabase/client'
 
 export interface MetricData {
   label: string
@@ -17,33 +18,81 @@ export interface ObservabilityDashboardProps {
   refreshInterval?: number
 }
 
+interface ReadinessMetricsResponse {
+  data?: {
+    metrics?: {
+      totalRuns: number
+      gatePassRate: number | null
+      blockedRuns: number
+      meanRunDurationMinutes: number | null
+    }
+  }
+  error?: unknown
+}
+
 export function ObservabilityDashboard({
   organizationId,
   refreshInterval = 30000,
 }: ObservabilityDashboardProps): React.JSX.Element {
-  const [metrics] = useState<MetricData[]>([
-    { label: 'Queue Depth', value: 42, unit: 'jobs', trend: 5, status: 'healthy' },
-    { label: 'Worker Latency', value: 285, unit: 'ms', trend: -12, status: 'healthy' },
-    { label: 'Error Rate', value: 0.3, unit: '%', trend: 0, status: 'healthy' },
-    { label: 'Uptime', value: 99.98, unit: '%', trend: 0, status: 'healthy' },
-  ])
+  const [metrics, setMetrics] = useState<MetricData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        // TODO: Fetch actual metrics from /api/v1/metrics
-        // const response = await fetch(`/api/v1/metrics?organizationId=${organizationId}`)
-        // const data = await response.json()
-        // setMetrics(data.metrics)
-      } catch (error) {
-        console.error('Failed to fetch metrics:', error)
-      }
+  const fetchMetrics = useCallback(async (): Promise<void> => {
+    if (!organizationId) {
+      setMetrics([])
+      setLoading(false)
+      return
     }
 
-    fetchMetrics()
-    const interval = setInterval(fetchMetrics, refreshInterval)
+    try {
+      const supabase = createSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Your session has expired. Sign in again to view telemetry.')
+
+      const response = await fetch(`/api/v1/metrics?organizationId=${encodeURIComponent(organizationId)}`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'x-organization-id': organizationId,
+        },
+      })
+      const payload = (await response.json().catch(() => ({}))) as ReadinessMetricsResponse
+      if (!response.ok) throw new Error('Readiness telemetry is temporarily unavailable.')
+
+      const readiness = payload.data?.metrics
+      if (!readiness) throw new Error('No readiness telemetry is available yet.')
+
+      setMetrics([
+        { label: 'Governed Runs', value: readiness.totalRuns, unit: '', status: 'healthy' },
+        {
+          label: 'Gate Pass Rate',
+          value: readiness.gatePassRate === null ? 0 : Number((readiness.gatePassRate * 100).toFixed(1)),
+          unit: '%',
+          status: readiness.gatePassRate !== null && readiness.gatePassRate < 0.8 ? 'warning' : 'healthy',
+        },
+        { label: 'Blocked Runs', value: readiness.blockedRuns, unit: '', status: readiness.blockedRuns > 0 ? 'warning' : 'healthy' },
+        {
+          label: 'Mean Run Time',
+          value: readiness.meanRunDurationMinutes ?? 0,
+          unit: 'm',
+          status: 'healthy',
+        },
+      ])
+      setError(null)
+    } catch (fetchError) {
+      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load readiness telemetry.')
+    } finally {
+      setLoading(false)
+    }
+  }, [organizationId])
+
+  useEffect(() => {
+    void fetchMetrics()
+    const interval = setInterval(() => {
+      void fetchMetrics()
+    }, refreshInterval)
     return () => clearInterval(interval)
-  }, [organizationId, refreshInterval])
+  }, [fetchMetrics, refreshInterval])
 
   const getIcon = (label: string) => {
     switch (label.toLowerCase()) {
@@ -70,27 +119,31 @@ export function ObservabilityDashboard({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {metrics.map((metric) => (
-        <Card key={metric.label} className={getStatusColor(metric.status)}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              {getIcon(metric.label)}
-              {metric.label}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metric.value}{metric.unit ? metric.unit : ''}
-            </div>
-            {metric.trend !== undefined && (
-              <p className={`text-xs ${metric.trend >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {metric.trend >= 0 ? '↑' : '↓'} {Math.abs(metric.trend)}% from last hour
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <>
+      {error && <p className="mb-4 text-sm text-muted-foreground" role="status">{error}</p>}
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading readiness telemetry...</div>
+      ) : metrics.length === 0 ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground"><Activity className="h-4 w-4" /> Connect a repository to see readiness telemetry.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {metrics.map((metric) => (
+            <Card key={metric.label} className={getStatusColor(metric.status)}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  {getIcon(metric.label)}
+                  {metric.label}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {metric.value}{metric.unit || ''}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </>
   )
 }

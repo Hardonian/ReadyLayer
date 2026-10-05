@@ -111,6 +111,7 @@ export function AppLayout({ children }: { children: React.ReactNode }): React.JS
                       height={28}
                       priority
                       className="h-7 w-auto dark:invert"
+                      style={{ width: 'auto', height: '28px' }}
                     />
                   </picture>
                 </Link>

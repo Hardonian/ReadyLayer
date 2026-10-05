@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -8,10 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Users, Shield, Bell, Zap, Server } from 'lucide-react'
 
 export default function AdminPage(): React.JSX.Element {
-  useEffect(() => {
-    // TODO: Fetch organization admin data
-  }, [])
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -66,8 +61,10 @@ export default function AdminPage(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* TODO: Add UserInviteForm and user list */}
-              <p className="text-sm text-muted-foreground">Team member management coming soon</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Invite teammates, assign roles, and keep the review surface owned by the right people.
+              </p>
+              <Button asChild variant="outline"><Link href="/dashboard/admin/users">Manage team members</Link></Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -81,8 +78,10 @@ export default function AdminPage(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* TODO: Add PolicyBuilder and template selector */}
-              <p className="text-sm text-muted-foreground">Policy management coming soon</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create versioned policy packs with checksums and traceable rule decisions.
+              </p>
+              <Button asChild variant="outline"><Link href="/dashboard/admin/policies">Manage policy packs</Link></Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -96,7 +95,10 @@ export default function AdminPage(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Notification settings coming soon</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Review delivery is configured from the connected repository and notification integrations.
+              </p>
+              <Button asChild variant="outline"><Link href="/dashboard/settings">Open settings</Link></Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -110,7 +112,10 @@ export default function AdminPage(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Integration settings coming soon</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Connect Git providers and inspect the repositories that feed governed runs.
+              </p>
+              <Button asChild variant="outline"><Link href="/dashboard/repos">Manage repositories</Link></Button>
             </CardContent>
           </Card>
         </TabsContent>

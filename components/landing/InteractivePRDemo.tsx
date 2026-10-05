@@ -416,7 +416,7 @@ export function InteractivePRDemo({
             </div>
 
             <TabsContent value="checks" className="m-0 p-4 space-y-2">
-              <AnimatePresence mode="wait">
+              <AnimatePresence>
                 {demoChecks.map((check) => {
                   const status = checkStates.get(check.id) || check.status
                   const isExpanded = selectedCheck === check.id
