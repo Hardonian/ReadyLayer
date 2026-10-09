@@ -24,4 +24,4 @@ jobs:
         run: npm ci
 
       - name: Dependency audit (depcheck)
-        run: npx tsx scripts/depcheck-audit.ts
+        run: npm run deps:check
