@@ -107,9 +107,19 @@ const nextConfig = {
               "frame-src 'self' https://js.stripe.com", // Allow Stripe checkout frames
               "object-src 'none'", // Block plugins
               "base-uri 'self'", // Restrict base tag
-              "form-action 'self'", // Restrict form submissions
+              "form-action 'self'", // Restrict form actions
               "frame-ancestors 'none'", // Same as X-Frame-Options DENY
-              "upgrade-insecure-requests", // Upgrade HTTP to HTTPS
+              // Upgrade HTTP to HTTPS. Only applied in production: WebKit
+              // implements upgrade-insecure-requests WITHOUT the CSP3
+              // "potentially trustworthy host" exemption (Chromium honors
+              // it), so in dev it rewrites the E2E auth-stub fetches from
+              // http://localhost:54321 to https and breaks every webkit
+              // test with 'TLS handshake: unexpected packet' — while the
+              // dev connect-src line above explicitly allowlists those
+              // http stub origins. Production config is unchanged.
+              ...(process.env.NODE_ENV === 'production'
+                ? ["upgrade-insecure-requests"]
+                : []),
             ].join('; '),
           },
         ],

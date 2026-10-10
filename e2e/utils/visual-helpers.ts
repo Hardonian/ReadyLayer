@@ -114,22 +114,6 @@ export const STABILIZE_JS = `
  * Setup page for visual testing - call this at the start of each visual test
  */
 export async function setupVisualTest(page: Page, _testInfo?: TestInfo): Promise<void> {
-  // Safari's HTTPS-First mode upgrades plain http://localhost:54321 (the mock
-  // Supabase stub) to TLS, which the stub cannot serve: 'Error performing TLS
-  // handshake: An unexpected TLS packet was received' x78 poisons the console
-  // for every webkit/Mobile Safari audit test. Intercept those requests and
-  // replay them with route.fetch(), which runs in Node (the test process)
-  // outside the browser and is not subject to browser URL upgrades. Single
-  // source of truth stays the stub server itself.
-  await page.route(/^https?:\/\/localhost:54321\//, async (route) => {
-    // Force the scheme back to http: if the browser already upgraded the
-    // request to https, replaying the upgraded URL would hit the same TLS
-    // wall. The stub is plain HTTP by design.
-    const plainHttpUrl = route.request().url().replace(/^https:/, 'http:')
-    const upstream = await route.fetch({ url: plainHttpUrl })
-    await route.fulfill({ response: upstream })
-  })
-
   // Inject CSS to disable animations
   await page.addStyleTag({ content: DISABLE_ANIMATIONS_CSS })
   
