@@ -205,11 +205,17 @@ Tests run: 25, Failures: 0, Errors: 0, Skipped: 0
         'sum-loop-benchmark',
         baselineFn,
         slowCandidateFn,
-        { warmupIterations: 1, measureIterations: 5, regressionThresholdPercent: 20 }
+        // JIT determinism: with 1 warmup / 5 samples the first-measured
+        // baseline carries V8 tier-up cost and the candidate can land in
+        // the same 1ms clock bucket on shared CI runners (observed deltas
+        // of 0.032ms and 0.055ms across runs). More warmups reach
+        // steady-state before timing; more samples average out scheduler
+        // jitter. The 50x work ratio then dominates in every environment.
+        { warmupIterations: 5, measureIterations: 30, regressionThresholdPercent: 20 }
       );
 
-      expect(comp.baseline.samples).toBe(5);
-      expect(comp.candidate.samples).toBe(5);
+      expect(comp.baseline.samples).toBe(30);
+      expect(comp.candidate.samples).toBe(30);
       expect(comp.candidate.meanMs).toBeGreaterThan(comp.baseline.meanMs);
       expect(comp.isRegression).toBe(true);
       expect(comp.summary).toContain('REGRESSION');
