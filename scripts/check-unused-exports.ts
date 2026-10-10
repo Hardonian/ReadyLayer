@@ -20,6 +20,10 @@ const IGNORE_PATTERNS = [
   // Entry points
   /^(cli|workers|app)\//,
   /^(index|main|server)\.ts$/,
+  // VS Code extension: activate/deactivate are invoked by the editor host
+  // via package.json "main"; its exported types are the extension API
+  // surface and are never internally imported.
+  /^ide\//,
   // Public API directories (used by external consumers, workers, or tests — not internally imported)
   /^services\//,
   /^integrations\//,
