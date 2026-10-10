@@ -190,29 +190,36 @@ Tests run: 25, Failures: 0, Errors: 0, Skipped: 0
   });
 
   describe('Automated Benchmark Regression Runner (Item #33)', () => {
-    it('calculates statistical metrics and detects performance regression', async () => {
-      const baselineFn = (): void => {
-        let sum = 0;
-        for (let i = 0; i < 1000; i++) sum += i;
-      };
+    // Sink writes from OUTSIDE the timed closure: a local `let sum` that
+    // nothing observes is dead-store-eliminable, and once V8 tier-up
+    // optimizes the loops away both functions measure as ~0.02ms noise
+    // (observed CI failures: candidate 0.017 vs baseline 0.030). Mutating
+    // an external variable forces the arithmetic to actually execute, so
+    // the 50x work ratio is real regardless of optimization tier.
+    let benchmarkSink = 0;
+    const loopFn = (iterations: number) => (): void => {
+      for (let i = 0; i < iterations; i++) benchmarkSink += i;
+    };
 
-      const slowCandidateFn = (): void => {
-        let sum = 0;
-        for (let i = 0; i < 50000; i++) sum += i;
-      };
+    it('calculates statistical metrics and detects performance regression', async () => {
+      const baselineFn = loopFn(1000);
+      const slowCandidateFn = loopFn(50000);
 
       const comp = await benchmarkRunner.compare(
         'sum-loop-benchmark',
         baselineFn,
         slowCandidateFn,
-        { warmupIterations: 1, measureIterations: 5, regressionThresholdPercent: 20 }
+        // Extra warmups + samples on top of the DCE fix: more steady-state
+        // timing, less scheduler jitter on shared runners.
+        { warmupIterations: 5, measureIterations: 30, regressionThresholdPercent: 20 }
       );
 
-      expect(comp.baseline.samples).toBe(5);
-      expect(comp.candidate.samples).toBe(5);
+      expect(comp.baseline.samples).toBe(30);
+      expect(comp.candidate.samples).toBe(30);
       expect(comp.candidate.meanMs).toBeGreaterThan(comp.baseline.meanMs);
       expect(comp.isRegression).toBe(true);
       expect(comp.summary).toContain('REGRESSION');
+      expect(benchmarkSink).toBeGreaterThan(0);
     });
   });
 });

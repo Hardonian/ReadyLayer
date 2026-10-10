@@ -236,6 +236,20 @@ export async function setTheme(page: Page, theme: 'light' | 'dark' | 'system'): 
  * Mock API responses for consistent data
  */
 export async function mockConsistentData(page: Page): Promise<void> {
+  // Catch-all for any /api/v1 request an audit page makes that is not
+  // explicitly mocked below: return an empty successful payload instead of
+  // letting the route hit a DB-less dev server and 500/401. Playwright
+  // resolves page.route in REVERSE registration order (last registered
+  // wins), so this must be registered FIRST to stay underneath every
+  // specific mock.
+  await page.route('**/api/v1/**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: null }),
+    })
+  })
+
   // Mock usage stats endpoint
   await page.route('/api/v1/usage', async (route) => {
     await route.fulfill({
@@ -301,6 +315,89 @@ export async function mockConsistentData(page: Page): Promise<void> {
     })
   })
   
+  // Mock notifications endpoint (global bell — fires on every authenticated
+  // page; the API wraps payloads as { data: ... } via successResponse)
+  await page.route('**/api/v1/notifications*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          notifications: [],
+          unreadCount: 0,
+        },
+      }),
+    })
+  })
+
+  // Mock current-organization endpoint (401s without it; shape matches
+  // app/api/v1/organizations/current successResponse)
+  await page.route('**/api/v1/organizations/current*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          organization: {
+            id: 'org-visual-test',
+            name: 'Acme Corp',
+            slug: 'acme-corp',
+            plan: 'pro',
+            role: 'owner',
+            repositoryCount: 2,
+          },
+        },
+      }),
+    })
+  })
+
+  // Mock GitHub installations endpoint (settings page; raw JSON, no data wrapper)
+  await page.route('**/api/v1/installations*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ installations: [] }),
+    })
+  })
+
+  // Mock the runtime UI-config endpoint (outside /api/v1; shape matches
+  // app/api/ui-config successResponse: { data: { organizationId, source,
+  // updatedAt, config: { version, tokens, banners, features, copy } } })
+  await page.route('**/api/ui-config*', async (route) => {
+    const url = new URL(route.request().url())
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          organizationId: url.searchParams.get('organizationId') ?? 'org-visual-test',
+          source: 'default',
+          updatedAt: '2026-01-10T10:00:00Z',
+          config: {
+            version: 1,
+            tokens: {
+              radius: { sm: '0.25rem', md: '0.5rem', lg: '0.75rem', base: '0.5rem' },
+            },
+            banners: {
+              topNotice: {
+                enabled: false,
+                variant: 'info',
+                title: 'Notice',
+                message: '',
+                dismissible: true,
+              },
+            },
+            features: {
+              aiSupportBotEnabled: true,
+              polishModeEnabled: false,
+            },
+            copy: {},
+          },
+        },
+      }),
+    })
+  })
+
   // Mock reviews endpoint
   await page.route('/api/v1/reviews?*', async (route) => {
     await route.fulfill({
