@@ -13,9 +13,7 @@ from .parsers.build_parser import BuildParser
 from .parsers.playwright_parser import PlaywrightParser
 from .parsers.vitest_parser import VitestParser
 from .classifiers.severity_classifier import SeverityClassifier
-from .formatters.json_formatter import JSONFormatter
-from .formatters.markdown_formatter import MarkdownFormatter
-from .formatters.csv_formatter import CSVFormatter
+from .formatters import JSONFormatter, MarkdownFormatter, CSVFormatter
 from .bundler.evidence_bundler import EvidenceBundler
 
 
