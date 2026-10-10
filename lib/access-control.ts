@@ -1,5 +1,9 @@
 export const PUBLIC_ROUTES = [
   '/',
+  // Fully static evaluation path (app/evaluate/page.tsx: no data access)
+  // linked from the public trust center (/security) as "Run an evidence-led
+  // evaluation"; e2e/trust-surfaces.spec.ts asserts it is reachable anonymously.
+  '/evaluate',
   '/auth/signin',
   '/auth/signout',
   '/auth/callback',

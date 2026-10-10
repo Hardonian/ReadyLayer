@@ -19,8 +19,9 @@ test.describe('Homepage', () => {
     // Verify page title
     await expect(page).toHaveTitle(/ReadyLayer/)
     
-    // Verify main heading is visible
-    await expect(page.getByRole('heading', { name: /Open-source governance/i })).toBeVisible()
+    // Verify main heading is visible (hero copy: "Autonomous Agent Velocity.
+    // Bounded, Reviewable Blast Radius." — components/landing/HeroProof.tsx)
+    await expect(page.getByRole('heading', { name: /Autonomous Agent Velocity/i })).toBeVisible()
     
     // Verify no uncaught errors
     expect(errors.length).toBe(0)

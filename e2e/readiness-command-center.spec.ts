@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   mockAuthenticatedSession,
+  mockConsistentData,
   setupVisualTest,
 } from './utils/visual-helpers';
 
@@ -22,6 +23,38 @@ const readinessMetrics = {
 };
 
 async function mockReadinessData(page: Page): Promise<void> {
+  // Global notification bell fetch on every authenticated page; the real
+  // route 500s without a DB and becomes a console error the spec forbids.
+  await page.route('**/api/v1/notifications*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { notifications: [], unreadCount: 0 } }),
+    });
+  });
+
+  // The app shell fetches the current organization; without a session-backed
+  // org (no DB in CI) it 401s and the shell replaces the page with a
+  // "Session not found" error state, so the operator brief never renders.
+  await page.route('**/api/v1/organizations/current*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        data: {
+          organization: {
+            id: 'org-visual',
+            name: 'Acme Corp',
+            slug: 'acme-corp',
+            plan: 'pro',
+            role: 'owner',
+            repositoryCount: 1,
+          },
+        },
+      }),
+    });
+  });
+
   await page.route('**/api/v1/repos?*', async (route) => {
     await route.fulfill({
       status: 200,
@@ -57,6 +90,10 @@ test.describe('Readiness command center', () => {
     await setupVisualTest(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await mockAuthenticatedSession(page);
+    // General /api/v1 catch-all + ui-config mock first: Playwright resolves
+    // page.route in reverse registration order, so the spec-specific mocks
+    // below win for the routes they cover.
+    await mockConsistentData(page);
     await mockReadinessData(page);
   });
 
