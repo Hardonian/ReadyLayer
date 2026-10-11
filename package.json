@@ -114,7 +114,7 @@
     "react-is": "^19.2.3",
     "recharts": "^3.6.0",
     "redis": "^6.3.0",
-    "stripe": "^22.5.0",
+    "stripe": "^23.0.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.5.4"
   },
