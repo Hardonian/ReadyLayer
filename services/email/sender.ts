@@ -247,11 +247,12 @@ export class EmailService {
       };
     }
     const replaceVariables = (value: string): string => value.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => variables[key] ?? '');
+    const renderedHtml = replaceVariables(template.html);
     return this.send({
       to,
       subject: replaceVariables(template.subject),
-      html: replaceVariables(template.html),
-      text: replaceVariables(template.html.replace(/<[^>]+>/g, '')),
+      html: renderedHtml,
+      text: renderedHtml.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
     });
   }
 }
