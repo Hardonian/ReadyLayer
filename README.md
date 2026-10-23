@@ -2,6 +2,12 @@
 
 **ReadyLayer is the open-source governance and trust plane for autonomous AI coding agents.** It bridges the critical enterprise gap between raw agent velocity (Cursor, Claude Code, Windsurf, Devin) and strict software delivery integrity with deterministic policy evaluation, package slopsquatting defense, and cryptographically verifiable in-toto/SLSA provenance.
 
+[![CI](https://github.com/Hardonian/ReadyLayer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Hardonian/ReadyLayer/actions/workflows/ci.yml)
+[![Security gates](https://github.com/Hardonian/ReadyLayer/actions/workflows/security-gates.yml/badge.svg?branch=main)](https://github.com/Hardonian/ReadyLayer/actions/workflows/security-gates.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+
+> **Portfolio signal:** ReadyLayer is the AI developer-platform flagship: it puts deterministic policy, provenance, supply-chain defense, and blast-radius controls around autonomous coding agents before changes reach production.
+
 **Landing strip**
 - **AI Package Slopsquatting & Hallucination Guardrail**: Intercepts AI-hallucinated package additions before dependency installation or CI execution.
 - **Agent Blast Radius Containment Engine**: Enforces strict perimeter boundaries (Tier 0 to Tier 3) and dual-custody cryptographic gating for CI/CD, Terraform, IAM, and DB schema mutations.
