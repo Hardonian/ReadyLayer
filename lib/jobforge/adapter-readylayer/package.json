@@ -11,7 +11,7 @@
   "dependencies": {
     "@jobforge/sdk-ts": "workspace:*",
     "@jobforge/shared": "workspace:*",
-    "zod": "^3.22.4"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@jobforge/typescript-config": "workspace:*",
