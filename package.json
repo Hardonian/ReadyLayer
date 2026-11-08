@@ -122,7 +122,7 @@
     "@next/bundle-analyzer": "^16.4.5",
     "@playwright/test": "^1.64.1",
     "@prisma/client": "^6.18.0",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.4",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.6.6",
     "@types/react": "^19.2.8",
