@@ -128,7 +128,7 @@
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "cross-env": "^10.1.0",
-    "eslint": "^10.13.0",
+    "eslint": "^10.14.0",
     "knip": "^6.43.0",
     "playwright": "^1.64.0",
     "prisma": "~6.12.0",
