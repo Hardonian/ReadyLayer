@@ -6,7 +6,7 @@
  */
 
 import * as babel from '@babel/parser';
-import * as t from '@babel/parser/node_modules/@babel/types';
+import * as t from '@babel/types';
 
 export interface ParseResult {
   language: string;
@@ -161,18 +161,16 @@ export class CodeParserService {
     try {
       const ast = babel.parse(content, {
         sourceType: 'module',
+        // Babel 8 enables shipped ECMAScript syntax (class fields, async
+        // generators, dynamic import, nullish coalescing, optional chaining,
+        // `export * as ns from`) by default and drops those names from its
+        // `PluginConfig` union, so only still-experimental syntax is listed.
         plugins: [
           'typescript',
           'jsx',
           'decorators-legacy',
-          'classProperties',
-          'asyncGenerators',
           'functionBind',
           'exportDefaultFrom',
-          'exportNamespaceFrom',
-          'dynamicImport',
-          'nullishCoalescingOperator',
-          'optionalChaining',
         ],
       });
 

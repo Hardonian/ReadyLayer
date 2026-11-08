@@ -4,7 +4,7 @@
  * Parses and validates .readylayer.yml configuration files
  */
 
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 
