@@ -7,6 +7,10 @@ on:
     branches: [main]
   schedule:
     - cron: '0 6 * * 1'
+  # Manual full-history scan entry point (same path the Monday schedule takes);
+  # used to verify gitleaks engine/allowlist changes on main without waiting
+  # for the next scheduled run.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -23,6 +27,14 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Deterministic engine version. Regression evidence (2026-11-09
+          # schedule run 42639308112): gitleaks 8.24.3 ignores the repo's
+          # .gitleaks.toml allowlist on full-history scans and flags 49
+          # already-verified fake fixtures (0 real secrets; see config header).
+          # 8.30.1 applies the allowlist correctly (0/959 commits) while still
+          # detecting planted live-shaped secrets (canary: 2 rule findings).
+          # Bump deliberately, re-run the canary after any change.
+          GITLEAKS_VERSION: 8.30.1
 
   dependency-audit:
     runs-on: ubuntu-latest
