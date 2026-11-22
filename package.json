@@ -121,7 +121,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.4.6",
-    "@playwright/test": "^1.65.0",
+    "@playwright/test": "^1.65.1",
     "@prisma/client": "^6.18.0",
     "@tailwindcss/postcss": "^4.3.4",
     "@types/node": "^26.6.6",
